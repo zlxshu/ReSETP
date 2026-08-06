@@ -1,0 +1,190 @@
+{
+  "schema": "resetp.z3-literature-charging-setups.v1",
+  "task_id": "Z3",
+  "status": "Z3_CHARGER_FLEET_BASIS_COMPLETE",
+  "research_protocol": {
+    "cycle_1": "对本地 Zotero 全文与仓库已有页码证据做宽检，覆盖目标期刊、多车场、混合车队、经典 EVRP 和容量充电站模型。",
+    "cycle_2": "按论文题名、DOI、充电容量公式和算例规模做定向复核；网页仅使用期刊官网、出版社页或机构作者稿。",
+    "papers_read_full_text": 8,
+    "routing_papers_with_active_charging_model": 7,
+    "active_charging_models_without_finite_simultaneous_charger_limit": 5,
+    "active_charging_models_with_finite_simultaneous_charger_limit": 2
+  },
+  "records": [
+    {
+      "paper": "陈婉茹, 徐光明, 张得志, 曹健 (2023), 碳交易机制下多中心混合车队配送路径和速度优化研究, 系统工程理论与实践 43(11):3320-3335",
+      "doi": "10.12011/SETP2022-2971",
+      "source_url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2022-2971",
+      "page": [3322, 3330, 3331],
+      "chargers": {
+        "per_depot_or_station": "未建模；没有车场桩数、公共站数量或枪口数",
+        "station_locations": "无途中充电站"
+      },
+      "power": "未报告；只给电池容量 80 kWh",
+      "capacity_constraint": "不设。p.3322 明确电动车离开配送中心前充满电、途中不充电，因而不存在充电并发、排队或枪口容量约束。",
+      "no_capacity_rationale": "充电被排除在当日路径决策之外：满电离场且途中不充电。",
+      "scale": "6 个配送中心、71 个客户；p.3330 式(30)按总需求/较小车型载重/车场数推得每场可用总车数 6；p.3331 扫描每场 0-6 辆 EV。",
+      "scale_relation": "车辆数与需求、较小载重、车场数有公式关系；充电设施与规模无关系，因为基础设施未建模。",
+      "is_observed_or_constructed": "CONSTRUCTED_SIMULATION_WITHOUT_CHARGING_INFRASTRUCTURE_OBSERVATION",
+      "evidence": "p.3322 问题假设；p.3330 §4.2.1、式(30)、表7；p.3331 表9。",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/5GXPYVZH/陈婉茹 等 _ 2023 _ 碳交易机制下多中心混合车队配送路径和速度优化研究.pdf",
+      "source_pdf_sha256": "aceb753db36f8d3c0f062ec25317fd3cbc6e6c18971bd193f0986a845a985b6f"
+    },
+    {
+      "paper": "李得成, 陈彦如, 张宗成 (2021), 基于分支定价算法的电动车与燃油车混合车辆路径问题研究, 系统工程理论与实践 41(4):995-1009",
+      "doi": "10.12011/SETP2019-1371",
+      "source_url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2019-1371",
+      "page": [997, 1003, 1004, 1005, 1006],
+      "chargers": {
+        "per_depot_or_station": "不报告每站枪口数；p.997 明确同一充电站可被多辆 EV 同时访问",
+        "station_locations": "小规模 5 客户×2 站；较大规模表中为 10×3、20×4、30×6、40×6、50×8（客户×站）"
+      },
+      "power": "未给 kW；充电率继承 Schneider 算例，并按客户服务时间标定",
+      "capacity_constraint": "不设有限并发容量。站点可由多辆 EV 同时访问；模型没有时隙、排队或同时充电车辆上限。",
+      "no_capacity_rationale": "p.997 直接把同时访问作为问题假设，没有另给拥堵合理化说明。",
+      "scale": "单车场；测试规模 5-50 客户、2-8 个充电站；敏感性使用 15 客户、可用总车数 6。",
+      "scale_relation": "充电站位置数随客户规模阶梯增加，但没有枪口/车辆比；可用车队总量与充电站容量分开。",
+      "is_observed_or_constructed": "CONSTRUCTED_BENCHMARK_INHERITED_FROM_SCHNEIDER",
+      "evidence": "p.997 §2.1；p.1003 数据说明；pp.1004-1006 表3-表5。",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/IUL5NYGA/李得成 等 _ 2021 _ 基于分支定价算法的电动车与燃油车混合车辆路径问题研究.pdf",
+      "source_pdf_sha256": "cf3e2355632887f6ce12387eb424ce17fb4736a6452ce53fc33cef01bf93083a"
+    },
+    {
+      "paper": "Montoya, Guéret, Mendoza, Villegas (2017), The electric vehicle routing problem with nonlinear charging function, Transportation Research Part B 103:87-110",
+      "doi": "10.1016/j.trb.2017.02.004",
+      "source_url": "https://doi.org/10.1016/j.trb.2017.02.004",
+      "page": [4, 13],
+      "chargers": {
+        "per_depot_or_station": "无限同时充电车辆数；没有有限枪口数",
+        "station_locations": "每个规模设置低/高两种站点可用性；站点数按客户数比例人工选取，位置随机或 p-median"
+      },
+      "power": "11、22、44 kW 三种站型；充电曲线拟合 Uhrig et al. (2015) 的实测数据",
+      "capacity_constraint": "不设。p.4 原文明确所有充电站可以同时处理无限数量 EV。",
+      "no_capacity_rationale": "模型把充电时长与充电量纳入路径成本和可行性，但不处理站点拥堵。",
+      "scale": "120 个构造算例；客户数 10、20、40、80、160、320，每规模 20 个。",
+      "scale_relation": "站点位置数按客户数比例人工选取；功率类型随机均匀分配；没有枪口/车辆比。",
+      "is_observed_or_constructed": "MIXED_REAL_CHARGING_CURVES_AND_CONSTRUCTED_NETWORK_INFRASTRUCTURE",
+      "evidence": "p.4 §2.1-2.2、图3；p.13 §4.1、图8。",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/72THJGSQ/Montoya 等 _ 2017 _ The electric vehicle routing problem with nonlinear charging function.pdf",
+      "source_pdf_sha256": "a790a183866c008840da369da3d0bd60eca03a0689708a3f35068795211ff60c"
+    },
+    {
+      "paper": "Froger, Jabali, Mendoza, Laporte (2022), The Electric Vehicle Routing Problem with Capacitated Charging Stations, Transportation Science 56(2):460-482",
+      "doi": "10.1287/trsc.2021.1111",
+      "source_url": "https://pubsonline.informs.org/doi/10.1287/trsc.2021.1111",
+      "page": [462, 463, 467, 468, 476],
+      "chargers": {
+        "per_depot_or_station": "主实验给每个充电站统一设置 1 或 2 个充电器；附录另检 3、4 个",
+        "station_locations": "继承 Montoya 120 算例的站点"
+      },
+      "power": "继承 Montoya 的非线性站型，即 11、22、44 kW 充电曲线",
+      "capacity_constraint": "设连续时间资源容量。pp.467-468 式(30)-(35)以 C_j 表示站 j 的充电器数，用资源流把每次充电操作分配给充电器，并用开始/完成时刻禁止同一枪口重叠。",
+      "no_capacity_rationale": "不适用。pp.462-463 还解释了既有研究忽略容量的直觉：路径已计绕行与充电时间；可预约公用站可把拥堵折入预约窗。",
+      "scale": "120 个 Montoya 算例；10、20、40、80、160、320 客户。",
+      "scale_relation": "每站 1/2 枪对所有规模固定，不按客户、车辆或车场同比例扩张；这是容量压力实验。",
+      "is_observed_or_constructed": "CONSTRUCTED_ONE_OR_TWO_CHARGERS_PER_STATION_ON_EXISTING_BENCHMARK",
+      "evidence": "pp.462-463 研究动机与 1/2/3/4 枪可行性测试；pp.467-468 式(30)-(35)；p.476 §5。",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/DS4ZEACC/Froger 等 _ 2022 _ The electric vehicle routing problem with capacitated charging stations.pdf",
+      "source_pdf_sha256": "2814ebc75a92afc45bdc829c0d393a37673e8e6f916998867734d6b328b6292c"
+    },
+    {
+      "paper": "Hiermann, Puchinger, Ropke, Hartl (2016), The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations, European Journal of Operational Research 252:995-1018",
+      "doi": "10.1016/j.ejor.2016.01.038",
+      "source_url": "https://doi.org/10.1016/j.ejor.2016.01.038",
+      "page": [997, 998, 1006, 1011],
+      "chargers": {
+        "per_depot_or_station": "不报告每站枪口数；没有有限并发上限",
+        "station_locations": "100 客户基准每例 21 个充电站"
+      },
+      "power": "未给 kW；充电率继承 Schneider 算例，并对各车型取同值",
+      "capacity_constraint": "不设。pp.997-998 的完整 MIP 用充电站复制节点表示可重复访问，没有充电器资源、排队或跨车辆时间重叠约束。",
+      "no_capacity_rationale": "没有专门论证；站点被建模为可访问节点，充电时间进入路线时钟。",
+      "scale": "Schneider 衍生基准，最大 100 客户；100 客户实例统一 21 个站点。",
+      "scale_relation": "充电站位置数固定为 21；实际使用不到一半、平均不到三分之一。车队规模不预设，p.997-998 由车辆购置成本和路线联合内生决定。",
+      "is_observed_or_constructed": "CONSTRUCTED_BENCHMARK_WITH_ENDOGENOUS_USED_FLEET",
+      "evidence": "pp.997-998 §2、式(2.1)；p.1006 §5.1；p.1011。",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/NIM4H4ID/Hiermann 等 _ 2016 _ The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations.pdf",
+      "source_pdf_sha256": "b6bbcc1e5be659d8add4012f24d640b55da5ca147b0f62854cb47d01c7c8fc8c"
+    },
+    {
+      "paper": "Schneider, Stenger, Goeke (2014), The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations, Transportation Science 48(4):500-520",
+      "doi": "10.1287/trsc.2013.0490",
+      "source_url": "https://doi.org/10.1287/trsc.2013.0490",
+      "page": [6, 12, 13],
+      "chargers": {
+        "per_depot_or_station": "1 个充电站节点设在车场，另有 20 个随机站点；不报告每站枪口数",
+        "station_locations": "每个 100 客户算例合计 21 个充电站节点"
+      },
+      "power": "未给 kW；构造充电率使一次充满耗时等于该算例平均客户服务时间的 3 倍",
+      "capacity_constraint": "不设有限并发容量。MIP 只跟踪单车到站后的充电时间，不含跨车辆站点资源约束。",
+      "no_capacity_rationale": "没有专门拥堵说明；充电时间与绕行进入路线可行性。",
+      "scale": "56 个 100 客户实例、每例 21 个充电站；另构造 5、10、15 客户小实例。",
+      "scale_relation": "100 客户统一 21 站；不是按车辆数配置枪口。",
+      "is_observed_or_constructed": "CONSTRUCTED_STATION_LOCATIONS_AND_CONSTRUCTED_RELATIVE_CHARGING_RATE",
+      "evidence": "p.6 模型；p.12 实例构造；p.13 小实例说明。",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/3KG6RDYU/Schneider 等 _ 2014 _ The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations.pdf",
+      "source_pdf_sha256": "4455c9c93ae866e1847b4882ca5bb96d90d4226f0818e033a8dcfeca6150f6d4"
+    },
+    {
+      "paper": "Wang, Zhou, Sun, Fan, Wang, Wang (2023), Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations, Expert Systems with Applications 219:119654",
+      "doi": "10.1016/j.eswa.2023.119654",
+      "source_url": "https://doi.org/10.1016/j.eswa.2023.119654",
+      "page": [6, 7, 14, 15, 17, 18],
+      "chargers": {
+        "per_depot_or_station": "不报告每站枪口数；p.14 明确所有充电站始终可用",
+        "station_locations": "基准为 4场/10站、6场/14站、8场/20站、12场/28站；重庆案例为 4场/13站"
+      },
+      "power": "30 kWh/h（p.18 表14）",
+      "capacity_constraint": "不设有限并发容量。p.6 假设每站可被多条 EV 路线共享；p.14 说所有站始终可用。",
+      "no_capacity_rationale": "共享站作为始终可用的插入节点；模型只计算单车等待、充电时间和能量，不处理枪口竞争。",
+      "scale": "构造基准 48-576 客户、4-12 车场、10-28 站；重庆真实案例 143 客户、4 车场、13 站。",
+      "scale_relation": "基准站点数随车场组别从 10 增至 28，但同一车场组内客户数增加时站点数不变；无枪口/车辆比。",
+      "is_observed_or_constructed": "MIXED_CONSTRUCTED_BENCHMARK_AND_SURVEY_ANCHORED_REAL_CASE_WITHOUT_OBSERVED_GUN_COUNT",
+      "evidence": "pp.6-7 §4；p.14 §5.2.4；p.15 表8；p.17 §6.2、表13；p.18 表14。",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/FWMR6V2Q/Wang 等 _ 2023 _ Collaborative multidepot electric vehicle routing problem with time windows and shared charging stat.pdf",
+      "source_pdf_sha256": "5e40ba7f6631983ff9b2c7d05393df1480c4324e7fd7284cfeba22740bf6d412"
+    },
+    {
+      "paper": "Wu, Lin, Liu, Jin (2022), The multi-depot electric vehicle scheduling problem with power grid characteristics, Transportation Research Part B 155:322-347",
+      "doi": "10.1016/j.trb.2021.11.007",
+      "source_url": "https://eprints.whiterose.ac.uk/id/eprint/180812/1/Wu%20et%20al%20-%20TRB2021%20-%20EV%20scheduling%20-%20WWR.pdf",
+      "page": [10, 11, 12, 22, 23, 30, 31, 32, 33],
+      "chargers": {
+        "per_depot_or_station": "基准站容量随机取整数区间 (3+|S|/(3.5l), 3+|S|/(2.5l))；广州案例假定每站容量 30 辆",
+        "station_locations": "基准 2/4/6/8 个站；广州案例 5 个车场、1 个实际充电站"
+      },
+      "power": "基准 200 kW；广州案例采用 30 分钟快充，设备例为 BYD EVA080KG，输入/输出功率小于 200 kW",
+      "capacity_constraint": "设时空网络容量。p.11 式(11)限制所需车辆不超过固定车队 N，式(12)限车场派车，式(13)限同一充电活动的车辆数不超过站容量，式(14)限同时充电峰值；p.12 逐式解释。",
+      "no_capacity_rationale": "不适用。该文把充电站容量与峰值并发作为核心约束。",
+      "scale": "基准 50/100/200/400 趟、2/5/8 车场、2/4/6/8 站；广州案例 379 趟、5 车场、1 站、可用车队上限 100。",
+      "scale_relation": "基准站容量随趟数/站数显式缩放，车场容量随趟数/车场数缩放，车队上限独立给定；广州的 30 容量和 100 车队为明确假设。",
+      "is_observed_or_constructed": "BENCHMARK_CONSTRUCTED_BY_EXPLICIT_SCALING_FORMULA;_REAL_CASE_LOCATION_OBSERVED_BUT_CAPACITY_AND_FLEET_ASSUMED",
+      "evidence": "pp.10-12 §3.3-3.4、式(11)-(14)；pp.22-23 §5.1.1；pp.30-31 §5.2.1；pp.32-33 §5.2.2。",
+      "source_pdf": null,
+      "source_pdf_sha256": null
+    }
+  ],
+  "common_finding": {
+    "one_sentence": "对本文 10-200 客户、1-4 车场的货运路径规模，同类路径论文的常见合同是设置若干充电站节点并把站点视为始终可用或无限并发；若研究物理拥堵，则公开给出每站 1/2 枪或按任务量缩放的容量公式，而不是把所有车场统一写成有现场出处的 2×22 kW。",
+    "charger_count": "不存在可迁移到每个车场的唯一常见枪数；有限容量论文的 1/2 枪是构造压力情景，Wu 的容量则随趟数/站数缩放。",
+    "power": "不存在跨论文共同功率；可核原值包括 11/22/44 kW、30 kWh/h、200 kW，以及按服务时间构造的相对充电率。",
+    "modal_capacity_contract": "UNBOUNDED_OR_ALWAYS_AVAILABLE_STATION_NODE",
+    "why_two_replay_setups_are_retained": "只把文献中占多数的无限并发合同作为共同部分；功率不取平均，分别保留 Montoya 的 22 kW 原值和 Wang 多车场案例的 30 kWh/h 原值。"
+  },
+  "literature_setups_for_zero_search_recheck": [
+    {
+      "setup_id": "LIT_U22_MONTOYA",
+      "simultaneous_charger_capacity": "UNBOUNDED",
+      "power_kw": 22.0,
+      "source": "Montoya et al. (2017), p.4",
+      "parameter_class": "LITERATURE_BENCHMARK_TRANSFER_NOT_OBSERVED_CHINA_SITE"
+    },
+    {
+      "setup_id": "LIT_U30_WANG_MD",
+      "simultaneous_charger_capacity": "UNBOUNDED_ALWAYS_AVAILABLE",
+      "power_kw_equivalent": 30.0,
+      "source": "Wang et al. (2023), pp.14,18",
+      "parameter_class": "LITERATURE_MULTIDEPOT_CASE_TRANSFER_NOT_OBSERVED_CHINA_SITE"
+    }
+  ]
+}

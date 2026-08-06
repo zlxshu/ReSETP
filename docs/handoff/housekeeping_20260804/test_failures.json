@@ -1,0 +1,112 @@
+{
+  "task_id": "T6-HOUSEKEEPING",
+  "test_command": "PYTHONPATH=solver/src:models/src:.:/opt/anaconda3/lib/python3.13/site-packages:build/python_envs/pyvrp-hgs-0.12.2/lib/python3.13/site-packages PYTHONHASHSEED=0 /opt/anaconda3/bin/python3.13 -m pytest solver/tests -q",
+  "test_environment": {
+    "available": true,
+    "python": "/opt/anaconda3/bin/python3.13",
+    "pytest_exit_code": 1,
+    "summary": "3 failed, 909 passed, 1 skipped in 319.47s (0:05:19)"
+  },
+  "t4_modified_files": [
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/run_adapter_g0.py",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_pyvrp_adapter.py"
+  ],
+  "registration_search_scope": [
+    "docs/handoff/**/*.md",
+    "docs/handoff/**/*.json",
+    "HANDOFF.md",
+    "docs/handoff/memory/"
+  ],
+  "failures": [
+    {
+      "name": "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+      "error_type": "AssertionError",
+      "error_summary": "run_e5_charging_ablation(Q1_BUNDLE_DIR, REAL_BUDGET_REPORT) 返回的 report[carbon_aware][feasible] 为 false；测试断言其应为 true。",
+      "registered": true,
+      "registration_locations": [
+        "docs/handoff/solver_fleetcap_fix_20260804/report.md:223-233",
+        "docs/handoff/memory/fleet_authority_v3_20260802.md:19-25",
+        "docs/handoff/memory/regression_fix_20260802.md:15-23",
+        "HANDOFF.md:5833"
+      ],
+      "related_to_T4": false,
+      "judgement_basis": {
+        "test_imports": [
+          "solver/tests/test_e5_ablation.py:6-16 imports setp_solver.check, instance_loader, prices, search.charging, search.e5_ablation, and solution",
+          "solver/tests/test_e5_ablation.py:97-98 calls setp_solver.search.e5_ablation.run_e5_charging_ablation"
+        ],
+        "tested_functions": [
+          "setp_solver.search.e5_ablation.run_e5_charging_ablation",
+          "setp_solver.search.charging fixed-route replay/evaluation path"
+        ],
+        "implementation_chain": [
+          "solver/src/setp_solver/search/e5_ablation.py:54-68"
+        ],
+        "t4_file_reference_check": "对测试文件、被测 e5_ablation.py 及其直接导入链检索五个 T4 文件名，无直接匹配；导入链未触及 pyvrp_adapter.py、epochal_hgs.py、route_pool_sp.py、run_adapter_g0.py、test_pyvrp_adapter.py。"
+      }
+    },
+    {
+      "name": "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts",
+      "error_type": "AssertionError",
+      "error_summary": "run_ev_adoption_diagnostic(...) 返回行的 row[root_cause] 为 repair_logic_defect；测试断言其不应等于 repair_logic_defect。",
+      "registered": true,
+      "registration_locations": [
+        "docs/handoff/solver_fleetcap_fix_20260804/report.md:223-233",
+        "docs/handoff/memory/fleet_authority_v3_20260802.md:19-25",
+        "docs/handoff/memory/regression_fix_20260802.md:15-23",
+        "HANDOFF.md:5833"
+      ],
+      "related_to_T4": false,
+      "judgement_basis": {
+        "test_imports": [
+          "solver/tests/test_e5_ablation.py:6-16 imports setp_solver.search.e5_ablation",
+          "solver/tests/test_e5_ablation.py:109-110 calls setp_solver.search.e5_ablation.run_ev_adoption_diagnostic"
+        ],
+        "tested_functions": [
+          "setp_solver.search.e5_ablation.run_ev_adoption_diagnostic",
+          "setp_solver.search.charging replay and evaluation path"
+        ],
+        "implementation_chain": [
+          "solver/src/setp_solver/search/e5_ablation.py:98-118"
+        ],
+        "t4_file_reference_check": "对测试文件、被测 e5_ablation.py 及其直接导入链检索五个 T4 文件名，无直接匹配；导入链未触及五个 T4 文件。"
+      }
+    },
+    {
+      "name": "solver/tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps",
+      "error_type": "AssertionError",
+      "error_summary": "candidate_obj=4954.204438573212 不小于 initial_obj=4923.553350198799；测试断言 candidate_obj 应严格小于 initial_obj。",
+      "registered": true,
+      "registration_locations": [
+        "docs/handoff/solver_fleetcap_fix_20260804/report.md:223-233",
+        "docs/handoff/memory/fleet_authority_v3_20260802.md:19-25",
+        "docs/handoff/memory/regression_fix_20260802.md:15-23",
+        "HANDOFF.md:5833"
+      ],
+      "related_to_T4": false,
+      "judgement_basis": {
+        "test_imports": [
+          "solver/tests/test_ev_heavy_findability_gate.py:10-17 imports setp_solver.check, prices, search.bundle, search.evaluation, search.winner_operators, and EV-heavy baseline gate/regime modules",
+          "solver/tests/test_ev_heavy_findability_gate.py:123-142 builds EvaluationContext, calls score_reference and apply_winner_action with action=vehicle_type_swap, then checks the objective"
+        ],
+        "tested_functions": [
+          "setp_solver.search.winner_operators.apply_winner_action",
+          "setp_solver.algorithms.resetp_alns.kernel.winner.apply_winner_action",
+          "vehicle_type_swap action",
+          "setp_solver.search.evaluation.score_reference"
+        ],
+        "implementation_chain": [
+          "solver/src/setp_solver/search/winner_operators.py:1-20 is a deprecated facade to the resetp_alns kernel",
+          "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py:248-307, 503, 573",
+          "baselines/e2_alns/ev_heavy_findability_gate.py:459-462 calls make_shared_initial_solution"
+        ],
+        "t4_file_reference_check": "对测试文件和上述 resetp_alns/evaluation/EV-heavy 直接导入链检索五个 T4 文件名，无直接匹配；该失败路径未触及 PyVRP T4 适配器、epochal_hgs、route_pool_sp、run_adapter_g0 或 test_pyvrp_adapter。"
+      }
+    }
+  ],
+  "overall_judgement": "三个失败均已登记为历史失败；基于当前测试导入链和被测函数核对，三者均不触及 T4 修改的五个文件。未修复任何失败、未修改测试或源码。"
+}
+

@@ -1,0 +1,35 @@
+{
+  "schema": "resetp.xc2.runtime-environment-addendum.v5",
+  "task_id": "XC2",
+  "recorded_during_first_six_scenarios_before_any_scenario_result": true,
+  "correction_to_prior_runtime_classification": {
+    "actual_state": "retry1 thread-transport computation remained active after its root PID became invisible to the managed sandbox monitor",
+    "evidence": "six aware preoptimizations, six blind preoptimizations, and paired stage_001 files appeared in chronological order after the monitor anomaly timestamp",
+    "completed_scenarios_at_correction": 0,
+    "retry2_outcome": "isolated coordinator refused pre-existing scenarios and did not compute",
+    "retry3_outcome": "system Python import failed before scenario creation and did not compute",
+    "retry4_outcome": "configuration prepared but formal command never started"
+  },
+  "directory_split_recovery": {
+    "cause": "the active retry1 job recreated scenarios after its initial six aware preoptimization files were conservatively moved under the earlier false-exit diagnosis",
+    "action": "copy the six same-run aware preoptimization JSON files back to their absent canonical paths while retaining the originals",
+    "scientific_output_changed": false,
+    "scenario_recomputed": false,
+    "result_selected_or_discarded": false
+  },
+  "monitor_recovery": {
+    "mode": "read-only artifact watcher supervised by codex-experiment-monitor",
+    "reason": "the sandbox denies process inspection for the detached computation",
+    "watcher": "baselines/china_e3_e7/formal_dynamic_dispatch_20260802_artifact_watcher.py",
+    "watcher_sha256": "032e0ef343c4cce4533bd0a23b34d9a6b96674ceaabca2cd6cffcaf1565a0067",
+    "terminal_authority": "formal_dynamic_dispatch_20260802/done.json with status XC_DYNAMIC_FORMAL_COMPLETE",
+    "watcher_may_launch_or_retry_scenarios": false,
+    "watcher_may_edit_results": false
+  },
+  "immutable_runner_sha256": "fe15611014dfab12bb43f8bca2113848e04779f15948c22654b365b7ee9b43f6",
+  "preregistration_sha256": "98053790d1be73ab9074aab408d5a447390683c1bfe93cbd0e2cb431e10136f6",
+  "scientific_contract_changed": false,
+  "seed_changed": false,
+  "budget_changed": false,
+  "completed_scenario_rerun": false
+}

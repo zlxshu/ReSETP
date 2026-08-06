@@ -1,0 +1,113 @@
+{
+  "command": [
+    "env",
+    "PYTHONHASHSEED=0",
+    "OMP_NUM_THREADS=1",
+    "OPENBLAS_NUM_THREADS=1",
+    "MKL_NUM_THREADS=1",
+    "VECLIB_MAXIMUM_THREADS=1",
+    "NUMEXPR_NUM_THREADS=1",
+    "/opt/anaconda3/bin/python3.13",
+    "run_scout_d.py",
+    "run",
+    "--workers",
+    "4"
+  ],
+  "events_emitted": [],
+  "last_event_state": "ANOMALY",
+  "log_initial_sizes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/.scout-d-depot-ownership-20260803.monitor/experiment.stdout.log": 0
+  },
+  "low_cpu_checks": 0,
+  "mode": "start",
+  "monitor_config_sha256": "1a5e72d6dba3106474ec52982e73f5a4b449254fe4bd4bcc5665ddc37ddcaa07",
+  "paused": false,
+  "pgid": 89176,
+  "pid": 89176,
+  "protected_hashes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+      "age_seconds": 54262.043028116226,
+      "exists": true,
+      "kind": "model",
+      "mtime": 1785682230.53,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "sha256": "7b570ba5a793f7ca2c5484779eb8d91b3b7e0d048a8e15311fcd01429acf355c",
+      "size": 28964
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_scattered_ownership_20260801/source_p_sequences.csv": {
+      "age_seconds": 216526.21310210228,
+      "exists": true,
+      "kind": "core_data",
+      "mtime": 1785519966.36,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_scattered_ownership_20260801/source_p_sequences.csv",
+      "sha256": "ba1226f149b04678487879640d5123413a35fe3b5bf37715127d3c76f70283c3",
+      "size": 2561
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/metadata.json": {
+      "age_seconds": 21.8926739692688,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1785736470.68,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/metadata.json",
+      "sha256": "0537d134a22b78881cfec702c0f8dc7869d2b9ad9d1ccd9880ac87ea67a48626",
+      "size": 32935
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/monitor.json": {
+      "age_seconds": 186.41275477409363,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1785736306.16,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/monitor.json",
+      "sha256": "1a5e72d6dba3106474ec52982e73f5a4b449254fe4bd4bcc5665ddc37ddcaa07",
+      "size": 2559
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/run_scout_d.py": {
+      "age_seconds": 104.30249691009521,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1785736388.27,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/run_scout_d.py",
+      "sha256": "d3ca5984bd2d28b24cffb64ade0b7582954393c72560277283910340169d188d",
+      "size": 53036
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/manifest.json": {
+      "age_seconds": 64405.473152160645,
+      "exists": true,
+      "kind": "core_data",
+      "mtime": 1785672087.1,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/manifest.json",
+      "sha256": "6f409ea92a02198485f066e57e8a06047a3bfc1f7b176f83089180e349ee2929",
+      "size": 1220
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 148605.25288915634,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1785587887.32,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+      "size": 44789
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 66825.08280205727,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1785669667.49,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "size": 46269
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 1732347.272972107,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "started_at": "2026-08-03T05:54:52+00:00",
+  "started_at_epoch": 1785736492.572417,
+  "stdout_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/.scout-d-depot-ownership-20260803.monitor/experiment.stdout.log"
+}

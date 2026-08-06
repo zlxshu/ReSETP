@@ -1,0 +1,118 @@
+{
+  "schema": "resetp.z3-multitrip-two-conventions.v1",
+  "task_id": "Z3",
+  "status": "Z3_CHARGER_FLEET_BASIS_COMPLETE",
+  "scope": {
+    "instances": 81,
+    "depot_rows": 144,
+    "electrification_levels": [0.0, 0.25, 0.5, 0.75, 1.0],
+    "route_search_executed": false,
+    "search_evaluations": 0,
+    "fixed_delivery_trips_all_cv": 1040,
+    "single_trip_available_fleet_total": 1042,
+    "multitrip_compressed_available_fleet_total_convention_a": 695,
+    "minimum_physical_cv_used_on_fixed_all_cv_trips": 693,
+    "vehicle_fixed_cost_cny_per_trip": 170.0
+  },
+  "convention_a": {
+    "name": "REDIMENSION_TOTAL_TO_MULTITRIP_MINIMUM_THEN_TEST",
+    "definition": "先对冻结的 1040 个配送趟求固定时钟下的最少实体车，再把电动化实验可用总量同步压到逐场 max(CV多趟最少数, EV多趟认证数)；81 个实例合计可用总量从单趟口径 1042 压到 695。",
+    "what_changes_relative_to_single_trip": [
+      "允许多趟复用",
+      "同时收紧可用实体车上限",
+      "100% EV 时把既有全 CV 趟原样改作 EV 趟"
+    ],
+    "cost_direction_under_current_model": {
+      "F2": "UNCHANGED_FOR_FIXED_TRIP_SET",
+      "calculation": "1040 trips × 170 CNY/trip = 176800 CNY，单趟与多趟相同",
+      "total_cost": "INDETERMINATE_UNDER_ZERO_SEARCH;_CAN_RISE_FALL_OR_BECOME_INCOMPARABLE_WHEN_CERTIFICATION_IS_LOST",
+      "reason": "cost.py:168 按 len(solution.routes) 计费；压缩实体车数不减少路线/配送趟数，而且收紧车队上限会删除旧单趟回退。充电时刻变化可能改变电费与碳成本，但这不是固定派遣费节省。"
+    },
+    "counterfactual_if_fixed_cost_were_per_physical_vehicle": {
+      "single_trip_all_cv_physical_vehicle_cost_cny": 176800.0,
+      "multitrip_all_cv_physical_vehicle_cost_cny": 117810.0,
+      "savings_cny": 58990.0,
+      "savings_percent": 33.365385,
+      "status": "COUNTERFACTUAL_NOT_CURRENT_F2"
+    },
+    "feasibility_direction": "CAN_WORSEN_BECAUSE_TOTAL_CAP_IS_TIGHTENED_AND_CV_TRIPS_ARE_NOT_ALL_EV_COMPATIBLE",
+    "current_2x22kw_certified_by_level": {
+      "0.0": 81,
+      "0.25": 81,
+      "0.5": 78,
+      "0.75": 63,
+      "1.0": 41
+    },
+    "literature_unbounded_capacity_certified_by_level": {
+      "0.0": 81,
+      "0.25": 81,
+      "0.5": 78,
+      "0.75": 63,
+      "1.0": 44
+    },
+    "independent_judgment": "上一轮的‘多趟使可行性下降’不是多趟性质，而是多趟复用与车队上限压缩、CV趟转EV三项合并后的结果。"
+  },
+  "convention_b": {
+    "name": "KEEP_SINGLE_TRIP_TOTAL_FIXED_AND_OPTIMIZE_USED_PHYSICAL_VEHICLES",
+    "definition": "逐场可用总量固定为 X4 单趟口径 T_d=max(R_d,R_e)，81 个实例合计 1042，不因开启多趟而缩小；多趟只允许把相容的配送趟串到同一实体车，单趟方案始终保留为可行回退。",
+    "what_changes_relative_to_single_trip": [
+      "只扩大趟链/车辆复用选择",
+      "不收紧可用车队上限",
+      "允许实际启用实体车数下降"
+    ],
+    "all_cv_physical_vehicle_witness": {
+      "delivery_trips": 1040,
+      "single_trip_physical_vehicles_used": 1040,
+      "multitrip_physical_vehicles_used": 693,
+      "available_fleet_cap_held_fixed": 1042,
+      "physical_vehicle_reduction": 347,
+      "physical_vehicle_reduction_percent": 33.365385
+    },
+    "cost_direction_under_current_model": {
+      "F2": "UNCHANGED_FOR_FIXED_TRIP_SET",
+      "calculation": "1040 trips × 170 CNY/trip = 176800 CNY，实体车从 1040 减到 693 也不改变 F2",
+      "total_cost": "WEAKLY_NONINCREASING_ONLY_AS_AN_EXPANDED_OPTIMIZATION_SPACE;_STRICT_SAVING_NOT_PROVED_BY_ZERO_SEARCH",
+      "reason": "旧单趟解仍在可行域内，所以最优值不能变差；但当前目标没有按实体车启用计费，不能把减少 347 辆直接写成成本下降。"
+    },
+    "cost_direction_if_fixed_cost_is_per_physical_vehicle": {
+      "direction": "DECREASES_WHEN_ANY_TRIP_CHAIN_REUSES_A_VEHICLE",
+      "all_cv_witness_savings_cny": 58990.0,
+      "all_cv_witness_savings_percent": 33.365385,
+      "literature_basis": "Hiermann et al. pp.997-998 对实际启用车辆计购置成本；Wu et al. pp.10-12,32-33 固定车队上限并按所需实体车计固定运输成本。"
+    },
+    "feasibility_direction": "CANNOT_WORSEN_WHEN_MULTITRIP_IS_OPTIONAL_AND_THE_SINGLE_TRIP_SOLUTION_IS_RETAINED",
+    "current_2x22kw_certified_by_level": {
+      "0.0": 81,
+      "0.25": 81,
+      "0.5": 81,
+      "0.75": 81,
+      "1.0": 75
+    },
+    "literature_unbounded_capacity_certified_by_level": {
+      "0.0": 81,
+      "0.25": 81,
+      "0.5": 81,
+      "0.75": 81,
+      "1.0": 81
+    },
+    "independent_judgment": "这是用户‘多趟降本增效’直觉对应的运营口径，但严格降本还要求固定费按实体车/班日启用计，而不是按配送趟计。"
+  },
+  "comparison": {
+    "user_intuition_holds_under": "CONVENTION_B_PLUS_PER_PHYSICAL_VEHICLE_ACTIVATION_COST",
+    "user_intuition_does_not_hold_under": [
+      "CONVENTION_A_WHEN_TOTAL_FLEET_CAP_IS_SIMULTANEOUSLY_COMPRESSED",
+      "CURRENT_MODEL_F2_WHICH_CHARGES_PER_DELIVERY_TRIP"
+    ],
+    "why": "多趟本身只增加趟链选择；只有同步削减车队上限才会消除单趟回退并制造新的可行性损失。实体车复用只减少实体车启用次数，不减少配送趟数。",
+    "paper_convention_decision": "USE_CONVENTION_B",
+    "paper_convention_reason_from_literature": "陈婉茹等 p.3331 和李得成等 pp.1006-1007 固定可用总量、让实际派遣量变化；Hiermann et al. pp.997-998 令实际使用车辆数内生；Wang et al. p.6 式(6)-(7)最小化并按实际使用 EV 计租赁费；Wu et al. pp.10-12 以 N 作固定上限、按所需实体车计固定运输费。没有一篇先按多趟最少数缩小可用上限，再把该缩小当作多趟处理效应。"
+  },
+  "source_evidence": {
+    "single_trip": "docs/handoff/fleet_sizing_derivation_20260802/fleet_sizing.json; levels_design.json",
+    "multitrip": "docs/handoff/fleet_sizing_multitrip_20260802/fleet_sizing_multitrip.json; levels_design_multitrip.json",
+    "multitrip_interface": "baselines/china_e3_e7/multitrip_interface_completion_20260802/done.json",
+    "F2_paper": "docs/paper_v2/paper_main.tex:475-480",
+    "F2_source": "solver/src/setp_solver/cost.py:164-168; solver/src/setp_solver/profit.py:92-99",
+    "fixed_cost_value": "solver/src/setp_solver/china81.py:884-910"
+  }
+}

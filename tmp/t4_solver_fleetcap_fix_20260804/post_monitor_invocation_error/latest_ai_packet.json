@@ -1,0 +1,152 @@
+{
+  "created_at": "2026-08-04T07:11:52+00:00",
+  "current_status": {
+    "checked_at": "2026-08-04T07:11:52+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/.t4-solver-fleetcap-post-probe.monitor/experiment.stdout.log": {
+        "age_seconds": 9.097529888153076,
+        "exists": true,
+        "mtime": 1785827503.45,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/.t4-solver-fleetcap-post-probe.monitor/experiment.stdout.log",
+        "size": 134
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/post/result.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/post/result.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/post/trace.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/post/trace.csv"
+      }
+    },
+    "findings": [
+      {
+        "code": "PROCESS_EXITED_WITHOUT_COMPLETION",
+        "details": {},
+        "message": "process ended without completion evidence",
+        "severity": "critical"
+      }
+    ],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/.t4-solver-fleetcap-post-probe.monitor/experiment.stdout.log"
+    ],
+    "name": "t4-solver-fleetcap-post-probe",
+    "paused": false,
+    "process": {
+      "alive": false,
+      "cpu_percent": 0,
+      "members": [],
+      "pgid": 66385,
+      "root_pid": 66385,
+      "rss_mb": 0.0
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+        "age_seconds": 69.84274101257324,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1785827442.71,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+        "sha256": "d18f0d9cfd39e9c323d677f9a56fb2ea6b15332cb04537e553198a48b8271acb",
+        "size": 38263
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py": {
+        "age_seconds": 469.27215480804443,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1785827043.28,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+        "sha256": "a00bfe1f6d43acd5539856a2324de077f8ff8d88de3576382156f08d1538a3bc",
+        "size": 40159
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+        "age_seconds": 731.8030350208282,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1785826780.75,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+        "sha256": "58dd67eff098bc038865744a2b6e00d559960d4a0f4428ff9305b38d257eb6e1",
+        "size": 29274
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv": {
+        "age_seconds": 155425.61094903946,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1785672086.94,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv",
+        "sha256": "ed9a584a31cc257eb064d5df9042f2df82a6b1868b73657474a9629e425f00b1",
+        "size": 67893
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 239625.22942495346,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1785587887.32,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+        "size": 44789
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 157845.0586400032,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1785669667.49,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+        "size": 46269
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+        "age_seconds": 1823367.2500622272,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784004145.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+        "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+        "size": 7609
+      }
+    },
+    "runtime_seconds": 10.151341915130615,
+    "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/.t4-solver-fleetcap-post-probe.monitor/scenes/20260804-151152-anomaly",
+    "schema_version": 1,
+    "state": "ANOMALY",
+    "system": {
+      "free_memory_mb": 110.890625,
+      "load_average_15m": 2.49853515625,
+      "load_average_1m": 2.48193359375,
+      "load_average_5m": 2.5791015625,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 49.0,
+      "swapouts": 65583939
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "t4-solver-fleetcap-post-probe",
+    "objective": "执行 T4 修复后的 50 客户同配置补全、种子与预算验证"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t4_solver_fleetcap_fix_20260804/.t4-solver-fleetcap-post-probe.monitor/experiment.stdout.log": [
+      "usage: probe_driver.py [-h] --label {pre,post} --output OUTPUT",
+      "probe_driver.py: error: the following arguments are required: --output"
+    ]
+  },
+  "reason": "ANOMALY",
+  "schema_version": 1
+}

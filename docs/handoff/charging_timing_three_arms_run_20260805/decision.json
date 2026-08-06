@@ -1,0 +1,27 @@
+{
+  "DECISION": "paper_claim_allowed=false; no result-direction filtering; no scientific correctness judgment recorded.",
+  "FACT": {
+    "failed_scientific_unit_count": 0,
+    "improvement_at_global_iteration_20000_count": 0,
+    "last_local_iteration_range": [
+      3662,
+      7774
+    ],
+    "materialized_unit_count": 90,
+    "maximum_absolute_search_final_closure_error": 0.0,
+    "nonzero_violation_count": 0,
+    "preexisting_17_rows_unchanged": true,
+    "reference_4589_7622_inside_count": 81,
+    "reference_4589_7622_outside_count": 9,
+    "registered_unit_count": 90,
+    "route_signature_all_three_equal_pair_sets": 30,
+    "route_signature_pair_set_count": 30,
+    "service_shortfall_count": 0,
+    "successful_unit_count": 90,
+    "technical_launcher_incident_archive": "docs/handoff/charging_timing_three_arms_run_20260805_T25_launcher_failure_archive"
+  },
+  "HALT": null,
+  "INFERENCE": "No plateau threshold was defined. The observed last-local-improvement range is 3662-7774; 81 of 90 unit rows fall in 4589-7622, so that numeric range does not cover all three regions. The early/middle/late amplitude summaries are descriptive only and are not a convergence judgment.",
+  "schema_version": "resetp.t25-decision.v1",
+  "status": "T25_EXPLORATORY_90_UNITS_MATERIALIZED"
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "name": "t10-intertrip-charging-fix",
+  "objective": "Replay the frozen T5 18-run matrix after the approved inter-trip charging fix",
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP",
+  "poll_seconds": 30,
+  "stale_seconds": 900,
+  "max_runtime_seconds": 7200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "t10_runner.py",
+    "--run"
+  ],
+  "forbidden_command_substrings": ["--self-test"],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 3,
+  "max_rss_mb": 7000,
+  "min_system_memory_free_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": ["run.log"],
+  "progress_files": [],
+  "result_files": ["raw_runs.csv", "solution_witnesses.json"],
+  "completion_files": ["done.json"],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {"path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py", "kind": "cost_function"},
+    {"path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py", "kind": "evaluator"},
+    {"path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py", "kind": "evaluator"}
+  ],
+  "ai": {"enabled": false, "timeout_seconds": 180}
+}

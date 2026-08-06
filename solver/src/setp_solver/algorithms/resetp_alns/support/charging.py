@@ -11,25 +11,40 @@ from __future__ import annotations
 
 from dataclasses import replace
 import math
+from collections.abc import Mapping
 from typing import Any
 
+from setp_solver.charge_timing import (
+    DEFAULT_CHARGE_TIMING_POLICY,
+    select_charge_timing_start,
+    validate_charge_timing_policy,
+)
 from setp_solver.cost import (
     CARBON_SLOT_SECONDS,
     best_charging_action_start,
     ev_instance_arc_energy_kwh,
-    route_departure_second,
     route_next_day_departure_second,
     route_return_arrival_without_charging,
     time_profile_rows_for_node,
 )
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import DEFAULT_PRICES, PriceParameters
-from setp_solver.search.charging import _curve_aware_action
+from setp_solver.charging_action import _curve_aware_action
 from setp_solver.solution import ChargingAction, Route, Solution
 from setp_solver.station_copies import physical_station_id
 from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
     ChargeOption,
     select_charge_option,
+)
+from setp_solver.search.multitrip_schedule import (
+    certified_depot_charge_window,
+    route_timing,
+    select_certified_depot_charge_start,
+    validate_depot_charge_window_mode,
+)
+from setp_solver.search.evaluation import EvaluationContext, record_repair_delta
+from setp_solver.algorithms.resetp_alns.operators.repair_scoring import (
+    route_model_cost_delta,
 )
 
 
@@ -40,6 +55,20 @@ CHARGE_AMOUNT_STRATEGIES = (
     "soc_95",
     "full",
 )
+PUBLIC_STATION_CANDIDATE_MODES = frozenset({"fallback", "parallel"})
+DEFAULT_PUBLIC_STATION_CANDIDATE_MODE = "fallback"
+
+
+def validate_public_station_candidate_mode(mode: str) -> str:
+    """Validate the public-station candidate-generation policy."""
+
+    if mode not in PUBLIC_STATION_CANDIDATE_MODES:
+        raise ValueError(
+            "unknown public station candidate mode: "
+            f"{mode!r}; expected one of "
+            f"{sorted(PUBLIC_STATION_CANDIDATE_MODES)}"
+        )
+    return mode
 
 
 def normalize_charge_amount_strategies(
@@ -84,10 +113,22 @@ def solve_charging(
     instance: Instance,
     gamma_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    depot_charge_window_mode: str = "full_gap",
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
 ) -> list[ChargingAction]:
     """Return charging actions for a repaired version of ``route``."""
 
-    _, actions = repair_route_charging(route, instance, gamma_profile, prices)
+    _, actions = repair_route_charging(
+        route,
+        instance,
+        gamma_profile,
+        prices,
+        depot_charge_window_mode=depot_charge_window_mode,
+        charge_timing_policy=charge_timing_policy,
+        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+    )
     return actions
 
 
@@ -96,13 +137,24 @@ def solve_charging_naive(
     instance: Instance,
     gamma_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    depot_charge_window_mode: str = "full_gap",
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
 ) -> list[ChargingAction]:
     """Return fixed-route actions using immediate return/arrival charging."""
 
     # v2026-06-12: S0 charging-policy ablation baseline. This keeps the same
     # power and energy construction as carbon-aware replay, but depot charging
     # starts immediately at route return instead of minimizing carbon.
-    return solve_charging_fixed_route(route, instance, gamma_profile, prices, strategy="naive")
+    return solve_charging_fixed_route(
+        route,
+        instance,
+        gamma_profile,
+        prices,
+        strategy="naive",
+        depot_charge_window_mode=depot_charge_window_mode,
+        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+    )
 
 
 def solve_charging_fixed_route(
@@ -112,6 +164,8 @@ def solve_charging_fixed_route(
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
     *,
     strategy: str = "aware",
+    depot_charge_window_mode: str = "full_gap",
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
 ) -> list[ChargingAction]:
     """Construct charging actions for an existing route without changing nodes."""
 
@@ -125,6 +179,7 @@ def solve_charging_fixed_route(
         fallback=_price(prices, "B_battery_kwh"),
     )
     battery = _price(prices, "initial_ev_battery_kwh")
+    validate_depot_charge_window_mode(depot_charge_window_mode)
     time_s = float(node_lookup[route.node_sequence[0]].ready_time)
     remaining_customers = [node_id for node_id in route.node_sequence if node_lookup[node_id].node_type.lower() == "c"]
     actions: list[ChargingAction] = []
@@ -163,28 +218,53 @@ def solve_charging_fixed_route(
                     occupancy_sec,
                     time_s,
                     len(node_profile),
+                    depot_charge_window_mode=depot_charge_window_mode,
+                    charging_actions=actions,
                 )
                 if latest + 1e-9 < earliest:
                     raise ValueError(f"No feasible fixed-route charging window for {route.vehicle_id} at {node_id}")
-                charge_start = (
-                    best_charging_action_start(
+                if node_type == "d":
+                    charge_start, charge_day_offset = select_certified_depot_charge_start(
                         action,
-                        earliest_start_second=earliest,
-                        latest_start_second=latest,
-                        instance=instance,
-                        carbon_profile=gamma_profile,
-                        prices=prices,
-                    )
-                    if strategy == "aware"
-                    else _select_charge_start(
                         earliest,
                         latest,
-                        node_profile,
-                        strategy,
-                        node_type=node_type,
+                        instance,
+                        prices,
+                        gamma_profile,
+                        mode=depot_charge_window_mode,
+                        strategy="integrated" if strategy == "aware" else "naive",
+                        charge_timing_policy=(
+                            "carbon_min" if strategy == "aware" else "asap"
+                        ),
+                        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+                    )
+                else:
+                    charge_start = (
+                        best_charging_action_start(
+                            action,
+                            earliest_start_second=earliest,
+                            latest_start_second=latest,
+                            instance=instance,
+                            carbon_profile=gamma_profile,
+                            prices=prices,
+                        )
+                        if strategy == "aware"
+                        else _select_charge_start(
+                            earliest,
+                            latest,
+                            node_profile,
+                            strategy,
+                            node_type=node_type,
+                        )
+                    )
+                    charge_day_offset = 0
+                actions.append(
+                    replace(
+                        action,
+                        charge_start_second=charge_start,
+                        charge_day_offset=charge_day_offset,
                     )
                 )
-                actions.append(replace(action, charge_start_second=charge_start))
                 battery += energy_needed
                 if node_type != "d":
                     time_s = max(time_s, charge_start + occupancy_sec)
@@ -221,12 +301,24 @@ def replay_fixed_route_charging(
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
     *,
     strategy: str = "aware",
+    depot_charge_window_mode: str = "full_gap",
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
 ) -> Solution:
     """Strip charging actions and replay charging on unchanged route sequences."""
 
     actions: list[ChargingAction] = []
     for route in solution.routes:
-        actions.extend(solve_charging_fixed_route(route, instance, gamma_profile, prices, strategy=strategy))
+        actions.extend(
+            solve_charging_fixed_route(
+                route,
+                instance,
+                gamma_profile,
+                prices,
+                strategy=strategy,
+                depot_charge_window_mode=depot_charge_window_mode,
+                carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+            )
+        )
     return replace(solution, charging_actions=actions)
 
 
@@ -238,8 +330,11 @@ def repair_route_charging(
     *,
     strategy: str = "legacy",
     carbon_weight: float = 1.0,
-    depot_charge_window_mode: str = "cyclic_overnight",
+    depot_charge_window_mode: str = "full_gap",
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
     charge_amount_strategy: str = "just_enough",
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
+    public_station_candidate_mode: str = DEFAULT_PUBLIC_STATION_CANDIDATE_MODE,
 ) -> tuple[Route, list[ChargingAction]]:
     """Insert station visits and actions sufficient for battery feasibility.
 
@@ -248,16 +343,171 @@ def repair_route_charging(
     station detours in common monetary units.
     """
 
+    candidates = repair_route_charging_candidates(
+        route,
+        instance,
+        gamma_profile,
+        prices,
+        strategy=strategy,
+        carbon_weight=carbon_weight,
+        depot_charge_window_mode=depot_charge_window_mode,
+        charge_timing_policy=charge_timing_policy,
+        charge_amount_strategy=charge_amount_strategy,
+        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+        public_station_candidate_mode=public_station_candidate_mode,
+    )
+    if len(candidates) == 1:
+        _, repaired, actions = candidates[0]
+        return repaired, actions
+    context = EvaluationContext(
+        instance=instance,
+        carbon_profile=gamma_profile,
+        prices=prices,
+        carbon_weight=carbon_weight,
+    )
+    scored_candidates = []
+    for index, (_, candidate_route, candidate_actions) in enumerate(candidates):
+        record_repair_delta(context)
+        scored_candidates.append(
+            (
+                route_model_cost_delta(candidate_route, candidate_actions, context),
+                index,
+                candidate_route,
+                candidate_actions,
+            )
+        )
+    _, _, repaired, actions = min(scored_candidates)
+    return repaired, actions
+
+
+def repair_route_charging_candidates(
+    route: Route,
+    instance: Instance,
+    gamma_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    strategy: str = "legacy",
+    carbon_weight: float = 1.0,
+    depot_charge_window_mode: str = "full_gap",
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
+    charge_amount_strategy: str = "just_enough",
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
+    public_station_candidate_mode: str = DEFAULT_PUBLIC_STATION_CANDIDATE_MODE,
+) -> list[tuple[str, Route, list[ChargingAction]]]:
+    """Build the legacy depot path and, when enabled, a public-only path."""
+
+    validate_public_station_candidate_mode(public_station_candidate_mode)
+    fallback_route, fallback_actions = _repair_route_charging_candidate(
+        route,
+        instance,
+        gamma_profile,
+        prices,
+        strategy=strategy,
+        carbon_weight=carbon_weight,
+        depot_charge_window_mode=depot_charge_window_mode,
+        charge_timing_policy=charge_timing_policy,
+        charge_amount_strategy=charge_amount_strategy,
+        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+        depot_precharge_target_kwh=None,
+    )
+    candidates = [("depot_fallback", fallback_route, fallback_actions)]
+    if public_station_candidate_mode == DEFAULT_PUBLIC_STATION_CANDIDATE_MODE:
+        return candidates
+    node_types = {node.node_id: node.node_type.lower() for node in instance.nodes}
+    if route.vehicle_type.lower() != "ev" or not route.node_sequence:
+        return candidates
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    remaining_customers = [
+        node_id
+        for node_id in route.node_sequence[1:]
+        if node_types.get(node_id) == "c"
+    ]
+    load_kg = sum(float(node_lookup[node_id].demand) for node_id in remaining_customers)
+    initial_battery = _price(prices, "initial_ev_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
+    stations = _available_station_visits(
+        [node for node in instance.nodes if node.node_type.lower() == "f"],
+        [],
+    )
+    start_node = route.node_sequence[0]
+    launch_targets: set[float] = set()
+    for station in stations:
+        launch_target = max(
+            initial_battery,
+            _ev_energy(
+                instance,
+                start_node,
+                station.node_id,
+                load_kg,
+                prices,
+            ),
+        )
+        if launch_target > battery_cap + 1e-9:
+            continue
+        rounded_target = round(float(launch_target), 12)
+        if rounded_target in launch_targets:
+            continue
+        launch_targets.add(rounded_target)
+        try:
+            public_route, public_actions = _repair_route_charging_candidate(
+                route,
+                instance,
+                gamma_profile,
+                prices,
+                strategy=strategy,
+                carbon_weight=carbon_weight,
+                depot_charge_window_mode=depot_charge_window_mode,
+                charge_timing_policy=charge_timing_policy,
+                charge_amount_strategy=charge_amount_strategy,
+                carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+                depot_precharge_target_kwh=launch_target,
+            )
+        except ValueError:
+            continue
+        public_station_ids = [
+            action.station_id
+            for action in public_actions
+            if node_types.get(action.station_id) == "f"
+        ]
+        if not public_station_ids:
+            continue
+        if any(
+            candidate_route == public_route and candidate_actions == public_actions
+            for _, candidate_route, candidate_actions in candidates
+        ):
+            continue
+        candidates.append(
+            (
+                f"public_station_{public_station_ids[0]}",
+                public_route,
+                public_actions,
+            )
+        )
+    return candidates
+
+
+def _repair_route_charging_candidate(
+    route: Route,
+    instance: Instance,
+    gamma_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    strategy: str,
+    carbon_weight: float,
+    depot_charge_window_mode: str,
+    charge_timing_policy: str,
+    charge_amount_strategy: str,
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None,
+    depot_precharge_target_kwh: float | None,
+) -> tuple[Route, list[ChargingAction]]:
+    """Build one charging path without changing any feasibility rule."""
+
     if strategy not in {"legacy", "integrated"}:
         raise ValueError(f"unknown charging-repair strategy: {strategy}")
-    if depot_charge_window_mode not in {
-        "cyclic_overnight",
-        "same_day_predeparture",
-    }:
-        raise ValueError(
-            "unknown depot charging window mode: "
-            f"{depot_charge_window_mode}"
-        )
+    validate_depot_charge_window_mode(depot_charge_window_mode)
+    validate_charge_timing_policy(charge_timing_policy)
     charge_amount_strategy = normalize_charge_amount_strategies(
         (charge_amount_strategy,)
     )[0]
@@ -273,7 +523,13 @@ def repair_route_charging(
     # v2026-06-12: Q2 starts EV routes from bbar and makes depot precharge a
     # first-class decision before preserving the existing en-route station logic.
     battery = _price(prices, "initial_ev_battery_kwh")
-    time_s = float(node_lookup[route.node_sequence[0]].ready_time)
+    time_s = route_timing(
+        route,
+        instance,
+        prices,
+        charging_actions=[],
+        validate_battery=False,
+    ).earliest_departure_second
     remaining_customers = [node_id for node_id in original_targets if node_lookup[node_id].node_type.lower() == "c"]
     depot_action = _depot_precharge_action(
         route,
@@ -285,7 +541,10 @@ def repair_route_charging(
         strategy=strategy,
         carbon_weight=carbon_weight,
         depot_charge_window_mode=depot_charge_window_mode,
+        charge_timing_policy=charge_timing_policy,
         charge_amount_strategy=charge_amount_strategy,
+        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+        target_charge_level_kwh=depot_precharge_target_kwh,
     )
     if depot_action is not None:
         actions.append(depot_action)
@@ -316,7 +575,13 @@ def repair_route_charging(
         )
         should_insert = failure_offset is not None
         if should_insert:
-            coverage_targets = future_targets[: int(failure_offset) + 1] if failure_offset is not None else [target]
+            coverage_targets = (
+                future_targets
+                if depot_precharge_target_kwh is not None
+                else future_targets[: int(failure_offset) + 1]
+                if failure_offset is not None
+                else [target]
+            )
             available_stations = _available_station_visits(stations, repaired)
             if not available_stations and battery + 1e-9 < needed_direct:
                 raise ValueError("No charging stations available for EV charging repair")
@@ -337,6 +602,7 @@ def repair_route_charging(
                 route.vehicle_id,
                 strategy=strategy,
                 carbon_weight=carbon_weight,
+                charge_timing_policy=charge_timing_policy,
                 charge_amount_strategy=charge_amount_strategy,
             )
             if candidate is None:
@@ -369,7 +635,20 @@ def repair_route_charging(
             remaining_customers.remove(target)
         current = target
 
-    return replace(route, node_sequence=repaired), actions
+    repaired_route = replace(route, node_sequence=repaired)
+    actions = _reanchor_depot_actions(
+        repaired_route,
+        actions,
+        instance,
+        gamma_profile,
+        prices,
+        depot_charge_window_mode=depot_charge_window_mode,
+        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+        strategy=strategy,
+        carbon_weight=carbon_weight,
+        charge_timing_policy=charge_timing_policy,
+    )
+    return repaired_route, actions
 
 
 def _available_station_visits(
@@ -477,15 +756,34 @@ def _fixed_charge_window(
     occupancy_sec: float,
     arrival_second: float,
     n_slots: int,
+    *,
+    depot_charge_window_mode: str,
+    charging_actions: list[ChargingAction],
 ) -> tuple[float, float]:
     node_id = route.node_sequence[idx]
     node = node_lookup[node_id]
     if node.node_type.lower() == "d":
-        # v2026-06-12: S0 depot charging is scheduled after the previous route
-        # returns and before the next day's departure.
-        period = float(n_slots) * CARBON_SLOT_SECONDS
-        earliest = route_return_arrival_without_charging(route, instance, prices)
-        latest = route_next_day_departure_second(route, instance, prices, period_seconds=period) - occupancy_sec
+        if depot_charge_window_mode == "full_gap":
+            period = float(n_slots) * CARBON_SLOT_SECONDS
+            earliest = route_return_arrival_without_charging(route, instance, prices)
+            latest = (
+                route_next_day_departure_second(
+                    route,
+                    instance,
+                    prices,
+                    period_seconds=period,
+                )
+                - occupancy_sec
+            )
+            return earliest, latest
+        earliest, latest, _ = certified_depot_charge_window(
+            route,
+            instance,
+            prices,
+            occupancy_seconds=occupancy_sec,
+            mode=depot_charge_window_mode,
+            charging_actions=charging_actions,
+        )
         return earliest, latest
     return _fixed_charge_earliest(node, node.node_type.lower(), arrival_second), _fixed_charge_latest(
         idx,
@@ -564,8 +862,11 @@ def _depot_precharge_action(
     *,
     strategy: str = "legacy",
     carbon_weight: float = 1.0,
-    depot_charge_window_mode: str = "cyclic_overnight",
+    depot_charge_window_mode: str = "same_day_predeparture",
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
     charge_amount_strategy: str = "just_enough",
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
+    target_charge_level_kwh: float | None = None,
 ) -> ChargingAction | None:
     depot_id = route.node_sequence[0]
     depot = node_lookup[depot_id]
@@ -576,12 +877,23 @@ def _depot_precharge_action(
     )
     initial_battery = _price(prices, "initial_ev_battery_kwh")
     route_need = _direct_route_energy_need(depot_id, original_targets, node_lookup, instance, prices)
-    target_charge_level = charge_amount_target_kwh(
-        charge_amount_strategy,
-        just_enough_kwh=route_need,
-        max_coverage_kwh=route_need,
-        capacity_kwh=battery_cap,
-    )
+    if target_charge_level_kwh is None:
+        target_charge_level = charge_amount_target_kwh(
+            charge_amount_strategy,
+            just_enough_kwh=route_need,
+            max_coverage_kwh=route_need,
+            capacity_kwh=battery_cap,
+        )
+    else:
+        target_charge_level = float(target_charge_level_kwh)
+        if (
+            not math.isfinite(target_charge_level)
+            or target_charge_level < initial_battery - 1e-9
+            or target_charge_level > battery_cap + 1e-9
+        ):
+            raise ValueError(
+                "depot launch charge target must lie within battery bounds"
+            )
     energy_needed = max(0.0, target_charge_level - initial_battery)
     if energy_needed <= 1e-9:
         return None
@@ -598,63 +910,93 @@ def _depot_precharge_action(
         instance=instance,
     )
     occupancy_sec = float(action.occupancy_minutes) * 60.0
-    depot_profile = time_profile_rows_for_node(
-        instance,
-        depot_id,
-        gamma_profile,
-    )
-    period = float(len(depot_profile)) * CARBON_SLOT_SECONDS
     synthetic_route = Route(route.vehicle_id, route.vehicle_type, route.home_depot_id, [route.node_sequence[0], *original_targets])
-    if depot_charge_window_mode == "same_day_predeparture":
-        # The fixed-date China81 scenario may only use energy charged on the
-        # registered date before the route actually departs.
-        earliest = 0.0
-        latest = (
-            route_departure_second(synthetic_route, instance, prices)
-            - occupancy_sec
-        )
-    else:
-        # Historical multi-day scenarios retain the cyclic overnight window.
-        earliest = route_return_arrival_without_charging(
-            synthetic_route,
-            instance,
-            prices,
-        )
-        latest = (
-            route_next_day_departure_second(
-                synthetic_route,
-                instance,
-                prices,
-                period_seconds=period,
-            )
-            - occupancy_sec
-        )
-    if latest + 1e-9 < earliest:
-        raise ValueError(f"No feasible depot charging window for {route.vehicle_id} at {depot_id}")
-    if strategy == "integrated":
-        charge_start = (
-            float(earliest)
-            if float(carbon_weight) <= 1e-12
-            else best_charging_action_start(
-                action,
-                earliest_start_second=earliest,
-                latest_start_second=latest,
-                instance=instance,
-                carbon_profile=gamma_profile,
-                prices=prices,
-            )
-        )
-    else:
-        charge_start, _ = _lowest_gamma_slot_start(
-            earliest,
-            latest,
-            depot_profile,
-        )
+    earliest, latest, _ = certified_depot_charge_window(
+        synthetic_route,
+        instance,
+        prices,
+        occupancy_seconds=occupancy_sec,
+        mode=depot_charge_window_mode,
+        charging_actions=[],
+    )
+    charge_start, charge_day_offset = select_certified_depot_charge_start(
+        action,
+        earliest,
+        latest,
+        instance,
+        prices,
+        gamma_profile,
+        mode=depot_charge_window_mode,
+        strategy=strategy,
+        carbon_weight=carbon_weight,
+        charge_timing_policy=charge_timing_policy,
+        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+    )
     return replace(
         action,
         charge_start_second=charge_start,
-        charge_day_offset=0,
+        charge_day_offset=charge_day_offset,
     )
+
+
+def _reanchor_depot_actions(
+    route: Route,
+    actions: list[ChargingAction],
+    instance: Instance,
+    gamma_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, float] | Any,
+    *,
+    depot_charge_window_mode: str,
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None,
+    strategy: str,
+    carbon_weight: float = 1.0,
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
+) -> list[ChargingAction]:
+    """Recompute depot charging against the final certificate route clock."""
+
+    depot_indices = [
+        index
+        for index, action in enumerate(actions)
+        if action.vehicle_id == route.vehicle_id
+        and action.station_id == route.home_depot_id
+    ]
+    if not depot_indices:
+        return actions
+    if len(depot_indices) != 1:
+        raise ValueError(
+            f"expected one depot charging action for {route.vehicle_id}, "
+            f"found {len(depot_indices)}"
+        )
+    index = depot_indices[0]
+    action = actions[index]
+    earliest, latest, _ = certified_depot_charge_window(
+        route,
+        instance,
+        prices,
+        occupancy_seconds=float(action.occupancy_minutes) * 60.0,
+        mode=depot_charge_window_mode,
+        charging_actions=actions,
+    )
+    start, offset = select_certified_depot_charge_start(
+        action,
+        earliest,
+        latest,
+        instance,
+        prices,
+        gamma_profile,
+        mode=depot_charge_window_mode,
+        strategy=strategy,
+        carbon_weight=carbon_weight,
+        charge_timing_policy=charge_timing_policy,
+        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+    )
+    updated = list(actions)
+    updated[index] = replace(
+        action,
+        charge_start_second=start,
+        charge_day_offset=offset,
+    )
+    return updated
 
 
 def _direct_route_energy_need(
@@ -785,6 +1127,7 @@ def _best_station_insert(
     *,
     strategy: str = "legacy",
     carbon_weight: float = 1.0,
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
     charge_amount_strategy: str = "just_enough",
 ) -> tuple[str, ChargingAction, float, float, float] | None:
     best: tuple[float, float, str, ChargingAction, float, float, float] | None = None
@@ -940,6 +1283,16 @@ def _best_station_insert(
             latest,
             station_profile,
         )
+        if charge_timing_policy != "carbon_min":
+            charge_start = select_charge_timing_start(
+                action,
+                earliest_start_second=earliest,
+                latest_start_second=latest,
+                instance=instance,
+                carbon_profile=gamma_profile,
+                prices=prices,
+                charge_timing_policy=charge_timing_policy,
+            )
         depart = charge_start + occupancy_sec
         action = replace(action, charge_start_second=charge_start)
         key = (gamma, detour, station.node_id, action, arrive, depart, battery_at_station + energy_needed)
@@ -956,6 +1309,7 @@ def _best_station_insert(
             gamma_profile,
             prices,
             carbon_weight=carbon_weight,
+            charge_timing_policy=charge_timing_policy,
         )
         option = scored.option
         _, arrive, battery_after = next(item for item in refined if item[0] == option)

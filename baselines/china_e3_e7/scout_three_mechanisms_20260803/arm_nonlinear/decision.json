@@ -1,0 +1,68 @@
+{
+  "schema": "resetp.scout3.nonlinear.decision.v1",
+  "task_id": "SCOUT3",
+  "status": "MEASURABLE_EFFECT",
+  "formal_result": false,
+  "question": "非线性充电机制是否产生可测效应？",
+  "answer": "有效应",
+  "completed_units": 20,
+  "expected_units": 20,
+  "paired_seed_count": 10,
+  "worker_failures": [],
+  "maximum_paired_difference": {
+    "seed": 1,
+    "metric": "nl90_minus_linear_cost_cny",
+    "difference": 0.0,
+    "relative_percent": 0.0
+  },
+  "effect_layers": [
+    "charging"
+  ],
+  "iterations_per_view": 25000,
+  "no_improvement_stop": null,
+  "complete_evaluation_attempts": 1600,
+  "all_objectives_digitwise": {
+    "1": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "2": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "3": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "4": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "5": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "6": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "7": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "8": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "9": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    },
+    "10": {
+      "L100_control": "0x1.1d2064a7ab27dp+12",
+      "NL90_mild": "0x1.1d2064a7ab27dp+12"
+    }
+  },
+  "all_structure_equal": false,
+  "elapsed_seconds": 2332.197599457926
+}

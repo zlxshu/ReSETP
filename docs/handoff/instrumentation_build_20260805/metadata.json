@@ -1,0 +1,151 @@
+{
+  "schema_version": "resetp.t22-instrumentation-build.v1",
+  "task_id": "T22",
+  "status": "T22_INSTRUMENTATION_BUILD_COMPLETE",
+  "created_at_utc": "2026-08-05T11:06:07Z",
+  "repository_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "git": {
+    "commit": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+    "branch": "codex/reporting-pipeline",
+    "worktree_was_already_dirty": true
+  },
+  "environment": {
+    "python_executable": "/opt/anaconda3/bin/python3.13",
+    "python": "3.13.9",
+    "scipy": "1.16.3",
+    "pyvrp": "0.12.2",
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH": "solver/src:models/src"
+  },
+  "formal_batch_started": false,
+  "formal_run_count": 0,
+  "smoke_search_run_count": 1,
+  "paper_claim_allowed": false,
+  "implementation": {
+    "global_hgs_wallclock_optional": true,
+    "global_hgs_wallclock_default_enabled": false,
+    "every_proxy_improvement_recorded": true,
+    "extra_complete_evaluations_for_improvement_trace": 0,
+    "automatic_plateau_stop_added": false,
+    "charge_timing_policy_plumbed": true,
+    "charge_timing_policy_default": "carbon_min",
+    "charge_timing_policy_implementation_changed": false,
+    "route_pool_mip_actual_time_recorded": true,
+    "route_pool_mip_extension_implemented": false,
+    "new_runner_manifest_size": 90,
+    "historical_formal_runner_modified": false
+  },
+  "approved_validation_relaxation": {
+    "scope": "single approved wallclock/checkpoint relaxation",
+    "removed_or_relaxed_branches": [
+      "epochal_hgs deterministic iteration mode requires a positive wallclock safety cap",
+      "route_pool_sp duplicate deterministic mode wallclock safety validation",
+      "exact checkpoints require deterministic HGS iterations",
+      "HGS iteration budget must be divisible by exact checkpoint interval"
+    ],
+    "moved_branches": [],
+    "other_existing_raise_assert_or_validation_weakened_by_t22": false
+  },
+  "mip_backend_capability": {
+    "backend": "scipy.optimize.milp/HiGHS",
+    "scipy_milp_signature": "(c, *, integrality=None, bounds=None, constraints=None, options=None)",
+    "single_wrapper_call_source": "/opt/anaconda3/lib/python3.13/site-packages/scipy/optimize/_milp.py:374",
+    "optimize_result_return_source": "/opt/anaconda3/lib/python3.13/site-packages/scipy/optimize/_milp.py:394",
+    "incumbent_callback_available": false,
+    "resumable_handle_available": false,
+    "extension_count": 0
+  },
+  "smoke": {
+    "output": "docs/handoff/instrumentation_build_20260805/smoke_raw",
+    "task_id": "T21_SMOKE__JJJ__COST_CARBON__S2026080201",
+    "instance_id": "cn-jjj-100c-01-V2-LOCATIONS",
+    "arm": "COST_CARBON",
+    "charge_timing_policy": "cost_plus_carbon",
+    "seed": 2026080201,
+    "hgs_iterations_total": 180,
+    "wall_seconds": 27.757893208996393,
+    "improvement_event_count": 10,
+    "improvement_trace_nonempty": true,
+    "improvement_iterations_strictly_monotone_within_view": true,
+    "slot_row_count": 96,
+    "depot_count": 2,
+    "slot_count_per_depot": 48,
+    "mip_actual_elapsed_seconds": 0.8706315840827301,
+    "mip_initial_time_limit_seconds": 10.0,
+    "mip_final_time_limit_seconds": 10.0,
+    "mip_finished_before_time_limit": true,
+    "mip_extension_count": 0,
+    "mip_status_class": "REJECTED_COMPLETE_MODEL_VIOLATIONS",
+    "final_violation_count": 0,
+    "completed_customer_count": 100,
+    "required_customer_count": 100,
+    "completed_demand": 25972.0,
+    "required_demand": 25972.0,
+    "search_objective": 4121.404744908565,
+    "final_full_evaluation_objective": 4121.404744908565,
+    "closure_error": 0.0,
+    "all_required_run_fields_have_values": true,
+    "strategy_start_seconds": {
+      "asap": 0.0,
+      "cost_min": 1800.0,
+      "cost_plus_carbon": 5400.0
+    },
+    "all_three_timing_policies_selectable": true,
+    "all_three_timing_policies_have_distinct_starts": true,
+    "paper_claim_allowed": false
+  },
+  "tests": {
+    "focused_final": {
+      "passed": 20,
+      "failed": 0,
+      "seconds": 5.60
+    },
+    "solver_full": {
+      "passed": 906,
+      "skipped": 1,
+      "failed": 6,
+      "seconds": 405.87,
+      "baseline_exactly_matched": true,
+      "failure_nodes": [
+        "solver/tests/test_e2_80k_robustness_gate.py::test_protected_semantics_and_goeke80_parameters_match_frozen_commit",
+        "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+        "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts",
+        "solver/tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps",
+        "solver/tests/test_paper_evidence_boundaries.py::test_current_e2b_e3_e4_and_e6_identity_matrices_are_exact",
+        "solver/tests/test_strong_bridge_backend_alignment.py::StrongBridgeBackendAlignmentTests::test_decision_gate_reports_backend_only_and_main_local_search_separately"
+      ]
+    },
+    "invocation_failures_preserved": [
+      "initial focused pytest collection: 2 errors, 0 tests, prototype modules absent from PYTHONPATH",
+      "first smoke launch: ModuleNotFoundError baselines before search",
+      "focused rerun wrong filenames: pytest exit 4, no tests ran",
+      "compile command wrong runner path: exit 1 before tests"
+    ]
+  },
+  "protected_file_sha256_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_file_sha256_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_files_unchanged": true,
+  "final_source_sha256": {
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": "b99c9f31146e3e1447bb23fb1413403fe97aeedc49db6e9e21374e061f4310da",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "b8dad634ad0e931d18d1d4bced0f51cde3927e640a312436ece2835a4342b4c0",
+    "baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py": "6a4f0ef70f3fd364e0b3d2e846d5c0b7c8a2d060d34bf77d586cb31e69d5e659",
+    "solver/src/setp_solver/china81_completion.py": "cb0bb62eeba2ad6ebc92d39ecf36a2aa2592b11f1f6a02abd53b2cdcc34bffe9",
+    "solver/src/setp_solver/charge_timing.py": "c199307557494320b87bd897e0ac5d68788a12c1788349e8b5052d46124fcc42",
+    "baselines/china_e3_e7/formal_algorithm_20260802/run_xa_formal.py": "60806ca0105cc7ca6c8ac54dfbcad368fd4e86fe3e0f70d28be5cc67e56f0dd3",
+    "baselines/e2_alns/audit_alns_budget_g0_20260718.py": "c7322d3704d90b9f658fef7dd1644686434dfd482fd093588466c25c53f68a99"
+  },
+  "artifact_exclusions": [
+    "artifact_hashes.json",
+    "._*",
+    "__pycache__",
+    ".pytest_cache"
+  ]
+}

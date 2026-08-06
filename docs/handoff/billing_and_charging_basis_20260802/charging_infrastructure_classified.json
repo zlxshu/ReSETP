@@ -1,0 +1,148 @@
+{
+  "schema": "resetp.z4-charging-infrastructure-classified.v1",
+  "task_id": "Z4",
+  "status": "Z4_CHARGING_CLASSIFICATION_COMPLETE",
+  "classification_definitions": {
+    "A": "EV paper, but the routing model does not model a charging process during the planned operation. This class is excluded from concurrency evidence.",
+    "B": "The routing/scheduling model contains charging decisions or charging time, but no finite charger, station-time, queue, or simultaneous-vehicle capacity is imposed; the formulation therefore permits multiple vehicles to use the same physical station concurrently.",
+    "C": "The charging process is modeled and a finite concurrency/capacity restriction is imposed through charger resources, station-time capacity, queueing, or an explicit simultaneous-vehicle upper bound."
+  },
+  "counts": {
+    "all_ev_papers": 8,
+    "A": 1,
+    "B": 5,
+    "C": 2,
+    "active_charging_denominator_B_plus_C": 7,
+    "B_percent_among_active_charging": 71.428571,
+    "C_percent_among_active_charging": 28.571429,
+    "class_A_included_in_ratio": false
+  },
+  "records": [
+    {
+      "paper": "陈婉茹, 胡祥培, 彭飞 (2023), 碳交易机制下多中心混合车队配送路径和速度优化研究, 系统工程理论与实践 43(11), 3320-3334",
+      "doi": "10.12011/SETP2022-2971",
+      "source_url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2022-2971",
+      "page": "p.3322, Section 2.1",
+      "class": "A",
+      "classification_reason": "The paper states that EV batteries are fully charged before leaving the distribution center and are not charged en route. There is no charging-duration, charger-selection, queue, or station-capacity decision in the model. It cannot support either setting or omitting a concurrency constraint.",
+      "original_evidence": "电动车电池容量已知, 且在离开配送中心前充满电, 在途中不充电.",
+      "capacity_constraint": "NOT_APPLICABLE_CHARGING_PROCESS_NOT_MODELED",
+      "depot_side_setup": "Pre-departure full battery is assumed; depot charger count, charging power, time slots and queue are all unmodeled.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/5GXPYVZH/陈婉茹 等 _ 2023 _ 碳交易机制下多中心混合车队配送路径和速度优化研究.pdf",
+      "source_pdf_sha256": "aceb753db36f8d3c0f062ec25317fd3cbc6e6c18971bd193f0986a845a985b6f"
+    },
+    {
+      "paper": "李得成, 陈彦如, 张宗成 (2021), 基于分支定价算法的电动车与燃油车混合车辆路径问题研究, 系统工程理论与实践 41(4), 995-1009",
+      "doi": "10.12011/SETP2019-1371",
+      "source_url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2019-1371",
+      "page": "p.997, Section 2.1; charging constraints on pp.998-999",
+      "class": "B",
+      "classification_reason": "The model includes en-route full charging and charging amount/state variables, while p.997 explicitly assumes that one charging station may be visited by several EVs at the same time. No charger-count or queue constraint is imposed.",
+      "original_evidence": "p.997: 假定电动车充电只考虑满充模式, 且一个充电站可被多辆电动车同时访问.",
+      "capacity_constraint": "NONE; simultaneous visits by multiple EVs are explicitly allowed.",
+      "depot_side_setup": "Single distribution center; vehicles start routes from the depot, but charging is assigned to en-route stations F. No depot charger count or kW is given. The benchmark charging rate is inherited from Schneider-type instances and is not a site contract.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/IUL5NYGA/李得成 等 _ 2021 _ 基于分支定价算法的电动车与燃油车混合车辆路径问题研究.pdf",
+      "source_pdf_sha256": "cf3e2355632887f6ce12387eb424ce17fb4736a6452ce53fc33cef01bf93083a"
+    },
+    {
+      "paper": "Montoya, Guéret, Mendoza & Villegas (2017), The electric vehicle routing problem with nonlinear charging function, Transportation Research Part B 103, 87-110",
+      "doi": "10.1016/j.trb.2017.02.004",
+      "source_url": "https://doi.org/10.1016/j.trb.2017.02.004",
+      "page": "published p.90 / local PDF p.4, Section 2.1",
+      "class": "B",
+      "classification_reason": "The nonlinear charging process is a route decision, but the problem statement explicitly says every charging station can handle an unlimited number of EVs simultaneously.",
+      "original_evidence": "All the EVs leave the depot with a fully charged battery, and all the CSs can handle an unlimited number of EVs simultaneously.",
+      "capacity_constraint": "NONE_UNLIMITED_SIMULTANEOUS_EV_PER_STATION",
+      "depot_side_setup": "Single depot; EVs leave fully charged. The depot is not assigned a finite charging resource. En-route station charging curves are fitted for 11, 22 and 44 kW; 22 kW is the middle benchmark curve, not a per-depot contract.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/72THJGSQ/Montoya 等 _ 2017 _ The electric vehicle routing problem with nonlinear charging function.pdf",
+      "source_pdf_sha256": "a790a183866c008840da369da3d0bd60eca03a0689708a3f35068795211ff60c"
+    },
+    {
+      "paper": "Hiermann, Puchinger, Ropke & Hartl (2016), The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations, European Journal of Operational Research 252, 995-1018",
+      "doi": "10.1016/j.ejor.2016.01.038",
+      "source_url": "https://doi.org/10.1016/j.ejor.2016.01.038",
+      "page": "pp.997-998, Eqs. (2.3), (2.7), (2.12) and accompanying text",
+      "class": "B",
+      "classification_reason": "Charging time and full recharging are modeled. The formulation creates multiple dummy copies F' of each physical station so different visits have independent time variables; Eq. (2.3) limits only each dummy copy to one visit and contains no cross-vehicle charger resource or overlap constraint. Thus visits to different copies of the same physical station may overlap.",
+      "original_evidence": "p.997: dummy nodes represent recharging stations multiple times and are needed to account for multiple visits at the original station; p.998 Eq. (2.7) adds recharge time, while the full constraint set has no C_j, queue or station-time coupling.",
+      "capacity_constraint": "NONE_FOR_PHYSICAL_STATION_CONCURRENCY",
+      "depot_side_setup": "Single start/end depot. Eq. (2.12) fixes y^k_0=Y^k, i.e. full starting energy; the depot has no charger count or power capacity. Finite charging resources are not modeled at depot or en-route stations.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/NIM4H4ID/Hiermann 等 _ 2016 _ The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations.pdf",
+      "source_pdf_sha256": "b6bbcc1e5be659d8add4012f24d640b55da5ca147b0f62854cb47d01c7c8fc8c"
+    },
+    {
+      "paper": "Schneider, Stenger & Goeke (2014), The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations, Transportation Science 48(4), 500-520",
+      "doi": "10.1287/trsc.2013.0490",
+      "source_url": "https://doi.org/10.1287/trsc.2013.0490",
+      "page": "Articles in Advance pp.5-6 / published pp.504-505, station-copy model and recharge-time constraint; Articles in Advance p.12 / published p.511, instance construction",
+      "class": "B",
+      "classification_reason": "Recharge duration is explicitly modeled, and dummy vertices permit several visits to a station. The formulation has no charger-count, queue, simultaneous-vehicle or station-time resource constraint; visits assigned to different dummy copies may overlap.",
+      "original_evidence": "p.5: F' is a set of dummy vertices generated to permit several visits to each recharging station; p.6 explains complete recharge with rate g. Constraints (1)-(12) contain route, time, load and battery feasibility but no station-capacity coupling.",
+      "capacity_constraint": "NONE_FOR_PHYSICAL_STATION_CONCURRENCY",
+      "depot_side_setup": "The benchmark locates one of 21 recharging-station locations at the depot and the other 20 randomly, but does not specify a finite number of chargers. Rate g is normalized so a full recharge takes three average customer service times; no kW is reported.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/3KG6RDYU/Schneider 等 _ 2014 _ The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations.pdf",
+      "source_pdf_sha256": "4455c9c93ae866e1847b4882ca5bb96d90d4226f0818e033a8dcfeca6150f6d4"
+    },
+    {
+      "paper": "Wang et al. (2023), Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations, Expert Systems with Applications 219, 119654",
+      "doi": "10.1016/j.eswa.2023.119654",
+      "source_url": "https://doi.org/10.1016/j.eswa.2023.119654",
+      "page": "PDF pp.5-7, Assumptions 3-5 and Eqs. (12)-(13), (22)-(23), (27); PDF p.18 Table 14",
+      "class": "B",
+      "classification_reason": "Charging location, amount and duration are active route decisions. Assumption 4 allows each charging station to be shared by multiple EV routes, and the complete model contains no station-time capacity, charger count, queue or overlap constraint.",
+      "original_evidence": "PDF p.6: each CS can be used once in each EV route and can be shared by multiple EV routes. Eqs. (12)-(13) calculate charging time/cost and Eqs. (22)-(23) place charging in route time; no cross-EV station resource appears.",
+      "capacity_constraint": "NONE_FOR_CONCURRENT_SHARED_STATION_USE",
+      "depot_side_setup": "Depots and charging stations are both charging facilities; EVs depart depots or stations fully charged. No depot charger count is given. The case parameter is charging rate 30 kWh/h on PDF p.18, and the paper reports 13 non-depot CSs for four depots rather than a per-depot charger contract.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/FWMR6V2Q/Wang 等 _ 2023 _ Collaborative multidepot electric vehicle routing problem with time windows and shared charging stat.pdf",
+      "source_pdf_sha256": "5e40ba7f6631983ff9b2c7d05393df1480c4324e7fd7284cfeba22740bf6d412"
+    },
+    {
+      "paper": "Froger, Jabali, Mendoza & Laporte (2022), The Electric Vehicle Routing Problem with Capacitated Charging Stations, Transportation Science 56(2), 460-482",
+      "doi": "10.1287/trsc.2021.1111",
+      "source_url": "https://pubsonline.informs.org/doi/10.1287/trsc.2021.1111",
+      "page": "pp.466-468, especially pp.467-468 Eqs. (30)-(35); p.481 computational setup",
+      "class": "C",
+      "classification_reason": "Each station j has C_j available chargers. A charger is a unit-capacity resource that can execute at most one charging operation at a time. Eqs. (30)-(33) send exactly C_j resource flows through selected charging operations; Eqs. (34)-(35) impose their temporal order and resource linkage.",
+      "original_evidence": "p.466: no more than C_j EVs simultaneously charge at station j. Eqs. (30)-(35) implement the resource flow; p.481 sets every station to one or two chargers.",
+      "capacity_constraint": "FINITE_CHARGER_RESOURCE_FLOW_AND_IMPLICIT_QUEUE; simultaneous EVs <= C_j",
+      "depot_side_setup": "Single depot; vehicles are located there at the start and leave fully charged. The finite C_j constraints apply to the en-route private stations F, not to a depot charger resource. Experiments give each station one or two chargers; charging functions inherit the 11/22/44 kW Montoya testbed families.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/DS4ZEACC/Froger 等 _ 2022 _ The electric vehicle routing problem with capacitated charging stations.pdf",
+      "source_pdf_sha256": "2814ebc75a92afc45bdc829c0d393a37673e8e6f916998867734d6b328b6292c"
+    },
+    {
+      "paper": "Wu, Lin, Liu & Jin (2022), The multi-depot electric vehicle scheduling problem with power grid characteristics, Transportation Research Part B 155, 322-347",
+      "doi": "10.1016/j.trb.2021.11.007",
+      "source_url": "https://eprints.whiterose.ac.uk/id/eprint/180812/1/Wu%20et%20al%20-%20TRB2021%20-%20EV%20scheduling%20-%20WWR.pdf",
+      "page": "accepted manuscript pp.11-12, Eqs. (11)-(14); p.23 benchmark construction; pp.30-31 Guangzhou case",
+      "class": "C",
+      "classification_reason": "The time-expanded network represents every station-time window as a charging activity. Eq. (13) bounds the number of buses assigned to activity j by station capacity V_Tj, and Eq. (14) bounds that concurrent count by peak-load variable L. Eq. (12) separately limits depot dispatch capacity.",
+      "original_evidence": "Eq. (13): sum_k sum_i x^k_{ij} <= V_Tj for all charging activities j in T. Eq. (14): the same concurrent charging count <= L. The p.12 explanation says (13) enforces charging-station capacity and (14) the peak-load restriction.",
+      "capacity_constraint": "FINITE_STATION_TIME_CAPACITY_AND_PEAK_SIMULTANEOUS_CHARGING_LIMIT",
+      "depot_side_setup": "Buses are fully charged overnight and fast-charge during the day. A station may be located at a terminal or off-route; the benchmark randomly sizes depot and station capacities by instance scale and uses 200 kW. In the Guangzhou case one charging station is located at Guangzhou National Archives Hall, a route terminal/depot location; depot capacity and charging-station capacity are each assumed to be 30 vehicles, fleet size is 100, and fast charging is 30 minutes with power below 200 kW.",
+      "source_pdf": null,
+      "source_pdf_url": "https://eprints.whiterose.ac.uk/id/eprint/180812/1/Wu%20et%20al%20-%20TRB2021%20-%20EV%20scheduling%20-%20WWR.pdf",
+      "source_pdf_sha256": "7463c2794fd2794872201895dff436d69c098ceb926b0acaf3ce978486a80646"
+    }
+  ],
+  "ratio_finding": "Among the seven papers that genuinely model charging, 5/7 (71.428571%) model charging without finite concurrency and 2/7 (28.571429%) impose finite concurrency/capacity. The one Class A paper is excluded from both numerator and denominator.",
+  "depot_side_comparison_to_resetp": {
+    "resetp_evidence": {
+      "sources": [
+        "data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/fleet_caps.csv:1-3",
+        "data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/decision.json:2-7",
+        "solver/src/setp_solver/china81.py:573-579"
+      ],
+      "depot_charger_count": 2,
+      "depot_charge_power_kw_per_charger": 22.0,
+      "aggregate_nameplate_kw_per_depot": 44.0,
+      "charger_parameter_class": "CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT",
+      "formal_search_allowed": false
+    },
+    "charger_count_position": "TIGHT_RELATIVE_TO_ACTIVE_CHARGING_SAMPLE",
+    "power_position": "LOW_TO_MIDDLE_BENCHMARK_POWER",
+    "overall_position": "偏紧",
+    "basis": "Five of seven active-charging papers impose no finite concurrency. Of the two finite-capacity papers, Froger uses one or two chargers per en-route station, so two equals its less restrictive arm; Wu's bus case uses station-time capacity 30. For power, 22 kW equals Montoya's middle curve, is below Wang's 30 kWh/h and far below Wu's up-to-200 kW fast charging, while exceeding Montoya's 11 kW curve. Combining only two concurrent positions with 22 kW therefore places ReSETP on the tight side of the sample's resource-pressure axis.",
+    "direct_depot_contract_match_count": 0,
+    "direct_depot_contract_finding": "None of the eight papers reports an observed delivery-depot contract of exactly two chargers at 22 kW each. Most assume full departure energy and leave depot hardware unmodeled; Schneider co-locates an uncapacitated station at the depot; Wang permits depot charging without charger count; Wu supplies the only finite depot/terminal-side scale but for electric buses at 30 vehicles and about 200 kW."
+  }
+}

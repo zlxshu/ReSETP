@@ -14,8 +14,10 @@ It must never call 0.13.4 "HGS".
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from importlib.metadata import version
 import inspect
+import json
 import math
 from time import perf_counter
 from typing import Any
@@ -24,6 +26,7 @@ import pyvrp
 from pyvrp import Model
 from pyvrp import Route as PyVRPRoute
 from pyvrp import Solution as PyVRPSolution
+from pyvrp import Trip as PyVRPTrip
 from pyvrp.stop import MaxRuntime
 
 from setp_solver.china81 import China81Bundle
@@ -37,13 +40,23 @@ from setp_solver.cost import (
     ev_instance_arc_energy_kwh,
     time_profile_rows_for_node,
 )
-from setp_solver.solution import Route, Solution
+from setp_solver.search.multitrip_schedule import (
+    build_multitrip_certificate,
+)
+from setp_solver.solution import (
+    Route,
+    Solution,
+    route_trip_vehicle_id,
+)
 
 
 COST_SCALE = 1_000
 ROUTE_PROXY_MODES = frozenset(
     {"cv_only", "naive_ev", "mechanism_ev"}
 )
+PROXY_FOUND_COMPLETION_FAILED = "代理找到但完成失败"
+SEARCH_NOT_FOUND = "搜索未找到"
+BUSINESS_HARD_INFEASIBLE = "业务硬不可行"
 
 
 @dataclass(frozen=True)
@@ -256,47 +269,80 @@ def build_pyvrp_problem(
             raise ValueError(
                 f"China81 finite fleet has no depot {depot.node_id!r}"
             )
-        cv_available = int(depot_caps["num_cv"])
-        ev_available = int(depot_caps["num_ev"])
-        if cv_available < 1 or ev_available < 1:
+        physical_cv_cap = int(depot_caps["num_cv"])
+        physical_ev_cap = int(depot_caps["num_ev"])
+        physical_total_cap = int(depot_caps["total_fleet_cap"])
+        if (
+            physical_cv_cap < 0
+            or physical_ev_cap < 0
+            or physical_total_cap < 1
+            or physical_cv_cap + physical_ev_cap != physical_total_cap
+        ):
             raise ValueError(
                 f"China81 finite fleet has invalid caps at "
                 f"{depot.node_id!r}"
             )
-        model.add_vehicle_type(
-            num_available=cv_available,
-            capacity=(
-                [
-                    round(cv_vehicle.payload_capacity_kg),
-                    *[
-                        len(customers)
-                        if item.node_id == depot.node_id
-                        else 0
-                        for item in depots
-                    ],
-                ]
-                if hard_home_depot_lock
-                else round(cv_vehicle.payload_capacity_kg)
-            ),
-            start_depot=location_object[depot.node_id],
-            end_depot=location_object[depot.node_id],
-            fixed_cost=round(
-                float(bundle.prices.vehicle_fixed_cost) * COST_SCALE
-            ),
-            tw_early=round(depot.ready_time),
-            tw_late=round(depot.due_time),
-            unit_distance_cost=1,
-            unit_duration_cost=unit_duration_cost,
-            profile=cv_road_profiles[depot.node_id],
-            name=f"CV@{depot.node_id}",
+        strict_multitrip = bool(
+            bundle.model_config.get("strict_multitrip", False)
         )
-        cv_vehicle_type_by_depot[depot.node_id] = vehicle_type_index
-        vehicle_type_by_depot_and_route_type[
-            (depot.node_id, "cv")
-        ] = vehicle_type_index
-        route_type_by_vehicle_type[vehicle_type_index] = "cv"
-        vehicle_type_index += 1
-        if include_ev:
+        # In strict multi-trip mode one PyVRP route is one physical vehicle,
+        # and its Trip objects are that vehicle's depot-to-depot dispatches.
+        # Thus num_available is the registered physical cap rather than an
+        # unbounded dispatch count.  The all-CV reference legitimately uses
+        # the registered total cap, matching the shared complete evaluator.
+        cv_available = (
+            physical_total_cap
+            if normalized_mode == "cv_only"
+            else physical_cv_cap
+        )
+        ev_available = physical_ev_cap
+        proxy_fixed_cost = (
+            0
+            if strict_multitrip
+            else round(float(bundle.prices.vehicle_fixed_cost) * COST_SCALE)
+        )
+        reload_kwargs = (
+            {
+                "reload_depots": [location_object[depot.node_id]],
+                "max_reloads": max(0, len(customers) - 1),
+            }
+            if strict_multitrip
+            else {}
+        )
+        if cv_available > 0:
+            model.add_vehicle_type(
+                num_available=cv_available,
+                capacity=(
+                    [
+                        round(cv_vehicle.payload_capacity_kg),
+                        *[
+                            len(customers)
+                            if item.node_id == depot.node_id
+                            else 0
+                            for item in depots
+                        ],
+                    ]
+                    if hard_home_depot_lock
+                    else round(cv_vehicle.payload_capacity_kg)
+                ),
+                start_depot=location_object[depot.node_id],
+                end_depot=location_object[depot.node_id],
+                fixed_cost=proxy_fixed_cost,
+                tw_early=round(depot.ready_time),
+                tw_late=round(depot.due_time),
+                unit_distance_cost=1,
+                unit_duration_cost=unit_duration_cost,
+                profile=cv_road_profiles[depot.node_id],
+                name=f"CV@{depot.node_id}",
+                **reload_kwargs,
+            )
+            cv_vehicle_type_by_depot[depot.node_id] = vehicle_type_index
+            vehicle_type_by_depot_and_route_type[
+                (depot.node_id, "cv")
+            ] = vehicle_type_index
+            route_type_by_vehicle_type[vehicle_type_index] = "cv"
+            vehicle_type_index += 1
+        if include_ev and ev_available > 0:
             model.add_vehicle_type(
                 num_available=ev_available,
                 capacity=(
@@ -314,15 +360,14 @@ def build_pyvrp_problem(
                 ),
                 start_depot=location_object[depot.node_id],
                 end_depot=location_object[depot.node_id],
-                fixed_cost=round(
-                    float(bundle.prices.vehicle_fixed_cost) * COST_SCALE
-                ),
+                fixed_cost=proxy_fixed_cost,
                 tw_early=round(depot.ready_time),
                 tw_late=round(depot.due_time),
                 unit_distance_cost=1,
                 unit_duration_cost=unit_duration_cost,
                 profile=ev_road_profiles[depot.node_id],
                 name=f"EV@{depot.node_id}",
+                **reload_kwargs,
             )
             vehicle_type_by_depot_and_route_type[
                 (depot.node_id, "ev")
@@ -369,10 +414,15 @@ def run_pyvrp_hgs_skeleton(
         route_proxy_mode=route_proxy_mode,
     )
     data = problem.model.data()
-    initial = _project_initial_solution(
+    initial_completion = complete_china81_route_skeleton(
         initial_skeleton,
+        bundle,
+    )
+    initial = _project_initial_solution(
+        initial_completion.solution,
         data,
         problem,
+        bundle,
     )
     solve_kwargs: dict[str, Any] = {
         "seed": int(seed),
@@ -387,12 +437,12 @@ def run_pyvrp_hgs_skeleton(
         MaxRuntime(float(runtime_seconds)),
         **solve_kwargs,
     )
-    initial_completion = complete_china81_route_skeleton(
-        initial_skeleton,
-        bundle,
-    )
+    initial_candidate_id = _skeleton_candidate_id(initial_skeleton)
     searched_skeleton = _translate_solution(result.best, problem)
+    searched_candidate_id = _native_candidate_id(result.best)
     searched_completion_failure: str | None = None
+    searched_completion_exception_type: str | None = None
+    searched_completion_failure_category: str | None = None
     try:
         searched_completion = complete_china81_route_skeleton(
             searched_skeleton,
@@ -400,6 +450,10 @@ def run_pyvrp_hgs_skeleton(
         )
     except (IndexError, KeyError, RuntimeError, TypeError, ValueError) as exc:
         searched_completion_failure = str(exc)
+        searched_completion_exception_type = type(exc).__name__
+        searched_completion_failure_category = (
+            _completion_failure_category(str(exc))
+        )
         searched_completion = None
     if (
         searched_completion is not None
@@ -475,6 +529,12 @@ def run_pyvrp_hgs_skeleton(
             "searched_complete_model_failure": (
                 searched_completion_failure
             ),
+            "searched_complete_model_exception_type": (
+                searched_completion_exception_type
+            ),
+            "searched_complete_model_failure_category": (
+                searched_completion_failure_category
+            ),
             "searched_exact_objective": (
                 None
                 if searched_completion is None
@@ -483,6 +543,47 @@ def run_pyvrp_hgs_skeleton(
             "initial_exact_objective": float(
                 initial_completion.objective
             ),
+            "complete_candidate_evaluation_attempts": 2,
+            "complete_candidate_evaluation_trace": [
+                {
+                    "candidate_id": initial_candidate_id,
+                    "source": "common_initial_solution",
+                    "iteration": None,
+                    "completion_succeeded": True,
+                    "complete_objective": float(
+                        initial_completion.objective
+                    ),
+                    "status": "PASS",
+                    "exception_type": None,
+                    "exception_message": None,
+                    "failure_category": None,
+                },
+                {
+                    "candidate_id": searched_candidate_id,
+                    "source": "pyvrp_search_best",
+                    "iteration": None,
+                    "completion_succeeded": (
+                        searched_completion is not None
+                    ),
+                    "complete_objective": (
+                        None
+                        if searched_completion is None
+                        else float(searched_completion.objective)
+                    ),
+                    "status": (
+                        "PASS"
+                        if searched_completion is not None
+                        else "INFEASIBLE_OR_ERROR"
+                    ),
+                    "exception_type": (
+                        searched_completion_exception_type
+                    ),
+                    "exception_message": searched_completion_failure,
+                    "failure_category": (
+                        searched_completion_failure_category
+                    ),
+                },
+            ],
             "selected_source": selected_source,
             "shared_completion_schema": completion.activity[
                 "schema_version"
@@ -589,7 +690,9 @@ def run_pyvrp_hgs_population_archive(
         tuple[Solution, China81CompletionResult, int]
     ] = []
     failures: list[str] = []
+    complete_candidate_evaluation_trace: list[dict[str, Any]] = []
     for native in proxy_ranked:
+        candidate_id = _native_candidate_id(native)
         try:
             skeleton = _translate_solution(native, problem)
             completion = complete_china81_route_skeleton(
@@ -603,11 +706,52 @@ def run_pyvrp_hgs_population_archive(
                     int(cost_evaluator.cost(native)),
                 )
             )
+            complete_candidate_evaluation_trace.append(
+                {
+                    "candidate_id": candidate_id,
+                    "source": "terminal_population_archive",
+                    "iteration": None,
+                    "completion_succeeded": True,
+                    "complete_objective": float(completion.objective),
+                    "status": "PASS",
+                    "exception_type": None,
+                    "exception_message": None,
+                    "failure_category": None,
+                }
+            )
         except (IndexError, KeyError, TypeError, ValueError) as exc:
             failures.append(str(exc))
+            complete_candidate_evaluation_trace.append(
+                {
+                    "candidate_id": candidate_id,
+                    "source": "terminal_population_archive",
+                    "iteration": None,
+                    "completion_succeeded": False,
+                    "complete_objective": None,
+                    "status": "INFEASIBLE_OR_ERROR",
+                    "exception_type": type(exc).__name__,
+                    "exception_message": str(exc),
+                    "failure_category": _completion_failure_category(
+                        str(exc)
+                    ),
+                }
+            )
     initial_completion = complete_china81_route_skeleton(
         initial_skeleton,
         bundle,
+    )
+    complete_candidate_evaluation_trace.append(
+        {
+            "candidate_id": _skeleton_candidate_id(initial_skeleton),
+            "source": "common_initial_solution",
+            "iteration": None,
+            "completion_succeeded": True,
+            "complete_objective": float(initial_completion.objective),
+            "status": "PASS",
+            "exception_type": None,
+            "exception_message": None,
+            "failure_category": None,
+        }
     )
     if exact_candidates:
         archive_skeleton, archive_completion, archive_proxy = min(
@@ -622,6 +766,19 @@ def run_pyvrp_hgs_population_archive(
     proxy_best_completion = complete_china81_route_skeleton(
         proxy_best_skeleton,
         bundle,
+    )
+    complete_candidate_evaluation_trace.append(
+        {
+            "candidate_id": _native_candidate_id(result.best),
+            "source": "proxy_best_solution",
+            "iteration": int(result.num_iterations),
+            "completion_succeeded": True,
+            "complete_objective": float(proxy_best_completion.objective),
+            "status": "PASS",
+            "exception_type": None,
+            "exception_message": None,
+            "failure_category": None,
+        }
     )
     if archive_completion.objective < initial_completion.objective - 1.0e-9:
         selected_source = "exact_population_archive"
@@ -672,6 +829,12 @@ def run_pyvrp_hgs_population_archive(
             "archive_candidate_limit": int(max_archive_candidates),
             "archive_candidates_completed": len(exact_candidates),
             "archive_completion_failures": failures,
+            "complete_candidate_evaluation_attempts": len(
+                complete_candidate_evaluation_trace
+            ),
+            "complete_candidate_evaluation_trace": (
+                complete_candidate_evaluation_trace
+            ),
             "proxy_best_proxy_objective": int(result.cost()),
             "proxy_best_exact_objective": float(
                 proxy_best_completion.objective
@@ -696,11 +859,56 @@ def _native_solution_key(solution: Any) -> tuple[Any, ...]:
         sorted(
             (
                 int(route.vehicle_type()),
-                tuple(int(client) for client in route),
+                tuple(
+                    (
+                        int(trip.start_depot()),
+                        int(trip.end_depot()),
+                        tuple(int(client) for client in trip.visits()),
+                    )
+                    for trip in route.trips()
+                ),
             )
             for route in solution.routes()
         )
     )
+
+
+def _native_candidate_id(solution: Any) -> str:
+    payload = json.dumps(
+        _native_solution_key(solution),
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _skeleton_candidate_id(solution: Solution) -> str:
+    key = tuple(
+        sorted(
+            (
+                route.vehicle_type.lower(),
+                route.home_depot_id,
+                tuple(route.node_sequence),
+            )
+            for route in solution.routes
+        )
+    )
+    payload = json.dumps(key, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _completion_failure_category(exception_message: str) -> str:
+    """Map one raw exception message through an exact, deterministic rule."""
+
+    message = str(exception_message)
+    if not message:
+        raise RuntimeError(
+            "candidate completion exception has an empty message"
+        )
+    if message.startswith("SEARCH_NOT_FOUND:"):
+        return SEARCH_NOT_FOUND
+    if message.startswith("BUSINESS_HARD_INFEASIBLE:"):
+        return BUSINESS_HARD_INFEASIBLE
+    return PROXY_FOUND_COMPLETION_FAILED
 
 
 def _proxy_arc_cost(
@@ -795,36 +1003,91 @@ def _project_initial_solution(
     initial_skeleton: Solution,
     data: Any,
     problem: China81PyVRPProblem,
+    bundle: China81Bundle,
 ) -> PyVRPSolution:
-    routes: list[PyVRPRoute] = []
+    normalized_routes: list[Route] = []
     for route in initial_skeleton.routes:
         route_type = str(route.vehicle_type).strip().lower()
         if problem.route_proxy_mode == "cv_only":
             route_type = "cv"
-        vehicle_type = (
-            problem.vehicle_type_by_depot_and_route_type.get(
-                (route.home_depot_id, route_type)
+        normalized_routes.append(
+            Route(
+                vehicle_id=route.vehicle_id,
+                vehicle_type=route_type,
+                home_depot_id=route.home_depot_id,
+                node_sequence=list(route.node_sequence),
             )
+        )
+
+    route_by_id = {route.vehicle_id: route for route in normalized_routes}
+    if len(route_by_id) != len(normalized_routes):
+        raise ValueError("PyVRP warm-start route ids must be unique")
+    certificate = build_multitrip_certificate(
+        normalized_routes,
+        bundle.instance,
+        bundle.prices,
+        charging_actions=(
+            []
+            if problem.route_proxy_mode == "cv_only"
+            else list(initial_skeleton.charging_actions)
+        ),
+    )
+    trips_by_physical_vehicle: dict[str, list[Any]] = {}
+    for trip in certificate.trips:
+        trips_by_physical_vehicle.setdefault(
+            trip.physical_vehicle_id,
+            [],
+        ).append(trip)
+
+    routes: list[PyVRPRoute] = []
+    for physical_vehicle_id in sorted(trips_by_physical_vehicle):
+        chain = sorted(
+            trips_by_physical_vehicle[physical_vehicle_id],
+            key=lambda item: item.trip_index,
+        )
+        source_routes = [route_by_id[item.route_id] for item in chain]
+        identities = {
+            (route.home_depot_id, route.vehicle_type)
+            for route in source_routes
+        }
+        if len(identities) != 1:
+            raise ValueError(
+                "PyVRP warm-start physical vehicle changes depot or type"
+            )
+        home_depot_id, route_type = next(iter(identities))
+        vehicle_type = problem.vehicle_type_by_depot_and_route_type.get(
+            (home_depot_id, route_type)
         )
         if vehicle_type is None:
             raise ValueError(
-                "no PyVRP vehicle type for warm-start route "
-                f"{route.vehicle_id!r}: depot={route.home_depot_id!r}, "
+                "no PyVRP vehicle type for warm-start physical vehicle "
+                f"{physical_vehicle_id!r}: depot={home_depot_id!r}, "
                 f"route_type={route_type!r}, "
                 f"proxy_mode={problem.route_proxy_mode!r}"
             )
-        visits = [
-            problem.location_by_node_id[node_id]
-            for node_id in route.node_sequence
-            if node_id in problem.location_by_node_id
-            and node_id != route.home_depot_id
-        ]
-        if not visits:
+        depot_location = problem.location_by_node_id[home_depot_id]
+        pyvrp_trips: list[PyVRPTrip] = []
+        for route in source_routes:
+            visits = [
+                problem.location_by_node_id[node_id]
+                for node_id in route.node_sequence[1:-1]
+            ]
+            if visits:
+                pyvrp_trips.append(
+                    PyVRPTrip(
+                        data,
+                        visits,
+                        vehicle_type,
+                        start_depot=depot_location,
+                        end_depot=depot_location,
+                    )
+                )
+        if not pyvrp_trips:
             continue
         routes.append(
             PyVRPRoute(
                 data,
-                visits,
+                pyvrp_trips,
                 vehicle_type,
             )
         )
@@ -837,25 +1100,38 @@ def _translate_solution(
 ) -> Solution:
     routes: list[Route] = []
     for route_index, pyvrp_route in enumerate(solution.routes()):
-        home_depot_id = problem.node_id_by_location[
-            int(pyvrp_route.start_depot())
+        base_vehicle_id = f"PYVRP-{route_index + 1:04d}"
+        route_type = problem.route_type_by_vehicle_type[
+            int(pyvrp_route.vehicle_type())
         ]
-        customers = [
-            problem.node_id_by_location[int(location)]
-            for location in pyvrp_route.visits()
-        ]
-        routes.append(
-            Route(
-                vehicle_id=f"PYVRP-{route_index + 1:04d}",
-                vehicle_type=problem.route_type_by_vehicle_type[
-                    int(pyvrp_route.vehicle_type())
-                ],
-                home_depot_id=home_depot_id,
-                node_sequence=[
-                    home_depot_id,
-                    *customers,
-                    home_depot_id,
-                ],
+        for trip_index, pyvrp_trip in enumerate(
+            pyvrp_route.trips(),
+            start=1,
+        ):
+            if pyvrp_trip.start_depot() != pyvrp_trip.end_depot():
+                raise ValueError(
+                    "China81 PyVRP trip must return to its home depot"
+                )
+            home_depot_id = problem.node_id_by_location[
+                int(pyvrp_trip.start_depot())
+            ]
+            customers = [
+                problem.node_id_by_location[int(location)]
+                for location in pyvrp_trip.visits()
+            ]
+            routes.append(
+                Route(
+                    vehicle_id=route_trip_vehicle_id(
+                        base_vehicle_id,
+                        trip_index,
+                    ),
+                    vehicle_type=route_type,
+                    home_depot_id=home_depot_id,
+                    node_sequence=[
+                        home_depot_id,
+                        *customers,
+                        home_depot_id,
+                    ],
+                )
             )
-        )
     return Solution(routes=routes)

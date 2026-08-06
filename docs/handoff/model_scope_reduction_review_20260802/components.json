@@ -1,0 +1,530 @@
+[
+  {
+    "name": "多车场共享客户与车辆资源、联合重分",
+    "tex_lines": "307-312, 318-320, 522-524, 575-579",
+    "objective_terms": ["F1", "F2", "F3", "F4", "F5"],
+    "parameters": ["D", "K_d", "d(k)", "d_i^0", "A_{ikp}", "z_{kp}"],
+    "dependent_experiments": ["E2-China81完整模型", "E3历史归属与联合重分", "E4路线-车型-充电联合优化", "E6四承包商合作", "E7动态重规划"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。陈婉茹等（2023）《系统工程理论与实践》§2-§3，pp.3320-3328，建立多中心混合车队路径模型；Soriano等（2023）§3.1-§3.3、PDF pp.3-7，允许多车场合作并比较独立与合作利润；Wang等（2023）§2-§4、PDF pp.3-16，研究协同多车场电动车路径与共享充电站。"
+    ],
+    "consequence_if_cut": "E3整节、表tab:e3-summary以及E6合作来源失去路由层基础；E4/E7退化为各车场独立问题。贡献第261行删除“多车场协同”，第284行本文“多车场”列改为横线，六列覆盖降为5列。四承包商故事不能成立，新颖性明显削弱。"
+  },
+  {
+    "name": "历史客户责任与允许跨车场服务",
+    "tex_lines": "312, 365, 367-368, 507-513, 575-579, 603-605, 727-733",
+    "objective_terms": ["F6", "并改变F1-F5的路线选择"],
+    "parameters": ["d(k)", "d_i^0", "A_{ikp}", "c^{tr}"],
+    "dependent_experiments": ["E3", "E6", "E7协同分派"],
+    "verdict": "必要",
+    "evidence": [
+      "包含责任/所有权结构。Soriano等（2023）§3.1-§3.3、PDF pp.3-7，区分客户所有权、单独经营与合作服务；Fernandez等（2018）§2-§3研究shared-customer collaboration；Wang等（2023）§3-§4、PDF pp.4-16研究多车场协同客户服务。"
+    ],
+    "consequence_if_cut": "E3的固定历史归属与联合重分对照、表tab:e3-summary及121.58个改换服务车场指标全部消失；E6只剩抽象成本分摊而没有合作运营来源。第261行仍可写多车场，但不能写协同；第284行“多车场”勾不能代表资源共享。六列形式可保留5列，完整四承包商故事不成立。"
+  },
+  {
+    "name": "按跨场客户数收取固定协调费c^{tr}（F6）",
+    "tex_lines": "365, 507-513, 524",
+    "objective_terms": ["F6"],
+    "parameters": ["c^{tr}", "d(k)", "d_i^0", "A_{ikp}"],
+    "dependent_experiments": ["E3非零跨场摩擦敏感性", "所有含跨场服务的完整成本复算"],
+    "verdict": "可砍",
+    "evidence": [
+      "查不到同形原文出处。逐式核对Soriano等（2023）§3.1-§3.3、Wang等（2023）§3-§4和陈婉茹等（2023）§2.3，三篇均有协同成本/利润或共享服务，但没有“每跨场服务一个客户收固定协调费”的目标项。仓库冻结主值为c^{tr}=0；10/25/50/95被记录为无现实标定摩擦代理（project_board_20260711.md第22行；prices.py第70-72行）。"
+    ],
+    "consequence_if_cut": "F6公式和非零摩擦响应图/表消失；c^{tr}=0的E3/E4/E6主口径数值不变，任何非零档结果不再进入论文。第261-263行无需改；第284行六列均不含跨场费，表格不变。新颖性不受损，反而去掉无来源参数。"
+  },
+  {
+    "name": "燃油车/电动车混合车队与车型选择",
+    "tex_lines": "312, 318-319, 349-350, 401-403, 760-764",
+    "objective_terms": ["F1", "F2", "F3", "F4", "F5"],
+    "parameters": ["K", "K_d", "Q_k", "m_k", "A_k^f", "alpha_k^e", "beta_{0k}^g", "beta_{1k}^g", "B", "bar K_u", "bar K_{du}"],
+    "dependent_experiments": ["E2-China81", "E4", "E5", "E7"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§2-§4，pp.81-88，显式联合燃油车与电动车车型、容量、固定费和能耗；陈婉茹等（2023）§2-§3，pp.3320-3328，建立多中心混合车队模型；李得成等（2021）§2-§4，pp.995-1003，研究电动车与燃油车混合车辆路径。"
+    ],
+    "consequence_if_cut": "E4的路线-车型-充电联合优化、E5混合车队敏感性和最终解的6条燃油趟/3条电动趟展示消失；E2-China81完整模型退化为单车型。第261行删“混合车队”，第284行本文该列改横线，覆盖降为5列。核心主张不成立。"
+  },
+  {
+    "name": "有限实体车辆、车辆所属车场与一车一模式",
+    "tex_lines": "312-313, 349-350, 367, 565-567, 772-776",
+    "objective_terms": ["F2", "并约束F1-F6全部可行解"],
+    "parameters": ["K", "K_d", "d(k)", "Omega_k", "z_{kp}", "bar K_u", "bar K_{du}"],
+    "dependent_experiments": ["E2-China81", "E3", "E4", "E5", "E6", "E7"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§4，pp.84-87，以有限异质车辆集合建模；Zhen等（2020）§3、PDF pp.3-8，将多趟分配给有限车辆；Zhao等（2024）§3-§5，pp.923-929，在多趟split中显式控制车辆数。"
+    ],
+    "consequence_if_cut": "实体车多趟失去承载对象，E3/E4/E6的车场-车型上限与车辆节省指标失效，E7无法继承单车状态。第261-263行的“实体车多趟/两层模型”均需删除，第284行多趟列改横线，新颖性降为静态无限车队组合。"
+  },
+  {
+    "name": "实体车日内多趟",
+    "tex_lines": "313-314, 351-355, 560-562, 591-596, 697-700, 774-776",
+    "objective_terms": ["F2", "F1-F6通过模式p汇总"],
+    "parameters": ["R_{kp}", "n_{kp}", "d_r^+", "d_r^-", "Omega_k", "z_{kp}"],
+    "dependent_experiments": ["E2-China81完整模型", "E3", "E4", "E5", "E6", "E7"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Zhen等（2020）§3-§5、PDF pp.3-13，直接研究多车场多趟带时间窗/释放时间问题；Zhao等（2024）§3-§6，pp.923-930，以split算法把giant tour分成多趟并分配实体车。"
+    ],
+    "consequence_if_cut": "按作者决定不得删除。若假设删除，第261-264行的实体车多趟、两层模型与单趟退化声明删除，第284行多趟列改横线，E3/E4/E6车辆使用和固定费均需重定义；六列覆盖降为5列。当前仓库审计还证明正式E3/E4/E6并未在多趟搜索空间求解，见e2_e7_decision_source_execution_audit_20260801.md第22-30行。"
+  },
+  {
+    "name": "相邻趟时间与SOC衔接",
+    "tex_lines": "560-562, 591-596, 697-700, 727-731",
+    "objective_terms": ["F1", "F2", "F5"],
+    "parameters": ["T_{d_r^-r}", "T_{d_{r'}^+r'}", "epsilon_{d_r^-r}", "epsilon_{d_{r'}^+r'}", "Q_{kp}^{rr'}", "E_q^{ch}"],
+    "dependent_experiments": ["所有多趟实验", "E4", "E5"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Zhen等（2020）§3、PDF pp.3-8，对相邻配送趟的时间排序和车辆排班建模；Diefenbach、Emde和Glock（2023）§3-§4，pp.831-838，安排服务趟之间的充电与车辆衔接。本文把两者合为时间+SOC连接。"
+    ],
+    "consequence_if_cut": "保留“多趟”但删除衔接会使同一车的趟序、剩余电量与趟间充电失真；E4返场补电和E5趟间非线性作用都消失。第263行“趟间按需补电”删除，第284行虽可形式勾选多趟，但不能再代表实体车可执行排班，新颖性论证不成立。"
+  },
+  {
+    "name": "首趟前及趟间车场按需补电",
+    "tex_lines": "314, 433-436, 560-562, 591-596",
+    "objective_terms": ["F1", "F5"],
+    "parameters": ["a_q^{ch}", "Delta_q", "underline a_q", "overline a_q", "E_q^{ch}", "pi_s"],
+    "dependent_experiments": ["E4固定排班择时", "E5", "多趟E3/E4/E6复算"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Diefenbach等（2023）摘要及§3-§4，pp.828-838，明确充电休息安排在服务趟之间并考虑非线性充电；Zhen等（2020）提供多趟排班但不含电量。"
+    ],
+    "consequence_if_cut": "作者已保留多趟，删除趟间补电会把可连续执行多趟的电动车强制退化为单电量周期；E4固定排班中返场/趟间会话和E5作用窗口消失。第263行须删除，六列表面不变但多趟与分时充电两列的联合含义被削弱。"
+  },
+  {
+    "name": "途中充电站选择与连续部分充电",
+    "tex_lines": "314, 328-329, 347, 354-355, 418-444, 551-557",
+    "objective_terms": ["F1", "F5"],
+    "parameters": ["S", "pi_s", "B", "B^{min}", "Y_{ir}", "E_q^{ch}", "a_q^{ch}", "Delta_q"],
+    "dependent_experiments": ["E4", "E5", "China81最终解与完整检查"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。Montoya等（2017）PDF p.4、pp.13-18，允许途中部分充电并比较不同充电函数；Goeke和Schneider（2015）§4，pp.84-87，允许电动车访问充电站；Wang等（2025）PDF pp.8、13-18联合车型、路径和部分充电。"
+    ],
+    "consequence_if_cut": "E5途中非线性敏感性及E4“途中充电站”联合决策消失，主文可只保留车场充电择时；所有实际使用公共站的China81解需重新核算可行性。第261-263行不变，第265行删“充电站”并把途中充电移至附录；第284行六列不变，新颖性仍成立。"
+  },
+  {
+    "name": "SOC分段非线性充电曲线",
+    "tex_lines": "328-329, 356, 418-444, 727-731, 885-900",
+    "objective_terms": ["F1", "F5"],
+    "parameters": ["B", "b_l", "kappa_l", "pi_s", "epsilon_q^{in}", "epsilon_q^{out}", "Delta_q"],
+    "dependent_experiments": ["E5文献车型敏感性", "E4完整评价", "E2-China81完整复算"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。Montoya等（2017）PDF pp.4、13-18；Wang等（2025）PDF pp.8、13-18、23-24；Wang等（2026）PDF pp.1、9、22-27，均把非线性曲线放入充电/路线评价。Wang等（2026）pp.24、26-27给出74.8 kWh、95 km、75元/h、300元固定费及2.00%-3.19%降本。"
+    ],
+    "consequence_if_cut": "按作者决定不得彻底删除；主结果可退化为恒功率，E5保留74.8 kWh/95 km成套文献车型敏感性。若完全删除，E5全部消失、算法步骤3和碳择时候选的功率转换点简化；第261-263行无须改，第265行可保留分时充电，第284行六列不变，新颖性仍站得住。"
+  },
+  {
+    "name": "充电站访问副本/同一物理站重复访问",
+    "tex_lines": "314, 347, 354-355, 379-381（正文未显式给访问序号，作为充电会话/站点表示的一部分）",
+    "objective_terms": ["F1", "F5"],
+    "parameters": ["S", "Q_{kp}", "s(q)", "E_q^{ch}", "a_q^{ch}"],
+    "dependent_experiments": ["E5文献车型敏感性", "含重复到站的充电可行性检查"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。Montoya等（2017）PDF p.4用同一充电站的节点副本允许多次访问；Wang和Zhao（2023）PDF pp.2-3采用不复制物理站的重复访问表示。仓库e5b_literature_and_infrastructure_diagnosis_20260801.md第51行逐项记录两种原文做法。"
+    ],
+    "consequence_if_cut": "不影响没有重复访问的主结果；E5若需同车同路多次使用同站的候选、相关可行性与容量汇总消失。贡献第261-265行和第284行均不改；新颖性不受影响。"
+  },
+  {
+    "name": "充电站容量与时段并发约束",
+    "tex_lines": "318, 355, 570-571, 598-599, 727-731",
+    "objective_terms": ["不直接进入目标函数"],
+    "parameters": ["C_s", "O_{skpt}", "T"],
+    "dependent_experiments": ["E2-China81完整检查", "E4", "E5", "E6"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。Froger等（2022）§3-§4，pp.460-472，专门研究有容量充电站的EVRP；Wang等（2023）§3-§4、PDF pp.4-16研究共享充电站资源约束。目标期刊陈婉茹等（2023）未建站点并发容量。"
+    ],
+    "consequence_if_cut": "充电排队/容量作用实验和容量违规检查消失；当前主结果若站容量未绑定则表图不必消失，但所有使用共享桩的解需按无容量模型解释。第261-263行不改，第265行删除“充电站联合决策”的容量含义；第284行不变，新颖性仍成立。"
+  },
+  {
+    "name": "分时电价",
+    "tex_lines": "315-316, 330, 357, 363, 438-444, 496-505, 727-731",
+    "objective_terms": ["F5"],
+    "parameters": ["T", "p_{s,t}^e", "y_{qt}", "a_q^{ch}"],
+    "dependent_experiments": ["E4排放-电费权衡", "E5", "所有含电动车充电成本的China81实验"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。Lin等（2021）§2-§4研究time-variant electricity prices下的路径与充放电；Wang等（2026）PDF pp.1、9、22-27联合非线性充电与分时电价并报告充电成本变化。陈婉茹等（2023）未引入分时电价。"
+    ],
+    "consequence_if_cut": "E4固定排班ASAP/CARBON的134.880%电费权衡消失，F5退化为统一电价；E5分时价渠道消失。第265行删“分时电价”，保留分时碳强度；第284行只比较分时充电排放，表不变。新颖性仍由时段碳排放支撑。"
+  },
+  {
+    "name": "时段碳排放强度与充电侧间接排放",
+    "tex_lines": "315-316, 330, 348, 357, 438-458, 462-473, 885-903",
+    "objective_terms": ["F1"],
+    "parameters": ["T", "gamma_t", "widehat gamma_t", "y_{qt}", "lambda^g", "E_{kp}"],
+    "dependent_experiments": ["E4联合优化", "E4固定排班28日电网日", "E2/E3/E6完整碳核算", "E7碳状态"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Li等（2024）§2-§4以3777辆上海电动车11个月数据，在不改变出行计划下优化充电时刻并核算时段排放；Chen等（2022）§II-§IV研究carbon-aware EV charging；本文表第284行的Li等正对应此列。"
+    ],
+    "consequence_if_cut": "E4整节的联合碳目标、固定排班11340配对、图fig:e4-charging及论文题名中的“时变碳强度”全部失去依据；贡献第265-267行和第284行该列删除，六列覆盖降为5列。核心主张不成立。"
+  },
+  {
+    "name": "预测碳强度与结算碳强度双序列",
+    "tex_lines": "357, 446-458, 465-471, 515-518",
+    "objective_terms": ["F1使用预测值；结算值用于事后复算"],
+    "parameters": ["widehat gamma_t", "gamma_t", "widehat E_{kp}", "E_{kp}"],
+    "dependent_experiments": ["无独立实验；China81中widehat gamma_t=gamma_t"],
+    "verdict": "可砍",
+    "evidence": [
+      "查不到同形原文出处。Li等（2024）§2-§4优化充电时刻并核算排放，但未设置本文这种“预测序列决策、结算序列复算”的双账；所查陈婉茹等（2023）、Wang等（2025、2026）也未给同形双序列。paper_main.tex第1046行明确China81两字段完全相等。"
+    ],
+    "consequence_if_cut": "没有表图或正式数字消失；widehat符号、所谓预测误差/结算复算叙述消失，统一用gamma_t。第261-267行和第284行不改；新颖性不受损。"
+  },
+  {
+    "name": "碳价格进入目标函数（F1）",
+    "tex_lines": "358-359, 462-473, 524",
+    "objective_terms": ["F1"],
+    "parameters": ["p^{car}", "E_{kp}", "widehat E_{kp}"],
+    "dependent_experiments": ["E4成本加碳目标", "E2/E3/E6完整总成本"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。陈婉茹等（2023）§2.3、pp.3323-3328把碳交易成本纳入多中心混合车队目标；陈雨蝶等（2025）§2.2-§2.4、PDF pp.4-8也把碳成本分项纳入总目标。"
+    ],
+    "consequence_if_cut": "E4“运营成本加碳成本/纯运营成本”对照和表tab:e4-summary第一行消失；时段碳只能作为事后指标，不能声称进入路线/车型联合决策。第265-267行改为固定排班排放分析；第284行仍可勾分时充电排放，但模型新颖性显著减弱。"
+  },
+  {
+    "name": "碳配额CE与买卖配额常数项",
+    "tex_lines": "359, 467-472",
+    "objective_terms": ["F1中的-p^{car}CE"],
+    "parameters": ["CE", "p^{car}"],
+    "dependent_experiments": ["当前主口径CE=0；无独立正式实验"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。陈婉茹等（2023）§5.2.1-§5.2.2，pp.3331-3333，明确做碳限额150/450 kg与碳价敏感性；陈雨蝶等（2025）§4.3、pp.14-15做碳价×配额情景。本文CE对所有可行解是同一常数，主值又为0。"
+    ],
+    "consequence_if_cut": "当前CE=0主结果和路线排序不变；若保留政策附录，仅配额敏感性表述受影响。第261-267行不必写配额，第284行不含配额列；六列覆盖与新颖性不变。"
+  },
+  {
+    "name": "滚阻、风阻、整备质量、迎风面积的物理能耗模型",
+    "tex_lines": "326, 345-350, 365-366, 386-414",
+    "objective_terms": ["F1", "F4", "F5"],
+    "parameters": ["c_D", "rho^a", "A_k^f", "v", "m_k", "g_0", "c_R", "alpha_k^e", "beta_{0k}^g", "beta_{1k}^g"],
+    "dependent_experiments": ["所有China81成本/能耗/排放结果", "E4", "最终解表tab:final-solution"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§3-§4，pp.83-87，显式使用质量、载重、速度、坡度、空气阻力和滚动阻力计算油电能耗；陈婉茹等（2023）§2.2-§2.3，pp.3323-3327，使用速度-载重相关能耗/排放。"
+    ],
+    "consequence_if_cut": "现有China81全部油耗、电耗、排放和成本绝对值需按简化能耗率重算，最终解表及E3/E4/E6数值均受影响；但没有实验专门识别风阻或迎风面积。第261-267行不变，能耗细式可降到附录；第284行不变，新颖性仍站得住。"
+  },
+  {
+    "name": "载重传播与载重依赖能耗项",
+    "tex_lines": "388-413, 535-540",
+    "objective_terms": ["F1", "F4", "F5"],
+    "parameters": ["L_{ir}", "u_{ij}", "q_i", "Q_k", "omega^E"],
+    "dependent_experiments": ["所有China81能耗/排放结果", "E4", "E3", "E6"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§3、pp.83-84及§4把车辆空重与弧段载重纳入能耗；姜广田等（2024）§2.4，pp.2365-2367也按载重修正燃油消耗。"
+    ],
+    "consequence_if_cut": "容量传播仍需保留，但能耗可改为车型固定每公里率；现有能耗/排放绝对值和E4结果需重算，专门的载重能耗参数及公式消失。贡献与第284行不变，新颖性不受损。"
+  },
+  {
+    "name": "车辆容量与载重传播约束",
+    "tex_lines": "324-325, 351-352, 535-540",
+    "objective_terms": ["不直接进入目标函数"],
+    "parameters": ["q_i", "Q_k", "L_{ir}", "a_{ir}", "x_{ijr}"],
+    "dependent_experiments": ["全部路径实验"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§4，pp.84-87；陈婉茹等（2023）§2.4，pp.3325-3328；Zhen等（2020）§3，PDF pp.3-8均设车辆容量和需求传播。"
+    ],
+    "consequence_if_cut": "问题不再是容量车辆路径问题，所有路线、车辆数和成本表失去可行性含义。第261-264行的VRP退化声明需重写；第284行虽无容量列，但六列覆盖不能挽救基本模型缺失。"
+  },
+  {
+    "name": "硬时间窗与时间传播",
+    "tex_lines": "327, 360-363, 543-548",
+    "objective_terms": ["不直接进入目标函数"],
+    "parameters": ["underline t_i", "overline t_i", "T_{ir}", "sigma_i", "t_{ij}", "M"],
+    "dependent_experiments": ["全部路径实验", "E7发车时机"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§4，pp.84-87；陈婉茹等（2023）§2.4，pp.3325-3328；Zhen等（2020）§3均使用时间窗。姜广田等（2024）pp.2367-2369动态重规划也继承时间状态。"
+    ],
+    "consequence_if_cut": "所有时间窗可行性、E7等待与最迟发车冲突、最终解时间列和公开MDVRPTW可比性消失。贡献表六列不直接变，但论文主题退化为无服务时效的路径问题，核心实验不成立。"
+  },
+  {
+    "name": "客户恰好服务一次、需求不可拆分",
+    "tex_lines": "324, 527-532, 565-567",
+    "objective_terms": ["不直接进入目标函数"],
+    "parameters": ["a_{ir}", "A_{ikp}", "x_{ijr}", "z_{kp}"],
+    "dependent_experiments": ["全部路径实验"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§4；Zhen等（2020）§3；陈婉茹等（2023）§2.4均要求客户唯一覆盖。"
+    ],
+    "consequence_if_cut": "服务完整性消失，所有成本、车辆数和合作收益不可比较；贡献和文献表失去VRP基本语义。"
+  },
+  {
+    "name": "按配送趟计固定派遣成本F2",
+    "tex_lines": "360, 475-480",
+    "objective_terms": ["F2"],
+    "parameters": ["c^{fix}", "n_{kp}", "z_{kp}"],
+    "dependent_experiments": ["全部China81", "E3", "E4", "E6", "E7发车时机"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§3-§4含车型固定费；Zhao等（2024）§3、pp.923-925按启用车辆计固定费；倪冠群等（2025）pp.3875-3876、3879以发车固定成本与等待/装载权衡决定派送。本文特有的是按趟而非按实体车计费。"
+    ],
+    "consequence_if_cut": "多趟经济性、车辆数节省、E7发车时机和E6合作节省都会系统改变，所有正式结果需重算。第261-263行仍可写多趟但经营含义削弱；第284行不变，新颖性不靠该标准成本项。"
+  },
+  {
+    "name": "里程成本F3",
+    "tex_lines": "361-363, 482-487",
+    "objective_terms": ["F3"],
+    "parameters": ["c_k^{km}", "D_{kp}", "d_{ij}"],
+    "dependent_experiments": ["全部路径实验"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§3-§4；陈婉茹等（2023）§2.3；Soriano等（2023）§3均以行驶距离/成本构成核心运营目标。"
+    ],
+    "consequence_if_cut": "路径长度失去直接经济代价，E2算法比较、E3协同节省和E6联盟值全部改变；贡献和第284行不变，但优化目标不再与同类VRP可比。"
+  },
+  {
+    "name": "燃油成本F4",
+    "tex_lines": "362, 399-403, 489-494",
+    "objective_terms": ["F4"],
+    "parameters": ["p^f", "F_{kp}", "beta_{0k}^g", "beta_{1k}^g"],
+    "dependent_experiments": ["全部含燃油车实验", "E4", "E3", "E6"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Goeke和Schneider（2015）§3-§4、陈婉茹等（2023）§2.3及姜广田等（2024）§2.4-§2.5均把燃油/能耗成本纳入目标。"
+    ],
+    "consequence_if_cut": "混合车队的油电经济比较失去燃油侧，E4和最终解成本分解失效；第284行混合车队勾仍在但核心比较不成立。"
+  },
+  {
+    "name": "分时充电电费F5主体",
+    "tex_lines": "363-364, 496-505",
+    "objective_terms": ["F5"],
+    "parameters": ["p_{s,t}^e", "y_{qt}", "Q_{kp}", "z_{kp}"],
+    "dependent_experiments": ["全部含电动车实验", "E4", "E5"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Wang等（2026）PDF pp.1、9、22-27把电费纳入路线/充电目标；Lin等（2021）§2-§4直接优化分时电价下的充放电；Goeke和Schneider（2015）含电动车能源成本。"
+    ],
+    "consequence_if_cut": "混合车队只剩燃油成本而没有电能成本，E4排放-电费权衡和E5经济结果全部失效；第265-267行需删除成本权衡，核心主张残缺。"
+  },
+  {
+    "name": "公共充电站独立占用时间费c^{occ}",
+    "tex_lines": "364, 496-503, 515-517",
+    "objective_terms": ["F5"],
+    "parameters": ["c^{occ}", "H_{kp}^{S}"],
+    "dependent_experiments": ["E5", "含公共站充电的China81成本"],
+    "verdict": "可砍",
+    "evidence": [
+      "查不到同形原文出处。Wang等（2025）PDF p.8以路线/充电时间计成本，Wang等（2026）PDF p.9以路线时长、充电电费和车辆固定费计成本，但所查直接同类没有本文这种只对公共站另收固定元/min占用费的独立F5项。仓库参数把0.5元/min标为代理值，且E5诊断中该项平均仅占总成本0.2665%。"
+    ],
+    "consequence_if_cut": "F5保留实际电费；公共站占用费分项和以其传导非线性时长的E5渠道消失，任何使用公共站的成本需重算。贡献第261-267行和第284行不变；新颖性不受损。"
+  },
+  {
+    "name": "配送趟层—实体车排班模式层两层建模",
+    "tex_lines": "351-355, 378-381, 520-579, 631-632",
+    "objective_terms": ["F1-F6"],
+    "parameters": ["R_{kp}", "Q_{kp}", "Omega_k", "A_{ikp}", "z_{kp}", "x_{ijr}"],
+    "dependent_experiments": ["全部完整模型实验", "多趟", "MV-HGS-SP路线池重组"],
+    "verdict": "必要",
+    "evidence": [
+      "包含结构先例。Zhen等（2020）§3-§5、PDF pp.3-13分开构造配送趟并做多趟车辆排班；Zhao等（2024）§4-§6、pp.926-930用giant tour与split把客户序列解码成多趟车辆方案；Wang等（2025）PDF pp.13-18使用路径评价与路线池重组。"
+    ],
+    "consequence_if_cut": "实体车多趟、趟间充电和算法路线池都失去统一数学接口。第262-264行整段删除，第284行多趟列难以保留；六列覆盖降为5列，模型核心主张不成立。"
+  },
+  {
+    "name": "按实际执行车辆所属车场归集的自然账本",
+    "tex_lines": "331-333, 575-579, 603-605",
+    "objective_terms": ["F1-F6进入C_d，收入rho q_i进入R_d"],
+    "parameters": ["C_d", "R_d", "Pi_d", "rho", "d(k)", "d_i^0"],
+    "dependent_experiments": ["E6合作前成员盈亏", "E3责任结构"],
+    "verdict": "必要",
+    "evidence": [
+      "包含同类成员利润核算。Soriano等（2023）§3.1-§3.3、PDF pp.3-7定义车场利润、独立基准与合作profit fairness；饶卫振等（2022）§2-§4，pp.2724-2733先求协作成本再做分摊。"
+    ],
+    "consequence_if_cut": "作者已拍板的“合作节省—自然账本—稳定分账”第二段消失；E6只剩系统节省和事后分配，不能识别结算前谁受损。第261行“成员结算参与”需删除或缩成成本分配，第284行成员收益条件列含义减弱，新颖性不完整。"
+  },
+  {
+    "name": "四承包商全部15个非空联盟价值v(A)=R(A)-C(A)",
+    "tex_lines": "367-372, 607-614, 727-733",
+    "objective_terms": ["不进入主路径目标；定义结算层联盟价值"],
+    "parameters": ["A", "v(A)", "R(A)", "C(A)", "rho"],
+    "dependent_experiments": ["E6的900个联盟成本", "核、核仁、Shapley"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。饶卫振等（2019）§2-§4，pp.1520-1529，基于所有子联盟协作成本定义特征函数并求核仁；饶卫振等（2022）§2-§4，pp.2724-2733同样先求联盟成本再分摊。"
+    ],
+    "consequence_if_cut": "E6的15联盟×60场景、核与核仁全部消失，只剩四家总合作节省；作者已拍板的稳定分账无法成立。第261行删“成员结算参与”，第284行成员收益条件列改横线，覆盖降为5列，新颖性显著削弱。"
+  },
+  {
+    "name": "Shapley值贡献分配比较",
+    "tex_lines": "333, 370, 615-620, 727-733",
+    "objective_terms": ["不进入F1-F6"],
+    "parameters": ["phi_d", "v(A)", "|A|", "|D|"],
+    "dependent_experiments": ["E6 Shapley位于核内52/60与核仁差额"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。Wang等（2023）§5、PDF pp.17-21在协同多车场共享充电研究中使用Shapley类成本分配；协同物流文献中Shapley作为贡献基准。饶卫振等（2019）核心方法是核仁，不要求同时保留Shapley。"
+    ],
+    "consequence_if_cut": "表tab:e6-summary中Shapley位于核内52/60、8个退出激励和最大差额444.280元三项消失；合作节省、自然账本和核仁稳定分账仍完整。第261行和第284行成员收益条件勾不变；新颖性仍由核仁/核支撑。"
+  },
+  {
+    "name": "核、参与条件与核仁稳定分账",
+    "tex_lines": "333, 371-372, 621-630",
+    "objective_terms": ["不进入F1-F6；事后结算"],
+    "parameters": ["x_d^{nu}", "Pi_d^0", "v(A)", "e(A,x)"],
+    "dependent_experiments": ["E6核仁60/60位于核内", "240/240成员优于单干"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。饶卫振等（2019）§2-§4，pp.1517-1530，专门提出协作配送成本分摊的核仁算法并检查联盟稳定；Soriano等（2023）§3、PDF pp.3-7要求合作方案满足利润公平/参与。"
+    ],
+    "consequence_if_cut": "作者已拍板的稳定分账第三段、表tab:e6-summary的60/60核内和240/240优于单干全部消失；第261行删“成员结算参与”，第284行成员收益条件列改横线，六列覆盖降为5列。核心合作故事不成立。"
+  },
+  {
+    "name": "动态新增订单",
+    "tex_lines": "307-308, 317, 323, 634-650, 905-910",
+    "objective_terms": ["重规划时重新进入F1-F6"],
+    "parameters": ["N^{new}(tau)", "N^{act}(tau)", "N^{served}(tau)", "tau"],
+    "dependent_experiments": ["E7", "动态滚动调用"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。姜广田等（2024）摘要及§2.5，pp.2362-2369，把新增店铺、未服务集合和当前车辆状态纳入动态调整；邱莹莹（2024）§3.3.2，pp.23-24研究新增订单的批事件处理。"
+    ],
+    "consequence_if_cut": "E7整组、动态滚动调用和第317、634-661、905-910行全部消失；第261行删“动态订单”，第263行删滚动状态继承，第284行动态事件列改横线，覆盖降为5列。作者已保留的动态发车时机无法存在。"
+  },
+  {
+    "name": "订单取消与需求改量",
+    "tex_lines": "317, 646-650, 905-910",
+    "objective_terms": ["重规划时重新进入F1-F6"],
+    "parameters": ["N^{cancel}(tau)", "q_i(tau)", "N^{act}(tau)"],
+    "dependent_experiments": ["E7扩展事件流；当前正文无正式结果"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含。姜广田等（2024）摘要、§2.5及§3，pp.2362-2369明确包括需求量变化、客户取消、新增与临时退货；其算例pp.2373-2376给出具体取消/增减事件。邱莹莹（2024）§3.3.2，pp.23-24也把增减和取消纳入动态信息。"
+    ],
+    "consequence_if_cut": "当前没有正式E7表图，因此主文无已封存结果消失；动态模型只保留新订单到达，取消/改量事件移入附录或不再声明。第261行仍可写动态订单，第284行动态事件勾不变；新颖性仍成立。"
+  },
+  {
+    "name": "累计需求量或固定时间间隔的组合触发/发车时机",
+    "tex_lines": "373-374, 634-645",
+    "objective_terms": ["不直接进入F1-F6；决定何时重规划/发车"],
+    "parameters": ["bar W", "T^{int}", "tau_m", "q_i"],
+    "dependent_experiments": ["E7动态订单发车时机"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。邱莹莹（2024）§3.3.2，pp.23-24给出定量与定时组合触发，p.47设置500 kg/30 min；倪冠群等（2025）pp.3875-3876、3879、3881研究固定成本、等待/装载与最长等待下的即时订单发车；蒋丽和梁昌勇（2015）pp.905-906、909研究延迟出库调度。"
+    ],
+    "consequence_if_cut": "按作者决定不得删除。若删除，E7只剩逐事件立即重算，无法回答“何时发车”；第263行滚动状态仍可保留，但第284行动态列只代表事件更新，核心动态研究问题减半。"
+  },
+  {
+    "name": "冻结已执行前缀、继承车辆位置/时间/载重/SOC并累计账本",
+    "tex_lines": "317, 651-661, 905-910",
+    "objective_terms": ["F1-F6的跨阶段累计"],
+    "parameters": ["loc_k(tau)", "t_k(tau)", "L_k(tau)", "epsilon_k(tau)", "C^{acc}(tau)", "E^{acc}(tau)", "Pi_d^{acc}(tau)"],
+    "dependent_experiments": ["E7"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。姜广田等（2024）§2.5，pp.2367-2369，把车辆下一节点设为虚拟配送中心并继承当前车辆位置、载货量、油量；pp.2373-2378按动态事件重规划。"
+    ],
+    "consequence_if_cut": "动态问题退化为每次从车场重做静态解，E7所有可执行性与成本累计结果失真。第263行“滚动状态继承”删除；第284行仍可形式勾动态，但不能代表实际执行，新颖性站不住。"
+  },
+  {
+    "name": "HGS-F/HGS-E/HGS-M三机制视角分解",
+    "tex_lines": "672-689, 697-708, 722-725",
+    "objective_terms": ["代理目标；最终以F1-F6复算"],
+    "parameters": ["三个代理成本", "K", "独立种群"],
+    "dependent_experiments": ["E2表tab:algorithm-comparison", "tab:china81-summary", "tab:mv-vs-o", "fig:convergence"],
+    "verdict": "可降级",
+    "evidence": [
+      "查不到同形原文出处。Zhao等（2024）§6，pp.928-930采用一个HGS种群、交叉、局部搜索、survivor与diversification；Wang等（2025）PDF pp.13-18采用曲线感知评价与路线池，但所查原文没有燃油/简化电动/机制感知三个独立代理种群的构造。"
+    ],
+    "consequence_if_cut": "三视角消融列和图中F/E/M三条线消失，算法可收缩为单一完整模型HGS加路线池重组；公开BKS表仍可保留。第268-270行删除“机制视角分解/跨视角”，第284行不变；六列模型新颖性仍在，但算法新颖性和现有0.069%-0.085%融合增量主张减弱。"
+  },
+  {
+    "name": "HGS种群、交叉、局部搜索、差异度管理与NoImprovement(K)",
+    "tex_lines": "710-725",
+    "objective_terms": ["代理目标；完整解再以F1-F6评价"],
+    "parameters": ["近邻数40", "Exchange算子集", "SwapTails", "SWAP*", "SwapRoutes", "K", "mu", "lambda", "n_close"],
+    "dependent_experiments": ["全部E2算法实验", "所有调用MV-HGS-SP的机制实验"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Zhao等（2024）§6、pp.928-930及Algorithm 4，明确HGS的初始种群、交叉、局部搜索、survivor、多样化和终止；陈雨蝶等（2025）§3、pp.8-10也完整给出混合元启发算法步骤和终止条件。"
+    ],
+    "consequence_if_cut": "不再有可复现的主算法，E2公开基准、China81算法表、收敛图和全部机制实验求解器身份消失。第268-270行算法贡献删除；第284行模型表仍在，但“模型与求解算法论文”的算法半边不成立。"
+  },
+  {
+    "name": "代理候选的统一完整模型补全、复算与独立可行性核验",
+    "tex_lines": "679-681, 727-737, 775-779, 782-787",
+    "objective_terms": ["F1-F6"],
+    "parameters": ["完整成本", "时间窗", "载重", "SOC", "C_s", "联盟价值"],
+    "dependent_experiments": ["全部E2-E7求解结果"],
+    "verdict": "必要",
+    "evidence": [
+      "包含同类两阶段评价。Wang等（2025）PDF pp.13-18先用曲线感知固定路线评价车型/充电，再把路线池重组；Zhao等（2024）§4-§6用split精确解码并评价HGS giant tour。"
+    ],
+    "consequence_if_cut": "代理目标会直接冒充完整模型，E2-E7所有成本与可行性证据失效；第269-270行“完整模型复算”删除，算法贡献不能成立。第284行模型要素即使保留，也没有算法真正求解它们。"
+  },
+  {
+    "name": "跨轮累积、去重且保留incumbent的路线池",
+    "tex_lines": "682-684, 739-749, 788-789",
+    "objective_terms": ["路线完整成本hat c_r来自F1-F6"],
+    "parameters": ["P", "hat c_r", "路线结构哈希", "外层轮次"],
+    "dependent_experiments": ["E2融合增量", "fig:route-pool", "公开基准"],
+    "verdict": "可降级",
+    "evidence": [
+      "包含路线池先例。Wang等（2025）PDF pp.13-18把候选路线放入路线池并做重组；Rochat和Taillard（1995）§2-§3使用自适应记忆保存优质路线。逐轮永久累积+三个机制视角的精确组合不是这些原文的共同必备结构。"
+    ],
+    "consequence_if_cut": "可改为单轮/有界路线池，fig:route-pool中的跨轮累积箭头与相关文字消失；路线池MIP本身仍可保留。第268-270行删“跨轮”，第284行不变；模型新颖性不受损，算法叙事收缩。"
+  },
+  {
+    "name": "限时MIP路线池集合划分",
+    "tex_lines": "674-681, 751-780",
+    "objective_terms": ["sum hat c_r lambda_r，hat c_r由F1-F6复算"],
+    "parameters": ["lambda_r", "hat a_{ir}", "hat c_r", "bar K_u", "bar K_{du}", "MIP时限", "下界", "gap"],
+    "dependent_experiments": ["E2 MV-HGS-SP", "公开基准", "fig:route-pool", "tab:mv-vs-o"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。Wang等（2025）PDF pp.13-18在路线池上求集合划分重组；陈婉茹等（2023）pp.3328-3331使用数学规划/启发算法比较；Zhao等（2024）§4-§6用split组合多趟。"
+    ],
+    "consequence_if_cut": "算法名称中的SP、路线池重组图、公开基准增量和China81融合结果失去机制；退化为普通HGS。第268-270行整项重写，第284行不变；模型六列新颖性仍在，但算法贡献明显变弱。"
+  },
+  {
+    "name": "严格改善才接受、写回共同起点与外层收敛",
+    "tex_lines": "682-689, 782-792",
+    "objective_terms": ["比较完整F"],
+    "parameters": ["F*", "F^{MIP}", "外层轮次上限", "无改善轮数", "K"],
+    "dependent_experiments": ["E2算法轨迹", "fig:convergence"],
+    "verdict": "可降级",
+    "evidence": [
+      "查不到同形原文出处。Zhao等（2024）§6、pp.928-930使用survivor/diversification与固定迭代终止；Wang等（2025）PDF pp.13-18使用路线池改进，但所查原文未给本文“每轮min接受—写回三视角共同起点—跨轮累积”的完整规则。"
+    ],
+    "consequence_if_cut": "可保留最佳已知解的普通精英保存，不再把min规则单列为创新；算法收敛图仍可存在。第269-270行删“单调接受”，第284行不变；新颖性不受损。"
+  },
+  {
+    "name": "固定充电会话的碳感知精确开始时刻候选",
+    "tex_lines": "885-903",
+    "objective_terms": ["最小化F1中的充电间接排放；路线与电量固定"],
+    "parameters": ["A_q", "B", "delta_l", "underline a_q", "overline a_q", "Delta_q", "widehat gamma_t", "y_{qt}(a)"],
+    "dependent_experiments": ["E4固定排班11340配对", "fig:e4-charging", "完整补全"],
+    "verdict": "必要",
+    "evidence": [
+      "包含同类决策。Li等（2024）§2-§4在不改变出行计划下优化充电时刻减排；Wang等（2026）PDF pp.22-23对固定路线做精确充电时刻安排；Kullman等（2021）§2-§3研究固定路线车辆充电问题。"
+    ],
+    "consequence_if_cut": "E4最清晰的固定排班边际效应、11340配对、54.970%充电侧减排和图fig:e4-charging消失；第265-267行补充检验删除，第284行分时充电排放仍可由联合模型勾选，但新颖性证据明显变弱。"
+  },
+  {
+    "name": "动态事件触发后重新调用静态求解步骤1-6",
+    "tex_lines": "905-910",
+    "objective_terms": ["剩余问题重新优化F1-F6"],
+    "parameters": ["动态状态", "失败状态", "各视角终止条件"],
+    "dependent_experiments": ["E7"],
+    "verdict": "必要",
+    "evidence": [
+      "包含。姜广田等（2024）§2.5、§3，pp.2367-2372在动态事件后以虚拟配送中心和当前车辆状态重新运行路径算法；邱莹莹（2024）§3.3.2、pp.23-24把每个批事件转成新的静态路径问题。"
+    ],
+    "consequence_if_cut": "动态模型没有求解过程，E7无法形成结果；第261、263行和第284行动态事件列均需删除。核心动态主张不成立。"
+  }
+]

@@ -1,0 +1,154 @@
+{
+  "schema": "resetp.z5-qualified-multitrip-papers.v1",
+  "task_id": "Z5",
+  "status": "Z5_MULTITRIP_FLEET_LITERATURE_COMPLETE",
+  "qualification_rule": "Only papers that explicitly assign two or more depot-to-depot delivery trips to the same physical vehicle within one workday, planning horizon, or period are included.",
+  "qualified_count": 7,
+  "coverage": {
+    "classic_multitrip_vrp": 3,
+    "multidepot_multitrip": 3,
+    "electric_multitrip": 1
+  },
+  "records": [
+    {
+      "paper": "Brandão, J.; Mercer, A. (1998), The multi-trip vehicle routing problem, Journal of the Operational Research Society 49:799-805",
+      "doi": "10.1038/sj.jors.2600595",
+      "source_url": "https://www.researchgate.net/publication/317138432_The_multi-trip_vehicle_routing_problem",
+      "source_type": "author-uploaded full text; page references below use the page numbers printed in that full text",
+      "page": {
+        "multitrip": ["author full text p.2", "author full text p.4"],
+        "fleet": ["author full text p.4", "author full text p.13"],
+        "max_trips": ["author full text pp.2-4"],
+        "benefit": ["author full text p.2", "author full text pp.13-16"]
+      },
+      "multitrip_evidence": "p.2 states that the practical algorithm allowed any number of multiple trips per day. p.4 defines a tour as a set of routes assigned to the same vehicle, h_v as the number of routes assigned to vehicle v, and sums route times over that vehicle.",
+      "fleet_size_given_or_endogenous": "BOTH. Total vehicles V may be defined a priori or determined by the algorithm (p.4). In the benchmark comparison, each selected V is fixed for that subproblem (p.13).",
+      "how_total_derived": "No demand/capacity formula for V. The benchmarks enumerate integer V from 1 to V_max; workday limits are then T1=round(1.05 Z*/V) and T2=round(1.10 Z*/V), where Z* is a quasi-optimal unrestricted-VRP travel value (p.13).",
+      "total_shrinks_or_fixed": "Fixed within each theoretical subproblem. Separately, the p.2 practical example cited by the authors reports that allowing a second trip reduced required vehicles from 21 to 19; no universal shrink factor is proposed.",
+      "max_trips_per_vehicle": "No numerical cap. The practical algorithm allows any number per day, bounded by delivery windows and legal driver schedules (p.2); the simplified model uses maximum driving time and overtime (p.4).",
+      "benefit_reported_as": "The introduction cites an empirical 21-to-19 vehicle reduction and 5% lower unit delivery cost (p.2). The simplified benchmark reports total travel time and balance of daily vehicle tours, not a single-trip causal comparison (pp.13-16).",
+      "fixed_cost_billing_unit": "The simplified TSMTVRP has no vehicle fixed-cost term and minimizes travel time for a given V (pp.3-4). The practical narrative lists driver, fuel, fleet-maintenance and hired-vehicle costs, but does not give an algebraic billing unit (p.2)."
+    },
+    {
+      "paper": "Cattaruzza, D.; Absi, N.; Feillet, D.; Vidal, T. (2014), A memetic algorithm for the Multi Trip Vehicle Routing Problem, European Journal of Operational Research 236:833-848",
+      "doi": "10.1016/j.ejor.2013.06.012",
+      "source_url": "https://w1.cirrelt.ca/~vidalt/papers/WP_EMSE_CMP-SFL_2012-1.pdf",
+      "source_type": "author manuscript; page references below use the manuscript's printed pages",
+      "source_pdf_sha256": "8bbab6131b8bbf7a1b09d6c7f179f73f2d1374e89805937bd0cda88201889508",
+      "page": {
+        "multitrip": ["author manuscript p.1"],
+        "fleet": ["author manuscript p.1", "author manuscript p.13"],
+        "max_trips": ["author manuscript p.1"],
+        "benefit": ["author manuscript p.1", "author manuscript pp.15-23"]
+      },
+      "multitrip_evidence": "p.1 states that each physical vehicle can perform several trips during the working day, return to the depot, reload, and start another service trip. It defines a depot fleet of m vehicles and limits the sum of route durations assigned to one vehicle by T_H.",
+      "fleet_size_given_or_endogenous": "GIVEN. m is an instance input.",
+      "how_total_derived": "No formula derives m from total demand or capacity. The benchmark scans different m and sets T_H1=round(1.05 z*/m), T_H2=round(1.10 z*/m), where z* is the original CVRP solution value (p.13).",
+      "total_shrinks_or_fixed": "Fixed within each instance; routes are packed into the given m vehicles. The paper does not automatically shrink m when multi-trip is enabled (pp.1,13).",
+      "max_trips_per_vehicle": "No numerical cap. The only aggregate restriction is that total duration of routes assigned to a vehicle cannot exceed T_H (p.1).",
+      "benefit_reported_as": "Total travel time, feasibility rate, and algorithmic solution quality on multi-trip benchmarks (pp.15-23); no isolated single-trip versus multi-trip benefit.",
+      "fixed_cost_billing_unit": "NONE. The objective is total travel time (p.1)."
+    },
+    {
+      "paper": "Zhen, L.; Ma, C.; Wang, K.; Xiao, L.; Zhang, W. (2020), Multi-depot multi-trip vehicle routing problem with time windows and release dates, Transportation Research Part E 135:101866",
+      "doi": "10.1016/j.tre.2020.101866",
+      "source_url": "https://doi.org/10.1016/j.tre.2020.101866",
+      "source_type": "publisher PDF",
+      "source_pdf_sha256": "e5b631cda4239813e16545bf78af3fffdcf315331bf12a79c659590ea2024c0d",
+      "page": {
+        "multitrip": [3, 4, 5, 17],
+        "fleet": [3, 4, 12, 13, 14],
+        "max_trips": [12, 13, 16, 17],
+        "benefit": [1, 4, 12, 13, 14]
+      },
+      "multitrip_evidence": "p.3 says each depot owns a fleet, each trip starts and ends at the same depot, and trips of the same vehicle cannot overlap. p.4 indexes vehicle k and trip w and gives real trip sets such as {1,2,3}. p.17 illustrates k0 performing two depot-customer-depot trips.",
+      "fleet_size_given_or_endogenous": "GIVEN. K and W are input sets; objective (1) minimizes travel time and does not purchase vehicles (pp.3-4).",
+      "how_total_derived": "The instance identifier directly encodes customers, depots, total vehicles, and maximum trips per vehicle (p.13). No demand, capacity, time-window, or horizon formula is supplied. A frequent two-vehicles-per-depot pattern is observable in the tables but is not justified as a derivation.",
+      "total_shrinks_or_fixed": "Fixed within each instance. Table 5 varies vehicle totals as sensitivity scenarios, not as an automatic consequence of enabling multi-trip (pp.13-14).",
+      "max_trips_per_vehicle": "3 for the small and 10-80 customer main instances; 5 for 90-200 customer main instances (pp.12-13); 2 in the appendix illustration (pp.16-17). No operational basis is given, and p.13 says max-trip tests were not listed because no clear differences were found.",
+      "benefit_reported_as": "Total travel time and algorithm performance; Table 5 reports travel-time sensitivity to vehicle counts. The paper does not isolate a single-trip baseline (pp.1,12-14).",
+      "fixed_cost_billing_unit": "NONE. Objective (1) contains travel times only (p.4)."
+    },
+    {
+      "paper": "Fermín Cueto, P.; Gjeroska, I.; Solà Vilalta, A.; Anjos, M. F. (2021), A solution approach for multi-trip vehicle routing problems with time windows, fleet sizing, and depot location, Networks 78:503-522",
+      "doi": "10.1002/net.22028",
+      "source_url": "https://www.pure.ed.ac.uk/ws/portalfiles/portal/200692297/net.22028.pdf",
+      "source_type": "publisher PDF in institutional repository",
+      "source_pdf_sha256": "a92d2e23276c198ab89cb9140aa078370dcd82ec5d57a36a61331b108f17083c",
+      "page": {
+        "multitrip": [504, 506, 513, 515],
+        "fleet": [509, 510, 511, 513],
+        "max_trips": [504, 506, 513, 515],
+        "benefit": [510, 511, 513]
+      },
+      "multitrip_evidence": "p.504 defines a trip as one physical vehicle leaving the depot, visiting customers, and returning, and explicitly permits multiple trips. p.506 orders consecutive trips of the same vehicle; p.515 describes packing routes into vehicle trips.",
+      "fleet_size_given_or_endogenous": "TWO-STAGE. Fleet size is endogenously estimated at the strategic stage, then fixed as the daily operational upper bound (pp.510-513).",
+      "how_total_derived": "Simulate n=50 busy-demand realizations using Bernoulli customer activation, Poisson(9.95) active demand, and calibrated beta; solve a multi-trip VRP for each realization; set each depot's final fleet to the 95th percentile of the 50 vehicle requirements (pp.509-510).",
+      "total_shrinks_or_fixed": "The strategic fleet is designed with multi-trip-aware VRPs and then held constant over daily operations. Daily usage may be lower; shortages are met with rentals. Table 2 gives 12/14/16/18 vehicles for P75/P95/Max/Max+10% criteria (pp.511,513).",
+      "max_trips_per_vehicle": "No numerical trip-count cap. Potential trip set R is bounded in practice by depot hours 06:00-17:00, customer windows 08:00-16:00, and consecutive-trip timing (pp.504,506,513,515).",
+      "benefit_reported_as": "Fleet requirement, fixed fleet cost, peak-day rental count and cost, total vehicle cost, and utilization risk (pp.510-513); no isolated single-trip baseline.",
+      "fixed_cost_billing_unit": "Per assigned physical vehicle. Vehicle lease/purchase, insurance, and driver wages are vehicle fixed costs (p.506); daily fleet cost is fixed regardless of daily utilization (p.513). Extra rentals are per vehicle-day at $90/day (p.511)."
+    },
+    {
+      "paper": "Wang, L.; Ding, Y.; Chen, Z.; Su, Z.; Zhuang, Y. (2024), Heuristic Algorithms for Heterogeneous and Multi-Trip Electric Vehicle Routing Problem with Pickup and Delivery, World Electric Vehicle Journal 15:69",
+      "doi": "10.3390/wevj15020069",
+      "source_url": "https://doi.org/10.3390/wevj15020069",
+      "source_type": "publisher PDF",
+      "source_pdf_sha256": "07cb71253aafa4fe457ae9ad24161d2c45f659d7bc7c9ebf29965005b593f09e",
+      "page": {
+        "multitrip": [1, 5, 6],
+        "fleet": [5, 6, 13],
+        "max_trips": [1, 5, 6],
+        "benefit": [1, 6, 17, 18, 19, 20, 21]
+      },
+      "multitrip_evidence": "p.1 explicitly models multiple trips per vehicle per day in a 06:00-24:00 delivery window. pp.5-6 index x by vehicle type k, physical vehicle g, and trip u; timing constraint (7) orders consecutive trips of the same g.",
+      "fleet_size_given_or_endogenous": "GIVEN AVAILABILITY. Each of two EV types has Max_Vehicle_Cnt=500 (Table 2, p.13); trips and vehicle assignments are optimized within that availability.",
+      "how_total_derived": "The paper directly gives 500 available vehicles per type and supplies no relation to demand, capacity, time windows, or daily horizon (p.13).",
+      "total_shrinks_or_fixed": "Availability remains 500 per type; no single-trip versus multi-trip fleet-total comparison is reported (pp.5-6,13).",
+      "max_trips_per_vehicle": "No numeric value is given for the cardinality of H^{kg}. The 06:00-24:00 horizon, time windows, and consecutive-trip timing limit realized trips (pp.1,5-6).",
+      "benefit_reported_as": "Total cost and its travel, waiting, charging, and vehicle-cost components; the motivation says multi-trip can reduce fleet size, but experiments do not isolate that causal effect (pp.1,17-21).",
+      "fixed_cost_billing_unit": "PER ACTIVE TRIP, not per physical vehicle. Equation (1) sums F^k times the depot-departure variable for every trip u, and the text says F^k is added when a type-k vehicle on trip u departs the depot (p.6)."
+    },
+    {
+      "paper": "Zhao, J.; Poon, M.; Tan, V. Y. F.; Zhang, Z. (2024), A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-dependent vehicle routing problem, European Journal of Operational Research 317:921-935",
+      "doi": "10.1016/j.ejor.2024.04.011",
+      "source_url": "https://doi.org/10.1016/j.ejor.2024.04.011",
+      "source_type": "publisher PDF",
+      "source_pdf_sha256": "e031b3f78e2950006e4fbdfd49c296519fc9066cd2c2c8bb2d4b440e728891f2",
+      "page": {
+        "multitrip": [921, 922, 923],
+        "fleet": [922, 923, 932, 933, 934],
+        "max_trips": [922, 923],
+        "benefit": [923, 932, 933, 934]
+      },
+      "multitrip_evidence": "p.922 states that every physical vehicle can undertake multiple depot-customer-depot trips within [E,L]. p.923 indexes x by physical vehicle k and trip r and defines z_k for whether physical vehicle k is used.",
+      "fleet_size_given_or_endogenous": "AVAILABLE SET GIVEN; ACTUAL USED FLEET ENDOGENOUS. K={1,...,K} is available, while z_k and N_veh determine usage (pp.922-923).",
+      "how_total_derived": "No external or demand/capacity formula for available K is reported. The model minimizes trip duration plus P times the number of used physical vehicles (p.923).",
+      "total_shrinks_or_fixed": "The availability ceiling is held fixed and actual used vehicles decline. Table 6 shows cases where N_veh falls from 3 to 1 as P rises while N_trip remains 3; the text explains reuse of existing vehicles (pp.932-934).",
+      "max_trips_per_vehicle": "No numeric cap. R={1,...,R} is defined for some sufficiently large integer R; [E,L], capacity, maximum trip distance D, and timing determine realized trips (pp.922-923).",
+      "benefit_reported_as": "Total cost, used physical vehicles N_veh, total trips N_trip, and the trade-off between vehicle fixed cost and reuse (pp.932-934).",
+      "fixed_cost_billing_unit": "PER USED PHYSICAL VEHICLE k: objective (1) contains P times sum_k z_k (p.923)."
+    },
+    {
+      "paper": "Cavecchia, M.; Alves de Queiroz, T.; Lancellotti, R.; Zucchi, G.; Iori, M. (2025), A Real-World Multi-Depot, Multi-Period, and Multi-Trip Vehicle Routing Problem with Time Windows, ICORES 2025:112-122",
+      "doi": "10.5220/0013153100003893",
+      "source_url": "https://www.scitepress.org/Papers/2025/131531/131531.pdf",
+      "source_type": "publisher PDF",
+      "source_pdf_sha256": "5e4dc2b6a1b0f9bc4dc607e52de72ac0526e6453f88049ce0ad2ae7566448045",
+      "page": {
+        "multitrip": [112, 114, 115, 116, 120],
+        "fleet": [114, 115, 116, 119, 120],
+        "max_trips": [114, 115, 116],
+        "benefit": [115, 116, 119, 120]
+      },
+      "multitrip_evidence": "p.112 says a physical vehicle performs multiple trips in a period and returns to its depot. pp.114-116 define a vehicle route as one or more trips, add loading time Delta between consecutive trips, and assign/sequence trips on vehicle k.",
+      "fleet_size_given_or_endogenous": "CANDIDATE SET GIVEN; ACTUAL USED FLEET ENDOGENOUS. K_v indexes candidate vehicles, y_kv selects physical vehicles, and the constructive method creates a new vehicle only when no used vehicle can accept a trip (pp.114-116).",
+      "how_total_derived": "No formula derives the candidate total from demand/capacity/time. Actual required physical vehicles are an optimized output and are reported by depot and type in Table 3 (pp.119-120).",
+      "total_shrinks_or_fixed": "No ex-ante proportional shrink. Generated trips are packed into physical vehicles while minimizing usage cost; the resulting used fleet is reported (pp.116,119-120).",
+      "max_trips_per_vehicle": "No numerical cap. A route may contain one or more trips and is limited by per-period working hours T, customer time windows, and loading/unloading time Delta between trips (pp.114-116).",
+      "benefit_reported_as": "Total vehicle-usage cost and number of physical vehicles used, with Table 3 reporting used vehicles by depot and type (pp.115-116,119-120). No isolated single-trip baseline.",
+      "fixed_cost_billing_unit": "A_v is incurred once when a physical vehicle is used at least once across all periods; B_v is incurred when that vehicle is used for a route in a period. A route may contain multiple trips (p.115)."
+    }
+  ],
+  "common_finding": "True multi-trip papers most often expose the physical fleet requirement or used-vehicle count and, when fixed cost is charged per physical vehicle, translate reuse into fleet-cost savings. Algorithm benchmark papers often report travel time and feasibility instead of a causal multi-trip saving."
+}

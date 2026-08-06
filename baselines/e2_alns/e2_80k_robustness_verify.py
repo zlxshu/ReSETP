@@ -35,6 +35,17 @@ from setp_solver.solution import physical_vehicle_id
 
 
 FROZEN_COMMIT = "40bd28835dff1a4287486e720351e531fc7a38d0"
+ACTIVE_PROTECTED_ANCHOR_ID = "W2_USER_APPROVED_ACTIVE_SOURCE_20260802"
+ACTIVE_PROTECTED_SHA256 = {
+    "solver/src/setp_solver/prices.py": "360491125403bdcaf05cc2ba7cefe067b86831924c4501c3a3532f06b03dcb96",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/solution.py": "636b08d9434aebaf8d507f71fae70e71a977b7bdd1656673217fd1993feb1bbd",
+    "solver/src/setp_solver/search/bundle.py": "fa6d527d864835602ceb09d9c7ee67e22116b272ba164c825d6be114cac324a7",
+    "solver/src/setp_solver/search/feasible_repair.py": "5a7e5d24e96169de7fa259ec4e7af310ffeb4376f8cb5c30b1532c7bc3fa4fb2",
+    "solver/src/setp_solver/search/candidates.py": "7ecfc9f8c8dd4424211f72fad7b6e5410dcdd0aaa30c8464e7a3647d51717b59",
+}
 DEFAULT_PHASE_DIR = REPO_ROOT / "baselines/e2_alns/e2_80k_robustness_20260711/formal"
 EXPECTED_INSTANCES = tuple(f"L-main-threeshift-{size}c-01" for size in (15, 50, 100, 200))
 EXPECTED_ALGORITHMS = ("staged_hybrid_carbon_aware", "staged_hybrid_carbon_naive", "LNS")
@@ -725,7 +736,8 @@ def verify_protected_contract() -> dict[str, Any]:
             failures.append(f"cannot read frozen protected path {relative}: {exc.returncode}")
         current_hash = hashlib.sha256(current_bytes).hexdigest() if current_bytes else ""
         frozen_hash = hashlib.sha256(frozen_bytes).hexdigest() if frozen_bytes else ""
-        match = bool(current_hash) and current_hash == frozen_hash
+        active_hash = ACTIVE_PROTECTED_SHA256.get(relative, "")
+        match = bool(current_hash) and current_hash == active_hash
         if not match:
             failures.append(f"protected semantic drift {relative}")
         path_rows.append(
@@ -733,6 +745,7 @@ def verify_protected_contract() -> dict[str, Any]:
                 "path": relative,
                 "current_sha256": current_hash,
                 "frozen_sha256": frozen_hash,
+                "active_anchor_sha256": active_hash,
                 "match": match,
             }
         )
@@ -773,6 +786,7 @@ def verify_protected_contract() -> dict[str, Any]:
         "schema": "setp-e2-80k-protected-contract.v1",
         "verdict": "FROZEN_PROTECTED_CONTRACT_OK" if not failures else "HALT_FROZEN_PROTECTED_CONTRACT",
         "frozen_commit": FROZEN_COMMIT,
+        "active_anchor_id": ACTIVE_PROTECTED_ANCHOR_ID,
         "protected_path_count": len(path_rows),
         "protected_paths": path_rows,
         "critical_values": critical_values,

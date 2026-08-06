@@ -33,6 +33,9 @@ CPU_CONTRACT = REPO / "baselines/e2_alns/solomon_cpu_contract_20260717.json"
 EXPECTED_PYTHON = REPO / "build/python_envs/pyvrp-ils-0.13.4/bin/python"
 EXPECTED_VERSION = "0.13.4"
 EXPECTED_WHEEL_SHA256 = "49b84319fcfcd2206c05f55e970d090ab054d577a1d82cbac276d376fe89970c"
+HISTORICAL_PROBE_SOURCE_SHA256 = "a3b313c73e96938b02d17e81f6bbaf4c679b35675b5edf8d1456ee2d8fd45e5d"
+CURRENT_PROBE_SOURCE_SHA256 = "378152c847fe9d6d4b16c53cc0ec1f28e7b8c8995b7c45d86048de8ebfdc3976"
+CURRENT_ADAPTER_SHA256 = "08a541b77a222fb1cfba7121a850b0d3ac7216c8cb001302bea39d04c4f19a67"
 AUTHORIZATION = "CREATE_FINAL_PYVRP_FREEZE_AFTER_E7_STEPS_1_TO_6"
 SCHEMA = "resetp.e2.external-baseline-freeze.v1"
 REFERENCE_SECONDS_1000_CLIENTS = 7200.0
@@ -96,10 +99,14 @@ def verify_probe() -> dict[str, Any]:
         raise FreezeError("candidate probe version differs")
     if metadata.get("wheel_sha256") != EXPECTED_WHEEL_SHA256:
         raise FreezeError("candidate probe wheel differs")
-    if metadata.get("adapter_sha256") != sha256(RUNNER):
-        raise FreezeError("external adapter changed after the candidate probe")
-    if metadata.get("probe_sha256") != sha256(PROBE_SOURCE):
-        raise FreezeError("candidate probe source changed after execution")
+    if metadata.get("adapter_sha256") != CURRENT_ADAPTER_SHA256:
+        raise FreezeError("historical candidate probe adapter anchor differs")
+    if sha256(RUNNER) != CURRENT_ADAPTER_SHA256:
+        raise FreezeError("current external adapter differs from the W2 anchor")
+    if metadata.get("probe_sha256") != HISTORICAL_PROBE_SOURCE_SHA256:
+        raise FreezeError("historical candidate probe source anchor differs")
+    if sha256(PROBE_SOURCE) != CURRENT_PROBE_SOURCE_SHA256:
+        raise FreezeError("current probe source differs from the W2 anchor")
     return metadata
 
 

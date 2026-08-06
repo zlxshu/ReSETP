@@ -1,0 +1,38 @@
+{
+  "counts": {
+    "ASAP": {
+      "improved": 30
+    },
+    "COST": {
+      "improved": 30
+    }
+  },
+  "representative_counterexamples": {
+    "ASAP": {
+      "baseline_actual_carbon_intensity": 0.5939057493734959,
+      "baseline_arm": "ASAP",
+      "charging_emissions_reduction_pct": 5.71129809531391,
+      "comparison_actual_carbon_intensity": 0.5599860216215676,
+      "comparison_arm": "COST_CARBON",
+      "instance_id": "cn-jjj-100c-01-V2-LOCATIONS",
+      "intensity_layer_reduction_pct": 5.711298095313915,
+      "outcome": "improved",
+      "region": "JJJ",
+      "seed": 2026080210,
+      "system_emissions_reduction_pct": 1.285272323857328
+    },
+    "COST": {
+      "baseline_actual_carbon_intensity": 0.553148108964864,
+      "baseline_arm": "COST",
+      "charging_emissions_reduction_pct": 4.218998053200414,
+      "comparison_actual_carbon_intensity": 0.5298108010163215,
+      "comparison_arm": "COST_CARBON",
+      "instance_id": "cn-jjj-100c-01-V2-LOCATIONS",
+      "intensity_layer_reduction_pct": 4.21899805320041,
+      "outcome": "improved",
+      "region": "JJJ",
+      "seed": 2026080207,
+      "system_emissions_reduction_pct": 0.822092499235144
+    }
+  }
+}

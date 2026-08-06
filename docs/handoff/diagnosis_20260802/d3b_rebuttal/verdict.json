@@ -1,0 +1,80 @@
+{
+  "task_id": "D3B",
+  "status": "D3B_REBUTTAL_COMPLETE",
+  "one_point_four_eight_percent_found": true,
+  "one_point_four_eight_percent_source": {
+    "result_package": "baselines/china_e3_e7/e3_zone_joint_20260731",
+    "field": "overall_cost_effect_pct_joint_vs_zone",
+    "value": 1.4829370445427614,
+    "comparison": "JOINT versus ZONE",
+    "formal_units_run": 40,
+    "aggregation": "equal-weight arithmetic mean of the two per-instance effects",
+    "per_instance_effects_pct": [
+      2.2727594138817997,
+      0.693114675203723
+    ]
+  },
+  "same_measurement_as_pooling_probe": false,
+  "comparison_distinction": {
+    "zone_vs_joint": {
+      "control": "ZONE: hard_home_depot_lock=true, pool_fleet=false",
+      "treatment": "JOINT: hard_home_depot_lock=false, pool_fleet=false",
+      "measures": "解除客户服务归属硬锁，逐车场车队上限保持不变"
+    },
+    "joint_vs_pooled": {
+      "control": "JOINT: hard_home_depot_lock=false, pool_fleet=false",
+      "treatment": "POOLED: hard_home_depot_lock=false, pool_fleet=true",
+      "measures": "在已解除客户硬锁后，再撤掉逐车场车辆数约束，只保留全局CV/EV总量",
+      "same_seed_effects_pct": [
+        -0.03787824695582147,
+        0.0,
+        -0.03621186182812346
+      ]
+    }
+  },
+  "third_occurrence_original": false,
+  "third_occurrence_revised": true,
+  "common_failure_action": "在冻结研究主张与情景前，没有把文献给出的机制必要条件逐项映射到候选算例，并用零搜索检查这些必要条件的可行集合是否非空。",
+  "change_reason": "补齐私有记忆后，应按共同失误动作而不是按车队池化是否在本项目产生收益来判定。王勇等（2023）pp.1134、1137-1139固定客户归属并改变车队/充电站共享；本项目旧E3的JOINT仅令hard_home_depot_lock=false且保持pool_fleet=false。该文献机制与实验开关的错位在冻结前可由零搜索映射发现。池化探针的近零负效应和陈雨蝶等（2025）p.16的相反分解只否定池化的充分性与普适性，不否定这次机制映射失误。",
+  "third_occurrence_e3_evidence": {
+    "wang_literature": "王勇等（2023）pp.1134,1137-1139：Case比较前客户归属固定；Case1-5改变车辆/充电站共享；成本10992.7到6240.5，车辆25到11",
+    "project_old_e3": "e3_zone_joint_20260731：ZONE/JOINT只切换客户归属硬锁，逐车场fleet_caps_by_depot不变",
+    "pooling_probe": "e3_pooling_probe_20260731：POOLED相对JOINT三种子为-0.03787824695582147%,0%,-0.03621186182812346%",
+    "conflicting_literature": "陈雨蝶等（2025）p.16：独立到分区成本-31.18%，分区到联合追加-3.44%"
+  },
+  "e3_measures_what": "修复一次人为随机打散并按容量对齐的客户归属，而不是解除经验意义上的历史归属约束",
+  "e3_synthetic_ownership_evidence": {
+    "source_sequence_rows": 6,
+    "source_families": [
+      "Uniform_Balanced",
+      "Uniform_Unbalanced"
+    ],
+    "formal_candidate_family": "Uniform_Unbalanced_Capacity_Rank_Aligned",
+    "formal_source_rows": 120,
+    "historical_arm_rows": 60,
+    "historical_cross_contractor_customer_count_values": [
+      0
+    ],
+    "joint_arm_rows": 60,
+    "mean_joint_cross_contractor_customer_count": 121.58333333333333,
+    "mean_instance_customer_count": 175,
+    "mean_reassignment_share": 0.6947619047619047,
+    "mean_reassignment_pct": 69.47619047619047,
+    "mean_cost_reduction_pct": 36.477268811132966
+  },
+  "synthetic_ownership_effect_on_third_occurrence": "supports",
+  "source_paths": [
+    "docs/handoff/diagnosis_20260802/d3_rootcause/report.md",
+    "baselines/china_e3_e7/e3_zone_joint_20260731/decision.json",
+    "baselines/china_e3_e7/e3_zone_joint_20260731/done.json",
+    "baselines/china_e3_e7/e3_pooling_probe_20260731/probe_results.json",
+    "baselines/china_e3_e7/e3_pooling_probe_20260731/isolated_copy/probe_pooling.py",
+    "docs/handoff/memory/mechanism_condition_absent_20260731.md",
+    "docs/handoff/mechanism_lever_rethink_20260731/report.md",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/source_p_sequences.csv",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/run_e3_scattered_ownership.py",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/run_e3_capacity_rank_aligned.py",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/README.md",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/decision.json"
+  ]
+}

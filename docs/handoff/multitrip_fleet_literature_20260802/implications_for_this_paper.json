@@ -1,0 +1,121 @@
+{
+  "schema": "resetp.z5-implications-for-this-paper.v1",
+  "task_id": "Z5",
+  "status": "Z5_MULTITRIP_FLEET_LITERATURE_COMPLETE",
+  "project_facts": {
+    "current_fleet_rule": "num_cv(d)=R_d; num_ev(d)=max(1,ceil(0.25*R_d))",
+    "current_rule_evidence": "HANDOFF.md:4193-4197 states that R_d and num_cv are derived from the instance, while 0.25 has no external basis and is researcher-constructed.",
+    "zero_search_multitrip_result": "1040 delivery trips require 1040 physical vehicles under single-trip and 693 under multi-trip, a reduction of 347 or 33.4%.",
+    "current_fixed_cost_contract": "paper_main.tex:475-480 and cost.py:168 charge fixed cost per delivery trip; therefore both representations charge 1040*170=176800."
+  },
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Should total fleet shrink with multi-trip or remain fixed while actual used vehicles decline?",
+      "answer_type": "INFERENCE",
+      "answer": "For the causal single-trip versus multi-trip comparison, hold the same defensible availability ceiling and let actual used physical vehicles decline endogenously. Do not shrink the ceiling by an unsupported factor. If a separate long-term fleet-planning study is desired, derive a strategic fleet from multi-trip demand realizations and then hold it fixed in daily operations.",
+      "basis": [
+        {
+          "paper": "Zhao et al. (2024)",
+          "page": [922, 923, 932, 933, 934],
+          "evidence": "Available set K is fixed; z_k/N_veh determines actual use. Higher per-vehicle fixed cost reduces used vehicles while trips can remain unchanged."
+        },
+        {
+          "paper": "Fermín Cueto et al. (2021)",
+          "page": [510, 511, 513],
+          "evidence": "Strategic fleet is the 95th percentile of vehicle requirements over 50 multi-trip VRP demand simulations, then K is fixed for daily routing."
+        },
+        {
+          "paper": "Cavecchia et al. (2025)",
+          "page": [116, 119, 120],
+          "evidence": "Trips are packed into physical vehicles; y selects actual vehicles and Table 3 reports the resulting used fleet."
+        },
+        {
+          "paper": "Brandão and Mercer (1998)",
+          "page": ["author full text p.4", "author full text p.13"],
+          "evidence": "V can be exogenous or algorithm-determined, but benchmark comparisons fix V within a subproblem; no proportional shrink rule is proposed."
+        }
+      ],
+      "rejected_interpretation": "The literature does not support treating ceil(0.25*R_d) or the observed 33.4% used-vehicle reduction as a new ex-ante availability coefficient."
+    },
+    {
+      "question_id": 2,
+      "question": "Does this paper need a maximum number of trips per vehicle per day?",
+      "answer_type": "INFERENCE",
+      "answer": "No numerical cap is supported unless an external operational, labor, or regulatory rule supplies one. Let the working horizon, driver/vehicle hours, customer time windows, charging, depot turnaround, and non-overlap constraints bound realized trips. If a finite trip index set is required computationally, use a provably safe bound rather than presenting it as an operational assumption.",
+      "basis": [
+        {
+          "paper": "Brandão and Mercer (1998)",
+          "page": ["author full text pp.2-4"],
+          "evidence": "Allows any number of trips per day; legal driver schedules and maximum driving time bind."
+        },
+        {
+          "paper": "Cattaruzza et al. (2014)",
+          "page": ["author manuscript p.1"],
+          "evidence": "No count cap; sum of route durations on one vehicle must be within T_H."
+        },
+        {
+          "paper": "Fermín Cueto et al. (2021)",
+          "page": [504, 506, 513, 515],
+          "evidence": "No count cap; depot hours, customer windows, and consecutive-trip scheduling bind."
+        },
+        {
+          "paper": "Zhao et al. (2024)",
+          "page": [922, 923],
+          "evidence": "R is only a sufficiently large trip-index integer; realized trips are bounded by [E,L], capacity, distance and timing."
+        },
+        {
+          "paper": "Cavecchia et al. (2025)",
+          "page": [114, 115, 116],
+          "evidence": "One or more trips per route; T and turnaround Delta bind."
+        },
+        {
+          "paper": "Zhen et al. (2020)",
+          "page": [12, 13, 16, 17],
+          "evidence": "Main instances use 3 or 5; appendix illustration uses 2. No operational basis is supplied, and max-trip tests had no clear differences."
+        }
+      ],
+      "numeric_range_found": {
+        "main_computational_instances": "3-5 trips per vehicle in Zhen et al. (2020), pp.12-13",
+        "illustrative_example": "2 trips in Zhen et al. (2020), pp.16-17",
+        "transferability": "NOT_TRANSFERABLE_AS_AN_EMPIRICAL_OPERATIONAL_RANGE"
+      }
+    },
+    {
+      "question_id": 3,
+      "question": "If fixed cost remains billed per trip, what multi-trip benefit can be reported without overclaiming?",
+      "answer_type": "FACT_PLUS_INFERENCE",
+      "answer": "Report the reduction in actual physical vehicles/fleet requirement, trips per used vehicle or trip-to-vehicle ratio, and any separately observed distance, time, energy, emissions, or service-coverage changes. Do not report fixed-cost or total-cost savings caused by vehicle reuse when the number of billed trips is unchanged.",
+      "basis": [
+        {
+          "paper": "Wang et al. (2024)",
+          "page": [1, 6],
+          "evidence": "The motivation links multi-trip to fleet fixed cost, but equation (1) charges F^k for every active trip u; physical-vehicle reuse cannot reduce that term."
+        },
+        {
+          "paper": "Zhao et al. (2024)",
+          "page": [923, 932, 933, 934],
+          "evidence": "Per-physical-vehicle billing P*z_k makes N_veh a legitimate cost channel and reports N_veh separately from N_trip."
+        },
+        {
+          "paper": "Cavecchia et al. (2025)",
+          "page": [115, 119, 120],
+          "evidence": "A_v is per physical vehicle across periods, B_v is per vehicle-period route, and actual used vehicles are reported."
+        },
+        {
+          "paper": "Zhen et al. (2020)",
+          "page": [1, 4, 12, 13, 14],
+          "evidence": "With no vehicle fixed cost, the paper reports travel-time outcomes rather than claiming fleet fixed-cost savings."
+        },
+        {
+          "paper": "Cattaruzza et al. (2014)",
+          "page": ["author manuscript p.1", "author manuscript pp.15-23"],
+          "evidence": "With no fixed-cost term, results are total travel time, feasibility, and algorithm quality."
+        }
+      ],
+      "project_safe_wording": "For the same 1040 delivery trips, multi-trip scheduling uses 693 physical vehicles instead of 1040, reducing the physical fleet requirement by 347 vehicles (33.4%). Because the current fixed cost is billed per trip, this reuse does not reduce fixed cost.",
+      "prohibited_wording_under_current_accounting": "Multi-trip reduces fixed cost or total cost by 33.4%."
+    }
+  ],
+  "one_sentence_literature_conclusion": "In true physical-vehicle multi-trip papers, benefits are most often expressed as lower physical fleet requirement or higher utilization and, only when fixed cost is billed per physical vehicle, as lower fleet cost; algorithm benchmarks often report travel time and feasibility instead."
+}

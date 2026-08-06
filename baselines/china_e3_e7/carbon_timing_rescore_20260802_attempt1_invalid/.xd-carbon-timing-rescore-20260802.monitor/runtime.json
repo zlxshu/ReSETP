@@ -1,0 +1,48 @@
+{
+  "command": [
+    "zsh",
+    "-lc",
+    "python3 baselines/china_e3_e7/run_carbon_timing_rescore_20260802.py && python3 baselines/china_e3_e7/verify_carbon_timing_rescore_20260802.py"
+  ],
+  "events_emitted": [],
+  "last_event_state": "ANOMALY",
+  "log_initial_sizes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/.xd-carbon-timing-rescore-20260802.monitor/experiment.stdout.log": 0
+  },
+  "low_cpu_checks": 0,
+  "mode": "start",
+  "monitor_config_sha256": "3a589056497cf514f718541f267eec199099704bf4a0800fab95ab59c8a22481",
+  "paused": false,
+  "pgid": 69083,
+  "pid": 69083,
+  "protected_hashes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/baselines/china_e3_e7/carbon_timing_rescore_20260802/pre_registration.json": {
+      "exists": false,
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/baselines/china_e3_e7/carbon_timing_rescore_20260802/pre_registration.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/docs/paper_v2/paper_main.tex": {
+      "exists": false,
+      "kind": "paper_conclusion",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/docs/paper_v2/paper_main.tex"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/solver/src/setp_solver/check.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/solver/src/setp_solver/check.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/solver/src/setp_solver/cost.py": {
+      "exists": false,
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/solver/src/setp_solver/cost.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/solver/src/setp_solver/search/evaluation.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/solver/src/setp_solver/search/evaluation.py"
+    }
+  },
+  "started_at": "2026-08-02T15:03:29+00:00",
+  "started_at_epoch": 1785683009.2989252,
+  "stdout_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/.xd-carbon-timing-rescore-20260802.monitor/experiment.stdout.log"
+}

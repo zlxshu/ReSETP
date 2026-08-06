@@ -1,0 +1,56 @@
+{
+  "schema": "resetp.z5-excluded-multitrip-papers.v1",
+  "task_id": "Z5",
+  "status": "Z5_MULTITRIP_FLEET_LITERATURE_COMPLETE",
+  "exclusion_rule": "Exclude any paper that does not explicitly connect two or more depot-to-depot delivery trips to the same physical vehicle within one workday, planning horizon, or period.",
+  "excluded_count": 5,
+  "records": [
+    {
+      "paper": "Schneider, M.; Stenger, A.; Goeke, D. (2014), The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations, Transportation Science 48(4):500-520",
+      "doi": "10.1287/trsc.2013.0490",
+      "source_url": "https://doi.org/10.1287/trsc.2013.0490",
+      "source_pdf_sha256": "4455c9c93ae866e1847b4882ca5bb96d90d4226f0818e033a8dcfeca6150f6d4",
+      "page": ["author/publisher PDF p.5"],
+      "evidence_checked": "p.5 defines every route as starting at depot 0 and ending at depot N+1 and uses a route-level arc model without a physical-vehicle-plus-trip index or a depot-return/redeparture linkage. Its hierarchical objective minimizes the number of routes/vehicles and then distance.",
+      "exclusion_reason": "SINGLE_TRIP_ROUTE_EQUALS_VEHICLE. Recharging-station revisits occur inside one route; the paper does not assign multiple completed depot-to-depot delivery trips to the same physical vehicle."
+    },
+    {
+      "paper": "Hiermann, G.; Puchinger, J.; Ropke, S.; Hartl, R. F. (2016), The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations, European Journal of Operational Research 252:995-1018",
+      "doi": "10.1016/j.ejor.2016.01.038",
+      "source_url": "https://doi.org/10.1016/j.ejor.2016.01.038",
+      "source_pdf_sha256": "b6bbcc1e5be659d8add4012f24d640b55da5ca147b0f62854cb47d01c7c8fc8c",
+      "page": [997, 998],
+      "evidence_checked": "p.997 asks for admissible tours so every customer is covered by exactly one tour. pp.997-998 charge vehicle acquisition cost when a route leaves the depot and formulate route columns lambda_kr; there is no physical vehicle index combined with a trip index or sequencing between depot-return tours.",
+      "exclusion_reason": "SINGLE_TRIP_FLEET_SIZE_AND_MIX. Each selected route represents one acquired vehicle; repeated charging-station visits do not establish multiple depot-to-depot trips by one physical vehicle."
+    },
+    {
+      "paper": "Froger, A.; Jabali, O.; Mendoza, J. E.; Laporte, G. (2022), The Electric Vehicle Routing Problem with Capacitated Charging Stations, Transportation Science 56(2):460-482",
+      "doi": "10.1287/trsc.2021.1111",
+      "source_url": "https://doi.org/10.1287/trsc.2021.1111",
+      "source_pdf_sha256": "2814ebc75a92afc45bdc829c0d393a37673e8e6f916998867734d6b328b6292c",
+      "page": ["author manuscript p.6"],
+      "evidence_checked": "Author-manuscript p.6 defines feasibility route by route: each route starts at the depot after time 0 and ends at the depot before T_max; the model synchronizes charging operations across routes but does not assign two completed routes to one physical EV.",
+      "exclusion_reason": "SINGLE_TRIP_WITH_CHARGER_CONGESTION. Cross-route charger synchronization is not physical-vehicle multi-trip reuse."
+    },
+    {
+      "paper": "Wang, Y.; Zhou, J.; Sun, Y.; Fan, J.; Wang, Z.; Wang, H. (2023), Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations, Expert Systems with Applications 219:119654",
+      "doi": "10.1016/j.eswa.2023.119654",
+      "source_url": "https://doi.org/10.1016/j.eswa.2023.119654",
+      "source_pdf_sha256": "5e40ba7f6631983ff9b2c7d05393df1480c4324e7fd7284cfeba22740bf6d412",
+      "page": [5, 7, 10],
+      "evidence_checked": "p.5 defines x_ijv by EV v but no trip index. p.7 constrains one departure/return for EV v, and p.10 says each route starts at a depot, visits customers, and ends at a depot. There is no return-reload-redeparture sequence for the same v.",
+      "exclusion_reason": "SINGLE_TRIP_MULTIDEPOT_EVRP. Shared charging stations and multiple depots do not make the model multi-trip."
+    },
+    {
+      "paper": "陈婉茹、徐光明、张得志、曹健 (2023), 碳交易机制下多中心混合车队配送路径和速度优化研究, 系统工程理论与实践 43(11):3320-3335",
+      "doi": "10.12011/SETP2022-2971",
+      "source_url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2022-2971",
+      "source_pdf_sha256": "aceb753db36f8d3c0f062ec25317fd3cbc6e6c18971bd193f0986a845a985b6f",
+      "page": [3322, 3324],
+      "evidence_checked": "p.3322 defines the maximum load and maximum duration of one dispatch and assumes that a vehicle's trip starts and ends at the same depot. p.3324 explains constraints for a single departure, return, and one-dispatch duration; there is no physical-vehicle trip index or between-trip sequencing.",
+      "exclusion_reason": "SINGLE_DISPATCH_MULTIDEPOT_MIXED_FLEET. It is close in depot and fleet context but does not model one physical vehicle performing multiple delivery trips in the day."
+    }
+  ],
+  "excluded_papers_used_in_statistics": false,
+  "excluded_papers_used_in_implications": false
+}

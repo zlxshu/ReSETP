@@ -1,0 +1,28 @@
+{
+  "schema": "resetp.x1-risk-remediation-artifact-hashes.v1",
+  "task_id": "X1",
+  "status": "X1_RISK_REMEDIATION_PLAN_COMPLETE",
+  "algorithm": "sha256",
+  "self_hash_included": false,
+  "excluded_patterns": [
+    "._*",
+    "artifact_hashes.json"
+  ],
+  "artifacts": [
+    {
+      "path": "report.md",
+      "sha256": "34a791aaf9ddcdbc53997548e468b35ebbe924d6f72f5e5a1e717a29d5853206",
+      "bytes": 22532
+    },
+    {
+      "path": "risks.json",
+      "sha256": "96eb09aa68911e1d9f972b0750ada879dc68002bcf16df309e81892cf047c3ef",
+      "bytes": 33554
+    },
+    {
+      "path": "done.json",
+      "sha256": "0f0c0f5272b7dea381770caf3ccbeb7f84efd31532070b3f1408236546a04365",
+      "bytes": 814
+    }
+  ]
+}

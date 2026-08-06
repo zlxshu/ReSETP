@@ -1,0 +1,226 @@
+{
+  "common_rules": {
+    "all_failures_infeasible_units_ties_and_adverse_directions_retained": true,
+    "dynamic_stream_seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "instance_is_primary_stability_unit": true,
+    "mandatory_disclosure": "If the reported effect exists only in the selected representative instance, that fact must be reported explicitly and may not be hidden.",
+    "post_result_instance_seed_parameter_or_reporting_filtering": "FORBIDDEN",
+    "same_model_and_parameter_contract_as_representative": true,
+    "same_ten_seed_set": [
+      2026080201,
+      2026080202,
+      2026080203,
+      2026080204,
+      2026080205,
+      2026080206,
+      2026080207,
+      2026080208,
+      2026080209,
+      2026080210
+    ],
+    "seed_or_day_rows_are_not_relabelled_as_independent_instances": true,
+    "selection_never_reopened": true
+  },
+  "execution_blocks": [
+    {
+      "block": "algorithm_five_method_stability",
+      "evidence_source_path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md:66",
+      "formal_search_run_count": 4000,
+      "journal_scale_basis": "Chen Wanru et al. (2023) p.3328: each result uses 10 runs and the 51-149-customer stopping rule; p.3331 Table 8: multi-method comparison on one private instance. Chen Yudie et al. (2025) pp.13-14 Table 6: one private instance, three methods, ten listed runs. The 80-instance multiplier is the user's required stability population, not a journal-imposed count.",
+      "methods": [
+        "O",
+        "F",
+        "E",
+        "M",
+        "MV"
+      ],
+      "report": [
+        "per-instance Best, Avg, Gap, feasible count, and CPU",
+        "O-to-F, F-to-E, E-to-M, and M-to-MV improve/tie/regress counts",
+        "all adverse or zero component transitions"
+      ],
+      "scope": "80 instances x 5 methods x 10 seeds"
+    },
+    {
+      "block": "algorithm_component_ablation_stability",
+      "evidence_source_path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md:67",
+      "formal_search_run_count": 2400,
+      "journal_scale_basis": "Chen Wanru et al. (2023) p.3331 Table 8 uses full plus two one-factor deletions; p.3328 uses 10 runs and 2000/150 stopping.",
+      "report": [
+        "per-instance paired cost differences and improve/tie/regress counts",
+        "route, vehicle-type, charging-action, and complete-solution structure changes",
+        "Best, Avg, Gap, feasible count, iterations, evaluations, and CPU"
+      ],
+      "scope": "80 instances x 3 variants x 10 seeds",
+      "variants": [
+        "MV-HGS-SP full",
+        "HGS-M-SP without multiview",
+        "MV-HGS without route-pool set partitioning"
+      ]
+    },
+    {
+      "block": "fleet_electrification_stability",
+      "evidence_source_path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md:68",
+      "fleet_levels_ev_percent": [
+        0,
+        25,
+        50,
+        75,
+        100
+      ],
+      "formal_search_run_count": 4000,
+      "journal_scale_basis": "Chen Wanru et al. (2023) p.3331 Table 9 uses one 71-customer instance and seven fixed-total fleet compositions; p.3328 uses 10 runs. Li Decheng et al. (2021) pp.1006-1007 use two datasets and seven fixed-total EV counts. The project's already frozen five levels are retained; no level is added after results.",
+      "report": [
+        "available CV/EV and actually dispatched CV/EV",
+        "feasible/not-found count without converting not-found into global infeasibility",
+        "cost, emissions, route count, vehicle-type changes, charging changes, and service quantities"
+      ],
+      "scope": "80 instances x 5 fleet levels x 10 seeds"
+    },
+    {
+      "block": "carbon_timing_stability",
+      "calendar_source_path": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv",
+      "evidence_source_path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md:36",
+      "journal_scale_basis": "The ten saved solutions follow Chen Wanru et al. (2023) p.3328's ten-run convention. The 28-day multiplier is not borrowed from the journal: it is the already registered complete February 2025 calendar, retained to prevent day selection.",
+      "path_search_run_count": 0,
+      "report": [
+        "movable-window and low/high-carbon opportunity counts",
+        "charging and system emissions, electricity cost, total operating cost, and direction counts",
+        "route, vehicle, served-customer, and charging-energy hash invariants"
+      ],
+      "scope": "80 instances x 10 saved full-method solutions x 28 registered February days x 2 timing rules",
+      "timing_rules": [
+        "ASAP",
+        "CARBON"
+      ],
+      "zero_search_rescore_count": 44800
+    },
+    {
+      "block": "dynamic_dispatch_stability",
+      "evidence_source_path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md:69",
+      "journal_scale_basis": "Jiang Guangtian et al. (2024) p.2372 uses population 120 and maximum 2000 generations; pp.2373-2374 use three dynamic adjustment times; p.2377 Table 14 compares three strategies with ten runs.",
+      "report": [
+        "new-order and actual-trigger counts, completion and service quantities",
+        "cost, distance, vehicles, route adjustments, accepted/rejected/not-served orders",
+        "per-stage runtime and whether it fits before the next trigger",
+        "improve/tie/regress/not-executable counts by instance"
+      ],
+      "scenario_count": 2400,
+      "scope": "80 instances x 3 strategies x 10 stream seeds",
+      "solver_call_definition": "one pre-optimization plus three dynamic adjustments per scenario",
+      "solver_call_equivalent": 9600
+    }
+  ],
+  "execution_state": {
+    "formal_experiment_started_by_SEL": false,
+    "route_search_executed_by_SEL": false,
+    "search_evaluations_by_SEL": 0,
+    "started": false
+  },
+  "frozen_at": "2026-08-03T01:10:38+08:00",
+  "remaining_instance_count": 80,
+  "remaining_instance_ids": [
+    "cn-cy-100c-02-V2-LOCATIONS",
+    "cn-cy-100c-03-V2-LOCATIONS",
+    "cn-cy-10c-01-V2-LOCATIONS",
+    "cn-cy-10c-02-V2-LOCATIONS",
+    "cn-cy-10c-03-V2-LOCATIONS",
+    "cn-cy-150c-01-V2-LOCATIONS",
+    "cn-cy-150c-02-V2-LOCATIONS",
+    "cn-cy-150c-03-V2-LOCATIONS",
+    "cn-cy-15c-01-V2-LOCATIONS",
+    "cn-cy-15c-02-V2-LOCATIONS",
+    "cn-cy-15c-03-V2-LOCATIONS",
+    "cn-cy-200c-01-V2-LOCATIONS",
+    "cn-cy-200c-02-V2-LOCATIONS",
+    "cn-cy-200c-03-V2-LOCATIONS",
+    "cn-cy-20c-01-V2-LOCATIONS",
+    "cn-cy-20c-02-V2-LOCATIONS",
+    "cn-cy-20c-03-V2-LOCATIONS",
+    "cn-cy-25c-01-V2-LOCATIONS",
+    "cn-cy-25c-02-V2-LOCATIONS",
+    "cn-cy-25c-03-V2-LOCATIONS",
+    "cn-cy-50c-01-V2-LOCATIONS",
+    "cn-cy-50c-02-V2-LOCATIONS",
+    "cn-cy-50c-03-V2-LOCATIONS",
+    "cn-cy-75c-01-V2-LOCATIONS",
+    "cn-cy-75c-02-V2-LOCATIONS",
+    "cn-cy-75c-03-V2-LOCATIONS",
+    "cn-jjj-100c-01-V2-LOCATIONS",
+    "cn-jjj-100c-02-V2-LOCATIONS",
+    "cn-jjj-100c-03-V2-LOCATIONS",
+    "cn-jjj-10c-01-V2-LOCATIONS",
+    "cn-jjj-10c-02-V2-LOCATIONS",
+    "cn-jjj-10c-03-V2-LOCATIONS",
+    "cn-jjj-150c-01-V2-LOCATIONS",
+    "cn-jjj-150c-02-V2-LOCATIONS",
+    "cn-jjj-150c-03-V2-LOCATIONS",
+    "cn-jjj-15c-01-V2-LOCATIONS",
+    "cn-jjj-15c-02-V2-LOCATIONS",
+    "cn-jjj-15c-03-V2-LOCATIONS",
+    "cn-jjj-200c-01-V2-LOCATIONS",
+    "cn-jjj-200c-02-V2-LOCATIONS",
+    "cn-jjj-200c-03-V2-LOCATIONS",
+    "cn-jjj-20c-01-V2-LOCATIONS",
+    "cn-jjj-20c-02-V2-LOCATIONS",
+    "cn-jjj-20c-03-V2-LOCATIONS",
+    "cn-jjj-25c-01-V2-LOCATIONS",
+    "cn-jjj-25c-02-V2-LOCATIONS",
+    "cn-jjj-25c-03-V2-LOCATIONS",
+    "cn-jjj-50c-01-V2-LOCATIONS",
+    "cn-jjj-50c-02-V2-LOCATIONS",
+    "cn-jjj-50c-03-V2-LOCATIONS",
+    "cn-jjj-75c-01-V2-LOCATIONS",
+    "cn-jjj-75c-02-V2-LOCATIONS",
+    "cn-jjj-75c-03-V2-LOCATIONS",
+    "cn-prd-100c-01-V2-LOCATIONS",
+    "cn-prd-100c-02-V2-LOCATIONS",
+    "cn-prd-100c-03-V2-LOCATIONS",
+    "cn-prd-10c-01-V2-LOCATIONS",
+    "cn-prd-10c-02-V2-LOCATIONS",
+    "cn-prd-10c-03-V2-LOCATIONS",
+    "cn-prd-150c-01-V2-LOCATIONS",
+    "cn-prd-150c-02-V2-LOCATIONS",
+    "cn-prd-150c-03-V2-LOCATIONS",
+    "cn-prd-15c-01-V2-LOCATIONS",
+    "cn-prd-15c-02-V2-LOCATIONS",
+    "cn-prd-15c-03-V2-LOCATIONS",
+    "cn-prd-200c-01-V2-LOCATIONS",
+    "cn-prd-200c-02-V2-LOCATIONS",
+    "cn-prd-200c-03-V2-LOCATIONS",
+    "cn-prd-20c-01-V2-LOCATIONS",
+    "cn-prd-20c-02-V2-LOCATIONS",
+    "cn-prd-20c-03-V2-LOCATIONS",
+    "cn-prd-25c-01-V2-LOCATIONS",
+    "cn-prd-25c-02-V2-LOCATIONS",
+    "cn-prd-25c-03-V2-LOCATIONS",
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-50c-02-V2-LOCATIONS",
+    "cn-prd-50c-03-V2-LOCATIONS",
+    "cn-prd-75c-01-V2-LOCATIONS",
+    "cn-prd-75c-02-V2-LOCATIONS",
+    "cn-prd-75c-03-V2-LOCATIONS"
+  ],
+  "reporting_contract": {
+    "appendix": "Publish the complete 80-instance table with no omitted row.",
+    "effect_only_selected_sentence_required": "If stability checks show that an effect occurs only in cn-cy-100c-01-V2-LOCATIONS, write exactly that substantive fact in the results and discussion; do not suppress it.",
+    "main_text": "Show the frozen representative instance only; state that it was selected before new experiments by selection_rule.json and give its hash.",
+    "no_success_only_subset": true,
+    "stability_summary": "For every block, summarize all 80 instance-level outcomes as improve/tie/regress/infeasible-or-not-found counts plus median and interquartile range."
+  },
+  "schema": "resetp.representative-instance-stability-check-plan.v1",
+  "selected_instance_id": "cn-cy-100c-01-V2-LOCATIONS",
+  "status": "FROZEN_FUTURE_EXECUTION_PLAN_NOT_STARTED",
+  "task_id": "SEL"
+}

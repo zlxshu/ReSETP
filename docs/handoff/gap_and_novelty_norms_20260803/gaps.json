@@ -1,0 +1,761 @@
+{
+  "task_id": "GAP",
+  "task_name": "研究不足与创新点写法行情实测",
+  "completed_on": "2026-08-03",
+  "scope": {
+    "chinese_papers": 5,
+    "english_papers": 7,
+    "full_text_accessible": 12,
+    "abstract_substitution_used": false
+  },
+  "classification_labels": [
+    "前人算错了",
+    "前人没同时考虑",
+    "前人假设不成立",
+    "前人方法不够"
+  ],
+  "unclassified_label": "未归类",
+  "counting_rule": "创新点条数只统计作者明确用数字、罗马序号或First/Second等序数列出的条目；散文式研究内容不拆项计数。",
+  "papers": [
+    {
+      "id": "C1",
+      "language": "zh",
+      "citation": "陈雨蝶等（2025）",
+      "title": "双碳背景下复杂冷链物流模型及求解算法",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/AYDB6KXP/陈雨蝶 等 _ 2025 _ 双碳背景下复杂冷链物流模型及求解算法.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["p.3"]
+      },
+      "gap_count": 2,
+      "gaps": [
+        {
+          "id": "C1-G1",
+          "quote": "冷链物流成本计算存在问题，如成本考虑不全面，未计算损坏、制冷、碳排放等成本",
+          "category": "前人算错了",
+          "page": "p.3"
+        },
+        {
+          "id": "C1-G2",
+          "quote": "鲜有文献在冷链物流背景下同时考虑这些因素",
+          "category": "前人没同时考虑",
+          "page": "p.3"
+        }
+      ],
+      "innovation_numbered": true,
+      "innovation_count": 4,
+      "numbering_note": "原文编号为1)、2)、3)、3)。",
+      "innovations": [
+        {
+          "id": "C1-I1",
+          "original_number": "1)",
+          "quote": "同时考虑冷链、时间窗、低碳、多中心、同时送取货、时变路网、多隔间、多产品等诸多因素",
+          "page": "p.3",
+          "corresponding_gap_ids": ["C1-G2"]
+        },
+        {
+          "id": "C1-I2",
+          "original_number": "2)",
+          "quote": "综合考虑六种成本，并改进等待成本和损坏成本的计算方式",
+          "page": "p.3",
+          "corresponding_gap_ids": ["C1-G1"]
+        },
+        {
+          "id": "C1-I3",
+          "original_number": "3)",
+          "quote": "结合遗传算法和变邻域搜索算法的优势设计混合遗传算法",
+          "page": "p.3",
+          "corresponding_gap_ids": [],
+          "correspondence": "无对应"
+        },
+        {
+          "id": "C1-I4",
+          "original_number": "3)",
+          "quote": "从算法有效性、碳交易机制、决策目标、配送模式等角度对仿真实验进行全面分析",
+          "page": "p.3",
+          "corresponding_gap_ids": [],
+          "correspondence": "无对应"
+        }
+      ],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "调整不同参数可以使模型适用于多种VRP问题，如设置配送中心数为1则适用于单中心VRP",
+            "page": "p.3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "C2",
+      "language": "zh",
+      "citation": "姜广田等（2024）",
+      "title": "绿色物流配送下的多车型动态车辆路径优化",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/IAUYMUUK/姜广田 等 _ 2024 _ 绿色物流配送下的多车型动态车辆路径优化.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["p.2364"]
+      },
+      "gap_count": 3,
+      "gaps": [
+        {
+          "id": "C2-G1",
+          "quote": "只考虑了这一方面，未考虑需求变化的随机性",
+          "category": "前人没同时考虑",
+          "page": "p.2364"
+        },
+        {
+          "id": "C2-G2",
+          "quote": "未考虑道路坡度对速度的影响",
+          "category": "前人没同时考虑",
+          "page": "p.2364"
+        },
+        {
+          "id": "C2-G3",
+          "quote": "忽视了载重、行驶速度等因素对碳排放的影响",
+          "category": "前人算错了",
+          "page": "p.2364"
+        }
+      ],
+      "innovation_numbered": false,
+      "innovation_count": null,
+      "innovations": [],
+      "generality_or_degradation": {
+        "present": false,
+        "evidence": []
+      }
+    },
+    {
+      "id": "C3",
+      "language": "zh",
+      "citation": "陈婉茹等（2023）",
+      "title": "碳交易机制下多中心混合车队配送路径和速度优化研究",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/5GXPYVZH/陈婉茹 等 _ 2023 _ 碳交易机制下多中心混合车队配送路径和速度优化研究.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["p.3322"]
+      },
+      "gap_count": 3,
+      "gaps": [
+        {
+          "id": "C3-G1",
+          "quote": "目前二者的协同关系还不够清晰，需要进一步研究如何将碳交易机制与新能源车辆的引入相结合",
+          "category": "前人没同时考虑",
+          "page": "p.3322"
+        },
+        {
+          "id": "C3-G2",
+          "quote": "目前研究大多针对单一配送中心内的车辆调度问题，忽略了多中心之间车辆调度的复杂性",
+          "category": "前人没同时考虑",
+          "page": "p.3322"
+        },
+        {
+          "id": "C3-G3",
+          "quote": "缺乏对距离、载重和速度等因素的全面考量，或将速度作为固定已知的外生变量",
+          "category": "前人算错了",
+          "page": "p.3322"
+        }
+      ],
+      "innovation_numbered": true,
+      "innovation_count": 3,
+      "innovations": [
+        {
+          "id": "C3-I1",
+          "original_number": "1)",
+          "quote": "构建决策混合车队路径方案与行驶速度的混合整数规划模型",
+          "page": "p.3322",
+          "corresponding_gap_ids": ["C3-G1", "C3-G2", "C3-G3"]
+        },
+        {
+          "id": "C3-I2",
+          "original_number": "2)",
+          "quote": "实现对多中心运力协同调度问题和车辆速度优化问题的联合求解",
+          "page": "p.3322",
+          "corresponding_gap_ids": ["C3-G2", "C3-G3"]
+        },
+        {
+          "id": "C3-I3",
+          "original_number": "3)",
+          "quote": "探究车队配置、碳交易机制和速度优化策略对配送方案经济效益和社会效益的影响",
+          "page": "p.3322",
+          "corresponding_gap_ids": ["C3-G1", "C3-G3"]
+        }
+      ],
+      "generality_or_degradation": {
+        "present": false,
+        "evidence": []
+      }
+    },
+    {
+      "id": "C4",
+      "language": "zh",
+      "citation": "李得成等（2021）",
+      "title": "基于分支定价算法的电动车与燃油车混合车辆路径问题研究",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/ESSCS4Z2/李得成 等 _ 2021 _ 基于分支定价算法的电动车与燃油车混合车辆路径问题研究.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["p.996", "p.997"]
+      },
+      "gap_count": 5,
+      "gaps": [
+        {
+          "id": "C4-G1",
+          "quote": "以上研究均假设运载工具完全相同，但在配送实践中，运载工具在载重限额、电池容量、行驶里程等方面存有差异",
+          "category": "前人假设不成立",
+          "page": "p.996"
+        },
+        {
+          "id": "C4-G2",
+          "quote": "假设充电站能且仅能被车辆访问一次，但实际配送场景中一个充电站会被车辆多次访问",
+          "category": "前人假设不成立",
+          "page": "p.996"
+        },
+        {
+          "id": "C4-G3",
+          "quote": "考虑了充电站的服务时间窗，但忽略了更为重要也更难处理的客户服务时间窗约束",
+          "category": "前人没同时考虑",
+          "page": "p.996"
+        },
+        {
+          "id": "C4-G4",
+          "quote": "已有研究均采用启发式算法进行求解，求解质量难以保证",
+          "category": "前人方法不够",
+          "page": "p.997"
+        },
+        {
+          "id": "C4-G5",
+          "quote": "在管理意义方面也鲜有探讨",
+          "category": "未归类",
+          "page": "p.997"
+        }
+      ],
+      "innovation_numbered": false,
+      "innovation_count": null,
+      "innovations": [],
+      "generality_or_degradation": {
+        "present": false,
+        "evidence": []
+      }
+    },
+    {
+      "id": "C5",
+      "language": "zh",
+      "citation": "饶卫振等（2019）",
+      "title": "一种求解协作配送成本分摊问题核仁解的近似迭代算法",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/W96R3AUG/饶卫振 等 _ 2019 _ 一种求解协作配送成本分摊问题核仁解的近似迭代算法.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["p.1518", "p.1519"]
+      },
+      "gap_count": 2,
+      "gaps": [
+        {
+          "id": "C5-G1",
+          "quote": "如果采用传统建模方法，通过人机互动读取模型所需数据，将需要2^n−1次的数据输入和求解",
+          "category": "前人方法不够",
+          "page": "p.1518"
+        },
+        {
+          "id": "C5-G2",
+          "quote": "求解成本分摊问题的核仁解依然是一个难题",
+          "category": "前人方法不够",
+          "page": "p.1519"
+        }
+      ],
+      "innovation_numbered": true,
+      "innovation_count": 2,
+      "innovations": [
+        {
+          "id": "C5-I1",
+          "original_number": "1)",
+          "quote": "构建考虑货物在配送中心调配的协作配送模型，并且能够用于一次性求解所有2^n−1个协作配送子联盟",
+          "page": "p.1519",
+          "corresponding_gap_ids": ["C5-G1"]
+        },
+        {
+          "id": "C5-I2",
+          "original_number": "2)",
+          "quote": "以任意可行分摊方案为起点，通过迭代不断逼近核仁解分摊方案",
+          "page": "p.1519",
+          "corresponding_gap_ids": ["C5-G2"]
+        }
+      ],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "构建一个能够一般化表示2^n−1个协作配送问题的数学模型",
+            "page": "p.1518"
+          }
+        ]
+      }
+    },
+    {
+      "id": "E1",
+      "language": "en",
+      "citation": "Schneider, Stenger & Goeke (2014)",
+      "title": "The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/3KG6RDYU/Schneider 等 _ 2014 _ The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["Articles in Advance p.2 (PDF p.3)", "Articles in Advance p.3 (PDF p.4)"]
+      },
+      "gap_count": 5,
+      "gaps": [
+        {
+          "id": "E1-G1",
+          "quote": "renders exact solution methods inadequate",
+          "category": "前人方法不够",
+          "page": "Articles in Advance p.2 (PDF p.3)"
+        },
+        {
+          "id": "E1-G2",
+          "quote": "Routing models […] are quite scarce",
+          "category": "未归类",
+          "page": "Articles in Advance p.3 (PDF p.4)"
+        },
+        {
+          "id": "E1-G3",
+          "quote": "actual location of recharging stations",
+          "category": "前人没同时考虑",
+          "page": "Articles in Advance p.3 (PDF p.4)"
+        },
+        {
+          "id": "E1-G4",
+          "quote": "The recharging time is assumed to be fixed",
+          "category": "前人假设不成立",
+          "page": "Articles in Advance p.3 (PDF p.4)"
+        },
+        {
+          "id": "E1-G5",
+          "quote": "Neither capacity restrictions nor time window constraints",
+          "category": "前人没同时考虑",
+          "page": "Articles in Advance p.3 (PDF p.4)"
+        }
+      ],
+      "innovation_numbered": false,
+      "innovation_count": null,
+      "innovations": [],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "The classical VRPTW represents a special case of E-VRPTW",
+            "page": "Articles in Advance p.18 (PDF p.19)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "E2",
+      "language": "en",
+      "citation": "Goeke & Schneider (2015)",
+      "title": "Routing a mixed fleet of electric and conventional vehicles",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/PGY3QPNT/Goeke和Schneider _ 2015 _ Routing a mixed fleet of electric and conventional vehicles.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["proof p.1 (journal p.81)", "proof p.2 (journal p.82)"]
+      },
+      "gap_count": 3,
+      "gaps": [
+        {
+          "id": "E2-G1",
+          "quote": "Most companies do not operate pure ECV fleets",
+          "category": "前人没同时考虑",
+          "page": "proof p.1 (journal p.81)"
+        },
+        {
+          "id": "E2-G2",
+          "quote": "a linear function of traveled distance",
+          "category": "前人算错了",
+          "page": "proof p.1 (journal p.81)"
+        },
+        {
+          "id": "E2-G3",
+          "quote": "exact methods will not be able to solve instances",
+          "category": "前人方法不够",
+          "page": "proof p.2 (journal p.82)"
+        }
+      ],
+      "innovation_numbered": true,
+      "innovation_count": 3,
+      "numbering_note": "原文编号为(i)、(ii)、(iii)。",
+      "innovations": [
+        {
+          "id": "E2-I1",
+          "original_number": "(i)",
+          "quote": "an adaptive mechanism to choose the number of customers",
+          "page": "proof p.2 (journal p.82)",
+          "corresponding_gap_ids": ["E2-G3"]
+        },
+        {
+          "id": "E2-I2",
+          "original_number": "(ii)",
+          "quote": "the use of surrogate violations",
+          "page": "proof p.2 (journal p.82)",
+          "corresponding_gap_ids": ["E2-G3"]
+        },
+        {
+          "id": "E2-I3",
+          "original_number": "(iii)",
+          "quote": "an acceptance criterion […] different penalty factors",
+          "page": "proof p.2 (journal p.82)",
+          "corresponding_gap_ids": ["E2-G3"]
+        }
+      ],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "VRPTW and E-VRPTW […] special cases of E-VRPTWMF",
+            "page": "proof p.16 (journal p.96)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "E3",
+      "language": "en",
+      "citation": "Hiermann et al. (2016)",
+      "title": "The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/NIM4H4ID/Hiermann 等 _ 2016 _ The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["p.995", "p.996", "p.997"]
+      },
+      "gap_count": 2,
+      "gaps": [
+        {
+          "id": "E3-G1",
+          "quote": "Our research combines two such streams of research",
+          "category": "前人没同时考虑",
+          "page": "p.996"
+        },
+        {
+          "id": "E3-G2",
+          "quote": "some instances with 50 customers cannot be solved",
+          "category": "前人方法不够",
+          "page": "p.996"
+        }
+      ],
+      "innovation_numbered": false,
+      "innovation_count": null,
+      "innovations": [],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "It combines and subsumes […] FSMFTW and […] E-VRPTW",
+            "page": "p.995"
+          }
+        ]
+      }
+    },
+    {
+      "id": "E4",
+      "language": "en",
+      "citation": "Montoya et al. (2017)",
+      "title": "The electric vehicle routing problem with nonlinear charging function",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/72THJGSQ/Montoya 等 _ 2017 _ The electric vehicle routing problem with nonlinear charging function.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["proof p.2 (journal p.88)", "proof p.3 (journal p.89)", "proof p.4 (journal p.90)"]
+      },
+      "gap_count": 5,
+      "gaps": [
+        {
+          "id": "E4-G1",
+          "quote": "directly and exclusively related to the traveled distance",
+          "category": "前人算错了",
+          "page": "proof p.2 (journal p.88)"
+        },
+        {
+          "id": "E4-G2",
+          "quote": "the charging infrastructure is private",
+          "category": "前人假设不成立",
+          "page": "proof p.2 (journal p.88)"
+        },
+        {
+          "id": "E4-G3",
+          "quote": "CSs can simultaneously handle an unlimited number of EVs",
+          "category": "前人假设不成立",
+          "page": "proof p.2 (journal p.88)"
+        },
+        {
+          "id": "E4-G4",
+          "quote": "partial charging consider linear function approximations",
+          "category": "前人算错了",
+          "page": "proof p.2 (journal p.88)"
+        },
+        {
+          "id": "E4-G5",
+          "quote": "neglects the impact of charging operations",
+          "category": "前人算错了",
+          "page": "proof p.4 (journal p.90)"
+        }
+      ],
+      "innovation_numbered": true,
+      "innovation_count": 5,
+      "numbering_note": "原文序数为First、Second、Third、Fourth、Fifth。",
+      "innovations": [
+        {
+          "id": "E4-I1",
+          "original_number": "First",
+          "quote": "we introduce the […] E-VRP-NL",
+          "page": "proof p.3 (journal p.89)",
+          "corresponding_gap_ids": ["E4-G4"]
+        },
+        {
+          "id": "E4-I2",
+          "original_number": "Second",
+          "quote": "we propose a hybrid metaheuristic",
+          "page": "proof p.3 (journal p.89)",
+          "corresponding_gap_ids": ["E4-G4"]
+        },
+        {
+          "id": "E4-I3",
+          "original_number": "Third",
+          "quote": "a set of realistic and publicly available instances",
+          "page": "proof p.3 (journal p.89)",
+          "corresponding_gap_ids": [],
+          "correspondence": "无对应"
+        },
+        {
+          "id": "E4-I4",
+          "original_number": "Fourth",
+          "quote": "better approximating the actual battery charging function",
+          "page": "proof p.3 (journal p.89)",
+          "corresponding_gap_ids": ["E4-G4"]
+        },
+        {
+          "id": "E4-I5",
+          "original_number": "Fifth",
+          "quote": "characteristics of good E-VRP-NL solutions",
+          "page": "proof p.3 (journal p.89)",
+          "corresponding_gap_ids": [],
+          "correspondence": "无对应"
+        }
+      ],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "PL generalizes FS, L1, and L2",
+            "page": "proof p.13 (journal p.99)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "E5",
+      "language": "en",
+      "citation": "Zhen et al. (2020)",
+      "title": "Multi-depot multi-trip vehicle routing problem with time windows and release dates",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/4QNKCCAE/Zhen 等 _ 2020 _ Multi-depot multi-trip vehicle routing problem with time windows and release dates.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["p.2", "p.3"]
+      },
+      "gap_count": 3,
+      "gaps": [
+        {
+          "id": "E5-G1",
+          "quote": "they did not provide a mathematical model for their problem",
+          "category": "未归类",
+          "page": "p.3"
+        },
+        {
+          "id": "E5-G2",
+          "quote": "there is no literature devoted to a Multi-D&T VRPTW-R",
+          "category": "前人没同时考虑",
+          "page": "p.3"
+        },
+        {
+          "id": "E5-G3",
+          "quote": "can only solve small-scale instances",
+          "category": "前人方法不够",
+          "page": "p.2"
+        }
+      ],
+      "innovation_numbered": true,
+      "innovation_count": 3,
+      "numbering_note": "原文序数为First、Second、Third。",
+      "innovations": [
+        {
+          "id": "E5-I1",
+          "original_number": "First",
+          "quote": "we propose the Multi-D&T VRPTW-R",
+          "page": "p.3",
+          "corresponding_gap_ids": ["E5-G2"]
+        },
+        {
+          "id": "E5-I2",
+          "original_number": "Second",
+          "quote": "we formulate this problem as a MIP model",
+          "page": "p.3",
+          "corresponding_gap_ids": ["E5-G1"]
+        },
+        {
+          "id": "E5-I3",
+          "original_number": "Third",
+          "quote": "an HPSO and an HGA are developed to solve the problem",
+          "page": "p.3",
+          "corresponding_gap_ids": ["E5-G3"]
+        }
+      ],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "the heuristics can be applied in MTVRPTWR and MDVRPTWR",
+            "page": "p.20"
+          }
+        ]
+      }
+    },
+    {
+      "id": "E6",
+      "language": "en",
+      "citation": "Froger et al. (2022)",
+      "title": "The electric vehicle routing problem with capacitated charging stations",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/DS4ZEACC/Froger 等 _ 2022 _ The electric vehicle routing problem with capacitated charging stations.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["journal p.461 (article p.2; PDF p.3)", "journal p.462 (article p.3; PDF p.4)", "journal p.464 (article p.5; PDF p.6)"]
+      },
+      "gap_count": 3,
+      "gaps": [
+        {
+          "id": "E6-G1",
+          "quote": "can simultaneously charge an unlimited number of EVs",
+          "category": "前人假设不成立",
+          "page": "journal p.461 (article p.2; PDF p.3)"
+        },
+        {
+          "id": "E6-G2",
+          "quote": "fully charged in constant time […] is a decision variable",
+          "category": "前人没同时考虑",
+          "page": "journal p.464 (article p.5; PDF p.6)"
+        },
+        {
+          "id": "E6-G3",
+          "quote": "reported optimal solutions on instances up to 20 customers",
+          "category": "前人方法不够",
+          "page": "journal p.462 (article p.3; PDF p.4)"
+        }
+      ],
+      "innovation_numbered": true,
+      "innovation_count": 2,
+      "numbering_note": "原文序数为First、Second。",
+      "innovations": [
+        {
+          "id": "E6-I1",
+          "original_number": "First",
+          "quote": "how CS capacity constraints can be integrated",
+          "page": "journal p.464 (article p.5; PDF p.6)",
+          "corresponding_gap_ids": ["E6-G1", "E6-G2"]
+        },
+        {
+          "id": "E6-I2",
+          "original_number": "Second",
+          "quote": "framework to solve E-VRPs with CS capacity constraints",
+          "page": "journal p.464 (article p.5; PDF p.6)",
+          "corresponding_gap_ids": ["E6-G1", "E6-G2", "E6-G3"]
+        }
+      ],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "E-VRPs with CS capacity constraints in general",
+            "page": "journal p.464 (article p.5; PDF p.6)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "E7",
+      "language": "en",
+      "citation": "Zhao et al. (2024)",
+      "title": "A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-dependent vehicle routing problem",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/YRTBDEXW/Zhao 等 _ 2024 _ A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-depend.pdf",
+      "access": "full_text",
+      "independent_gap_paragraph": {
+        "present": true,
+        "pages": ["p.921", "p.922"]
+      },
+      "gap_count": 3,
+      "gaps": [
+        {
+          "id": "E7-G1",
+          "quote": "cannot preserve optimality […] after trip assignment",
+          "category": "前人方法不够",
+          "page": "p.921"
+        },
+        {
+          "id": "E7-G2",
+          "quote": "no prior work that applies the SPA on the TDVRP",
+          "category": "前人没同时考虑",
+          "page": "p.922"
+        },
+        {
+          "id": "E7-G3",
+          "quote": "without optimizing the departure time of each trip",
+          "category": "前人没同时考虑",
+          "page": "p.922"
+        }
+      ],
+      "innovation_numbered": false,
+      "innovation_count": null,
+      "innovations": [],
+      "generality_or_degradation": {
+        "present": true,
+        "evidence": [
+          {
+            "quote": "can be readily adapted for other variants of VRP",
+            "page": "p.934"
+          }
+        ]
+      }
+    }
+  ],
+  "aggregate": {
+    "paper_count": 12,
+    "chinese_paper_count": 5,
+    "english_paper_count": 7,
+    "gap_total": 39,
+    "gap_class_counts": {
+      "前人算错了": 7,
+      "前人没同时考虑": 14,
+      "前人假设不成立": 6,
+      "前人方法不够": 9
+    },
+    "unclassified_count": 3,
+    "gap_count_range": {
+      "min": 2,
+      "max": 5
+    },
+    "numbered_innovation_count_range": {
+      "min": 2,
+      "max": 5,
+      "paper_count_included": 7
+    },
+    "generality_or_degradation_count": {
+      "present": 9,
+      "absent": 3
+    }
+  },
+  "stop_condition": "GAP_NOVELTY_NORMS_COMPLETE"
+}

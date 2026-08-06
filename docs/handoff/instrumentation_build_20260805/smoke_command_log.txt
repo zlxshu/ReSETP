@@ -1,0 +1,46 @@
+T22 smoke and validation command log
+
+SMOKE_ATTEMPT_0
+command=PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py --mode smoke --workers 1 --output docs/handoff/instrumentation_build_20260805/smoke_raw
+exit=1
+search_started=false
+output_directory_created=false
+exception=ModuleNotFoundError: No module named 'baselines'
+cause=script-directory statistics.py shadowed the Python standard-library statistics module
+
+SMOKE_ATTEMPT_1
+command=PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py --mode smoke --workers 1 --output docs/handoff/instrumentation_build_20260805/smoke_raw
+exit=0
+search_started=true
+search_run_count=1
+wall_seconds_process=29.004076042
+runner_stdout_bytes=0
+raw_output_directory=docs/handoff/instrumentation_build_20260805/smoke_raw
+
+FOCUSED_COLLECTION_ATTEMPT_0
+result=2 collection errors / 0 tests
+cause=prototype directory was absent from the root-level PYTHONPATH
+
+FOCUSED_TEST_ATTEMPT_1
+result=15 passed in 4.03s
+
+FOCUSED_TEST_ATTEMPT_2
+result=pytest exit 4 / no tests ran / file or directory not found: test_epochal_hgs.py
+
+COMPILE_AND_TEST_ATTEMPT_0
+result=exit 1 before tests
+cause=wrong relative path ../../../china_e3_e7/run_t21_charging_timing_three_arms_20260805.py
+
+FOCUSED_FINAL
+result=20 passed in 5.60s
+
+SOLVER_FULL
+command=PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider solver/tests
+exit=1
+result=906 passed / 1 skipped / 6 failed in 405.87s
+baseline_failure_set_exactly_matched=true
+
+FORMAL_BATCH
+started=false
+run_count=0
+paper_claim_allowed=false

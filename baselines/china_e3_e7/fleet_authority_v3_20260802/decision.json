@@ -1,0 +1,77 @@
+{
+  "schema": "resetp.w2-fleet-authority-v3.decision.v1",
+  "task_id": "W2",
+  "status": "W2_FLEET_AUTHORITY_V3_COMPLETE",
+  "parts": {
+    "fleet_authority_v3": "COMPLETE",
+    "frozen_baseline_reanchor": "COMPLETE_WITH_TWO_NON_ANCHOR_REGRESSIONS_RETAINED",
+    "superseded_results_register": "COMPLETE"
+  },
+  "fleet_authority": {
+    "old_formula": "num_ev(d)=max(1,ceil(0.25*R_d))",
+    "old_formula_status": "SUPERSEDED_RETAINED_HISTORY_ONLY",
+    "authority_depot_rows": 144,
+    "authority_total_physical_cap": 943,
+    "endpoint_lower_total": 830,
+    "depots_above_endpoint_lower": 85,
+    "vehicles_added_above_endpoint_lower": 113,
+    "selected_Td_min": 2,
+    "selected_Td_max": 22,
+    "x4_single_trip_total": 1042,
+    "reduction_from_x4_vehicles": 99,
+    "reduction_from_x4_percent": 9.500959692898,
+    "minimality_scope": "minimum total physical-fleet vector over the registered two deterministic EDF prefix route families; lower endpoint covers are exact DAG path-cover minima; ties use depot-id lexicographic order"
+  },
+  "zero_search_certification": {
+    "certified_instances_by_level": {
+      "0": 81,
+      "25": 81,
+      "50": 81,
+      "75": 81,
+      "100": 81
+    },
+    "certification_units": 405,
+    "violating_units": 0,
+    "infeasible_rows": [],
+    "route_search_executed": false,
+    "formal_experiment_executed": false,
+    "search_evaluations": 0
+  },
+  "w1_comparison": {
+    "w1_old_finite_concurrency_old_fleet": "81/81/81/81/75",
+    "w1_unbounded_concurrency_old_fleet_1042": "81/81/81/81/81",
+    "w2_unbounded_concurrency_v3_fleet_943": "81/81/81/81/81"
+  },
+  "reanchor_regression": {
+    "targeted_passed": 11,
+    "targeted_failed": 0,
+    "full_suite_passed": 907,
+    "full_suite_skipped": 1,
+    "full_suite_failed": 5,
+    "remaining_failures": {
+      "real_regression": [
+        "solver/tests/test_china81_shared_completion_20260720.py::test_shared_completion_is_feasible_monotone_and_complete",
+        "solver/tests/test_china81_shared_completion_20260720.py::test_shared_completion_enforces_depot_vehicle_type_caps"
+      ],
+      "unresolved_historical": [
+        "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+        "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts"
+      ],
+      "old_contract": [
+        "solver/tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps"
+      ]
+    }
+  },
+  "protected_diff_quiet_exit_codes": {
+    "docs/paper_v2/paper_main.tex": 0,
+    "solver/src/setp_solver/check.py": 0,
+    "solver/src/setp_solver/search/evaluation.py": 0
+  },
+  "git_diff_stat_snapshot": {
+    "captured_at_utc": "2026-08-02T12:31:03Z",
+    "summary": "35 files changed, 5880 insertions(+), 167 deletions(-)",
+    "scope_note": "full inherited dirty worktree; continuously changing pre-existing watchdog logs included; untracked W2 files excluded by git diff"
+  },
+  "superseded_register": "docs/handoff/superseded_results_register_20260802.md",
+  "reanchor_record": "docs/handoff/frozen_baseline_reanchor_20260802.md"
+}

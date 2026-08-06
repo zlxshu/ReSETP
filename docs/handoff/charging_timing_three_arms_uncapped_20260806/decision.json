@@ -1,0 +1,17 @@
+{
+  "schema_version": "resetp.t31-decision.v1",
+  "status": "HALT_T31_WORKERS3_MEMORY_SWAP_INSTABILITY",
+  "FACT": {
+    "materialized_unit_count": 73,
+    "successful_unit_count": 73,
+    "failed_unit_count": 0,
+    "remaining_unit_count": 17,
+    "new_successful_unit_count": 3,
+    "new_failed_unit_count": 0,
+    "protected_files_unchanged": true
+  },
+  "INFERENCE": "The observed instability was memory and swap related rather than a CPU-load limit.",
+  "DECISION": "Stopped under the user-specified workers=3 resource boundary; no worker reduction or automatic resume.",
+  "HALT": "HALT_T31_WORKERS3_MEMORY_SWAP_INSTABILITY",
+  "paper_claim_allowed": false
+}

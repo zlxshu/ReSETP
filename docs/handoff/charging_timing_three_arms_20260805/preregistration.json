@@ -1,0 +1,128 @@
+{
+  "schema_version": "resetp.t21-charging-timing-preregistration.v1",
+  "task_id": "T21",
+  "created_at_utc": "2026-08-05T10:22:39Z",
+  "created_before_any_search_result": true,
+  "batch_type": "EXPLORATORY",
+  "paper_claim_allowed": false,
+  "question": "在同一算例、日期、种子、初始解和求解合同下，充电择时策略是否会改变48槽充电分布、每kWh实际碳强度以及完整模型读数？",
+  "comparisons": [
+    {
+      "arm": "ASAP",
+      "charge_timing_policy": "asap",
+      "meaning": "有空即充（省事企业）"
+    },
+    {
+      "arm": "COST",
+      "charge_timing_policy": "cost_min",
+      "meaning": "电费最省（精明企业）"
+    },
+    {
+      "arm": "COST_CARBON",
+      "charge_timing_policy": "cost_plus_carbon",
+      "meaning": "电费+碳价乘排放（碳感知）"
+    }
+  ],
+  "only_changed_factor": "charge_timing_policy",
+  "held_constant": {
+    "instances": [
+      "cn-cy-100c-01-V2-LOCATIONS",
+      "cn-jjj-100c-01-V2-LOCATIONS",
+      "cn-prd-100c-01-V2-LOCATIONS"
+    ],
+    "replicas": "none; only -01 in each region",
+    "date": "the same instance-bound operating date within every paired instance-seed unit; no arm-specific override",
+    "seeds": [
+      2026080201,
+      2026080202,
+      2026080203,
+      2026080204,
+      2026080205,
+      2026080206,
+      2026080207,
+      2026080208,
+      2026080209,
+      2026080210
+    ],
+    "initial_solution": "the same fleet-authority-v3 25-percent witness-derived route skeleton for all three arms within each instance-seed unit",
+    "algorithm": "MV-HGS-SP final 2026-08-02 configuration",
+    "views": [
+      "cv_only",
+      "naive_ev",
+      "mechanism_ev"
+    ],
+    "reference_iterations_by_view": {
+      "cv_only": 600,
+      "naive_ev": 600,
+      "mechanism_ev": 800
+    },
+    "reference_iterations_are_hard_limits": false,
+    "checkpoint_interval_by_view": {
+      "cv_only": 100,
+      "naive_ev": 100,
+      "mechanism_ev": 100
+    },
+    "checkpoint_max_total": 20,
+    "common_and_proxy_total": 6,
+    "terminal_archive_by_view": {
+      "cv_only": 24,
+      "naive_ev": 24,
+      "mechanism_ev": 24
+    },
+    "route_pool_and_certificate": 2,
+    "complete_model_evaluation_max": 100,
+    "evaluator": "shared complete China81 evaluator",
+    "checker": "shared complete checker plus independent multitrip/charging-overlap audit",
+    "fleet_contract": "strict multitrip with the same fleet authority and fixed-cost billing basis",
+    "carbon_calendar": "same per paired unit",
+    "electricity_tariff": "same per paired unit",
+    "carbon_price": "unchanged active repository value",
+    "depot_charge_window_mode": "unchanged active registered value",
+    "public_station_candidate_mode": "unchanged active registered value",
+    "first_trip_cross_day_semantics": "unchanged active registered value",
+    "tolerance": "unchanged active _TOL and checker tolerances",
+    "environment": {
+      "PYTHONHASHSEED": "0",
+      "PYTHONPATH": "solver/src:models/src",
+      "independent_processes": "6-8 on the observed 8-logical-thread machine, subject only to measured resource safety"
+    }
+  },
+  "pairing_unit": "same instance and same seed",
+  "run_count_if_executed": 90,
+  "stopping_contract": {
+    "sole_hgs_stop_reason": "observed improvement curve remains flat for a long period",
+    "plateau_window_registered": false,
+    "plateau_window_value": null,
+    "reference_total_iterations": 2000,
+    "continue_if_improving_at_reference_total": true,
+    "global_hgs_wallclock_allowed": false,
+    "route_pool_mip": {
+      "only_allowed_wallclock": true,
+      "starting_limit_seconds": 10.0,
+      "fixed_limit": false,
+      "extend_if_still_improving_at_limit": true,
+      "finish_early_if_already_converged": true,
+      "record_actual_seconds_each_run": true,
+      "record_extension_each_run": true
+    }
+  },
+  "falsification": "If the three arms show no difference in both the 48-slot charging distribution and actual charging-side carbon intensity per kWh, then the claim that charging timing is a usable lever does not hold on these instances.",
+  "adverse_results_policy": "retain every registered instance, seed and arm; no seed selection, row deletion, result-directed setting change or paper claim",
+  "protected_files": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py"
+  ],
+  "forbidden_change_surfaces": [
+    "charge_timing_policy implementation",
+    "depot_charge_window_mode",
+    "public_station_candidate_mode",
+    "first-trip cross-day semantics",
+    "carbon price",
+    "_TOL",
+    "protected files",
+    "auditors",
+    "docs/paper_gci_dmm_vrp_20260804/",
+    "docs/paper_v2/"
+  ]
+}

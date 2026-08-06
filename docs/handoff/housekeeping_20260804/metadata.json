@@ -1,0 +1,65 @@
+{
+  "task_id": "T6-HOUSEKEEPING",
+  "as_of": "2026-08-04",
+  "status": "completed_with_registered_historical_test_failures",
+  "scope": [
+    "只读核查 solver/tests 全量测试失败归因",
+    "把满足许可证、直接下载和体积边界的候选数据原样封存为未使用库存"
+  ],
+  "search_evaluations": 0,
+  "test_run": {
+    "command": "PYTHONPATH=solver/src:models/src:.:/opt/anaconda3/lib/python3.13/site-packages:build/python_envs/pyvrp-hgs-0.12.2/lib/python3.13/site-packages PYTHONHASHSEED=0 /opt/anaconda3/bin/python3.13 -m pytest solver/tests -q",
+    "exit_code": 1,
+    "passed": 909,
+    "failed": 3,
+    "skipped": 1,
+    "duration_seconds": 319.47,
+    "environment_available": true,
+    "timestamp_precision": "date only; pytest tool output persisted duration and counts, not wall-clock start/end"
+  },
+  "failure_attribution": {
+    "failure_count": 3,
+    "historical_registration_found_for_all": true,
+    "t4_related_count": 0,
+    "t4_modified_files": [
+      "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+      "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/run_adapter_g0.py",
+      "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_pyvrp_adapter.py"
+    ],
+    "test_failures_record": "docs/handoff/housekeeping_20260804/test_failures.json"
+  },
+  "candidate_inventory": {
+    "source_catalog": "docs/handoff/instance_data_source_survey_20260804/candidates.json",
+    "candidate_count": 17,
+    "included_count": 5,
+    "excluded_count": 12,
+    "archived_file_count": 52,
+    "download_failures": 0,
+    "included_ids": ["C01", "C02", "C11", "C15", "C17"],
+    "excluded_ids": ["C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C12", "C13", "C14", "C16"],
+    "raw_files_parsed": false,
+    "raw_files_converted": false,
+    "raw_files_unpacked": false,
+    "integrated_into_code": false,
+    "integrated_into_formal_experiment": false
+  },
+  "record_surfaces": [
+    "docs/handoff/housekeeping_20260804/report.md",
+    "docs/handoff/housekeeping_20260804/test_failures.json",
+    "docs/handoff/housekeeping_20260804/inventory.json",
+    "docs/handoff/housekeeping_20260804/metadata.json",
+    "docs/handoff/housekeeping_20260804/raw_runs.csv",
+    "docs/handoff/housekeeping_20260804/decision.json",
+    "docs/handoff/housekeeping_20260804/artifact_hashes.json"
+  ],
+  "protected_paths_untouched": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py",
+    "solver/tests/",
+    "data/ChinaInstances/"
+  ]
+}
+

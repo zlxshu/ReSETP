@@ -1,0 +1,17 @@
+{
+  "task_id": "T3-TARIFF-CARBON-MISALIGN",
+  "verdict": "PASS_READ_ONLY_DESCRIPTIVE_ARITHMETIC_COMPLETE",
+  "facts": [
+    "Input contract passed: 12096 rows and all required columns present.",
+    "Nine-city 48-slot mean-profile depot Pearson=-0.76901514, Spearman=-0.78157303.",
+    "Shijiazhuang 12:00-15:00 is valley on all 28 dates in the input calendar.",
+    "search_evaluations=0 and solver_runs=0."
+  ],
+  "boundaries": [
+    "Carbon intensity is an hourly provincial projection copied to half-hour slots, not measured carbon intensity.",
+    "Rank alignment in section 3b is a task-defined descriptive statistic, not a literature metric.",
+    "Counterfactual arithmetic ignores availability and time windows and is not a scheduling result.",
+    "Shijiazhuang tariff source hashes are documented, but matching source entities were not found in the allowed search directories."
+  ],
+  "search_evaluations": 0
+}

@@ -1,0 +1,33 @@
+{
+  "task_id": "GAP",
+  "status": "GAP_NOVELTY_NORMS_COMPLETE",
+  "completed_on": "2026-08-03",
+  "paper_count": 12,
+  "chinese_paper_count": 5,
+  "english_paper_count": 7,
+  "full_text_accessible_count": 12,
+  "inaccessible_count": 0,
+  "abstract_substitution_used": false,
+  "experiments_run": 0,
+  "modified_outside_delivery_directory": false,
+  "deliverables": [
+    "report.md",
+    "gaps.json",
+    "inaccessible.json",
+    "done.json",
+    "artifact_hashes.json"
+  ],
+  "checks": {
+    "per_paper_gap_presence_and_pages": "PASS",
+    "per_gap_quote_category_and_page": "PASS",
+    "numbered_innovation_count_quote_mapping_and_page": "PASS",
+    "generality_or_degradation_quote_and_page": "PASS",
+    "aggregate_counts_and_ranges": "PASS",
+    "inaccessible_items_separated": "PASS",
+    "quotes_at_most_60_characters": "PASS",
+    "json_parse": "PASS",
+    "artifact_hashes": "PASS",
+    "dot_underscore_excluded": "PASS"
+  },
+  "stop_condition": "GAP_NOVELTY_NORMS_COMPLETE"
+}

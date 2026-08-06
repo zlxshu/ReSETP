@@ -1,0 +1,35 @@
+{
+  "task_id": "X2",
+  "status": "X2_LEGACY_SWEEP_PARTIAL",
+  "items_total": 32,
+  "by_category": {
+    "死代码": 4,
+    "重复实现": 5,
+    "退役资产": 6,
+    "参数漂移": 8,
+    "悬挂引用": 3,
+    "文档失效": 6
+  },
+  "affects_mainline_count": 23,
+  "completed_to": "范围1已完成文件级清单、静态调用关系、正式算法链、重复模块哈希比较、死符号候选和三个受保护文件的关键历史分支；范围2至5完成了顶层目录、显式引用、当前authority与高风险权威文档的预扫描，但均未达到逐文件逐行全量终态。",
+  "completed_boundaries": {
+    "1_solver_source": "排除 ._* 与 __pycache__ 后清点107文件/103个Python文件；确认正式入口、动态入口、deprecated shims、9对重复support模块、4个当前死代码候选、受保护文件关键兼容分支。",
+    "2_baselines": "清点20个顶层目录的有效文件数；核对paper_main.tex直接引用；统计跨目录metadata引用；抽查指定UK/280kWh/DR/E2/E3/E5/E7包终态。",
+    "3_config_instances": "核对china81.py当前static/matrix/order/runtime/fleet authority、prices默认与China覆盖、fleet v1/v2、forecast=actual和论文算法包关键source hash。",
+    "4_paper_artifacts": "核对paper_main.tex全部7组显式input/includegraphics/IfFileExists目标存在并计算SHA-256；反查当前E4两份decision与E2 raw runs。",
+    "5_docs": "核对强制入口、三份历史规划、E1-E7合同、paper north star、diagnosis master、两份session handoff与2026-08-02 HANDOFF的覆盖关系。"
+  },
+  "incomplete_boundaries": {
+    "1_solver_source": "未对103个Python文件逐文件逐行人工通读，未证明所有公开符号无仓库外调用者。",
+    "2_baselines": "未对所有二级/三级实验包逐一读取metadata/raw_runs/decision/artifact_hashes/report并建立完整引用图。",
+    "3_config_instances": "未对81个算例的每个节点、矩阵、48槽日历和所有正式包锁定哈希逐文件重算。",
+    "4_paper_artifacts": "未把全部手写数字、内嵌表和paper_v2的全部87个图/TeX/PDF资产双向映射到正式产物。",
+    "5_docs": "未逐文件读取docs/handoff约660个有效文件并建立完整superseded_by DAG。"
+  },
+  "read_only_boundary": {
+    "experiments_run": 0,
+    "repository_files_modified_outside_delivery_directory": 0,
+    "files_deleted": 0,
+    "directories_moved": 0
+  }
+}

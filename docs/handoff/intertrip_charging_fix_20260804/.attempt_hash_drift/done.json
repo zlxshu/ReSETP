@@ -1,0 +1,13 @@
+{
+  "draft_status": "DRAFT_METHOD_AWAITING_USER_APPROVAL",
+  "failure": {
+    "completed_run_count": 6,
+    "exception_message": "protected-file hash drift before/during probe: {\"solver/src/setp_solver/check.py\": {\"expected\": \"a4d8d57e7fd01c581464453896cc49978d22bceedb9534359d1e09670151e481\", \"observed\": \"886e91108f666c4c4dcb379020b5ec4e055e9a6150fdb42d69bd1ffc9e5ad38c\"}}",
+    "exception_type": "RuntimeError",
+    "traceback": "Traceback (most recent call last):\n  File \"/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/carbon_objective_probe_20260804/probe_driver.py\", line 1194, in main\n    assert_protected_hashes()\n    ~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/carbon_objective_probe_20260804/probe_driver.py\", line 216, in assert_protected_hashes\n    raise RuntimeError(\n    ...<2 lines>...\n    )\nRuntimeError: protected-file hash drift before/during probe: {\"solver/src/setp_solver/check.py\": {\"expected\": \"a4d8d57e7fd01c581464453896cc49978d22bceedb9534359d1e09670151e481\", \"observed\": \"886e91108f666c4c4dcb379020b5ec4e055e9a6150fdb42d69bd1ffc9e5ad38c\"}}\n"
+  },
+  "finished_at": "2026-08-04T15:26:37.260452+00:00",
+  "schema": "resetp.t5-runner-done.v1",
+  "status": "RUNNER_HALT",
+  "task_id": "T10-INTERTRIP-CHARGING-FIX"
+}

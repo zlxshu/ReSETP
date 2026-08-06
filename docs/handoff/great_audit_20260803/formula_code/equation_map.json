@@ -1,0 +1,477 @@
+{
+  "schema_version": "resetp.gr1.formula-code-map.v1",
+  "task_id": "GR1",
+  "status": "GR1_FORMULA_CODE_AUDIT_COMPLETE",
+  "paper_file": "docs/paper_v2/paper_main.tex",
+  "numbered_equation_count": 37,
+  "covered_equation_count": 37,
+  "verdict_counts": {
+    "一致": 21,
+    "不一致": 15,
+    "未实现": 1,
+    "代码有而论文无": 0
+  },
+  "equations": [
+    {
+      "eq_label": "eq:power",
+      "tex_lines": [392, 395],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["871-874", "895-950"],
+      "key_expression": "return (drag_force + rolling_force) * v_speed_ms; profiled path returns drag_coefficient * sum_v2d + rolling_force * distance",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "1,000 m、空载；论文固定 v=25 m/s；代码 profile 为各 500 m @10/20 m/s，使用当前默认物理参数",
+        "paper_value": 41333.589375,
+        "paper_unit": "W",
+        "code_value": 13801.3124,
+        "code_unit": "W（profile 弧总机械能/总行驶时间的等效功率）",
+        "difference_code_minus_paper": -27532.276975
+      },
+      "impact": "China81 正式实例存在 road_profiles，实际走 895-950 的变速积分分支而非论文固定速度功率式；所有基于该分支的能耗、油耗、碳排、电池可行性和成本均受影响。最小例等效功率低 66.61%，全库幅度需重算，GR1 禁止正式实验故未重算。"
+    },
+    {
+      "eq_label": "eq:electricity",
+      "tex_lines": [400, 403],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["891-892", "1046-1063", "1076-1108"],
+      "key_expression": "alpha_e * power_w * time_s / 3_600_000; profiled path alpha_e * _profile_mechanical_energy_j(...) / 3_600_000",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "同 eq:power 的 1,000 m 最小例",
+        "paper_value_kwh": 0.605257696986,
+        "code_value_kwh": 0.378929885699,
+        "difference_code_minus_paper_kwh": -0.226327811287,
+        "relative_difference_percent": -37.3936
+      },
+      "impact": "China81 的 EV 行驶电耗、补电量、电费、间接碳排和电池传播均按 profile 分支计算，不等于论文固定 v 公式；方向和量级依具体速度剖面变化。"
+    },
+    {
+      "eq_label": "eq:fuel",
+      "tex_lines": [400, 403],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["877-888", "953-1009", "1012-1043"],
+      "key_expression": "fuel_rate_lps * time_s; profiled path integrates engine-friction*time plus mechanical_energy/(eta_diesel*eta_tf)",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "同 eq:power 的 1,000 m 最小例",
+        "paper_value_l": 0.182330733985,
+        "code_value_l": 0.16498931222,
+        "difference_code_minus_paper_l": -0.017341421765,
+        "relative_difference_percent": -9.5111
+      },
+      "impact": "China81 CV 的 F4、直接排放和 F1 均继承该 profile 差异；最小例油耗低 9.51%，全库幅度未在只读审计中重跑。"
+    },
+    {
+      "eq_label": "eq:linear_energy",
+      "tex_lines": [406, 411],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["871-892", "1046-1073", "1076-1108"],
+      "key_expression": "constant-speed ev_arc_energy_kwh is load-linear; China81 dispatches to sum(v^2 d) profile energy",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "同 eq:power 的 1,000 m 最小例；论文线性退化式与 eq:electricity 同值",
+        "paper_value_kwh": 0.605257696986,
+        "code_value_kwh": 0.378929885699,
+        "difference_code_minus_paper_kwh": -0.226327811287
+      },
+      "impact": "无 road_profiles 时实现与线性退化式一致；China81 当前正式分支不是该线性式，故论文声称的线性传播不是正式评价器的实际计算。"
+    },
+    {
+      "eq_label": "eq:charge_duration",
+      "tex_lines": [427, 432],
+      "impl_file": "solver/src/setp_solver/charging_curve.py; solver/src/setp_solver/charging_action.py; solver/src/setp_solver/cost.py",
+      "impl_lines": ["charging_curve.py:212-240", "charging_curve.py:275-316", "charging_action.py:25-50", "cost.py:496-581"],
+      "key_expression": "segment time increment = 3600*(E_right-E_left)/(reference_power*relative_power); duration = cumulative_time(end)-cumulative_time(start)",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "分段能量/功率积分与论文逐段求和同构，并由 cost.py 复核记录时长"},
+      "impact": "无独立偏差；充电时长直接影响可行窗口、排班和时段能量。"
+    },
+    {
+      "eq_label": "eq:charge_window",
+      "tex_lines": [433, 436],
+      "impl_file": "solver/src/setp_solver/check.py; solver/src/setp_solver/charging_curve.py",
+      "impl_lines": ["check.py:717-917", "charging_curve.py:481-508"],
+      "key_expression": "latest_start = latest_finish - duration; reject starts/completions outside legal depot/public-station windows",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "代码以 latest_start=latest_finish-duration 实现整段落窗"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:charge_overlap",
+      "tex_lines": [438, 442],
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/charging_curve.py",
+      "impl_lines": ["cost.py:431-493", "cost.py:584-651", "charging_curve.py:446-478"],
+      "key_expression": "overlap = max(0, min(slot_end, action_end)-max(slot_start, action_start))",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "max-min 正部表达式逐字同构；非线性分支再按相位功率积分 y_qt"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:carbon",
+      "tex_lines": [449, 457],
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/china81.py",
+      "impl_lines": ["cost.py:202-209", "cost.py:723-753", "cost.py:1111-1125", "china81.py:846-860"],
+      "key_expression": "e_total = fuel_liters*diesel_ef + sum(y_qt*actual_gco2_per_kwh/1000); no evaluator return for forecast E_hat",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "10 kWh 会话，forecast=100 g/kWh，actual=200 g/kWh，无燃油",
+        "paper_forecast_kg": 1.0,
+        "paper_settlement_kg": 2.0,
+        "code_evaluator_kg": 2.0,
+        "code_minus_paper_planning_kg": 1.0
+      },
+      "impact": "代码评价器只返回结算 actual 排放，未实现论文同式中的规划排放 E_hat。China81 静态构造器当前把 actual=forecast，故该静态数据上数值为零差；预测/实绩分离的 E7 或任意非相等 profile 会改变规划目标。"
+    },
+    {
+      "eq_label": "eq:F1",
+      "tex_lines": [470, 473],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["202-214", "723-753", "1111-1125"],
+      "key_expression": "cost_carbon = (E_total_actual - quota) * carbon_price",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "沿用 eq:carbon 最小例，CE=0，p_car=0.05034/公斤",
+        "paper_planning_cost": 0.05034,
+        "code_cost": 0.10068,
+        "difference_code_minus_paper": 0.05034
+      },
+      "impact": "预测强度与结算强度不等时，搜索目标使用了实际值而不是论文 F1 的预测值；China81 静态 actual=forecast 时该项差为 0。"
+    },
+    {
+      "eq_label": "eq:F2",
+      "tex_lines": [475, 480],
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/solution.py",
+      "impl_lines": ["cost.py:164-170", "solution.py:11-25"],
+      "key_expression": "cost_fix = (distinct physical CV ids + distinct physical EV ids) * vehicle_fixed_cost",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "已保存 200c 消融解 G2__MV_HGS_NO_SP__S2026080206；35 趟、22 辆实体车、c_fix=170",
+        "paper_value_cny": 5950.0,
+        "code_value_cny": 3740.0,
+        "difference_code_minus_paper_cny": -2210.0,
+        "affected_saved_terminal_runs": "30/30 均为相同 35 趟/22 实体车/3740 固定成本"
+      },
+      "impact": "该 30 个终局的代码目标均为 7820.1814723598745；仅把 F2 改回论文趟口径即为 10030.181472359875，增加 2210（相对代码目标 28.2602%）。所有多趟结果、利润和联盟价值受影响；单趟一车时差为 0。"
+    },
+    {
+      "eq_label": "eq:F3",
+      "tex_lines": [482, 487],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["158-160", "171-179"],
+      "key_expression": "sum(distance_m/1000 * non_energy_distance_cost_per_km(vehicle_type))",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "逐路线里程乘车型单位里程成本后求和"},
+      "impact": "无聚合层独立偏差；距离本身来自实例 road profile。"
+    },
+    {
+      "eq_label": "eq:F4",
+      "tex_lines": [489, 494],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["161", "180-185"],
+      "key_expression": "sum(route_fuel_liters * diesel_price_for_route(...))",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "油量乘油价的聚合式一致"},
+      "impact": "聚合式一致，但数值继承 eq:fuel 的 profile/固定速度偏差。"
+    },
+    {
+      "eq_label": "eq:F5",
+      "tex_lines": [496, 504],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["186-193", "1128-1215"],
+      "key_expression": "sum(y_qt*TOU_price) + public occupancy_minutes*occupancy_fee; depot occupancy excluded",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "分时电量逐槽乘价，公共站占用分钟单列"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:F6",
+      "tex_lines": [507, 513],
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/china81_completion.py",
+      "impl_lines": ["cost.py:200", "china81_completion.py:67-87", "china81_completion.py:104-109"],
+      "key_expression": "len(solution.cross_site_services) * cross_site_cost; formal China81 wrapper first reconstructs the list from routes",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "1 个异属客户，c_tr=25；路线存在但调用裸 evaluate 时 cross_site_services=[]",
+        "paper_value": 25.0,
+        "code_value": 0.0,
+        "difference_code_minus_paper": -25.0
+      },
+      "impact": "裸评价器不从 A_ikp/责任归属推导 F6，依赖外部注释列表；China81 formal wrapper 会重建，且当前主值 c_tr=0，故当前正式主值影响为 0；非零摩擦或绕过 wrapper 的历史/诊断路径可能少计。"
+    },
+    {
+      "eq_label": "eq:obj",
+      "tex_lines": [522, 525],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["194-214"],
+      "key_expression": "total_cost = cost_fix + cost_km + cost_fuel + cost_elec + cost_occ + cost_time + cost_transship + cost_carbon",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case_1_saved_F2_only": {"paper_formula_value_cny": 10030.181472359875, "code_value_cny": 7820.1814723598745, "difference_code_minus_paper_cny": -2210.0},
+        "case_2_code_only_time": {"route_hours": 1.0, "time_price_cny_per_hour": 75.0, "paper_value_cny": 0.0, "code_value_cny": 75.0, "difference": 75.0}
+      },
+      "impact": "目标同时继承 F1/F2/F6 偏差并额外含论文 F1-F6 之外的 cost_time。默认 time price=0，但 E5-P1 灵敏度为 75 CNY/h 时会直接改变排序和目标值。"
+    },
+    {
+      "eq_label": "eq:trip_flow",
+      "tex_lines": [526, 529],
+      "impl_file": "solver/src/setp_solver/check.py",
+      "impl_lines": ["553-589"],
+      "key_expression": "route must start/end at its home depot and be closed; no incoming origin/outgoing sink arises from ordered route representation",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "显式节点序列使起讫弧唯一，并检查同一 home depot 闭合"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:flow_cons",
+      "tex_lines": [530, 533],
+      "impl_file": "solver/src/setp_solver/check.py",
+      "impl_lines": ["437-454", "553-589"],
+      "key_expression": "each represented customer visit has exactly one predecessor and successor; global service count must equal one",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "序列编码隐式满足访问节点入度=出度=1，覆盖检查防重复/遗漏"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:load_bounds",
+      "tex_lines": [534, 537],
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/check.py",
+      "impl_lines": ["cost.py:858-868", "check.py:592-637"],
+      "key_expression": "backward cumulative customer demand; initial load <= capacity and every arc load nonnegative",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "起点载重为路线需求总和，逐弧检查 0<=L<=Q"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:load_prop",
+      "tex_lines": [538, 541],
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/check.py",
+      "impl_lines": ["cost.py:858-868", "check.py:624-636"],
+      "key_expression": "delivered = loads[idx-1]-loads[idx]; must equal node.demand",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "选中弧上采用等式传播，强于论文 big-M 不等式"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:tw",
+      "tex_lines": [542, 545],
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/check.py",
+      "impl_lines": ["cost.py:409-426", "check.py:686-714"],
+      "key_expression": "start=max(arrival,ready_time); violation if start>due_time",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "下界由等待 max 实现，上界由 due 检查"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:time_prop",
+      "tex_lines": [546, 549],
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["350-428"],
+      "key_expression": "arrival_next = depart_current + travel_time; depart=start+service or charge occupancy",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "选中弧上以递推等式实现论文下界，并含等待/服务/充电"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:batt_prop",
+      "tex_lines": [550, 554],
+      "impl_file": "solver/src/setp_solver/check.py; solver/src/setp_solver/search/multitrip_schedule.py",
+      "impl_lines": ["check.py:920-1007", "multitrip_schedule.py:1462-1503"],
+      "key_expression": "battery -= arc_energy; reject only battery<0 or battery>B; certificate likewise accepts end>=0",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "构造 B=80 kWh、Bmin=16 kWh、弧后电量=5 kWh",
+        "paper_lower_bound_kwh": 16.0,
+        "code_accepted_kwh": 5.0,
+        "difference_code_minus_paper_bound_kwh": -11.0,
+        "saved_evidence": "G2__MV_HGS_NO_SP__S2026080206 的 14 个 EV 趟中 10 个 end_battery_kwh=0，certificate.soc_min=null"
+      },
+      "impact": "论文未给 Bmin 的数值，故无法无条件重判现有解；但任意 Bmin>0 都会使上述 10 个零电量趟终点违反论文约束，EV 可行性、充电量、车队构成及成本可能改变。"
+    },
+    {
+      "eq_label": "eq:no_customer_charge",
+      "tex_lines": [555, 558],
+      "impl_file": "solver/src/setp_solver/check.py",
+      "impl_lines": ["233-327"],
+      "key_expression": "charging action station node_type must be depot d or facility f; customer c is rejected",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "客户节点不能拥有 charging action"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:trip_linkage",
+      "tex_lines": [559, 563],
+      "impl_file": "solver/src/setp_solver/search/multitrip_schedule.py",
+      "impl_lines": ["1416-1526"],
+      "key_expression": "next departure >= previous recharge_end; next start battery = previous end + between-trip charge",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "代码把充电完成纳入 recharge_end，时间约束比只比较返场时刻更强，电量连续为等式"},
+      "impact": "无独立偏差；但仍继承 Bmin 缺失。"
+    },
+    {
+      "eq_label": "eq:coverage",
+      "tex_lines": [564, 568],
+      "impl_file": "solver/src/setp_solver/check.py; solver/src/setp_solver/search/multitrip_schedule.py",
+      "impl_lines": ["check.py:437-486", "multitrip_schedule.py:1442-1452", "multitrip_schedule.py:1529-1547"],
+      "key_expression": "each customer exactly once; distinct physical ids bounded by CV/EV availability; one physical id has one type/home and sequential trips",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "模式由同一实体车的有序多趟证书表示，覆盖与车辆选择上限均检查"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:station_cap",
+      "tex_lines": [569, 572],
+      "impl_file": "solver/src/setp_solver/check.py; solver/src/setp_solver/china81.py; solver/src/setp_solver/model_config.py",
+      "impl_lines": ["check.py:489-550", "check.py:1120-1128", "china81.py:592-636", "model_config.py:26-47"],
+      "key_expression": "occupied sessions <= station_chargers, but current model config sets depot capacity unbounded/None and checker substitutes customer_count",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "2 个客户、车场论文 C_s=1、同槽 2 个会话；代码 unbounded 模式使 fallback C_s=customer_count=2",
+        "paper_lhs": 2,
+        "paper_capacity": 1,
+        "paper_excess": 1,
+        "code_lhs": 2,
+        "code_capacity": 2,
+        "code_excess": 0,
+        "violation_count_difference_code_minus_paper": -1
+      },
+      "impact": "当前 200c 正式 metadata 明示 depot_charger_capacity_mode=unbounded，因此现有结果不能作为论文对 d∈D 的有限 C_s 约束证据；公共站有限容量仍检查。"
+    },
+    {
+      "eq_label": "eq:stage_profit",
+      "tex_lines": [574, 580],
+      "impl_file": "solver/src/setp_solver/profit.py",
+      "impl_lines": ["64-174", "203-233"],
+      "key_expression": "revenue - fixed_per_distinct_physical_vehicle - km - fuel - electricity - occupancy - transship - actual carbon",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "同一实体车 2 趟、c_fix=170，其余收益成本相同",
+        "paper_fixed_deduction_cny": 340.0,
+        "code_fixed_deduction_cny": 170.0,
+        "code_profit_minus_paper_profit_cny": 170.0,
+        "additional_ledger_gap": "若 route_time_cost_per_hour=75 且 1 小时，目标多 75，但 profit.py 不扣该 75"
+      },
+      "impact": "所有多趟车场利润、独立基准、联盟价值和分配输入受 F2 口径影响；预测/结算碳分离时又受 actual 口径影响。route-time 灵敏度下目标与利润账不闭合。"
+    },
+    {
+      "eq_label": "eq:binary",
+      "tex_lines": [581, 584],
+      "impl_file": "solver/src/setp_solver/solution.py; baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "impl_lines": ["solution.py:28-46", "route_pool_sp.py:690-698"],
+      "key_expression": "selected routes/actions are discrete records; SP integrality=1 and bounds [0,1]",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "MIP 选择变量明确为 0/1，启发式解也以离散模式记录表示"},
+      "impact": "无独立偏差。"
+    },
+    {
+      "eq_label": "eq:coalition_profit",
+      "tex_lines": [610, 613],
+      "impl_file": "baselines/china_e3_e7/e6_contractor_participation_20260801/run_pilot06_direct_15.py",
+      "impl_lines": ["534-543", "568-574"],
+      "key_expression": "values[group] = coalition_revenue(bundle) - result['cost']",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "联盟收入减联盟成本直接实现 v(A)=R(A)-C(A)"},
+      "impact": "代数一致，但 C(A) 继承 F2/F1 等上游语义差异。"
+    },
+    {
+      "eq_label": "eq:shapley",
+      "tex_lines": [615, 620],
+      "impl_file": "baselines/china_e3_e7/e6_contractor_participation_20260801/e6_cooperative_game.py",
+      "impl_lines": ["24-35"],
+      "key_expression": "factorial(size)*factorial(n-size-1)/factorial(n) * marginal contribution",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "权重与边际贡献逐项同式，并有排列法复算检查"},
+      "impact": "分配算法本身一致；输入 v(A) 的成本口径偏差会传导到数值。"
+    },
+    {
+      "eq_label": "eq:core",
+      "tex_lines": [621, 626],
+      "impl_file": "baselines/china_e3_e7/e6_contractor_participation_20260801/e6_cooperative_game.py",
+      "impl_lines": ["38-66"],
+      "key_expression": "A_eq ones*x=v(D); -incidence*x <= -v(A); explicit core_violations computes v(A)-sum x_d",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "效率等式和全部真子联盟理性约束逐项进入 LP"},
+      "impact": "核检验本身一致；联盟价值输入继承上游成本偏差。"
+    },
+    {
+      "eq_label": "eq:trigger",
+      "tex_lines": [641, 644],
+      "impl_file": "solver/src/setp_solver/search/dynamic.py",
+      "impl_lines": ["58-65", "998-1023"],
+      "key_expression": "if len(batch) >= q_bar: trigger; else trigger at last_trigger+delta_t_seconds",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "上次触发 t=0；1 个新增事件在 t=60 带来 500 kg；论文 Wbar=500 kg；代码 q_bar=8、delta_t=10800 s",
+        "paper_trigger_second": 60.0,
+        "code_trigger_second": 10800.0,
+        "difference_code_minus_paper_second": 10740.0,
+        "counterexample": "8 个各 1 kg 事件会令代码在第 8 个事件触发，而论文累计仅 8 kg<500 kg"
+      },
+      "impact": "E7 的触发时刻、批大小、重规划次数、等待和状态继承全部可能改变；现有按 q_bar=8 生成的结果不能支持论文按公斤 Wbar 的机制声明。"
+    },
+    {
+      "eq_label": "eq:customer_update",
+      "tex_lines": [646, 650],
+      "impl_file": "solver/src/setp_solver/search/dynamic.py",
+      "impl_lines": ["1026-1044", "1047-1093"],
+      "key_expression": "add inserts; cancel removes if unserved; served customers excluded; demand/time-window changes replace attributes",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "集合层实现 (old-served-cancelled) union new，并额外更新属性"},
+      "impact": "无集合公式独立偏差。"
+    },
+    {
+      "eq_label": "eq:accumulation",
+      "tex_lines": [655, 660],
+      "impl_file": "未实现（仅成本与碳部分实现于 solver/src/setp_solver/search/dynamic.py）",
+      "impl_lines": ["dynamic.py:272-277", "dynamic.py:329-369"],
+      "key_expression": "cumulative_cost += chunk_metrics['total_cost']; cumulative_carbon += chunk_metrics['E_total']; no cumulative/stage depot-profit state",
+      "verdict": "未实现",
+      "numeric_evidence": {"required": false, "result": "三联公式只实现 Z 与 E；Pi_d 累计项无状态变量、无递推赋值"},
+      "impact": "动态成本和排放可累计，但论文所称已执行收益 barPi_d 的阶段守恒没有代码证据；E7 输出的 nominal/final depot profit 不能替代逐阶段已执行收益累计。"
+    },
+    {
+      "eq_label": "eq:sp-recombination",
+      "tex_lines": [753, 769],
+      "impl_file": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "impl_lines": ["628-699", "700-711"],
+      "key_expression": "MIP has customer exact-cover matrix and binary variables only; stats explicitly state route-count fleet caps omitted",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "C1/C2；r1={C1},CV,cost1；r2={C2},CV,cost1；r3={C1,C2},EV,cost10；CV cap=1, EV cap=1",
+        "paper_constrained_objective": 10.0,
+        "code_surrogate_objective": 2.0,
+        "difference_code_minus_paper": -8.0,
+        "selected_by_code": ["r1", "r2"],
+        "paper_feasible_selection": ["r3"]
+      },
+      "impact": "完整评价器会在 MIP 后拒绝超车队上限的候选，因此最终可行性有后验保护；但限时 MIP 的搜索空间、incumbent、界和是否贡献改进均不同，现有 SP 消融不能声称执行了论文 760-764 的两族车队约束。"
+    },
+    {
+      "eq_label": "eq:charging-candidates",
+      "tex_lines": [895, 898],
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/charging_curve.py",
+      "impl_lines": ["cost.py:654-693", "charging_curve.py:481-508"],
+      "key_expression": "candidates={earliest,latest_start} union grid_boundary-phase_boundary, clipped to window",
+      "verdict": "一致",
+      "numeric_evidence": {"required": false, "result": "端点及 b-delta_l 候选逐项生成并截取到可行窗"},
+      "impact": "候选集无独立偏差。"
+    },
+    {
+      "eq_label": "eq:charging-rule",
+      "tex_lines": [899, 900],
+      "impl_file": "solver/src/setp_solver/cost.py; baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py",
+      "impl_lines": ["cost.py:654-720", "run_e7_dynamic.py:513-531"],
+      "key_expression": "best_charging_action_start defaults intensity_field='actual_gco2_per_kwh'; E7 caller explicitly overrides forecast_gco2_per_kwh",
+      "verdict": "不一致",
+      "numeric_evidence": {
+        "case": "候选开始 {0,1800}s，10 kWh；forecast=(100,200)，actual=(200,100) g/kWh",
+        "paper_selected_start_second": 0.0,
+        "code_default_selected_start_second": 1800.0,
+        "start_difference_second": 1800.0,
+        "paper_selected_forecast_emissions_kg": 1.0,
+        "code_default_choice_forecast_emissions_kg": 2.0,
+        "forecast_penalty_kg": 1.0
+      },
+      "impact": "通用核心默认与论文相反；当前 E7 v3 调用显式传 forecast，故该入口一致，其他未覆写调用会按 actual 择时。China81 静态 actual=forecast 时选择不受影响。"
+    }
+  ]
+}

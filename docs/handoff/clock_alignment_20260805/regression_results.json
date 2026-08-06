@@ -1,0 +1,235 @@
+{
+  "completion_mode_probe": [
+    {
+      "classification": "求解器未找到",
+      "detail": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_beijing': overage=(1, 0, 0)",
+      "mode": "prev_night",
+      "status": "NO_FEASIBLE_CONFIGURATION"
+    },
+    {
+      "charge_day_offsets": [
+        0
+      ],
+      "charging_action_count": 1,
+      "classification": "可用",
+      "mode": "same_day_predeparture",
+      "status": "PASS"
+    },
+    {
+      "classification": "求解器未找到",
+      "detail": "shared China81 completion returned an infeasible solution: CHARGING_START:EV_D_beijing_1#T1:D_beijing:depot charging must finish before current departure or lie between route return and the next departure (start=39059.606, completion=44177.626, departure=40831.871, return=63606.704, next_departure=127231.871)",
+      "mode": "full_gap",
+      "status": "NO_FEASIBLE_CONFIGURATION"
+    }
+  ],
+  "full_suite_recorded": {
+    "actual": {
+      "failed": 6,
+      "passed": 906,
+      "skipped": 1
+    },
+    "baseline": {
+      "failed": 14,
+      "passed": 898,
+      "skipped": 1
+    },
+    "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider solver/tests",
+    "new_failures": 0,
+    "recovered_t10_failures": 8
+  },
+  "mode_rows": [
+    {
+      "fixed_offset": -1,
+      "mode": "prev_night",
+      "profile_day_offsets_loaded": [
+        -1,
+        0
+      ],
+      "profile_row_counts": [
+        96
+      ],
+      "window": [
+        0.0,
+        82800.0
+      ]
+    },
+    {
+      "fixed_offset": 0,
+      "mode": "same_day_predeparture",
+      "profile_day_offsets_loaded": [
+        0
+      ],
+      "profile_row_counts": [
+        96
+      ],
+      "window": [
+        0.0,
+        42565.71286
+      ]
+    },
+    {
+      "fixed_offset": 0,
+      "mode": "full_gap",
+      "profile_day_offsets_loaded": [
+        -1,
+        0,
+        1
+      ],
+      "profile_row_counts": [
+        96
+      ],
+      "window": [
+        50396.31286,
+        128965.71286
+      ]
+    }
+  ],
+  "positive": [
+    {
+      "key": "C_seed2_budget1000",
+      "overlap_seconds": [
+        6563.0712245500035
+      ],
+      "pass": true,
+      "violation_types": [
+        "CHARGING_TRIP_OVERLAP"
+      ]
+    },
+    {
+      "key": "C_seed1_budget100",
+      "overlap_seconds": [
+        6365.9078330282355
+      ],
+      "pass": true,
+      "violation_types": [
+        "CHARGING_TRIP_OVERLAP"
+      ]
+    },
+    {
+      "key": "C_seed3_budget1000",
+      "overlap_seconds": [
+        6239.742124296223
+      ],
+      "pass": true,
+      "violation_types": [
+        "CHARGING_TRIP_OVERLAP"
+      ]
+    }
+  ],
+  "positive_passed": 3,
+  "positive_required": 3,
+  "protected_after": {
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_before": {
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "schema": "resetp.t15-clock-alignment-regression.v1",
+  "status": "PASS",
+  "t10_legal": [
+    {
+      "key": "C_seed1_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed1_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed2_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed2_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed3_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed3_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed1_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed1_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed2_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed2_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed3_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed3_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed1_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed1_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed2_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed2_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed3_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed3_budget1000",
+      "pass": true,
+      "violation_types": []
+    }
+  ],
+  "t10_legal_checked": 18,
+  "t10_legal_passed": 18,
+  "t10_legal_required": 18,
+  "target_pytest": {
+    "command": "/opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider solver/tests/test_public_station_multitrip_20260723.py::test_public_station_route_closes_strict_clock_soc_and_certificate solver/tests/test_public_station_multitrip_20260723.py::test_public_station_route_passes_mandatory_strict_runtime solver/tests/test_refined_carbon_charging.py::test_integrated_route_repair_inserts_station_and_remains_fully_feasible solver/tests/test_refined_carbon_charging.py::test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation solver/tests/test_search.py::SearchGateTests::test_h2_initial_solution_contains_deterministic_ev_charging_witness solver/tests/test_search.py::SearchGateTests::test_h3_short_alns_has_nonzero_charging_signal solver/tests/test_search.py::SearchGateTests::test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges",
+    "exit_code": 0,
+    "passed": true,
+    "stderr": "",
+    "stdout": ".......                                                                  [100%]\n7 passed in 3.40s\n"
+  }
+}

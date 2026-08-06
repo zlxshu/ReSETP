@@ -1,0 +1,48 @@
+{
+  "schema": "resetp.t13-remaining-gate-failures-decision.v1",
+  "task_id": "T13-REMAINING-GATE-FAILURES-DIAGNOSIS",
+  "status": "ROOT_CAUSE_FOUND_TECHNICAL_ONLY",
+  "paper_claim_allowed": false,
+  "decision": "diagnosis_only_no_source_or_test_change",
+  "甲类结论": {
+    "tests": [
+      "solver/tests/test_refined_carbon_charging.py::test_integrated_route_repair_inserts_station_and_remains_fully_feasible",
+      "solver/tests/test_refined_carbon_charging.py::test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation"
+    ],
+    "root_cause": "被判违反的是 D0 车场充电动作，不是 F1 在途公共站动作；D0 为 node_type=d，未命中公共站跳过分支。",
+    "copy_mismatch": false,
+    "overlap_seconds": [
+      2492.783666140434,
+      1492.783666140434
+    ]
+  },
+  "乙类结论": {
+    "tests": [
+      "solver/tests/test_search.py::SearchGateTests::test_h2_initial_solution_contains_deterministic_ev_charging_witness",
+      "solver/tests/test_search.py::SearchGateTests::test_h3_short_alns_has_nonzero_charging_signal",
+      "solver/tests/test_search.py::SearchGateTests::test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges"
+    ],
+    "halt_source": "solver/src/setp_solver/search/construction.py:213",
+    "root_cause": "C3@D0 确定性带充电候选的窗口前后均非空且相同；候选在 construction.py:207 的当前 check_solution 中被新增 CHARGING_TRIP_OVERLAP 丢弃，随后空候选分支抛出 HALT_H2。",
+    "window_narrowing_supported": false,
+    "fixture_too_tight_supported": false,
+    "deterministic_direct_energy_kwh": 83.48426334435885,
+    "battery_capacity_kwh": 80.0,
+    "depot_window_seconds": [
+      9073.829432129312,
+      22442.0614769616
+    ],
+    "public_station_window_seconds": [
+      425.79162846189837,
+      22381.093839624275
+    ],
+    "pre_T10_checker_candidate_passes": true,
+    "post_T10_only_new_violation": "CHARGING_TRIP_OVERLAP"
+  },
+  "stop_state": "HALT_REGRESSION_FAILED",
+  "evidence_files": [
+    "report.md",
+    "diagnostic_observations.json",
+    "targeted_pytest_output.txt"
+  ]
+}

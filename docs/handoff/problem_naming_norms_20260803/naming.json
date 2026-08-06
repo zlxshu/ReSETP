@@ -1,0 +1,781 @@
+{
+  "task_name": "问题命名行情实测",
+  "generated_date": "2026-08-03",
+  "status": "NAMING_NORMS_COMPLETE",
+  "scope": {
+    "accessible_papers": 15,
+    "chinese_papers": 5,
+    "english_papers": 10,
+    "full_text_only": true,
+    "abstract_only_fill_used": false
+  },
+  "count_protocol": {
+    "scope": "从正文起点计至 References/参考文献标题前；附录属于正文；剔除摘要、参考文献和重复页眉；连字符处换行先合并后计数。",
+    "case_sensitive": true,
+    "variant_rule": "定义形式与排印变体分别计数；主计数只计作者定义的缩写形式。",
+    "modifier_rule": "只列问题全称中明示的修饰成分；Vehicle Routing Problem/车辆路径问题本体不计。"
+  },
+  "records": [
+    {
+      "id": "chen_yudie_2025",
+      "language": "zh",
+      "citation": "陈雨蝶、干宏程、程亮、温金鹏（2025）",
+      "title": "双碳背景下复杂冷链物流模型及求解算法",
+      "source": "/Users/zhouleixishu/Zotero/storage/AYDB6KXP/陈雨蝶 等 _ 2025 _ 双碳背景下复杂冷链物流模型及求解算法.pdf",
+      "problem_name": {
+        "original": "考虑同时送取货和时变路网的绿色多隔间冷链物流模型 (Multi-compartment Time-dependent Green Vehicle Routing Problem with Simultaneous Pickup and Delivery)",
+        "page": "p.3",
+        "evidence_quote": "本文建立了考虑同时送取货和时变路网的绿色多隔间冷链物流模型 (Multi-compartment Time-dependent Green Vehicle Routing Problem with Simultaneous Pickup and Delivery, MCTDGVRPSPD)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "MCTDGVRPSPD",
+        "definition_page": "p.3",
+        "letter_mapping": [
+          {"position": "M", "source_word": "Multi"},
+          {"position": "C", "source_word": "compartment"},
+          {"position": "T", "source_word": "Time"},
+          {"position": "D", "source_word": "dependent"},
+          {"position": "G", "source_word": "Green"},
+          {"position": "V", "source_word": "Vehicle"},
+          {"position": "R", "source_word": "Routing"},
+          {"position": "P", "source_word": "Problem"},
+          {"position": "S", "source_word": "Simultaneous"},
+          {"position": "P", "source_word": "Pickup"},
+          {"position": "D", "source_word": "Delivery"}
+        ],
+        "unencoded_terms": [],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 4,
+        "items": ["Multi-compartment", "Time-dependent", "Green", "with Simultaneous Pickup and Delivery"],
+        "page": "p.3"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "Multi-compartment Time-dependent Green + Vehicle Routing Problem + with Simultaneous Pickup and Delivery",
+        "page": "p.3"
+      },
+      "body_occurrence": {
+        "value": 8,
+        "form_counted": "MCTDGVRPSPD",
+        "variant_counts": {},
+        "scope": "正文至参考文献前",
+        "page_range": "pp.2-21"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "在双碳目标背景下, 冷链物流行业面临着降低碳排放和提高运营效率的双重挑战.",
+        "page": "p.1",
+        "truncated": false
+      }
+    },
+    {
+      "id": "jiang_guangtian_2024",
+      "language": "zh",
+      "citation": "姜广田、纪皎月、董佳伟（2024）",
+      "title": "绿色物流配送下的多车型动态车辆路径优化",
+      "source": "/Users/zhouleixishu/Zotero/storage/IAUYMUUK/姜广田 等 _ 2024 _ 绿色物流配送下的多车型动态车辆路径优化.pdf",
+      "problem_name": {
+        "original": "绿色物流配送下的多车型动态车辆路径优化 (multi-vehicle dynamic vehicle routing optimization under green logistics distribution)",
+        "page": "p.2364",
+        "evidence_quote": "本文研究的绿色物流配送下的多车型动态车辆路径优化 (multi-vehicle dynamic vehicle routing optimization under green logistics distribution, MVDVROGLD)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "MVDVROGLD",
+        "definition_page": "p.2364",
+        "letter_mapping": [
+          {"position": "M", "source_word": "multi"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "D", "source_word": "dynamic"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "O", "source_word": "optimization"},
+          {"position": "G", "source_word": "green"},
+          {"position": "L", "source_word": "logistics"},
+          {"position": "D", "source_word": "distribution"}
+        ],
+        "unencoded_terms": [],
+        "observed_variants": [
+          {"form": "MVDVRPGLD", "count": 1, "page": "p.2370", "note": "正文排印形式"}
+        ]
+      },
+      "modifiers": {
+        "count": 3,
+        "items": ["多车型 / multi-vehicle", "动态 / dynamic", "绿色物流配送下 / under green logistics distribution"],
+        "page": "p.2364"
+      },
+      "naming_structure": {
+        "category": "另起新名",
+        "evidence_quote": "multi-vehicle dynamic vehicle routing optimization under green logistics distribution, MVDVROGLD",
+        "page": "p.2364"
+      },
+      "body_occurrence": {
+        "value": 3,
+        "form_counted": "MVDVROGLD",
+        "variant_counts": {"MVDVRPGLD": 1},
+        "scope": "正文至参考文献前",
+        "page_range": "pp.2363-2379"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "针对低碳条件下多车型动态车辆路径优化问题, 将研究过程分为预优化和动态调整两阶段",
+        "page": "p.2362",
+        "truncated": true
+      }
+    },
+    {
+      "id": "chen_wanru_2023",
+      "language": "zh",
+      "citation": "陈婉茹、徐光明、张得志等（2023）",
+      "title": "碳交易机制下多中心混合车队配送路径和速度优化研究",
+      "source": "/Users/zhouleixishu/Zotero/storage/5GXPYVZH/陈婉茹 等 _ 2023 _ 碳交易机制下多中心混合车队配送路径和速度优化研究.pdf",
+      "problem_name": {
+        "original": "碳交易机制下由传统燃油车和电动车构成的混合车队的配送路径-速度联合优化问题",
+        "page": "p.3321",
+        "evidence_quote": "本文基于多配送中心、客户时间窗、车场容量、行程时间等现实配送条件和要求, 进一步提出碳交易机制下由传统燃油车和电动车构成的混合车队的配送路径-速度联合优化问题"
+      },
+      "acronym": {
+        "present": false,
+        "form": null,
+        "definition_page": null,
+        "letter_mapping": [],
+        "unencoded_terms": [],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 3,
+        "items": ["多配送中心", "碳交易机制下", "由传统燃油车和电动车构成的混合车队"],
+        "page": "pp.3320-3321"
+      },
+      "naming_structure": {
+        "category": "无缩写（不适用）",
+        "evidence_quote": "多配送中心车辆路径-速度联合优化问题",
+        "page": "p.3320"
+      },
+      "body_occurrence": {
+        "value": null,
+        "form_counted": null,
+        "variant_counts": {},
+        "scope": "无作者自定问题缩写",
+        "page_range": "pp.3321-3334"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "为助力物流企业实现 “低污染、低排放、低能耗” 的绿色配送",
+        "page": "p.3320",
+        "truncated": true
+      }
+    },
+    {
+      "id": "li_decheng_2021",
+      "language": "zh",
+      "citation": "李得成、陈彦如、张宗成（2021）",
+      "title": "基于分支定价算法的电动车与燃油车混合车辆路径问题研究",
+      "source": "/Users/zhouleixishu/Zotero/storage/ESSCS4Z2/李得成 等 _ 2021 _ 基于分支定价算法的电动车与燃油车混合车辆路径问题研究.pdf",
+      "problem_name": {
+        "original": "带时间窗的电动车与燃油车混合车队配送问题 (electric VRP with time windows and mixed fleet)",
+        "page": "p.996",
+        "evidence_quote": "带时间窗的电动车与燃油车混合车队配送问题 (electric VRP with time windows and mixed fleet, EVRPTWMF)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "EVRPTWMF",
+        "definition_page": "p.996",
+        "letter_mapping": [
+          {"position": "E", "source_word": "electric"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problem"},
+          {"position": "T", "source_word": "time"},
+          {"position": "W", "source_word": "windows"},
+          {"position": "M", "source_word": "mixed"},
+          {"position": "F", "source_word": "fleet"}
+        ],
+        "unencoded_terms": [],
+        "observed_variants": [
+          {"form": "E-VRPTWMF", "count": 3, "page": "pp.997, 1003", "note": "章节、表题及正文排印形式"}
+        ]
+      },
+      "modifiers": {
+        "count": 3,
+        "items": ["electric / 电动车", "with time windows / 带时间窗", "mixed fleet / 电动车与燃油车混合车队"],
+        "page": "pp.995-996"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "electric VRP with time windows and mixed fleet, EVRPTWMF",
+        "page": "p.996"
+      },
+      "body_occurrence": {
+        "value": 13,
+        "form_counted": "EVRPTWMF",
+        "variant_counts": {"E-VRPTWMF": 3},
+        "scope": "正文至参考文献前",
+        "page_range": "pp.996-1008"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "随着电动物流车的日渐普及, 越来越多物流企业的配送业务由传统燃油车和电动物流车共同完成.",
+        "page": "p.995",
+        "truncated": false
+      }
+    },
+    {
+      "id": "rao_weizhen_2019",
+      "language": "zh",
+      "citation": "饶卫振、张云东、刘从虎等（2019）",
+      "title": "一种求解协作配送成本分摊问题核仁解的近似迭代算法",
+      "source": "/Users/zhouleixishu/Zotero/storage/W96R3AUG/饶卫振 等 _ 2019 _ 一种求解协作配送成本分摊问题核仁解的近似迭代算法.pdf",
+      "problem_name": {
+        "original": "协作车辆路径问题 (multi-owner collaborative vehicle routing problem)",
+        "page": "p.1520",
+        "evidence_quote": "本文研究协作车辆路径问题 (multi-owner collaborative vehicle routing problem, 简称 MOCVRP) 的成本分摊模型"
+      },
+      "acronym": {
+        "present": true,
+        "form": "MOCVRP",
+        "definition_page": "p.1520",
+        "letter_mapping": [
+          {"position": "M", "source_word": "multi"},
+          {"position": "O", "source_word": "owner"},
+          {"position": "C", "source_word": "collaborative"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problem"}
+        ],
+        "unencoded_terms": [],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 2,
+        "items": ["multi-owner", "collaborative"],
+        "page": "p.1520"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "multi-owner collaborative + vehicle routing problem",
+        "page": "p.1520"
+      },
+      "body_occurrence": {
+        "value": 15,
+        "form_counted": "MOCVRP",
+        "variant_counts": {},
+        "scope": "正文至参考文献前；文本层中 2 处将字母 C 识别为数字 0，按页面原缩写 MOCVRP 计入",
+        "page_range": "pp.1518-1533"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "协作配送问题是典型的组合优化合作博弈问题, 也可称为协作车辆路径问题, 其核心问题之一是确定公平合理的成本分摊方案.",
+        "page": "p.1517",
+        "truncated": false
+      }
+    },
+    {
+      "id": "schneider_2014",
+      "language": "en",
+      "citation": "Schneider, Stenger, and Goeke (2014)",
+      "title": "The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations",
+      "source": "/Users/zhouleixishu/Zotero/storage/3KG6RDYU/Schneider 等 _ 2014 _ The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations.pdf",
+      "problem_name": {
+        "original": "electric vehicle-routing problem with time windows and recharging stations",
+        "page": "p.1",
+        "evidence_quote": "We introduce the electric vehicle-routing problem with time windows and recharging stations (E-VRPTW)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "E-VRPTW",
+        "definition_page": "p.1",
+        "letter_mapping": [
+          {"position": "E", "source_word": "electric"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problem"},
+          {"position": "T", "source_word": "time"},
+          {"position": "W", "source_word": "windows"}
+        ],
+        "unencoded_terms": ["recharging stations"],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 3,
+        "items": ["electric", "with time windows", "recharging stations"],
+        "page": "p.1"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "electric + vehicle-routing problem + with time windows and recharging stations",
+        "page": "p.1"
+      },
+      "body_occurrence": {
+        "value": 48,
+        "form_counted": "E-VRPTW",
+        "variant_counts": {},
+        "scope": "Introduction 至 References 前，剔除重复页眉",
+        "page_range": "pp.1-19"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "Driven by new laws and regulations concerning the emission",
+        "page": "p.1",
+        "truncated": true
+      }
+    },
+    {
+      "id": "goeke_schneider_2015",
+      "language": "en",
+      "citation": "Goeke and Schneider (2015)",
+      "title": "Routing a mixed fleet of electric and conventional vehicles",
+      "source": "/Users/zhouleixishu/Zotero/storage/PGY3QPNT/Goeke和Schneider _ 2015 _ Routing a mixed fleet of electric and conventional vehicles.pdf",
+      "problem_name": {
+        "original": "Electric Vehicle Routing Problem with Time Windows and Mixed Fleet",
+        "page": "p.1",
+        "evidence_quote": "In this paper, we propose the Electric Vehicle Routing Problem with Time Windows and Mixed Fleet (E-VRPTWMF)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "E-VRPTWMF",
+        "definition_page": "p.1",
+        "letter_mapping": [
+          {"position": "E", "source_word": "Electric"},
+          {"position": "V", "source_word": "Vehicle"},
+          {"position": "R", "source_word": "Routing"},
+          {"position": "P", "source_word": "Problem"},
+          {"position": "T", "source_word": "Time"},
+          {"position": "W", "source_word": "Windows"},
+          {"position": "M", "source_word": "Mixed"},
+          {"position": "F", "source_word": "Fleet"}
+        ],
+        "unencoded_terms": [],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 3,
+        "items": ["Electric", "with Time Windows", "Mixed Fleet"],
+        "page": "p.1"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "Electric + Vehicle Routing Problem + with Time Windows and Mixed Fleet",
+        "page": "p.1"
+      },
+      "body_occurrence": {
+        "value": 38,
+        "form_counted": "E-VRPTWMF",
+        "variant_counts": {},
+        "scope": "Introduction 至 References 前",
+        "page_range": "pp.1-17"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "In this paper, we propose the Electric Vehicle Routing",
+        "page": "p.1",
+        "truncated": true
+      }
+    },
+    {
+      "id": "hiermann_2016",
+      "language": "en",
+      "citation": "Hiermann, Puchinger, Ropke, and Hartl (2016)",
+      "title": "The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations",
+      "source": "/Users/zhouleixishu/Zotero/storage/NIM4H4ID/Hiermann 等 _ 2016 _ The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations.pdf",
+      "problem_name": {
+        "original": "Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations",
+        "page": "p.995",
+        "evidence_quote": "We introduce the Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations (E-FSMFTW)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "E-FSMFTW",
+        "definition_page": "p.995",
+        "letter_mapping": [
+          {"position": "E", "source_word": "Electric"},
+          {"position": "F", "source_word": "Fleet"},
+          {"position": "S", "source_word": "Size"},
+          {"position": "M", "source_word": "Mix"},
+          {"position": "F", "source_word": "Fixed costs", "mapping_basis": "p.996 对 FSMF 的定义"},
+          {"position": "T", "source_word": "Time"},
+          {"position": "W", "source_word": "Windows"}
+        ],
+        "unencoded_terms": ["Vehicle Routing Problem", "Recharging Stations"],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 4,
+        "items": ["Electric", "Fleet Size and Mix", "with Time Windows", "Recharging Stations"],
+        "page": "p.995"
+      },
+      "naming_structure": {
+        "category": "另起新名",
+        "evidence_quote": "the so-called Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations (E-FSMFTW)",
+        "page": "p.995"
+      },
+      "body_occurrence": {
+        "value": 36,
+        "form_counted": "E-FSMFTW",
+        "variant_counts": {},
+        "scope": "Introduction 至 References 前，含附录",
+        "page_range": "pp.995-1018"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "Due to new regulations and further technological progress",
+        "page": "p.995",
+        "truncated": true
+      }
+    },
+    {
+      "id": "montoya_2017",
+      "language": "en",
+      "citation": "Montoya, Guéret, Mendoza, and Villegas (2017)",
+      "title": "The electric vehicle routing problem with nonlinear charging function",
+      "source": "/Users/zhouleixishu/Zotero/storage/72THJGSQ/Montoya 等 _ 2017 _ The electric vehicle routing problem with nonlinear charging function.pdf",
+      "problem_name": {
+        "original": "electric vehicle routing problem with nonlinear charging functions",
+        "page": "p.3",
+        "evidence_quote": "First, we introduce the electric vehicle routing problem with nonlinear charging functions (E-VRP-NL)."
+      },
+      "acronym": {
+        "present": true,
+        "form": "E-VRP-NL",
+        "definition_page": "p.3",
+        "letter_mapping": [
+          {"position": "E", "source_word": "electric"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problem"},
+          {"position": "N", "source_word": "non"},
+          {"position": "L", "source_word": "linear"}
+        ],
+        "unencoded_terms": ["charging functions"],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 2,
+        "items": ["electric", "with nonlinear charging functions"],
+        "page": "p.3"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "electric + vehicle routing problem + with nonlinear charging functions",
+        "page": "p.3"
+      },
+      "body_occurrence": {
+        "value": 38,
+        "form_counted": "E-VRP-NL",
+        "variant_counts": {},
+        "scope": "Introduction 至 Acknowledgement 前",
+        "page_range": "article-in-press pp.1-19"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "Electric vehicle routing problems (E-VRPs) extend classical",
+        "page": "p.1",
+        "truncated": true
+      }
+    },
+    {
+      "id": "zhen_2020",
+      "language": "en",
+      "citation": "Zhen, Ma, Wang, Xiao, and Zhang (2020)",
+      "title": "Multi-depot multi-trip vehicle routing problem with time windows and release dates",
+      "source": "/Users/zhouleixishu/Zotero/storage/4QNKCCAE/Zhen 等 _ 2020 _ Multi-depot multi-trip vehicle routing problem with time windows and release dates.pdf",
+      "problem_name": {
+        "original": "multi-depot multi-trip vehicle routing problem with time windows and release dates",
+        "page": "p.2",
+        "evidence_quote": "we define the above problem as a multi-depot multi-trip vehicle routing problem with time windows and release dates (Multi-D&T VRPTW-R)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "Multi-D&T VRPTW-R",
+        "definition_page": "p.2",
+        "letter_mapping": [
+          {"position": "Multi-D", "source_word": "multi-depot"},
+          {"position": "&", "source_word": "and"},
+          {"position": "T", "source_word": "multi-trip"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problem"},
+          {"position": "T", "source_word": "time"},
+          {"position": "W", "source_word": "windows"},
+          {"position": "R", "source_word": "release dates"}
+        ],
+        "unencoded_terms": [],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 4,
+        "items": ["multi-depot", "multi-trip", "with time windows", "release dates"],
+        "page": "p.2"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "Multi-D&T + VRP + TW-R",
+        "page": "p.2"
+      },
+      "body_occurrence": {
+        "value": 12,
+        "form_counted": "Multi-D&T VRPTW-R",
+        "variant_counts": {},
+        "scope": "Introduction 至 References 前，含附录",
+        "page_range": "pp.1-20"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "This study investigates a multi-depot multi-trip vehicle",
+        "page": "p.1",
+        "truncated": true
+      }
+    },
+    {
+      "id": "zhao_2024",
+      "language": "en",
+      "citation": "Zhao, Poon, Tan, and Zhang (2024)",
+      "title": "A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-dependent vehicle routing problem",
+      "source": "/Users/zhouleixishu/Zotero/storage/YRTBDEXW/Zhao 等 _ 2024 _ A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-depend.pdf",
+      "problem_name": {
+        "original": "multi-trip time-dependent vehicle routing problem",
+        "page": "p.921",
+        "evidence_quote": "We design a hybrid algorithm for the multi-trip time-dependent vehicle routing problem (MT-TD-VRP)."
+      },
+      "acronym": {
+        "present": true,
+        "form": "MT-TD-VRP",
+        "definition_page": "p.921",
+        "letter_mapping": [
+          {"position": "M", "source_word": "multi"},
+          {"position": "T", "source_word": "trip"},
+          {"position": "T", "source_word": "time"},
+          {"position": "D", "source_word": "dependent"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problem"}
+        ],
+        "unencoded_terms": [],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 2,
+        "items": ["multi-trip", "time-dependent"],
+        "page": "p.921"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "MT-TD + VRP",
+        "page": "p.921"
+      },
+      "body_occurrence": {
+        "value": 27,
+        "form_counted": "MT-TD-VRP",
+        "variant_counts": {},
+        "scope": "Introduction 至 Acknowledgments 前",
+        "page_range": "pp.921-934"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "We design a hybrid algorithm for the multi-trip",
+        "page": "p.921",
+        "truncated": true
+      }
+    },
+    {
+      "id": "froger_2022",
+      "language": "en",
+      "citation": "Froger, Jabali, Mendoza, and Laporte (2022)",
+      "title": "The electric vehicle routing problem with capacitated charging stations",
+      "source": "/Users/zhouleixishu/Zotero/storage/DS4ZEACC/Froger 等 _ 2022 _ The electric vehicle routing problem with capacitated charging stations.pdf",
+      "problem_name": {
+        "original": "E-VRP with non-linear charging functions and capacitated stations",
+        "page": "author manuscript abstract; local PDF p.2",
+        "evidence_quote": "We refer to this problem as the E-VRP with non-linear charging functions and capacitated stations (E-VRP-NL-C)."
+      },
+      "acronym": {
+        "present": true,
+        "form": "E-VRP-NL-C",
+        "definition_page": "author manuscript abstract; local PDF p.2",
+        "letter_mapping": [
+          {"position": "E", "source_word": "electric"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problem"},
+          {"position": "N", "source_word": "non"},
+          {"position": "L", "source_word": "linear"},
+          {"position": "C", "source_word": "capacitated"}
+        ],
+        "unencoded_terms": ["charging functions", "stations"],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 3,
+        "items": ["electric", "non-linear charging functions", "capacitated stations"],
+        "page": "author manuscript abstract; local PDF p.2"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "E-VRP + NL + C",
+        "page": "author manuscript abstract; local PDF p.2"
+      },
+      "body_occurrence": {
+        "value": 55,
+        "form_counted": "E-VRP-NL-C",
+        "variant_counts": {},
+        "scope": "Introduction 至 Acknowledgments 前",
+        "page_range": "author manuscript pp.1-26"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "Electric vehicle routing problems (E-VRPs) deal with routing",
+        "page": "author manuscript abstract; local PDF p.2",
+        "truncated": true
+      }
+    },
+    {
+      "id": "wang_2023",
+      "language": "en",
+      "citation": "Wang, Zhou, Sun, Fan, Wang, and Wang (2023)",
+      "title": "Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations",
+      "source": "/Users/zhouleixishu/Zotero/storage/FWMR6V2Q/Wang 等 _ 2023 _ Collaborative multidepot electric vehicle routing problem with time windows and shared charging stat.pdf",
+      "problem_name": {
+        "original": "collaborative multidepot EV routing problem with time windows and shared charging stations",
+        "page": "PDF p.1",
+        "evidence_quote": "Solving a collaborative multidepot EV routing problem with time windows and shared charging stations (CMEVRPTW-SCS)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "CMEVRPTW-SCS",
+        "definition_page": "PDF p.1",
+        "letter_mapping": [
+          {"position": "C", "source_word": "collaborative"},
+          {"position": "M", "source_word": "multidepot"},
+          {"position": "E", "source_word": "electric"},
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problem"},
+          {"position": "T", "source_word": "time"},
+          {"position": "W", "source_word": "windows"},
+          {"position": "S", "source_word": "shared"},
+          {"position": "C", "source_word": "charging"},
+          {"position": "S", "source_word": "stations"}
+        ],
+        "unencoded_terms": [],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 5,
+        "items": ["collaborative", "multidepot", "electric", "with time windows", "shared charging stations"],
+        "page": "PDF p.1"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "CME + VRP + TW-SCS",
+        "page": "PDF p.1"
+      },
+      "body_occurrence": {
+        "value": 61,
+        "form_counted": "CMEVRPTW-SCS",
+        "variant_counts": {},
+        "scope": "Introduction 至 Acknowledgments 前",
+        "page_range": "PDF pp.1-33"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "Logistics distribution using electric vehicles (EVs)",
+        "page": "PDF p.1",
+        "truncated": true
+      }
+    },
+    {
+      "id": "wang_2026",
+      "language": "en",
+      "citation": "Wang, Zhang, Liu, Wei, and Wang (2026)",
+      "title": "The logistics vehicle charging station location selection and routing problem with partial recharging and shared fleets",
+      "source": "/Users/zhouleixishu/Zotero/storage/C6AEWZCV/Wang 等 _ 2026 _ The logistics vehicle charging station location selection and routing problem with partial rechargin.pdf",
+      "problem_name": {
+        "original": "the logistics vehicle charging station location selection and routing problem with partial recharging and shared fleets",
+        "page": "PDF p.1",
+        "evidence_quote": "This study examines the logistics vehicle charging station location selection and routing problem with partial recharging and shared fleets."
+      },
+      "acronym": {
+        "present": false,
+        "form": null,
+        "definition_page": null,
+        "letter_mapping": [],
+        "unencoded_terms": [],
+        "observed_variants": []
+      },
+      "modifiers": {
+        "count": 4,
+        "items": ["logistics vehicle", "charging station location selection", "partial recharging", "shared fleets"],
+        "page": "PDF p.1"
+      },
+      "naming_structure": {
+        "category": "无缩写（不适用）",
+        "evidence_quote": "the logistics vehicle charging station location selection and routing problem with partial recharging and shared fleets",
+        "page": "PDF p.1"
+      },
+      "body_occurrence": {
+        "value": null,
+        "form_counted": null,
+        "variant_counts": {},
+        "scope": "无作者自定问题缩写",
+        "page_range": "PDF pp.1-34"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "Growing global concern over environmental protection",
+        "page": "PDF p.1",
+        "truncated": true
+      }
+    },
+    {
+      "id": "vidal_2013",
+      "language": "en",
+      "citation": "Vidal, Crainic, Gendreau, and Prins (2013)",
+      "title": "A hybrid genetic algorithm with adaptive diversity management for a large class of vehicle routing problems with time-windows",
+      "source": "https://www.cirrelt.ca/documentstravail/cirrelt-2011-61.pdf",
+      "source_note": "CIRRELT-2011-61 作者全文稿（2011），对应 2013 期刊论文 DOI 10.1016/j.cor.2012.07.018；页码与计数均指作者稿。",
+      "problem_name": {
+        "original": "large-scale vehicle routing problems with time windows",
+        "page": "author manuscript p.1",
+        "evidence_quote": "a wide range of large-scale vehicle routing problems with time windows (VRPTW)"
+      },
+      "acronym": {
+        "present": true,
+        "form": "VRPTW",
+        "definition_page": "author manuscript p.1",
+        "letter_mapping": [
+          {"position": "V", "source_word": "vehicle"},
+          {"position": "R", "source_word": "routing"},
+          {"position": "P", "source_word": "problems"},
+          {"position": "T", "source_word": "time"},
+          {"position": "W", "source_word": "windows"}
+        ],
+        "unencoded_terms": ["large-scale"],
+        "observed_variants": [
+          {"form": "PVRPTW", "count": 37, "page": "author manuscript pp.1-24", "note": "periodic variant"},
+          {"form": "MDVRPTW", "count": 19, "page": "author manuscript pp.1-24", "note": "multiple-depot variant"},
+          {"form": "SDVRPTW", "count": 19, "page": "author manuscript pp.1-24", "note": "site-dependent variant"}
+        ]
+      },
+      "modifiers": {
+        "count": 1,
+        "items": ["with time windows"],
+        "page": "author manuscript p.1"
+      },
+      "naming_structure": {
+        "category": "定语叠加 + VRP",
+        "evidence_quote": "vehicle routing problems + with time windows (VRPTW)",
+        "page": "author manuscript p.1"
+      },
+      "body_occurrence": {
+        "value": 43,
+        "form_counted": "VRPTW（不含 PVRPTW、MDVRPTW、SDVRPTW 内嵌字符串）",
+        "variant_counts": {"PVRPTW": 37, "MDVRPTW": 19, "SDVRPTW": 19},
+        "scope": "Introduction 至 Acknowledgments 前，剔除重复页眉",
+        "page_range": "author manuscript pp.1-24"
+      },
+      "abstract_first_sentence": {
+        "excerpt": "The paper presents an efficient Hybrid Genetic Search with",
+        "page": "author manuscript abstract; PDF p.2",
+        "truncated": true
+      }
+    }
+  ],
+  "summary_counts": {
+    "modifier_count_min": 1,
+    "modifier_count_max": 5,
+    "with_acronym": 13,
+    "without_acronym": 2,
+    "naming_structure_modifier_stack_plus_vrp": 11,
+    "naming_structure_new_name": 2,
+    "naming_structure_not_applicable": 2
+  }
+}

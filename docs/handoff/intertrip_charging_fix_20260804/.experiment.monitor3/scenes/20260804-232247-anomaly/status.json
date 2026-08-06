@@ -1,0 +1,102 @@
+{
+  "checked_at": "2026-08-04T15:22:47+00:00",
+  "checkpoint_inventory": [],
+  "csv_summaries": [],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/raw_runs.csv": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/raw_runs.csv"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log": {
+      "age_seconds": 83.15660405158997,
+      "exists": true,
+      "mtime": 1785856884.67,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log",
+      "size": 66
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json"
+    }
+  },
+  "findings": [
+    {
+      "code": "FINAL_RESULT_MISSING",
+      "details": {},
+      "message": "completion marker exists but result is missing: /Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/raw_runs.csv",
+      "severity": "critical"
+    },
+    {
+      "code": "FINAL_RESULT_MISSING",
+      "details": {},
+      "message": "completion marker exists but result is missing: /Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json",
+      "severity": "critical"
+    }
+  ],
+  "log_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log"
+  ],
+  "name": "t10-intertrip-charging-fix",
+  "pause_action": "SIGSTOP",
+  "paused": true,
+  "process": {
+    "alive": true,
+    "cpu_percent": 13.1,
+    "members": [
+      {
+        "command": "/opt/anaconda3/bin/python3 docs/handoff/intertrip_charging_fix_20260804/t10_runner.py --run",
+        "cpu_percent": 13.1,
+        "elapsed": "00:00",
+        "pgid": 50335,
+        "pid": 50335,
+        "ppid": 1,
+        "rss_kb": 21808,
+        "state": "Ss"
+      }
+    ],
+    "pgid": 50335,
+    "root_pid": 50335,
+    "rss_mb": 21.296875
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 721.3067309856415,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1785856246.52,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "a4d8d57e7fd01c581464453896cc49978d22bceedb9534359d1e09670151e481",
+      "size": 48155
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 187300.33664608002,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1785669667.49,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "size": 46269
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 1852822.526804924,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "runtime_seconds": 0.06349301338195801,
+  "schema_version": 1,
+  "state": "ANOMALY",
+  "system": {
+    "free_memory_mb": 71.078125,
+    "load_average_15m": 2.72216796875,
+    "load_average_1m": 3.13232421875,
+    "load_average_5m": 2.9873046875,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent": 43.0,
+    "swapouts": 66068781
+  }
+}

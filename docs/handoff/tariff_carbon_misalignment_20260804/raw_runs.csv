@@ -1,0 +1,7 @@
+run_id,stage,status,input_rows,output_rows,search_evaluations,notes
+R0,input_contract,PASS,12096,0,0,12096 rows; required columns present; no key duplicates
+R1,city_profiles,PASS,12096,432,0,9 cities x 48 slots
+R2,daily_extrema_tariff,PASS,12096,252,0,252 city-days; tariff signatures checked
+R3,correlations_rank_alignment,PASS,12096,26,0,13 scopes x 2 price bases
+R4,counterfactual_arithmetic,PASS,12096,54,0,9 cities x 2 price bases x 3 energy levels
+R5,shijiazhuang_source_audit,PASS_WITH_SOURCE_LIMITATION,0,1,0,documentation paths/hashes found; matching entities absent in allowed directories

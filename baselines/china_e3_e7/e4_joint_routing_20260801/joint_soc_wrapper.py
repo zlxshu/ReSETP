@@ -35,6 +35,10 @@ from setp_solver.cost import (
     route_node_schedule,
 )
 from setp_solver.solution import ChargingAction, Route, Solution
+from setp_solver.search.multitrip_schedule import (
+    ContinuousSOCContract,
+    E4_CONTINUOUS_SOC_CONTRACT_ID,
+)
 
 
 COST_ONLY = "COST_ONLY"
@@ -47,6 +51,21 @@ SOC_MAX = 0.80
 TOL = 1.0e-8
 
 _MODE_BY_BUNDLE: dict[int, str] = {}
+
+
+def multitrip_soc_contract(
+    terminal_charges: list[dict[str, Any]] | tuple[dict[str, Any], ...],
+) -> ContinuousSOCContract:
+    """Expose E4's existing SOC cycle to the generic multi-trip adapter."""
+
+    return ContinuousSOCContract(
+        contract_id=E4_CONTINUOUS_SOC_CONTRACT_ID,
+        soc_initial=SOC_INITIAL,
+        soc_min=SOC_MIN,
+        soc_max=SOC_MAX,
+        soc_final_minimum=SOC_INITIAL,
+        terminal_charges=tuple(dict(row) for row in terminal_charges),
+    )
 
 
 @dataclass(frozen=True)

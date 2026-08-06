@@ -1,0 +1,119 @@
+{
+  "schema": "resetp.t13-remaining-gate-failures-diagnosis.v1",
+  "task_id": "T13-REMAINING-GATE-FAILURES-DIAGNOSIS",
+  "date": "2026-08-05",
+  "status": "ROOT_CAUSE_FOUND_TECHNICAL_ONLY",
+  "paper_claim_allowed": false,
+  "scope": "read_only_diagnosis",
+  "repository": "/Volumes/移动硬盘（512G）/ReSETP",
+  "required_environment": {
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH": "solver/src:models/src",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "pytest_cache": "disabled with -p no:cacheprovider"
+  },
+  "protected_files": {
+    "solver/src/setp_solver/cost.py": {
+      "before_sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "after_sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "unchanged": true
+    },
+    "solver/src/setp_solver/check.py": {
+      "before_sha256": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+      "after_sha256": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+      "unchanged": true
+    },
+    "solver/src/setp_solver/search/evaluation.py": {
+      "before_sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "after_sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "unchanged": true
+    }
+  },
+  "targeted_pytest": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 -m pytest -p no:cacheprovider -q <five named tests>",
+    "passed": 0,
+    "failed": 5,
+    "duration_seconds": 0.57,
+    "output": "targeted_pytest_output.txt"
+  },
+  "inputs_read": [
+    "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+    "docs/handoff/memory/user_operating_principles.md",
+    "docs/handoff/defect_intertrip_charging_overlap_20260804.md",
+    "docs/handoff/intertrip_charging_fix_20260804/claude_independent_verification.md",
+    "docs/handoff/intertrip_charging_fix_narrowing_20260804/report.md",
+    "docs/handoff/intertrip_charging_fix_tolerance_20260804/report.md",
+    "HANDOFF.md",
+    "docs/handoff/memory/MEMORY.md",
+    "docs/handoff/memory/project-prd-execution-v2.md",
+    "docs/handoff/project_prd_execution_map_v2_20260702.md",
+    "docs/handoff/project_planning_map_20260701.md",
+    "docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md",
+    "CLAUDE.md",
+    "docs/handoff/model_change_approval_register_20260718.md"
+  ],
+  "root_causes": {
+    "A_refined_carbon_charging": {
+      "tests": 2,
+      "offending_station_id": "D0",
+      "offending_node_type": "d",
+      "station_copy_mismatch": false,
+      "overlap_seconds": [
+        2492.783666140434,
+        1492.783666140434
+      ],
+      "source_refs": [
+        "solver/tests/test_refined_carbon_charging.py:150-177",
+        "solver/tests/test_refined_carbon_charging.py:204-244",
+        "solver/src/setp_solver/check.py:410-490",
+        "solver/src/setp_solver/check.py:453-460",
+        "solver/src/setp_solver/station_copies.py:12-13"
+      ]
+    },
+    "B_search_H2_H3_M0": {
+      "tests": 3,
+      "halt_source": "solver/src/setp_solver/search/construction.py:211-214",
+      "candidate_filter_source": "solver/src/setp_solver/search/construction.py:184-210",
+      "fixture_battery_kwh": 80.0,
+      "fixture_depot_ready_second": 0.0,
+      "fixture_depot_due_second": 32400.0,
+      "deterministic_route": ["D0", "C3", "D0"],
+      "deterministic_repaired_route": ["D0", "F2", "C3", "D0"],
+      "deterministic_direct_energy_kwh": 83.48426334435885,
+      "depot_window_seconds": [9073.829432129312, 22442.0614769616],
+      "public_station_window_seconds": [425.79162846189837, 22381.093839624275],
+      "window_values_same_before_after_T10": true,
+      "window_is_empty_or_negative": false,
+      "current_checker_only_new_violation": "CHARGING_TRIP_OVERLAP",
+      "pre_T10_checker_C3_candidate_passes": true,
+      "source_refs": [
+        "solver/tests/test_search.py:278-286",
+        "solver/tests/test_search.py:289-299",
+        "solver/tests/test_search.py:428-441",
+        "solver/src/setp_solver/search/construction.py:184-217",
+        "solver/src/setp_solver/search/charging.py:468-522",
+        "solver/src/setp_solver/check.py:118-124",
+        "solver/src/setp_solver/check.py:410-490"
+      ]
+    }
+  },
+  "diagnostic_artifacts": [
+    "diagnose_root_causes.py",
+    "diagnostic_observations.json",
+    "diagnostic_trace.txt",
+    "run_targeted_pytest.py",
+    "targeted_pytest_output.json",
+    "targeted_pytest_output.txt",
+    "report.md",
+    "decision.json",
+    "metadata.json",
+    "finalize_artifacts.py",
+    "artifact_hashes.json"
+  ],
+  "artifact_hash_exclusions": [
+    "artifact_hashes.json",
+    "._*",
+    "**/__pycache__/**",
+    "**/.pytest_cache/**"
+  ]
+}

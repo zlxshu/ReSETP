@@ -1,0 +1,149 @@
+{
+  "created_at": "2026-08-04T15:30:21+00:00",
+  "current_status": {
+    "checked_at": "2026-08-04T15:30:21+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/raw_runs.csv": {
+        "age_seconds": 6.164425849914551,
+        "exists": true,
+        "mtime": 1785857415.64,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/raw_runs.csv",
+        "size": 15643
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log": {
+        "age_seconds": 4.064399003982544,
+        "exists": true,
+        "mtime": 1785857417.74,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log",
+        "size": 2963
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json": {
+        "age_seconds": 6.0944459438323975,
+        "exists": true,
+        "mtime": 1785857415.71,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json",
+        "size": 308123
+      }
+    },
+    "findings": [],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log"
+    ],
+    "name": "t10-intertrip-charging-fix",
+    "paused": false,
+    "process": {
+      "alive": false,
+      "cpu_percent": 0,
+      "members": [],
+      "pgid": 50783,
+      "root_pid": 50783,
+      "rss_mb": 0.0
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 227.68510603904724,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1785857194.12,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "886e91108f666c4c4dcb379020b5ec4e055e9a6150fdb42d69bd1ffc9e5ad38c",
+        "size": 48101
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 187754.31492686272,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1785669667.49,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+        "size": 46269
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+        "age_seconds": 1853276.505432129,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784004145.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+        "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+        "size": 7609
+      }
+    },
+    "runtime_seconds": 180.56836462020874,
+    "schema_version": 1,
+    "state": "COMPLETED",
+    "system": {
+      "free_memory_mb": 950.359375,
+      "load_average_15m": 2.8154296875,
+      "load_average_1m": 3.59619140625,
+      "load_average_5m": 3.03662109375,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 39.0,
+      "swapouts": 66068781
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "t10-intertrip-charging-fix",
+    "objective": "Replay the frozen T5 18-run matrix after the approved inter-trip charging fix"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log": [
+      "START arm=O seed=1 budget=100 run_id=O_seed1_budget100",
+      "DONE arm=O seed=1 budget=100 search=2149.591734441078 full=2164.772885253248 success=35/35 elapsed=4.085s",
+      "START arm=C seed=1 budget=100 run_id=C_seed1_budget100",
+      "DONE arm=C seed=1 budget=100 search=2152.150230388952 full=2164.626578675601 success=35/35 elapsed=4.418s",
+      "START arm=P seed=1 budget=100 run_id=P_seed1_budget100",
+      "DONE arm=P seed=1 budget=100 search=2149.591734441078 full=2164.772885253248 success=35/35 elapsed=4.082s",
+      "START arm=O seed=2 budget=100 run_id=O_seed2_budget100",
+      "DONE arm=O seed=2 budget=100 search=2152.946017544280 full=2168.150729239561 success=35/35 elapsed=4.179s",
+      "START arm=C seed=2 budget=100 run_id=C_seed2_budget100",
+      "DONE arm=C seed=2 budget=100 search=2155.538671001026 full=2168.001534491213 success=35/35 elapsed=4.731s",
+      "START arm=P seed=2 budget=100 run_id=P_seed2_budget100",
+      "DONE arm=P seed=2 budget=100 search=2152.946017544280 full=2168.150729239561 success=35/35 elapsed=4.289s",
+      "START arm=O seed=3 budget=100 run_id=O_seed3_budget100",
+      "DONE arm=O seed=3 budget=100 search=2156.301385787454 full=2171.618996422380 success=35/35 elapsed=4.108s",
+      "START arm=C seed=3 budget=100 run_id=C_seed3_budget100",
+      "DONE arm=C seed=3 budget=100 search=2158.986647006411 full=2171.469917740401 success=35/35 elapsed=4.700s",
+      "START arm=P seed=3 budget=100 run_id=P_seed3_budget100",
+      "DONE arm=P seed=3 budget=100 search=2183.815200319094 full=2199.544825114966 success=35/35 elapsed=4.128s",
+      "START arm=O seed=1 budget=1000 run_id=O_seed1_budget1000",
+      "DONE arm=O seed=1 budget=1000 search=2164.645959283908 full=2180.118751270395 success=62/62 elapsed=14.559s",
+      "START arm=C seed=1 budget=1000 run_id=C_seed1_budget1000",
+      "DONE arm=C seed=1 budget=1000 search=2167.306078755338 full=2179.971798436025 success=62/62 elapsed=15.239s",
+      "START arm=P seed=1 budget=1000 run_id=P_seed1_budget1000",
+      "DONE arm=P seed=1 budget=1000 search=2179.202258781264 full=2194.809879929801 success=62/62 elapsed=14.915s",
+      "START arm=O seed=2 budget=1000 run_id=O_seed2_budget1000",
+      "DONE arm=O seed=2 budget=1000 search=2178.418761296495 full=2194.008240581904 success=61/62 elapsed=14.458s",
+      "START arm=C seed=2 budget=1000 run_id=C_seed2_budget1000",
+      "DONE arm=C seed=2 budget=1000 search=2180.842147939982 full=2193.881304570783 success=61/62 elapsed=15.946s",
+      "START arm=P seed=2 budget=1000 run_id=P_seed2_budget1000",
+      "DONE arm=P seed=2 budget=1000 search=2170.813547853797 full=2186.307606616886 success=62/62 elapsed=14.399s",
+      "START arm=O seed=3 budget=1000 run_id=O_seed3_budget1000",
+      "DONE arm=O seed=3 budget=1000 search=2178.475154698954 full=2194.128319476733 success=62/62 elapsed=15.256s",
+      "START arm=C seed=3 budget=1000 run_id=C_seed3_budget1000",
+      "DONE arm=C seed=3 budget=1000 search=2179.690316264491 full=2192.459617460848 success=62/62 elapsed=15.548s",
+      "START arm=P seed=3 budget=1000 run_id=P_seed3_budget1000",
+      "DONE arm=P seed=3 budget=1000 search=2179.463282246601 full=2195.097177627504 success=62/62 elapsed=14.634s",
+      "RUNNER_COMPLETE run_count=18"
+    ]
+  },
+  "reason": "COMPLETED",
+  "schema_version": 1
+}

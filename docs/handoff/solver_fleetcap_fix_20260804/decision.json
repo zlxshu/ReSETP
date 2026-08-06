@@ -1,0 +1,24 @@
+{
+  "criteria": {
+    "protected_files_unchanged": true,
+    "v1_all_logged_completion_evaluations": 167,
+    "v1_all_logged_completion_successes": 164,
+    "v1_completion_success_gt_zero": true,
+    "v1_search_candidate_attempts": 147,
+    "v1_search_candidate_successes": 144,
+    "v2_seed_effective": true,
+    "v3_budget_effective": true,
+    "v4_pre_post_distribution_recorded": true,
+    "v5_directed_passed": true,
+    "v5_full_current_historical_failures_only": true
+  },
+  "evidence_boundary": {
+    "formal_packages_revalidated": false,
+    "formal_runs_started": 0,
+    "probe_only": true
+  },
+  "remaining_open_issue": "3 of 147 post-fix candidates still fail exact completion with the physical-fleet-cap exception; all are persisted and classified. The proxy Route/Trip vehicle count is capped, but the shared exact completion independently reconstructs earliest-departure trip packing.",
+  "schema": "resetp.t4-solver-fleetcap-fix.decision.v1",
+  "status": "SOLVER_FLEETCAP_FIX_COMPLETE",
+  "task_id": "T4-SOLVER-FLEETCAP-FIX"
+}

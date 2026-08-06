@@ -1,0 +1,15 @@
+{
+  "schema": "resetp.t15-clock-alignment.decision.v1",
+  "task_id": "T15",
+  "status": "PASS_REGRESSION_GATES",
+  "depot_charge_window_mode_default": "same_day_predeparture",
+  "mode_selection": "留待后续预注册试算与用户决定",
+  "paper_claim_allowed": false,
+  "protected_files_changed": false,
+  "check_py_changed": false,
+  "full_suite_new_failures": 0,
+  "notes": [
+    "三种模式均已注册并实现；本任务不做优选。",
+    "prev_night 在一个有限车队 smoke fixture 上未找到满足车队上限的组合，未据此宣称模型硬不可行。"
+  ]
+}

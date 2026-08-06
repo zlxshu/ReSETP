@@ -1,0 +1,55 @@
+{
+  "schema_version": "resetp.t28-runtime-recovery.v1",
+  "recorded_at_utc": "2026-08-06T01:27:21Z",
+  "paper_claim_allowed": false,
+  "event": "PAUSE_AND_RESTART_AFTER_PROCESS_MEMORY_THRASH",
+  "facts": {
+    "materialized_rows_before_restart": 23,
+    "accepted_pre_t28_rows": 8,
+    "completed_t28_rows_before_restart": 15,
+    "fully_closed_batches_before_restart": 1,
+    "completed_units_in_interrupted_batch": [
+      "T26__CY__COST__S2026080208",
+      "T26__CY__COST__S2026080209",
+      "T26__CY__COST__S2026080210",
+      "T26__CY__COST_CARBON__S2026080201",
+      "T26__CY__COST_CARBON__S2026080202",
+      "T26__CY__COST_CARBON__S2026080203"
+    ],
+    "incomplete_unmaterialized_units": [
+      "T26__CY__COST_CARBON__S2026080204",
+      "T26__CY__COST_CARBON__S2026080205",
+      "T26__CY__COST_CARBON__S2026080206"
+    ],
+    "worker_states_before_pause": ["U", "U", "U"],
+    "worker_cpu_percent_before_pause": [0.8, 1.5, 2.2],
+    "unit_state_stage_before_pause": "SEARCH_STARTING",
+    "observed_swapouts_before_pause": 48447311,
+    "monitor_exit_snapshot": {
+      "checked_at_utc": "2026-08-06T01:20:14Z",
+      "finding_code": "PROCESS_EXITED_WITHOUT_COMPLETION",
+      "load_average_1m": 278.71337890625,
+      "load_average_5m": 100.08984375,
+      "load_average_15m": 40.8935546875,
+      "memory_pressure_free_percent": 33.0,
+      "swapouts": 55668319
+    },
+    "interrupted_batch_started_at_utc": "2026-08-06T00:33:05Z",
+    "interrupted_batch_elapsed_until_exit_seconds": 2829.0,
+    "interrupted_batch_unit_wall_seconds_median": 698.8698942085007,
+    "interrupted_batch_load_average_before": [1.453125, 1.635254, 2.126953],
+    "interrupted_batch_load_average_at_exit": [278.71337890625, 100.08984375, 40.8935546875],
+    "resource_tracker_shutdown_warning": "There appear to be 5 leaked semaphore objects to clean up at shutdown",
+    "existing_materialized_units_will_be_skipped_by_instance_arm_seed": true
+  },
+  "recovery_change": {
+    "process_pool_max_tasks_per_child": 1,
+    "unit_workers": 3,
+    "max_batch_units": 9,
+    "maximum_configured_compute_threads": 9,
+    "minimum_relative_improvement": 0.01,
+    "no_improvement_seconds_per_view": 180.0,
+    "mip_time_limit_seconds": 10.0,
+    "search_semantics_changed": false
+  }
+}

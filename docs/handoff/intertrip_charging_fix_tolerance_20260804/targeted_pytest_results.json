@@ -1,0 +1,29 @@
+{
+  "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src pytest -q solver/tests/test_public_station_multitrip_20260723.py solver/tests/test_refined_carbon_charging.py solver/tests/test_search.py",
+  "duration_seconds": 120.11,
+  "passed": 36,
+  "failed": 5,
+  "skipped": 0,
+  "status": "HALT_REGRESSION_FAILED",
+  "recovered": [
+    "solver/tests/test_public_station_multitrip_20260723.py::test_public_station_route_closes_strict_clock_soc_and_certificate",
+    "solver/tests/test_public_station_multitrip_20260723.py::test_public_station_route_passes_mandatory_strict_runtime"
+  ],
+  "remaining_failures": [
+    {
+      "test_file": "solver/tests/test_refined_carbon_charging.py",
+      "test_count": 2,
+      "failure_value": "CHARGING_TRIP_OVERLAP: charge=[8000.000000,21090.909091), trip=[0.000000,10492.783666) and charge=[9000.000000,22090.909091), trip=[0.000000,10492.783666)"
+    },
+    {
+      "test_file": "solver/tests/test_search.py",
+      "test_count": 3,
+      "failure_value": "HALT_H2: no feasible EV route with a nonzero charging action"
+    }
+  ],
+  "full_suite": {
+    "run": false,
+    "t10_baseline": "898 passed / 1 skipped / 14 failed",
+    "expected_after_7_recoveries": "905 passed / 1 skipped / 7 failed"
+  }
+}

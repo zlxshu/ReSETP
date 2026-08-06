@@ -26,6 +26,11 @@ from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
     score_charge_option,
 )
 from setp_solver.instance_loader import Instance, Node
+from setp_solver.model_config import (
+    DEPOT_CHARGER_CAPACITY_FINITE_INSTANCE,
+    DEPOT_CHARGER_CAPACITY_UNBOUNDED,
+    ModelConfig,
+)
 from setp_solver.prices import PriceParameters
 from setp_solver.solution import ChargingAction, Route, Solution
 
@@ -48,9 +53,9 @@ CORRECTED_PARAMETERS = (
 @pytest.mark.parametrize(
     ("instance_id", "region", "diesel_price", "num_cv", "num_ev"),
     [
-        ("cn-jjj-10c-01-V2-LOCATIONS", "jjj", 7.48, 2, 1),
-        ("cn-prd-10c-01-V2-LOCATIONS", "prd", 7.44, 3, 1),
-        ("cn-cy-10c-01-V2-LOCATIONS", "cy", 7.50, 2, 1),
+        ("cn-jjj-10c-01-V2-LOCATIONS", "jjj", 7.48, 1, 1),
+        ("cn-prd-10c-01-V2-LOCATIONS", "prd", 7.44, 1, 1),
+        ("cn-cy-10c-01-V2-LOCATIONS", "cy", 7.50, 1, 1),
     ],
 )
 def test_real_china81_bundle_joins_region_vehicle_and_road_contracts(
@@ -138,6 +143,42 @@ def test_real_china81_bundle_joins_region_vehicle_and_road_contracts(
         and node.due_time == CHINA81_HORIZON_END_SECOND
         for node in facilities
     )
+    depots = [node for node in facilities if node.node_type == "d"]
+    public_stations = [node for node in facilities if node.node_type == "f"]
+    assert depots and all(node.station_chargers is None for node in depots)
+    assert public_stations and all(
+        node.station_chargers is not None and node.station_chargers > 0
+        for node in public_stations
+    )
+    assert bundle.model_config["depot_charger_capacity_mode"] == (
+        DEPOT_CHARGER_CAPACITY_UNBOUNDED
+    )
+
+    legacy_finite_bundle = load_china81_bundle(
+        REPO_ROOT,
+        instance_id,
+        model_config=ModelConfig(
+            depot_charger_capacity_mode=(
+                DEPOT_CHARGER_CAPACITY_FINITE_INSTANCE
+            )
+        ),
+    )
+    legacy_depots = [
+        node
+        for node in legacy_finite_bundle.instance.nodes
+        if node.node_type == "d"
+    ]
+    legacy_public_stations = [
+        node
+        for node in legacy_finite_bundle.instance.nodes
+        if node.node_type == "f"
+    ]
+    assert legacy_depots and all(
+        node.station_chargers == 2 for node in legacy_depots
+    )
+    assert [node.station_chargers for node in legacy_public_stations] == [
+        node.station_chargers for node in public_stations
+    ]
 
     first = bundle.instance.nodes[0].node_id
     second = bundle.instance.nodes[1].node_id

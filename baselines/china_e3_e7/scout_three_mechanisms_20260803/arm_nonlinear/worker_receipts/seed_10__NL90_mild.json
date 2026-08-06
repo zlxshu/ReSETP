@@ -1,0 +1,949 @@
+{
+  "row": {
+    "seed": 10,
+    "curve_id": "NL90_mild",
+    "status": "PASS",
+    "objective": 4562.024573963715,
+    "objective_float_hex": "0x1.1d2064a7ab27dp+12",
+    "total_cost_cny": 4562.024573963715,
+    "system_emissions_kg": 415.8739123997247,
+    "public_station_charging_count": 0,
+    "public_actions_ending_above_85pct": 0,
+    "public_actions_crossing_85pct": 0,
+    "between_trip_recharge_count": 0,
+    "between_trip_recharge_energy_kwh": 0,
+    "route_count": 18,
+    "used_physical_vehicle_count": 12,
+    "route_structure_sha256": "16259adedecdf47b932ddb581e3437b14d8d8941426623e56ce1c88026755bb5",
+    "charging_structure_sha256": "c0d3e8b54ca8f828b800f3304a912fb9a4d8c39c4f35bf3400cf6f77d2c9683c",
+    "solution_sha256": "da3318633c796a89dcf0f7ff22f5b60d1d005074cbef38a98fc5859022356a57",
+    "iterations_by_view": {
+      "cv_only": 25000,
+      "naive_ev": 25000,
+      "mechanism_ev": 25000
+    },
+    "complete_candidate_evaluation_attempts": 80,
+    "elapsed_seconds": 313.58414066699333
+  },
+  "solution": {
+    "routes": [
+      {
+        "vehicle_id": "CV_D_chengdu_1#T1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "node_sequence": [
+          "D_chengdu",
+          "C030",
+          "C023",
+          "C003",
+          "C038",
+          "D_chengdu"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chengdu_2#T1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "node_sequence": [
+          "D_chengdu",
+          "C029",
+          "C006",
+          "C041",
+          "C033",
+          "C031",
+          "D_chengdu"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chengdu_3#T1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "node_sequence": [
+          "D_chengdu",
+          "C037",
+          "C017",
+          "C021",
+          "C019",
+          "C004",
+          "C035",
+          "D_chengdu"
+        ]
+      },
+      {
+        "vehicle_id": "EV_D_chengdu_1#T1",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chengdu",
+        "node_sequence": [
+          "D_chengdu",
+          "C015",
+          "C005",
+          "C012",
+          "C009",
+          "C008",
+          "C036",
+          "D_chengdu"
+        ]
+      },
+      {
+        "vehicle_id": "EV_D_chengdu_2#T1",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chengdu",
+        "node_sequence": [
+          "D_chengdu",
+          "C040",
+          "C022",
+          "C024",
+          "C020",
+          "C028",
+          "C034",
+          "C027",
+          "C026",
+          "D_chengdu"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chengdu_1#T2",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "node_sequence": [
+          "D_chengdu",
+          "C032",
+          "C002",
+          "C010",
+          "C025",
+          "C014",
+          "D_chengdu"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chengdu_2#T2",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "node_sequence": [
+          "D_chengdu",
+          "C001",
+          "C018",
+          "C042",
+          "C011",
+          "C007",
+          "C016",
+          "D_chengdu"
+        ]
+      },
+      {
+        "vehicle_id": "EV_D_chengdu_1#T2",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chengdu",
+        "node_sequence": [
+          "D_chengdu",
+          "C013",
+          "C039",
+          "D_chengdu"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chongqing_1#T1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C061",
+          "C048",
+          "C080",
+          "C067",
+          "C064",
+          "C099",
+          "C095",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "EV_D_chongqing_1#T1",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C047",
+          "C091",
+          "C078",
+          "C068",
+          "C094",
+          "C071",
+          "C049",
+          "C060",
+          "C100",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chongqing_2#T1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C051",
+          "C072",
+          "C090",
+          "C058",
+          "C097",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "EV_D_chongqing_2#T1",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C044",
+          "C085",
+          "C093",
+          "C055",
+          "C075",
+          "C081",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chongqing_3#T1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C076",
+          "C074",
+          "C045",
+          "C082",
+          "C083",
+          "C089",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chongqing_5#T1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C065",
+          "C087",
+          "C062",
+          "C092",
+          "C088",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chongqing_4#T1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C053",
+          "C077",
+          "C069",
+          "C054",
+          "C079",
+          "C098",
+          "C056",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "CV_D_chongqing_1#T2",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C070",
+          "C046",
+          "C043",
+          "C073",
+          "C086",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "EV_D_chongqing_1#T2",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C084",
+          "C052",
+          "C059",
+          "C096",
+          "C063",
+          "C050",
+          "C066",
+          "D_chongqing"
+        ]
+      },
+      {
+        "vehicle_id": "EV_D_chongqing_2#T2",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "node_sequence": [
+          "D_chongqing",
+          "C057",
+          "D_chongqing"
+        ]
+      }
+    ],
+    "charging_actions": [
+      {
+        "vehicle_id": "EV_D_chengdu_1#T1",
+        "station_id": "D_chengdu",
+        "energy_kwh": 24.53432905466891,
+        "occupancy_minutes": 66.91180651273338,
+        "charge_start_second": 0.0,
+        "charge_day_offset": -1,
+        "start_energy_kwh": 0.0,
+        "end_energy_kwh": 24.53432905466891,
+        "charging_curve_id": "NL90_mild"
+      },
+      {
+        "vehicle_id": "EV_D_chengdu_1#T2",
+        "station_id": "D_chengdu",
+        "energy_kwh": 17.202009837913366,
+        "occupancy_minutes": 46.91457228521831,
+        "charge_start_second": 36000.0,
+        "charge_day_offset": 0,
+        "start_energy_kwh": 0.0,
+        "end_energy_kwh": 17.202009837913366,
+        "charging_curve_id": "NL90_mild"
+      },
+      {
+        "vehicle_id": "EV_D_chengdu_2#T1",
+        "station_id": "D_chengdu",
+        "energy_kwh": 24.32017295216999,
+        "occupancy_minutes": 66.32774441500906,
+        "charge_start_second": 0.0,
+        "charge_day_offset": -1,
+        "start_energy_kwh": 0.0,
+        "end_energy_kwh": 24.32017295216999,
+        "charging_curve_id": "NL90_mild"
+      },
+      {
+        "vehicle_id": "EV_D_chongqing_1#T1",
+        "station_id": "D_chongqing",
+        "energy_kwh": 39.668474536369985,
+        "occupancy_minutes": 108.18674873555452,
+        "charge_start_second": 0.0,
+        "charge_day_offset": -1,
+        "start_energy_kwh": 0.0,
+        "end_energy_kwh": 39.668474536369985,
+        "charging_curve_id": "NL90_mild"
+      },
+      {
+        "vehicle_id": "EV_D_chongqing_1#T2",
+        "station_id": "D_chongqing",
+        "energy_kwh": 37.74006614561763,
+        "occupancy_minutes": 102.92745312441171,
+        "charge_start_second": 47824.3528125353,
+        "charge_day_offset": 0,
+        "start_energy_kwh": 0.0,
+        "end_energy_kwh": 37.74006614561763,
+        "charging_curve_id": "NL90_mild"
+      },
+      {
+        "vehicle_id": "EV_D_chongqing_2#T1",
+        "station_id": "D_chongqing",
+        "energy_kwh": 47.2921541190862,
+        "occupancy_minutes": 128.97860214296236,
+        "charge_start_second": 0.0,
+        "charge_day_offset": -1,
+        "start_energy_kwh": 0.0,
+        "end_energy_kwh": 47.2921541190862,
+        "charging_curve_id": "NL90_mild"
+      },
+      {
+        "vehicle_id": "EV_D_chongqing_2#T2",
+        "station_id": "D_chongqing",
+        "energy_kwh": 24.596122550413256,
+        "occupancy_minutes": 67.0803342283998,
+        "charge_start_second": 49975.17994629601,
+        "charge_day_offset": 0,
+        "start_energy_kwh": 0.0,
+        "end_energy_kwh": 24.596122550413256,
+        "charging_curve_id": "NL90_mild"
+      }
+    ],
+    "cross_site_services": []
+  },
+  "certificate": {
+    "contract_id": "E3_STRICT_MULTITRIP_V3_NL",
+    "status": "PASS",
+    "vehicle_counts": {
+      "cv": 8,
+      "ev": 4
+    },
+    "trips": [
+      {
+        "route_id": "CV_D_chengdu_1#T1",
+        "physical_vehicle_id": "CV_D_chengdu_1",
+        "trip_index": 1,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "departure_second": 39678.591179999996,
+        "return_second": 47969.591179999996,
+        "recharge_end_second": 47969.591179999996,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chengdu_1#T2",
+        "physical_vehicle_id": "CV_D_chengdu_1",
+        "trip_index": 2,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "departure_second": 48537.60146,
+        "return_second": 57329.20146,
+        "recharge_end_second": 57329.20146,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chengdu_2#T1",
+        "physical_vehicle_id": "CV_D_chengdu_2",
+        "trip_index": 1,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "departure_second": 42603.53974,
+        "return_second": 50981.03974,
+        "recharge_end_second": 50981.03974,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chengdu_2#T2",
+        "physical_vehicle_id": "CV_D_chengdu_2",
+        "trip_index": 2,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "departure_second": 54972.15175999999,
+        "return_second": 63541.35176,
+        "recharge_end_second": 63541.35176,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chengdu_3#T1",
+        "physical_vehicle_id": "CV_D_chengdu_3",
+        "trip_index": 1,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "departure_second": 44490.63024,
+        "return_second": 52818.23024,
+        "recharge_end_second": 52818.23024,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chongqing_1#T1",
+        "physical_vehicle_id": "CV_D_chongqing_1",
+        "trip_index": 1,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 38637.363659999995,
+        "return_second": 50538.46365999999,
+        "recharge_end_second": 50538.46365999999,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chongqing_1#T2",
+        "physical_vehicle_id": "CV_D_chongqing_1",
+        "trip_index": 2,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 51067.94062,
+        "return_second": 63466.47916,
+        "recharge_end_second": 63466.47916,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chongqing_2#T1",
+        "physical_vehicle_id": "CV_D_chongqing_2",
+        "trip_index": 1,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 43741.59954,
+        "return_second": 54186.79954,
+        "recharge_end_second": 54186.79954,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chongqing_3#T1",
+        "physical_vehicle_id": "CV_D_chongqing_3",
+        "trip_index": 1,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 45791.36222,
+        "return_second": 56372.96222000001,
+        "recharge_end_second": 56372.96222000001,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chongqing_4#T1",
+        "physical_vehicle_id": "CV_D_chongqing_4",
+        "trip_index": 1,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 47343.58102,
+        "return_second": 59191.21843999999,
+        "recharge_end_second": 59191.21843999999,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "CV_D_chongqing_5#T1",
+        "physical_vehicle_id": "CV_D_chongqing_5",
+        "trip_index": 1,
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 48360.21488,
+        "return_second": 58326.814880000005,
+        "recharge_end_second": 58326.814880000005,
+        "start_battery_kwh": null,
+        "end_battery_kwh": null,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "EV_D_chengdu_1#T1",
+        "physical_vehicle_id": "EV_D_chengdu_1",
+        "trip_index": 1,
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chengdu",
+        "departure_second": 46527.090200000006,
+        "return_second": 55697.690200000005,
+        "recharge_end_second": 38814.8743371131,
+        "start_battery_kwh": 24.53432905466891,
+        "end_battery_kwh": 0.0,
+        "charge_start_second": 36000.0,
+        "charge_energy_kwh": 17.202009837913366,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "EV_D_chengdu_1#T2",
+        "physical_vehicle_id": "EV_D_chengdu_1",
+        "trip_index": 2,
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chengdu",
+        "departure_second": 58009.2166,
+        "return_second": 63008.8166,
+        "recharge_end_second": 63008.8166,
+        "start_battery_kwh": 17.202009837913366,
+        "end_battery_kwh": 0.0,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "EV_D_chengdu_2#T1",
+        "physical_vehicle_id": "EV_D_chengdu_2",
+        "trip_index": 1,
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chengdu",
+        "departure_second": 46780.42178000001,
+        "return_second": 57179.71318,
+        "recharge_end_second": 57179.71318,
+        "start_battery_kwh": 24.32017295216999,
+        "end_battery_kwh": 0.0,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "EV_D_chongqing_1#T1",
+        "physical_vehicle_id": "EV_D_chongqing_1",
+        "trip_index": 1,
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 40959.082539999996,
+        "return_second": 52625.582539999996,
+        "recharge_end_second": 54000.0,
+        "start_battery_kwh": 39.668474536369985,
+        "end_battery_kwh": 0.0,
+        "charge_start_second": 47824.3528125353,
+        "charge_energy_kwh": 37.74006614561763,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "EV_D_chongqing_1#T2",
+        "physical_vehicle_id": "EV_D_chongqing_1",
+        "trip_index": 2,
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 56216.4046,
+        "return_second": 67077.8046,
+        "recharge_end_second": 67077.8046,
+        "start_battery_kwh": 37.74006614561763,
+        "end_battery_kwh": 0.0,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "EV_D_chongqing_2#T1",
+        "physical_vehicle_id": "EV_D_chongqing_2",
+        "trip_index": 1,
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 42434.28046,
+        "return_second": 54613.38046000001,
+        "recharge_end_second": 54000.0,
+        "start_battery_kwh": 47.2921541190862,
+        "end_battery_kwh": 0.0,
+        "charge_start_second": 49975.17994629601,
+        "charge_energy_kwh": 24.596122550413256,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      },
+      {
+        "route_id": "EV_D_chongqing_2#T2",
+        "physical_vehicle_id": "EV_D_chongqing_2",
+        "trip_index": 2,
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "departure_second": 59742.537919999995,
+        "return_second": 64402.83791999999,
+        "recharge_end_second": 64402.83791999999,
+        "start_battery_kwh": 24.596122550413256,
+        "end_battery_kwh": 0.0,
+        "charge_start_second": null,
+        "charge_energy_kwh": null,
+        "in_route_charge_energy_kwh": 0,
+        "fixed_departure_battery_kwh": null
+      }
+    ],
+    "recharge_mode": "on_demand",
+    "depot_charge_power_kw": 22.0,
+    "first_trip_charge_day_offset": -1,
+    "charging_curve_id": "NL90_mild",
+    "charging_curve_parameter_sha256": "605f66b161bb16e9383ceec724d10ec09c6033eb9e600f11b64e5af9b8fd1e54",
+    "battery_capacity_kwh": 77.28,
+    "charging_curve_physical_sha256": "3350c2624f438a01779dcebc5ac058a851ea7ba6a4f0322dd0bf07951ddd4de6",
+    "initial_battery_kwh": 0.0,
+    "continuous_soc_contract_id": null,
+    "soc_initial": null,
+    "soc_min": null,
+    "soc_max": null,
+    "soc_final_minimum": null,
+    "depot_charge_ledger": []
+  },
+  "completion_activity": {
+    "schema_version": "resetp.china81-shared-completion.v1",
+    "baseline_all_cv_cost": 5174.431221352166,
+    "finite_fleet_reference_cost": 5174.431221352166,
+    "final_cost": 4562.024573963715,
+    "strict_improvement": true,
+    "improvement": 612.4066473884513,
+    "route_count": 18,
+    "ev_route_count": 7,
+    "charging_action_count": 7,
+    "cross_site_service_count": 0,
+    "mechanism_experts_queried": [
+      "vehicle_type_and_nonlinear_charging",
+      "time_varying_electricity_and_carbon",
+      "multi_depot_responsibility_accounting"
+    ],
+    "variant_count": 54,
+    "charge_amount_strategies": [
+      "just_enough"
+    ],
+    "charge_amount_strategy_generation": {
+      "just_enough": {
+        "generated": 54,
+        "failed": 0
+      }
+    },
+    "charge_amount_strategy_acceptance": {
+      "just_enough": 7
+    },
+    "variant_attempts": 43,
+    "variant_generation_failures": [],
+    "mandatory_fleet_assignment_count": 0,
+    "mandatory_fleet_assignments": [],
+    "rejected_infeasible": 34,
+    "rejected_non_improving": 2,
+    "accepted_variants": [
+      {
+        "route_index": 11,
+        "label": "ev_immediate",
+        "charge_amount_strategy": "just_enough",
+        "before_cost": 5174.431221352166,
+        "after_cost": 5032.094518963774,
+        "improvement": 142.33670238839204,
+        "charging_action_count": 1
+      },
+      {
+        "route_index": 9,
+        "label": "ev_immediate",
+        "charge_amount_strategy": "just_enough",
+        "before_cost": 5032.094518963774,
+        "after_cost": 4905.73973311553,
+        "improvement": 126.35478584824432,
+        "charging_action_count": 1
+      },
+      {
+        "route_index": 16,
+        "label": "ev_integrated",
+        "charge_amount_strategy": "just_enough",
+        "before_cost": 4905.73973311553,
+        "after_cost": 4820.614890070104,
+        "improvement": 85.12484304542613,
+        "charging_action_count": 1
+      },
+      {
+        "route_index": 4,
+        "label": "ev_immediate",
+        "charge_amount_strategy": "just_enough",
+        "before_cost": 4820.614890070104,
+        "after_cost": 4736.52330221622,
+        "improvement": 84.09158785388354,
+        "charging_action_count": 1
+      },
+      {
+        "route_index": 3,
+        "label": "ev_immediate",
+        "charge_amount_strategy": "just_enough",
+        "before_cost": 4736.52330221622,
+        "after_cost": 4655.178798726273,
+        "improvement": 81.34450348994687,
+        "charging_action_count": 1
+      },
+      {
+        "route_index": 17,
+        "label": "ev_integrated",
+        "charge_amount_strategy": "just_enough",
+        "before_cost": 4655.178798726273,
+        "after_cost": 4603.651819751645,
+        "improvement": 51.52697897462804,
+        "charging_action_count": 1
+      },
+      {
+        "route_index": 7,
+        "label": "ev_integrated",
+        "charge_amount_strategy": "just_enough",
+        "before_cost": 4603.651819751645,
+        "after_cost": 4562.024573963715,
+        "improvement": 41.627245787930406,
+        "charging_action_count": 1
+      }
+    ],
+    "baseline_breakdown": {
+      "total_cost": 5174.431221352166,
+      "cost_fix": 2040.0,
+      "cost_km": 1371.9502251623635,
+      "cost_fuel": 1716.012862121267,
+      "cost_elec": 0,
+      "cost_occ": 0.0,
+      "cost_time": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 46.46813406853539,
+      "E_total": 619.409944928491,
+      "E_cv_direct": 619.409944928491,
+      "E_ev_indirect": 0.0,
+      "n_veh_cv": 12,
+      "n_veh_ev": 0,
+      "distance_total": 1758910.545079953,
+      "distance_cv": 1758910.545079953,
+      "distance_ev": 0,
+      "fuel_liters": 229.003520426535,
+      "electricity_kwh": 0,
+      "route_time_hours": 27.32886111111111,
+      "depot_charging_kwh": 0,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 0
+    },
+    "final_breakdown": {
+      "total_cost": 4562.024573963715,
+      "cost_fix": 2040.0,
+      "cost_km": 1295.9098277602195,
+      "cost_fuel": 1044.2808286818424,
+      "cost_elec": 150.63505661342543,
+      "cost_occ": 0.0,
+      "cost_time": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 31.19886090822735,
+      "E_total": 415.8739123997247,
+      "E_cv_direct": 376.94766309482213,
+      "E_ev_indirect": 38.926249304902555,
+      "n_veh_cv": 8,
+      "n_veh_ev": 4,
+      "distance_total": 1758910.545079953,
+      "distance_cv": 1067634.205060463,
+      "distance_ev": 691276.34001949,
+      "fuel_liters": 139.36221491444635,
+      "electricity_kwh": 215.35332919623934,
+      "route_time_hours": 27.32886111111111,
+      "depot_charging_kwh": 215.35332919623934,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 215.35332919623934
+    }
+  },
+  "search_stats": {
+    "algorithm": "MV-HGS-SP",
+    "algorithm_name_en": "Multi-View Hybrid Genetic Search with Time-Limited MIP Route-Pool Recombination",
+    "algorithm_name_zh": "多视角混合遗传搜索—限时MIP路线池重组算法",
+    "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an audited time-limited MIP layer recombines routes across views",
+    "seed": 10,
+    "hgs_seconds_per_view": null,
+    "max_hgs_iterations_per_view": {
+      "cv_only": 25000,
+      "naive_ev": 25000,
+      "mechanism_ev": 25000
+    },
+    "max_no_improvement_iterations_per_view": {
+      "cv_only": null,
+      "naive_ev": null,
+      "mechanism_ev": null
+    },
+    "wallclock_safety_seconds_per_view": 86400.0,
+    "wallclock_safety_triggered": false,
+    "primary_budget_unit": "complete_candidate_evaluation_attempt",
+    "complete_candidate_evaluation_attempts": 80,
+    "complete_candidate_budget_expected": 80,
+    "complete_candidate_budget_exactly_consumed": true,
+    "last_strict_improvement_evaluation": 25,
+    "last_strict_improvement_fraction": 0.3125,
+    "view_count": 3,
+    "exact_elites_per_view": 8,
+    "archive_candidates_per_view": {
+      "cv_only": 24,
+      "naive_ev": 24,
+      "mechanism_ev": 24
+    },
+    "exact_checkpoint_interval_iterations": {
+      "cv_only": null,
+      "naive_ev": null,
+      "mechanism_ev": null
+    },
+    "exact_checkpoint_attempts_by_view": {
+      "cv_only": 0,
+      "naive_ev": 0,
+      "mechanism_ev": 0
+    },
+    "preserve_base_pool_recombination": false,
+    "base_route_pool_mip": null,
+    "parent_solution_count": 3,
+    "route_pool_candidate_solution_count": 3,
+    "route_pool_size": 18,
+    "best_parent_objective": 4562.024573963715,
+    "selected_source": "best_exact_hgs_parent",
+    "final_objective": 4562.024573963715,
+    "strict_recombination_improvement": false,
+    "improvement_over_best_parent": 0.0,
+    "route_pool_mip": {
+      "solver": "scipy.optimize.milp/HiGHS",
+      "component": "time-limited MIP route-pool recombination",
+      "formulation": "customer exact cover surrogate",
+      "fleet_semantics": "route-count caps omitted because strict multi-trip assigns physical vehicles only in the shared complete evaluator",
+      "objective_semantics": "sum of route proxy costs; final authority is the shared complete evaluator",
+      "success": true,
+      "status": 0,
+      "status_class": "OPTIMAL",
+      "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+      "incumbent_available": true,
+      "objective": 5582.024573963715,
+      "dual_bound": 5582.024573963715,
+      "mip_gap": 0.0,
+      "mip_node_count": 0,
+      "time_limit_seconds": 5.0,
+      "optimality_proven": true,
+      "incumbent_vector_integral": true,
+      "incumbent_cover_exact": true,
+      "selected_route_count": 18,
+      "independent_violation_count": 0,
+      "independent_complete_candidate_evaluation_attempts": 1,
+      "independent_exact_objective": 4562.024573963715,
+      "objective_closes_under_complete_model": false,
+      "objective_is_search_surrogate": true,
+      "recombined_exact_objective": 4562.024573963715
+    },
+    "set_partitioning": {
+      "solver": "scipy.optimize.milp/HiGHS",
+      "component": "time-limited MIP route-pool recombination",
+      "formulation": "customer exact cover surrogate",
+      "fleet_semantics": "route-count caps omitted because strict multi-trip assigns physical vehicles only in the shared complete evaluator",
+      "objective_semantics": "sum of route proxy costs; final authority is the shared complete evaluator",
+      "success": true,
+      "status": 0,
+      "status_class": "OPTIMAL",
+      "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+      "incumbent_available": true,
+      "objective": 5582.024573963715,
+      "dual_bound": 5582.024573963715,
+      "mip_gap": 0.0,
+      "mip_node_count": 0,
+      "time_limit_seconds": 5.0,
+      "optimality_proven": true,
+      "incumbent_vector_integral": true,
+      "incumbent_cover_exact": true,
+      "selected_route_count": 18,
+      "independent_violation_count": 0,
+      "independent_complete_candidate_evaluation_attempts": 1,
+      "independent_exact_objective": 4562.024573963715,
+      "objective_closes_under_complete_model": false,
+      "objective_is_search_surrogate": true,
+      "recombined_exact_objective": 4562.024573963715,
+      "legacy_key_name_only": true
+    },
+    "hard_home_depot_lock": false,
+    "measured_elapsed_seconds": 313.57681770808995
+  }
+}

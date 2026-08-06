@@ -1,0 +1,89 @@
+{
+  "schema": "resetp.representative-instance-selection-rule.v1",
+  "task_id": "SEL",
+  "status": "FROZEN_BEFORE_CANDIDATE_IDENTITIES_WERE_EVALUATED",
+  "frozen_at": "2026-08-03T01:10:38+08:00",
+  "population": {
+    "instance_count": 81,
+    "identity_source": "baselines/algorithm_prototypes/china81_vs_opensource_20260727/raw_runs.json",
+    "required_seed_set": [1, 2, 3, 4, 5],
+    "representative_size_domain": {
+      "minimum_customers": 51,
+      "maximum_customers": 149,
+      "china81_sizes_admitted": [75, 100],
+      "basis": "Chen et al. (2023), p.3328 uses the 51-149-customer stopping regime; p.3331 Table 8 uses one 71-customer private instance. The repository evidence inventory maps the representative comparison and ablation to one 51-149-customer China81 instance.",
+      "source_path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md:66-67"
+    }
+  },
+  "quantile_definition": {
+    "method": "Hyndman-Fan type 7 / linear interpolation, identical to numpy.quantile default",
+    "population_unit": "instance",
+    "identity_blinding": "Threshold distributions were computed over all 81 values and written here before any qualifying instance id was listed.",
+    "missing_value_policy": "No imputation. Any missing required dimension makes that instance ineligible. If no instance qualifies, stop without relaxing thresholds."
+  },
+  "dimension_rules": {
+    "algorithm_component": {
+      "metric": "m_to_mv_improve_seed_count",
+      "definition": "Among seeds 1-5, count cases where M final_cost - MV final_cost > 1e-9 in the sealed old-vehicle batch.",
+      "threshold_operator": ">=",
+      "threshold": 3,
+      "distribution_basis": {
+        "all_81_q3": 3,
+        "positive_support_q1": 3,
+        "frequency": {"0": 50, "1": 2, "2": 3, "3": 10, "4": 4, "5": 12}
+      },
+      "source_path": "baselines/algorithm_prototypes/china81_vs_opensource_20260727/raw_runs.json",
+      "source_sha256": "4291ee24707bcf834c6cf6ff6b308a14eab4b4a6a3011681408935e8693e070c",
+      "selection_boundary": "The old 140.41 kWh vehicle and old fleet limits make this a discrimination prior only; absolute costs and improvements are not new-model results."
+    },
+    "fleet_electrification": {
+      "metric": "dispatched_composition_l1_diameter",
+      "definition": "Across the five certified 0/25/50/75/100% levels, take max over all level pairs of abs(physical_cv_used_i-physical_cv_used_j)+abs(physical_ev_used_i-physical_ev_used_j).",
+      "threshold_operator": ">=",
+      "threshold": 14,
+      "distribution_basis": {"all_81_min": 3, "all_81_q1": 6, "all_81_median": 14, "all_81_q3": 27, "all_81_max": 56},
+      "companion_metric": "available_composition_l1_diameter",
+      "source_path": "baselines/china_e3_e7/fleet_authority_v3_20260802/raw_runs.csv",
+      "source_sha256": "52461308cb94860d3a7a86d3cadf5bc7aaabfcd938cec280ff308a7a6b90ed42"
+    },
+    "carbon_timing": {
+      "metric": "unique_carbon_opportunity_action_count",
+      "definition": "Count unique (seed, action_index) charging actions for which at least one of the 28 registered days has candidate_count>1 and CARBON predicted charging emissions at least 1e-9 kg below ASAP.",
+      "threshold_operator": ">=",
+      "threshold": 15,
+      "distribution_basis": {"all_81_min": 5, "all_81_q1": 5, "all_81_median": 15, "all_81_q3": 28, "all_81_max": 55},
+      "companion_metrics": ["unique_charging_action_count", "window_span_seconds distribution", "opportunity_action_day_count"],
+      "source_path": "baselines/china_e3_e7/e4_carbon_timing_20260729/action_timing_audit.csv",
+      "source_sha256": "a93cf85d31bcf11d3e37571379c50e488297eec5780be1087057b26d23269497"
+    },
+    "dynamic_demand": {
+      "metrics": ["new_order_count_per_stream", "due_slack_p10_seconds"],
+      "definition": "Apply the frozen H0/G2 20% independent-disclosure generator to stream seeds 1-5. Per instance, require the common event count per stream and the type-7 10th percentile of due_time-t_appear over all five streams.",
+      "thresholds": {
+        "new_order_count_per_stream": {"operator": ">=", "value": 10, "distribution_basis": "all-81 median"},
+        "due_slack_p10_seconds": {"operator": ">=", "value": 5206.138268734958, "distribution_basis": "all-81 q1 of the per-instance p10 values"}
+      },
+      "companion_metrics": ["ready_lead_p10_seconds", "due_slack_median_seconds", "due_slack_min_seconds"],
+      "source_path": "baselines/china_e3_e7/e7_h0_g2_foundation_20260801/stream.py",
+      "source_sha256": "d5caee5d1eecb3241bcfdb572171777aa1694de7050b6e858c4bf013ab903951"
+    }
+  },
+  "selection_order": [
+    "Keep only instances in the 51-149 customer representative-size domain.",
+    "Keep only instances meeting every frozen dimension threshold; no compensating weighted score is allowed.",
+    "Choose the remaining instance with the largest customer_count.",
+    "If tied, choose the lexicographically smallest full instance_id. This tie-break uses no outcome magnitude."
+  ],
+  "forbidden_after_freeze": [
+    "Changing a threshold, metric, population, seed set, tolerance, size domain, or tie-break after candidate identities are evaluated.",
+    "Ranking by the largest cost improvement, emissions reduction, or number of formal wins.",
+    "Using any new path search, formal experiment, or later reported experiment outcome to alter this selection."
+  ],
+  "no_relaxation_rule": "If the intersection is empty or a required dimension is unavailable, record HALT_NO_ELIGIBLE_REPRESENTATIVE_INSTANCE or HALT_DIMENSION_NOT_EVALUABLE; do not weaken the rule.",
+  "source_hashes": {
+    "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv": "886354a6a6a5fd3e63512caa800f9541637fd5e99e432b6843b235ef96300655",
+    "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv": "a36b833228f9313f02a5e7796156b1f1e0b1a39982e5427c017d25522349c982",
+    "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b",
+    "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md": "e70e4904205d35d2d25d740e3d888bfec937707664f6c32c596ec0302caedeb0"
+  }
+}

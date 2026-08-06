@@ -1,0 +1,25 @@
+{
+  "task_id": "T12-INTERTRIP-CHARGING-FIX-TOLERANCE",
+  "status": "HALT_REGRESSION_FAILED",
+  "date": "2026-08-05",
+  "scope": "Only solver/src/setp_solver/check.py::_check_charging_trip_overlap; reuse FEASIBILITY_TOL=1e-9",
+  "search_rerun": false,
+  "full_suite_run": false,
+  "environment": {
+    "pythonhashseed": "0",
+    "pythonpath": "solver/src:models/src",
+    "targeted_command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src pytest -q solver/tests/test_public_station_multitrip_20260723.py solver/tests/test_refined_carbon_charging.py solver/tests/test_search.py"
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "93139ea143d361d1b4cde7e9e2a34506bf90b95fe718809c1a467c2fd97b7f73",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_file_change_authorized": "check.py only, T12 user instruction",
+  "paper_claim_allowed": false
+}

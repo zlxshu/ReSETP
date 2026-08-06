@@ -1,0 +1,22 @@
+{
+  "schema": "resetp.t18-public-station-candidate-decision.v1",
+  "verdict": "HALT_REGRESSION_FAILED",
+  "paper_claim_allowed": false,
+  "implementation_gate_passed": false,
+  "facts": {
+    "default_mode": "fallback",
+    "parallel_mode_generated_both_candidate_classes": true,
+    "parallel_minimal_case_violation_counts": {
+      "depot_fallback": 0,
+      "public_station_S_beijing": 0
+    },
+    "parallel_minimal_case_selected": "depot_fallback",
+    "targeted_pytest_passed": 7,
+    "positive_overlap_passed": 3,
+    "t10_legal_passed": 18,
+    "full_suite_actual": "905 passed / 1 skipped / 7 failed",
+    "full_suite_required": "906 passed / 1 skipped / 6 failed"
+  },
+  "decision": "Stop after the failed full-suite gate; do not classify failures, change tests, relax constraints, tune thresholds, or make paper claims.",
+  "halt_reason": "The full-suite result differed from the required baseline by one additional failure."
+}

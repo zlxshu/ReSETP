@@ -1,0 +1,84 @@
+{
+  "task_id": "T2-INSTANCE-SOURCE",
+  "title": "中国城配 VRP 算例数据源调查与现有源质量评估",
+  "created_at": "2026-08-04T15:04:19+08:00",
+  "as_of_date": "2026-08-04",
+  "timezone": "Asia/Singapore",
+  "repository": "/Volumes/移动硬盘（512G）/ReSETP",
+  "git_commit_read_only_snapshot": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "mode": "read_only_survey_with_new_output_directory_only",
+  "scope": {
+    "existing_files_modified": false,
+    "solver_code_touched": false,
+    "instances_generated": false,
+    "solver_or_experiment_run": false,
+    "descriptive_analysis_only": true,
+    "candidate_selection_made": false,
+    "ranking_or_scoring_performed": false,
+    "search_evaluations": 0
+  },
+  "required_startup_read": [
+    "HANDOFF.md",
+    "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+    "docs/handoff/project_prd_execution_map_v2_20260702.md",
+    "docs/handoff/project_planning_map_20260701.md",
+    "docs/handoff/memory/MEMORY.md",
+    "docs/handoff/memory/project-prd-execution-v2.md",
+    "docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md",
+    "CLAUDE.md",
+    "docs/handoff/china_open_ev_vrp_instance_search_20260717.md"
+  ],
+  "task_specific_repository_sources": [
+    "docs/handoff/china_order_attribute_contract_v2_20260718.md",
+    "data/ChinaInstances/china_order_attribute_contract_v2_20260718.json",
+    "data/ChinaInstances/china_order_attribute_calibration_v2_20260718/",
+    "docs/handoff/model_change_approval_register_20260718.md:181-197",
+    "data/ChinaInstances/open_sources_20260717/figshare_28113608/",
+    "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv",
+    "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/metadata.json",
+    "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/decision.json"
+  ],
+  "primary_external_sources": [
+    "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0318432",
+    "https://api.figshare.com/v2/articles/28113608",
+    "https://data.mendeley.com/datasets/gsnndmbyzc/1",
+    "https://figshare.com/articles/dataset/Delivery_routing_for_electric_vehicles_with_en-route_mobile_battery_swapping/26870551",
+    "https://connect.informs.org/tsl/tslresources/datachallenge",
+    "https://github.com/meituan/Meituan-INFORMS-TSL-Research-Challenge",
+    "https://github.com/spatialsmart/VRPTW/tree/master/Shanghai/Problem",
+    "https://xuebao.dlou.edu.cn/article/2025/2095-1388/202502014.html",
+    "https://www.sintef.no/projectweb/top/vrptw/",
+    "https://neo.lcc.uma.es/vrp/vrp-instances/",
+    "https://dimacs.rutgers.edu/index.php/programs/challenge/vrp/cvrp/",
+    "https://dimacs.rutgers.edu/index.php/programs/challenge/vrp/evrp/",
+    "https://data.mendeley.com/datasets/h3mrm5dhxw/1",
+    "https://data.mendeley.com/datasets/bd7rm5fw6k/1",
+    "https://registry.opendata.aws/amazon-last-mile-challenges/",
+    "https://data.mendeley.com/datasets/np452gmj7f/2",
+    "https://zenodo.org/records/18529191",
+    "https://doi.org/10.34894/3SK3JG"
+  ],
+  "descriptive_statistics": {
+    "input": "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv",
+    "input_rows": 5805,
+    "groups": ["ALL", "customer_size:10", "customer_size:15", "customer_size:20", "customer_size:25", "customer_size:50", "customer_size:75", "customer_size:100", "customer_size:150", "customer_size:200"],
+    "metrics": ["demand_kg", "time_window_early_minute", "time_window_width_minute", "service_minutes", "source_order_uid"],
+    "statistics": ["n", "min", "p05", "p25", "median", "mean", "p75", "p95", "max", "std", "value_counts", "value_shares", "unique_count", "unique_share", "max_reuse_count"],
+    "output": "descriptive_stats.csv"
+  },
+  "deliverables": [
+    "report.md",
+    "current_source_assessment.json",
+    "candidates.json",
+    "descriptive_stats.csv",
+    "inaccessible.json",
+    "metadata.json",
+    "raw_runs.csv",
+    "decision.json",
+    "artifact_hashes.json"
+  ],
+  "artifact_hash_policy": {
+    "algorithm": "sha256",
+    "exclude": ["artifact_hashes.json", "._*", "__pycache__"]
+  }
+}

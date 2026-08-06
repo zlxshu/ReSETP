@@ -1,0 +1,213 @@
+{
+  "created_at": "2026-08-04T09:56:22+00:00",
+  "current_status": {
+    "checked_at": "2026-08-04T09:56:22+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/.t7-eval-chain-carbon-consistency.monitor/experiment.stdout.log": {
+        "age_seconds": 0.17313003540039062,
+        "exists": true,
+        "mtime": 1785837382.34,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/.t7-eval-chain-carbon-consistency.monitor/experiment.stdout.log",
+        "size": 0
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/completion_trace.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/completion_trace.csv"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/probe_raw.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/probe_raw.csv"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/raw_runs.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/raw_runs.csv"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/runner_state.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/runner_state.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/slot_distribution.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/slot_distribution.csv"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/solution_witnesses.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/solution_witnesses.json"
+      }
+    },
+    "findings": [
+      {
+        "code": "COMMAND_CONTRACT_MISMATCH",
+        "details": {},
+        "message": "expected command text missing: PYTHONHASHSEED=0",
+        "severity": "critical"
+      }
+    ],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/.t7-eval-chain-carbon-consistency.monitor/experiment.stdout.log"
+    ],
+    "name": "t7-eval-chain-carbon-consistency",
+    "pause_action": "SIGSTOP",
+    "paused": true,
+    "process": {
+      "alive": true,
+      "cpu_percent": 11.5,
+      "members": [
+        {
+          "command": "/opt/anaconda3/bin/python3.13 docs/handoff/eval_chain_carbon_consistency_20260804/t7_runner.py",
+          "cpu_percent": 11.5,
+          "elapsed": "00:00",
+          "pgid": 26680,
+          "pid": 26680,
+          "ppid": 1,
+          "rss_kb": 17680,
+          "state": "Us"
+        }
+      ],
+      "pgid": 26680,
+      "root_pid": 26680,
+      "rss_mb": 17.265625
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+        "age_seconds": 9663.508759021759,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1785827719.01,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+        "sha256": "661969f95ef7e86660d4ee250a48f8921c37990eb7721448d6126240677d6fbd",
+        "size": 37951
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py": {
+        "age_seconds": 10339.238543987274,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1785827043.28,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+        "sha256": "a00bfe1f6d43acd5539856a2324de077f8ff8d88de3576382156f08d1538a3bc",
+        "size": 40159
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+        "age_seconds": 10601.768858909607,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1785826780.75,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+        "sha256": "58dd67eff098bc038865744a2b6e00d559960d4a0f4428ff9305b38d257eb6e1",
+        "size": 29274
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv": {
+        "age_seconds": 165295.57828092575,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1785672086.94,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv",
+        "sha256": "ed9a584a31cc257eb064d5df9042f2df82a6b1868b73657474a9629e425f00b1",
+        "size": 67893
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv": {
+        "age_seconds": 1035065.8734819889,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784802316.64,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv",
+        "sha256": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b",
+        "size": 6588079
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/preregistration.json": {
+        "age_seconds": 175.94893717765808,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1785837206.57,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/preregistration.json",
+        "sha256": "4d59c5a13394e3de626e5b6271afd2d10996864730415fbf8e2a1da1fdd434b8",
+        "size": 2444
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/t7_runner.py": {
+        "age_seconds": 154.50919699668884,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1785837228.01,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/t7_runner.py",
+        "sha256": "2b5fab3f5b46a6d775b7617fff183acefa8b9d0396c13015d11bfe9b31210774",
+        "size": 3218
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 249495.19332003593,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1785587887.32,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+        "size": 44789
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py": {
+        "age_seconds": 299.73926997184753,
+        "exists": true,
+        "kind": "repair_source",
+        "mtime": 1785837082.78,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py",
+        "sha256": "5702f2457e34d184ea88e0be821e66db4627bcda09e1ad1b9eeed7089eae6805",
+        "size": 25561
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 167715.02322006226,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1785669667.49,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+        "size": 46269
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+        "age_seconds": 1833237.2134139538,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784004145.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+        "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+        "size": 7609
+      }
+    },
+    "runtime_seconds": 0.10816168785095215,
+    "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/.t7-eval-chain-carbon-consistency.monitor/scenes/20260804-175622-anomaly",
+    "schema_version": 1,
+    "state": "ANOMALY",
+    "system": {
+      "free_memory_mb": 573.140625,
+      "load_average_15m": 3.5576171875,
+      "load_average_1m": 2.94677734375,
+      "load_average_5m": 3.80126953125,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 38.0,
+      "swapouts": 66016455
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "t7-eval-chain-carbon-consistency",
+    "objective": "Run the exact T5 18-run O/C/P matrix after the objective-consistent completion wiring repair"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/.t7-eval-chain-carbon-consistency.monitor/experiment.stdout.log": []
+  },
+  "reason": "ANOMALY",
+  "schema_version": 1
+}

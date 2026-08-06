@@ -20,11 +20,18 @@ from ..charging_curve import (
     curve_from_parameters,
     pack_trip_chain,
 )
+from ..charge_timing import (
+    DEFAULT_CHARGE_TIMING_POLICY,
+    charge_timing_objective_value,
+    select_charge_timing_start,
+    validate_charge_timing_policy,
+)
 from ..cost import (
     _arc_loads,
     _price,
     best_charging_action_start,
     carbon_profile_row_for_slot,
+    charging_action_emissions_kg,
     charging_curve_for_action,
     charging_slot_breakdown,
     ev_instance_arc_energy_kwh,
@@ -37,11 +44,20 @@ from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, rou
 LEGACY_CONTRACT_ID = "E3_STRICT_MULTITRIP_V1"
 CONTRACT_ID = "E3_STRICT_MULTITRIP_V2"
 NONLINEAR_CONTRACT_ID = "E3_STRICT_MULTITRIP_V3_NL"
+E4_CONTINUOUS_SOC_CONTRACT_ID = "E4_SOC_60_20_80_NEXT_DAY_60_V1"
 CHARGE_MODE_FULL = "full"
 CHARGE_MODE_PARTIAL = "partial"
 CHARGE_MODE_ON_DEMAND = "on_demand"
 STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET = -1
 STATIC_PREHORIZON_SECONDS = 86_400.0
+DEPOT_CHARGE_WINDOW_MODES = frozenset(
+    {
+        "prev_night",
+        "same_day_predeparture",
+        "full_gap",
+    }
+)
+DEFAULT_DEPOT_CHARGE_WINDOW_MODE = "same_day_predeparture"
 _TOL = 1e-6
 
 
@@ -76,6 +92,46 @@ class ScheduledTrip:
 
 
 @dataclass(frozen=True)
+class ContinuousSOCContract:
+    """An additive shifted-SOC contract carried by a saved-solution adapter.
+
+    The generic solver continues to use physical battery kWh.  ``soc_min`` is
+    subtracted only for this continuity ledger, matching E4's existing
+    20%-reserve implementation without changing the shared cost/check modules.
+    ``terminal_charges`` must be the rows saved by the experiment scorer.
+    """
+
+    contract_id: str
+    soc_initial: float
+    soc_min: float
+    soc_max: float
+    soc_final_minimum: float
+    terminal_charges: tuple[Mapping[str, Any], ...]
+
+
+@dataclass(frozen=True)
+class DepotChargeLedgerEntry:
+    """One charge between a certified trip and its following departure."""
+
+    after_route_id: str
+    before_route_id: str | None
+    physical_vehicle_id: str
+    station_id: str
+    relation: str
+    energy_kwh: float
+    start_battery_kwh: float
+    end_battery_kwh: float
+    charge_start_second: float
+    charge_end_second: float
+    next_departure_second: float
+    charge_day_offset: int
+    saved_charge_start_second: float
+    saved_charge_end_second: float
+    electricity_cost_cny: float
+    emissions_kg: float
+
+
+@dataclass(frozen=True)
 class MultiTripCertificate:
     contract_id: str
     status: str
@@ -88,6 +144,13 @@ class MultiTripCertificate:
     charging_curve_parameter_sha256: str = L100_CONTROL.parameter_sha256
     battery_capacity_kwh: float | None = None
     charging_curve_physical_sha256: str | None = None
+    initial_battery_kwh: float | None = None
+    continuous_soc_contract_id: str | None = None
+    soc_initial: float | None = None
+    soc_min: float | None = None
+    soc_max: float | None = None
+    soc_final_minimum: float | None = None
+    depot_charge_ledger: tuple[DepotChargeLedgerEntry, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -134,6 +197,36 @@ def multitrip_certificate_from_dict(
             None
             if payload.get("charging_curve_physical_sha256") is None
             else str(payload["charging_curve_physical_sha256"])
+        ),
+        initial_battery_kwh=(
+            None
+            if payload.get("initial_battery_kwh") is None
+            else float(payload["initial_battery_kwh"])
+        ),
+        continuous_soc_contract_id=(
+            None
+            if payload.get("continuous_soc_contract_id") is None
+            else str(payload["continuous_soc_contract_id"])
+        ),
+        soc_initial=(
+            None
+            if payload.get("soc_initial") is None
+            else float(payload["soc_initial"])
+        ),
+        soc_min=(
+            None if payload.get("soc_min") is None else float(payload["soc_min"])
+        ),
+        soc_max=(
+            None if payload.get("soc_max") is None else float(payload["soc_max"])
+        ),
+        soc_final_minimum=(
+            None
+            if payload.get("soc_final_minimum") is None
+            else float(payload["soc_final_minimum"])
+        ),
+        depot_charge_ledger=tuple(
+            DepotChargeLedgerEntry(**dict(row))
+            for row in payload.get("depot_charge_ledger", ())
         ),
     )
 
@@ -290,6 +383,7 @@ def route_timing(
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
     *,
     charging_actions: list[ChargingAction] | None = None,
+    validate_battery: bool = True,
 ) -> TripTiming:
     """Compute one legal route-to-trip interval without changing route schema.
 
@@ -460,6 +554,17 @@ def route_timing(
         fallback=_price(prices, "B_battery_kwh"),
     )
     if route.vehicle_type.lower() == "ev":
+        if not validate_battery:
+            return TripTiming(
+                route.vehicle_id,
+                route.vehicle_type.lower(),
+                route.home_depot_id,
+                earliest_departure,
+                depart,
+                energy,
+                public_energy,
+                required_departure,
+            )
         if required_departure is None:
             if energy > battery + 1e-6:
                 raise ValueError(
@@ -535,6 +640,492 @@ def route_timing(
     )
 
 
+def validate_depot_charge_window_mode(mode: str) -> str:
+    """Validate and return one of the three registered depot-window modes."""
+
+    if mode not in DEPOT_CHARGE_WINDOW_MODES:
+        raise ValueError(
+            "unknown depot charging window mode: "
+            f"{mode!r}; expected one of "
+            f"{sorted(DEPOT_CHARGE_WINDOW_MODES)}"
+        )
+    return mode
+
+
+def certified_depot_charge_window(
+    route: Route,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    occupancy_seconds: float,
+    mode: str = DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
+    charging_actions: list[ChargingAction] | None = None,
+) -> tuple[float, float, int]:
+    """Return a depot window from the authoritative route clock.
+
+    The returned tuple is ``(earliest, latest, fixed_day_offset)``.  For
+    ``full_gap`` the day offset is only a fallback for callers that do not
+    provide a day-keyed calendar; calendar-aware callers may split the window
+    over actual day offsets themselves.
+    """
+
+    validate_depot_charge_window_mode(mode)
+    if float(occupancy_seconds) < 0.0:
+        raise ValueError("depot charging occupancy must be non-negative")
+    timing = route_timing(
+        route,
+        instance,
+        prices,
+        charging_actions=charging_actions,
+        validate_battery=False,
+    )
+    occupancy = float(occupancy_seconds)
+    if mode == "prev_night":
+        return 0.0, STATIC_PREHORIZON_SECONDS - occupancy, -1
+    if mode == "same_day_predeparture":
+        return 0.0, float(timing.earliest_departure_second) - occupancy, 0
+
+    next_departure = (
+        float(timing.earliest_departure_second) + STATIC_PREHORIZON_SECONDS
+    )
+    while next_departure <= float(timing.return_second) + _TOL:
+        next_departure += STATIC_PREHORIZON_SECONDS
+    return (
+        float(timing.return_second),
+        next_departure - occupancy,
+        0,
+    )
+
+
+def select_certified_depot_charge_start(
+    action: ChargingAction,
+    earliest_second: float,
+    latest_second: float,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any,
+    base_profile: list[dict[str, Any]],
+    *,
+    mode: str,
+    strategy: str = "legacy",
+    carbon_weight: float = 1.0,
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
+) -> tuple[float, int]:
+    """Choose one actual-day slot inside a certified depot window.
+
+    ``charge_start_second`` remains local to the selected calendar day and the
+    returned offset records that day relative to the route day.  This is the
+    only generator-side bridge from the certificate window to the existing
+    charging-action schema; prices and carbon rows are never synthesized.
+    """
+
+    validate_depot_charge_window_mode(mode)
+    validate_charge_timing_policy(charge_timing_policy)
+    earliest = float(earliest_second)
+    latest = float(latest_second)
+    occupancy = float(action.occupancy_minutes) * 60.0
+    if latest + _TOL < earliest:
+        raise ValueError("no feasible depot charging window")
+
+    if mode == "prev_night":
+        offsets = (-1,)
+    elif mode == "same_day_predeparture":
+        offsets = (0,)
+    elif carbon_profiles_by_day_offset is None:
+        offsets = (0,)
+    else:
+        first = int(earliest // STATIC_PREHORIZON_SECONDS)
+        last = int(latest // STATIC_PREHORIZON_SECONDS)
+        offsets = tuple(range(first, last + 1))
+
+    candidates: list[tuple[float, float, float, int]] = []
+    for offset in offsets:
+        day_start = float(offset) * STATIC_PREHORIZON_SECONDS
+        local_earliest = max(0.0, earliest - day_start)
+        local_latest = min(
+            STATIC_PREHORIZON_SECONDS - occupancy,
+            latest - day_start,
+        )
+        if local_latest + _TOL < local_earliest:
+            continue
+        if carbon_profiles_by_day_offset is None:
+            profile = base_profile
+        else:
+            try:
+                profile = carbon_profiles_by_day_offset[offset]
+            except KeyError as exc:
+                raise ValueError(
+                    "missing registered carbon/price profile for depot "
+                    f"day offset {offset}"
+                ) from exc
+
+        if charge_timing_policy == "carbon_min" and strategy == "legacy":
+            local_start, gamma = _lowest_profile_slot_start(
+                local_earliest,
+                local_latest,
+                profile,
+            )
+            score = float(gamma)
+        else:
+            local_action = replace(action, charge_start_second=local_earliest)
+            local_start = select_charge_timing_start(
+                local_action,
+                earliest_start_second=local_earliest,
+                latest_start_second=local_latest,
+                instance=instance,
+                carbon_profile=profile,
+                prices=prices,
+                charge_timing_policy=charge_timing_policy,
+            )
+            shifted = replace(action, charge_start_second=local_start)
+            score = charge_timing_objective_value(
+                shifted,
+                instance,
+                profile,
+                prices,
+                charge_timing_policy=charge_timing_policy,
+            )
+        absolute_start = day_start + float(local_start)
+        candidates.append(
+            (
+                float(score),
+                absolute_start,
+                float(local_start),
+                int(offset),
+            )
+        )
+
+    if not candidates:
+        raise ValueError("no feasible depot charging window on registered calendar days")
+    if charge_timing_policy == "carbon_min":
+        _, _, start, offset = min(
+            candidates,
+            key=lambda item: (item[0], item[2], item[3]),
+        )
+    else:
+        _, _, start, offset = min(candidates, key=lambda item: item)
+    return start, offset
+
+
+def _lowest_profile_slot_start(
+    earliest: float,
+    latest: float,
+    profile: list[dict[str, Any]],
+) -> tuple[float, float]:
+    candidates = [
+        (
+            float(row["actual_gco2_per_kwh"]),
+            float(row["horizon_second_start"]),
+        )
+        for row in profile
+        if earliest - _TOL <= float(row["horizon_second_start"]) <= latest + _TOL
+    ]
+    if not candidates:
+        slot = min(
+            max(0.0, float(earliest)),
+            float(latest),
+        )
+        rows = profile or []
+        if not rows:
+            raise ValueError("carbon profile must be non-empty")
+        wrapped = slot % STATIC_PREHORIZON_SECONDS
+        row = min(
+            rows,
+            key=lambda item: abs(
+                float(item["horizon_second_start"]) - wrapped
+            ),
+        )
+        return slot, float(row["actual_gco2_per_kwh"])
+    gamma, start = min(candidates, key=lambda item: (item[0], item[1]))
+    return start, gamma
+
+
+def _validate_continuous_soc_contract(
+    contract: ContinuousSOCContract,
+) -> None:
+    values = (
+        float(contract.soc_min),
+        float(contract.soc_initial),
+        float(contract.soc_final_minimum),
+        float(contract.soc_max),
+    )
+    if not contract.contract_id:
+        raise ValueError("continuous SOC contract id is empty")
+    if not (0.0 <= values[0] <= values[1] <= values[3] <= 1.0):
+        raise ValueError(
+            f"{contract.contract_id}: require "
+            "0 <= soc_min <= soc_initial <= soc_max <= 1"
+        )
+    if not (values[0] <= values[2] <= values[3]):
+        raise ValueError(
+            f"{contract.contract_id}: final SOC minimum is outside bounds"
+        )
+
+
+def _shifted_soc_energy(
+    soc: float,
+    soc_min: float,
+    physical_capacity_kwh: float,
+) -> float:
+    return (float(soc) - float(soc_min)) * float(physical_capacity_kwh)
+
+
+def _terminal_row_number(
+    row: Mapping[str, Any],
+    key: str,
+    contract_id: str,
+) -> float:
+    try:
+        return float(row[key])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"{contract_id}: terminal charge has invalid {key}"
+        ) from exc
+
+
+def _validate_continuous_soc_route_bounds(
+    route: Route,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any,
+    charging_actions: list[ChargingAction],
+    *,
+    start_battery_kwh: float,
+    upper_battery_kwh: float,
+    contract_id: str,
+) -> None:
+    nodes = {node.node_id: node for node in instance.nodes}
+    loads = _arc_loads(route.node_sequence, nodes)
+    actions_by_station: dict[str, list[ChargingAction]] = {}
+    for action in charging_actions:
+        if action.vehicle_id == route.vehicle_id:
+            actions_by_station.setdefault(action.station_id, []).append(action)
+    battery = float(start_battery_kwh)
+    for index, (left, right) in enumerate(
+        zip(route.node_sequence, route.node_sequence[1:])
+    ):
+        battery -= ev_instance_arc_energy_kwh(
+            instance,
+            left,
+            right,
+            loads[index],
+            prices,
+        )
+        if battery < -_TOL:
+            raise ValueError(
+                f"{contract_id}: route {route.vehicle_id} falls below soc_min"
+            )
+        for action in actions_by_station.get(right, ()):
+            battery += float(action.energy_kwh)
+            if battery > upper_battery_kwh + _TOL:
+                raise ValueError(
+                    f"{contract_id}: route {route.vehicle_id} exceeds soc_max"
+                )
+
+
+def _attach_continuous_soc_ledger(
+    certificate: MultiTripCertificate,
+    routes: list[Route],
+    contract: ContinuousSOCContract,
+    charging_curve: PiecewiseChargingCurve,
+) -> MultiTripCertificate:
+    """Bind saved terminal rows to the certified trip chain without repricing."""
+
+    physical_capacity = float(certificate.battery_capacity_kwh or 0.0)
+    target = _shifted_soc_energy(
+        contract.soc_final_minimum,
+        contract.soc_min,
+        physical_capacity,
+    )
+    trips = {trip.route_id: trip for trip in certificate.trips}
+    route_lookup = {route.vehicle_id: route for route in routes}
+    rows_by_route: dict[str, list[Mapping[str, Any]]] = {}
+    for row in contract.terminal_charges:
+        route_id = str(row.get("vehicle_id", ""))
+        rows_by_route.setdefault(route_id, []).append(row)
+    unknown = sorted(set(rows_by_route) - set(route_lookup))
+    if unknown:
+        raise ValueError(
+            f"{contract.contract_id}: terminal charges reference unknown routes "
+            f"{unknown}"
+        )
+    repeated = sorted(
+        route_id for route_id, rows in rows_by_route.items() if len(rows) != 1
+    )
+    if repeated:
+        raise ValueError(
+            f"{contract.contract_id}: terminal charge is not unique for {repeated}"
+        )
+
+    by_vehicle: dict[str, list[ScheduledTrip]] = {}
+    for trip in certificate.trips:
+        by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
+    next_trip: dict[str, ScheduledTrip] = {}
+    for chain in by_vehicle.values():
+        ordered = sorted(chain, key=lambda item: item.trip_index)
+        for previous, current in zip(ordered, ordered[1:]):
+            next_trip[previous.route_id] = current
+
+    ledger: list[DepotChargeLedgerEntry] = []
+    for route_id, route in route_lookup.items():
+        if route.vehicle_type.lower() != "ev":
+            if route_id in rows_by_route:
+                raise ValueError(
+                    f"{contract.contract_id}: CV route {route_id} has a terminal charge"
+                )
+            continue
+        trip = trips[route_id]
+        end_battery = float(trip.end_battery_kwh or 0.0)
+        expected_energy = max(0.0, target - end_battery)
+        rows = rows_by_route.get(route_id, [])
+        if expected_energy <= _TOL:
+            if rows and abs(
+                _terminal_row_number(
+                    rows[0], "energy_kwh", contract.contract_id
+                )
+            ) > _TOL:
+                raise ValueError(
+                    f"{contract.contract_id}: route {route_id} has surplus "
+                    "terminal energy"
+                )
+            continue
+        if not rows:
+            raise ValueError(
+                f"{contract.contract_id}: route {route_id} is missing terminal charge"
+            )
+        row = rows[0]
+        energy = _terminal_row_number(row, "energy_kwh", contract.contract_id)
+        start_soc = _terminal_row_number(row, "start_soc", contract.contract_id)
+        end_soc = _terminal_row_number(row, "end_soc", contract.contract_id)
+        saved_start = _terminal_row_number(
+            row, "start_second_absolute", contract.contract_id
+        )
+        saved_end = _terminal_row_number(
+            row, "end_second_absolute", contract.contract_id
+        )
+        row_start_energy = _shifted_soc_energy(
+            start_soc,
+            contract.soc_min,
+            physical_capacity,
+        )
+        row_end_energy = _shifted_soc_energy(
+            end_soc,
+            contract.soc_min,
+            physical_capacity,
+        )
+        if abs(energy - expected_energy) > _TOL:
+            raise ValueError(
+                f"{contract.contract_id}: route {route_id} terminal energy "
+                "does not restore the registered final SOC"
+            )
+        if (
+            abs(row_start_energy - end_battery) > _TOL
+            or abs(row_end_energy - (end_battery + energy)) > _TOL
+            or end_soc + _TOL < contract.soc_final_minimum
+        ):
+            raise ValueError(
+                f"{contract.contract_id}: route {route_id} terminal SOC "
+                "does not close to the certified battery"
+            )
+        # E4's existing action builder tolerates round-off immediately below
+        # the shifted 20% floor, then clamps that start to zero before asking
+        # the curve for a duration.  Reproduce that boundary operation exactly.
+        curve_start_energy = min(
+            physical_capacity,
+            max(0.0, row_start_energy),
+        )
+        curve_end_energy = min(
+            physical_capacity,
+            max(curve_start_energy, row_start_energy + energy),
+        )
+        expected_duration = charging_curve.duration_seconds(
+            curve_start_energy,
+            curve_end_energy,
+        )
+        if abs(saved_end - saved_start - expected_duration) > _TOL:
+            raise ValueError(
+                f"{contract.contract_id}: route {route_id} terminal duration "
+                "disagrees with the charging curve"
+            )
+        station_id = str(row.get("station_id", ""))
+        if station_id != route.home_depot_id:
+            raise ValueError(
+                f"{contract.contract_id}: route {route_id} terminal charge "
+                "is not at its home depot"
+            )
+
+        following = next_trip.get(route_id)
+        if following is None:
+            actual_start = saved_start
+            actual_end = saved_end
+            next_departure = _terminal_row_number(
+                row, "latest_second_absolute", contract.contract_id
+            ) + expected_duration
+            relation = "between_trip_next_day_cycle"
+            before_route_id = None
+            day_offset = int(row.get("day_offset", int(saved_start // 86_400.0)))
+            if (
+                actual_start < trip.return_second - _TOL
+                or actual_end > next_departure + _TOL
+            ):
+                raise ValueError(
+                    f"{contract.contract_id}: route {route_id} terminal charge "
+                    "is outside its return-to-next-day window"
+                )
+        else:
+            actual_start = float(trip.charge_start_second or 0.0)
+            actual_end = float(trip.recharge_end_second)
+            next_departure = float(following.departure_second)
+            relation = "between_solution_trips"
+            before_route_id = following.route_id
+            day_offset = 0
+            if (
+                abs(float(trip.charge_energy_kwh or 0.0) - energy) > _TOL
+                or actual_start < trip.return_second - _TOL
+                or actual_end > next_departure + _TOL
+            ):
+                raise ValueError(
+                    f"{contract.contract_id}: route {route_id} terminal charge "
+                    "does not fit before its packed next trip"
+                )
+        ledger.append(
+            DepotChargeLedgerEntry(
+                after_route_id=route_id,
+                before_route_id=before_route_id,
+                physical_vehicle_id=trip.physical_vehicle_id,
+                station_id=station_id,
+                relation=relation,
+                energy_kwh=energy,
+                start_battery_kwh=(
+                    0.0 if abs(end_battery) <= _TOL else end_battery
+                ),
+                end_battery_kwh=(
+                    (0.0 if abs(end_battery) <= _TOL else end_battery)
+                    + energy
+                ),
+                charge_start_second=actual_start,
+                charge_end_second=actual_end,
+                next_departure_second=next_departure,
+                charge_day_offset=day_offset,
+                saved_charge_start_second=saved_start,
+                saved_charge_end_second=saved_end,
+                electricity_cost_cny=_terminal_row_number(
+                    row, "electricity_cost_cny", contract.contract_id
+                ),
+                emissions_kg=_terminal_row_number(
+                    row, "emissions_kg", contract.contract_id
+                ),
+            )
+        )
+    if len(ledger) != len(contract.terminal_charges):
+        raise ValueError(
+            f"{contract.contract_id}: terminal charge count does not close"
+        )
+    return replace(
+        certificate,
+        depot_charge_ledger=tuple(ledger),
+    )
+
+
 def build_multitrip_certificate(
     routes: list[Route],
     instance: Instance,
@@ -543,6 +1134,7 @@ def build_multitrip_certificate(
     recharge_mode: str = CHARGE_MODE_ON_DEMAND,
     initial_departure_battery_by_route: dict[str, float] | None = None,
     charging_actions: list[ChargingAction] | None = None,
+    continuous_soc_contract: ContinuousSOCContract | None = None,
 ) -> MultiTripCertificate:
     """Build a reproducible physical-vehicle schedule for one fixed route set.
 
@@ -563,6 +1155,26 @@ def build_multitrip_certificate(
         fallback=_price(prices, "B_battery_kwh"),
     )
     charging_curve = _curve_for_prices(prices, instance)
+    ledger_initial_battery = _price(prices, "initial_ev_battery_kwh")
+    ledger_upper_battery = battery_kwh
+    fixed_departure_battery_by_route: dict[str, float] = {}
+    if continuous_soc_contract is not None:
+        _validate_continuous_soc_contract(continuous_soc_contract)
+        ledger_initial_battery = _shifted_soc_energy(
+            continuous_soc_contract.soc_initial,
+            continuous_soc_contract.soc_min,
+            battery_kwh,
+        )
+        ledger_upper_battery = _shifted_soc_energy(
+            continuous_soc_contract.soc_max,
+            continuous_soc_contract.soc_min,
+            battery_kwh,
+        )
+        fixed_departure_battery_by_route = {
+            route.vehicle_id: ledger_initial_battery
+            for route in routes
+            if route.vehicle_type.lower() == "ev"
+        }
     timings = [
         route_timing(
             route,
@@ -572,6 +1184,39 @@ def build_multitrip_certificate(
         )
         for route in routes
     ]
+    if fixed_departure_battery_by_route:
+        fixed_timings: list[TripTiming] = []
+        for timing in timings:
+            fixed = fixed_departure_battery_by_route.get(timing.route_id)
+            if fixed is None:
+                fixed_timings.append(timing)
+                continue
+            if (
+                timing.required_departure_battery_kwh is not None
+                and abs(timing.required_departure_battery_kwh - fixed) > _TOL
+            ):
+                raise ValueError(
+                    f"{continuous_soc_contract.contract_id}: route "
+                    f"{timing.route_id} public-charge ledger does not depart "
+                    "at the registered SOC"
+                )
+            fixed_timings.append(
+                replace(timing, required_departure_battery_kwh=fixed)
+            )
+        timings = fixed_timings
+        for route in routes:
+            fixed = fixed_departure_battery_by_route.get(route.vehicle_id)
+            if fixed is None:
+                continue
+            _validate_continuous_soc_route_bounds(
+                route,
+                instance,
+                prices,
+                list(charging_actions or ()),
+                start_battery_kwh=fixed,
+                upper_battery_kwh=ledger_upper_battery,
+                contract_id=continuous_soc_contract.contract_id,
+            )
     scheduled: list[ScheduledTrip] = []
     counts = {"cv": 0, "ev": 0}
     for (depot, vehicle_type) in sorted({(t.home_depot_id, t.vehicle_type) for t in timings}):
@@ -585,7 +1230,7 @@ def build_multitrip_certificate(
             group_trips, group_count = _schedule_ev_group(
                 group,
                 depot,
-                battery_kwh=battery_kwh,
+                battery_kwh=ledger_upper_battery,
                 charging_curve=charging_curve,
                 recharge_mode=recharge_mode,
                 initial_departure_battery_by_route=initial_departure_battery_by_route or {},
@@ -608,7 +1253,28 @@ def build_multitrip_certificate(
         charging_curve.parameter_sha256,
         battery_kwh,
         charging_curve.physical_parameter_sha256,
+        ledger_initial_battery,
+        (
+            None
+            if continuous_soc_contract is None
+            else continuous_soc_contract.contract_id
+        ),
+        None if continuous_soc_contract is None else continuous_soc_contract.soc_initial,
+        None if continuous_soc_contract is None else continuous_soc_contract.soc_min,
+        None if continuous_soc_contract is None else continuous_soc_contract.soc_max,
+        (
+            None
+            if continuous_soc_contract is None
+            else continuous_soc_contract.soc_final_minimum
+        ),
     )
+    if continuous_soc_contract is not None:
+        certificate = _attach_continuous_soc_ledger(
+            certificate,
+            routes,
+            continuous_soc_contract,
+            charging_curve,
+        )
     validate_multitrip_certificate(
         certificate,
         routes,
@@ -837,6 +1503,16 @@ def _minimize_ev_chain_charging(
                 if charge_start is not None
                 else trip.return_second
             )
+            if (
+                charge_start is not None
+                and charge_start < trip.return_second - _TOL
+            ):
+                # ``pack_trip_chain`` can identify the required energy while
+                # not being able to place that energy inside the actual gap.
+                # Keep the already feasible greedy ledger in that case; it
+                # carries more battery into the trip instead of moving charge
+                # into the preceding outside interval.
+                return trips
             updated[trip.route_id] = replace(
                 trip,
                 start_battery_kwh=row.departure_energy_kwh,
@@ -850,6 +1526,128 @@ def _minimize_ev_chain_charging(
                 recharge_end_second=recharge_end,
             )
     return [updated[trip.route_id] for trip in trips]
+
+
+def _continuous_soc_battery_upper(
+    certificate: MultiTripCertificate,
+    physical_capacity_kwh: float,
+) -> float:
+    if certificate.continuous_soc_contract_id is None:
+        if certificate.depot_charge_ledger:
+            raise ValueError(
+                f"{CONTRACT_ID}: depot charge ledger has no continuous SOC contract"
+            )
+        return physical_capacity_kwh
+    fields = (
+        certificate.soc_initial,
+        certificate.soc_min,
+        certificate.soc_max,
+        certificate.soc_final_minimum,
+        certificate.initial_battery_kwh,
+    )
+    if any(value is None for value in fields):
+        raise ValueError(
+            f"{certificate.continuous_soc_contract_id}: incomplete SOC contract"
+        )
+    contract = ContinuousSOCContract(
+        certificate.continuous_soc_contract_id,
+        float(certificate.soc_initial),
+        float(certificate.soc_min),
+        float(certificate.soc_max),
+        float(certificate.soc_final_minimum),
+        (),
+    )
+    _validate_continuous_soc_contract(contract)
+    expected_initial = _shifted_soc_energy(
+        contract.soc_initial,
+        contract.soc_min,
+        physical_capacity_kwh,
+    )
+    if abs(float(certificate.initial_battery_kwh) - expected_initial) > _TOL:
+        raise ValueError(
+            f"{contract.contract_id}: initial battery disagrees with registered SOC"
+        )
+    return _shifted_soc_energy(
+        contract.soc_max,
+        contract.soc_min,
+        physical_capacity_kwh,
+    )
+
+
+def _validate_depot_charge_ledger(
+    certificate: MultiTripCertificate,
+    charging_curve: PiecewiseChargingCurve,
+) -> None:
+    if certificate.continuous_soc_contract_id is None:
+        return
+    trips = {trip.route_id: trip for trip in certificate.trips}
+    if len(certificate.depot_charge_ledger) != len(
+        {entry.after_route_id for entry in certificate.depot_charge_ledger}
+    ):
+        raise ValueError(
+            f"{certificate.continuous_soc_contract_id}: duplicate depot ledger route"
+        )
+    for entry in certificate.depot_charge_ledger:
+        trip = trips.get(entry.after_route_id)
+        if trip is None or trip.vehicle_type != "ev":
+            raise ValueError(
+                f"{certificate.continuous_soc_contract_id}: depot ledger is detached"
+            )
+        if (
+            entry.physical_vehicle_id != trip.physical_vehicle_id
+            or entry.station_id != trip.home_depot_id
+        ):
+            raise ValueError(
+                f"{certificate.continuous_soc_contract_id}: depot ledger binding drifted"
+            )
+        start = float(entry.start_battery_kwh)
+        end = float(entry.end_battery_kwh)
+        energy = float(entry.energy_kwh)
+        if (
+            energy <= _TOL
+            or abs(start - float(trip.end_battery_kwh or 0.0)) > _TOL
+            or abs(end - start - energy) > _TOL
+        ):
+            raise ValueError(
+                f"{certificate.continuous_soc_contract_id}: depot ledger energy is discontinuous"
+            )
+        duration = charging_curve.duration_seconds(start, end)
+        if abs(
+            float(entry.charge_end_second)
+            - float(entry.charge_start_second)
+            - duration
+        ) > _TOL:
+            raise ValueError(
+                f"{certificate.continuous_soc_contract_id}: depot ledger duration drifted"
+            )
+        if (
+            float(entry.charge_start_second) < trip.return_second - _TOL
+            or float(entry.charge_end_second)
+            > float(entry.next_departure_second) + _TOL
+        ):
+            raise ValueError(
+                f"{certificate.continuous_soc_contract_id}: depot ledger leaves its trip gap"
+            )
+        if entry.relation == "between_solution_trips":
+            following = trips.get(str(entry.before_route_id))
+            if (
+                following is None
+                or following.physical_vehicle_id != trip.physical_vehicle_id
+                or following.trip_index != trip.trip_index + 1
+                or abs(
+                    float(entry.next_departure_second)
+                    - float(following.departure_second)
+                )
+                > _TOL
+                or abs(float(trip.charge_energy_kwh or 0.0) - energy) > _TOL
+            ):
+                raise ValueError(
+                    f"{certificate.continuous_soc_contract_id}: packed-trip depot ledger drifted"
+                )
+        elif entry.relation != "between_trip_next_day_cycle":
+            raise ValueError(
+                f"{certificate.continuous_soc_contract_id}: unknown depot ledger relation"
+            )
 
 
 def validate_multitrip_certificate(
@@ -866,6 +1664,10 @@ def validate_multitrip_certificate(
         else instance.battery_capacity_kwh(
             fallback=_price(prices, "B_battery_kwh"),
         )
+    )
+    ledger_battery_upper = _continuous_soc_battery_upper(
+        certificate,
+        battery_kwh,
     )
     if certificate.recharge_mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
         raise ValueError(f"{CONTRACT_ID}: unknown recharge mode")
@@ -889,6 +1691,15 @@ def validate_multitrip_certificate(
             if current.departure_second + 1e-6 < previous.recharge_end_second:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} has overlap or incomplete recharge")
             if current.vehicle_type == "ev":
+                if (
+                    previous.charge_start_second is not None
+                    and previous.charge_start_second
+                    < previous.return_second - _TOL
+                ):
+                    raise ValueError(
+                        f"{CONTRACT_ID}: {vehicle_id} charges before the "
+                        "previous trip returns"
+                    )
                 if certificate.recharge_mode == CHARGE_MODE_FULL:
                     if abs(float(current.start_battery_kwh or 0.0) - battery_kwh) > _TOL:
                         raise ValueError(f"{CONTRACT_ID}: {vehicle_id} does not depart full")
@@ -907,11 +1718,11 @@ def validate_multitrip_certificate(
             end_battery = float(trip.end_battery_kwh or 0.0)
             if end_battery < -_TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} has negative battery")
-            if end_battery > battery_kwh + _TOL:
+            if end_battery > ledger_battery_upper + _TOL:
                 raise ValueError(
                     f"{CONTRACT_ID}: {vehicle_id} returns above battery capacity"
                 )
-            if start_battery > battery_kwh + _TOL:
+            if start_battery > ledger_battery_upper + _TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} exceeds battery capacity at departure")
             if (
                 trip.fixed_departure_battery_kwh is not None
@@ -934,7 +1745,7 @@ def validate_multitrip_certificate(
                 needed = battery_kwh - end_battery
                 if abs(energy - needed) > _TOL:
                     raise ValueError(f"{CONTRACT_ID}: {vehicle_id} full recharge does not replenish used energy")
-            elif end_battery + energy > battery_kwh + _TOL:
+            elif end_battery + energy > ledger_battery_upper + _TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} partial recharge exceeds battery capacity")
             if energy > _TOL:
                 if trip.charge_start_second is None:
@@ -958,6 +1769,7 @@ def validate_multitrip_certificate(
                         f"{NONLINEAR_CONTRACT_ID}: {vehicle_id} charge duration "
                         "disagrees with charging curve"
                     )
+    _validate_depot_charge_ledger(certificate, charging_curve)
 
 
 def strict_multitrip_violations(
@@ -1026,6 +1838,9 @@ def prepare_multitrip_solution(
     solution: Solution,
     instance: Instance,
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    continuous_soc_contract: ContinuousSOCContract | None = None,
+    depot_charge_window_mode: str = "prev_night",
 ) -> tuple[Solution, MultiTripCertificate]:
     """Attach the V2 physical schedule and its real charging ledger.
 
@@ -1036,12 +1851,24 @@ def prepare_multitrip_solution(
     earlier in ``route_timing`` if such a route is not yet supported.
     """
 
+    validate_depot_charge_window_mode(depot_charge_window_mode)
     already_prepared = bool(solution.routes) and all(
-        "#T" in route.vehicle_id and physical_vehicle_id(route.vehicle_id).startswith(("CV_", "EV_"))
+        "#T" in route.vehicle_id
+        and physical_vehicle_id(route.vehicle_id).startswith(("CV_", "EV_"))
         for route in solution.routes
     )
+    if already_prepared and continuous_soc_contract is not None:
+        raise ValueError(
+            f"{continuous_soc_contract.contract_id}: repeated preparation must "
+            "reuse the returned certificate because saved terminal rows use "
+            "preparation-input route ids"
+        )
     if already_prepared:
-        certificate = _certificate_from_prepared_solution(solution, instance, prices)
+        certificate = _certificate_from_prepared_solution(
+            solution,
+            instance,
+            prices,
+        )
     else:
         certificate = None
 
@@ -1049,9 +1876,17 @@ def prepare_multitrip_solution(
         fallback=_price(prices, "B_battery_kwh"),
     )
     charging_curve = _curve_for_prices(prices, instance)
+    inherited_value = _price(prices, "initial_ev_battery_kwh")
+    if continuous_soc_contract is not None:
+        _validate_continuous_soc_contract(continuous_soc_contract)
+        inherited_value = _shifted_soc_energy(
+            continuous_soc_contract.soc_initial,
+            continuous_soc_contract.soc_min,
+            battery_cap,
+        )
     inherited = _canonical_curve_energy(
         charging_curve,
-        _price(prices, "initial_ev_battery_kwh"),
+        inherited_value,
         label="initial EV battery",
     )
     initial_departure: dict[str, float] = {}
@@ -1076,6 +1911,7 @@ def prepare_multitrip_solution(
             recharge_mode=CHARGE_MODE_ON_DEMAND,
             initial_departure_battery_by_route=initial_departure,
             charging_actions=list(solution.charging_actions),
+            continuous_soc_contract=continuous_soc_contract,
         )
         certificate = _reuse_existing_between_trip_times(
             certificate,
@@ -1116,7 +1952,12 @@ def prepare_multitrip_solution(
         if energy <= _TOL:
             continue
         duration = charging_curve.duration_seconds(inherited, target_energy)
-        latest_start = STATIC_PREHORIZON_SECONDS - duration
+        if depot_charge_window_mode == "same_day_predeparture":
+            latest_start = float(trip.departure_second) - duration
+            first_trip_charge_day_offset = 0
+        else:
+            latest_start = STATIC_PREHORIZON_SECONDS - duration
+            first_trip_charge_day_offset = STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET
         if latest_start < -_TOL:
             raise ValueError(f"{CONTRACT_ID}: first-trip depot precharge exceeds the pre-horizon day")
         old_action = first_trip_depot_action.get(trip.route_id)
@@ -1131,6 +1972,8 @@ def prepare_multitrip_solution(
             and old_start <= latest_start + _TOL
             else latest_start
         )
+        if depot_charge_window_mode == "full_gap" and old_action is not None:
+            first_trip_charge_day_offset = int(old_action.charge_day_offset)
         prepared_actions.append(
             ChargingAction(
                 vehicle_id=id_map[trip.route_id],
@@ -1138,7 +1981,7 @@ def prepare_multitrip_solution(
                 energy_kwh=energy,
                 occupancy_minutes=duration / 60.0,
                 charge_start_second=start,
-                charge_day_offset=STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+                charge_day_offset=first_trip_charge_day_offset,
                 start_energy_kwh=inherited,
                 end_energy_kwh=target_energy,
                 charging_curve_id=certificate.charging_curve_id,
@@ -1149,7 +1992,23 @@ def prepare_multitrip_solution(
         replace(trip, route_id=id_map[trip.route_id])
         for trip in certificate.trips
     )
-    remapped_certificate = replace(certificate, trips=remapped_trips)
+    remapped_ledger = tuple(
+        replace(
+            entry,
+            after_route_id=id_map[entry.after_route_id],
+            before_route_id=(
+                None
+                if entry.before_route_id is None
+                else id_map[entry.before_route_id]
+            ),
+        )
+        for entry in certificate.depot_charge_ledger
+    )
+    remapped_certificate = replace(
+        certificate,
+        trips=remapped_trips,
+        depot_charge_ledger=remapped_ledger,
+    )
     prepared_actions.extend(certificate_charging_actions(remapped_certificate))
     prepared_actions.sort(
         key=lambda action: (
@@ -1307,6 +2166,7 @@ def _certificate_from_prepared_solution(
         charging_curve.parameter_sha256,
         battery_cap,
         charging_curve.physical_parameter_sha256,
+        inherited,
     )
     validate_multitrip_certificate(
         certificate,

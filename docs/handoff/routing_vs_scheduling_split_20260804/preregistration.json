@@ -1,0 +1,145 @@
+{
+  "schema": "resetp.t8-routing-vs-scheduling-split-preregistration.v1",
+  "task_id": "T8-ROUTING-VS-SCHEDULING-SPLIT",
+  "status": "DRAFT_METHOD_AWAITING_USER_APPROVAL",
+  "formal_search_allowed": false,
+  "paper_claim_allowed": false,
+  "task_type": "draft_method_probe_not_formal_experiment",
+  "question": "在同一算例上，碳带来的系统减排中，有多少来自重排充电时刻，有多少来自改变路线、车型或趟结构。",
+  "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+  "scenario_date": "2025-02-12",
+  "budget_iterations_per_search_view": 1000,
+  "seeds": [1, 2, 3, 4, 5, 6, 7, 8],
+  "expected_run_count": 24,
+  "arms": [
+    {
+      "id": "COST",
+      "search": true,
+      "search_objective": "operating_cost_only",
+      "search_carbon_price_cny_per_kg": 0.0,
+      "charging_timing_objective": "electricity_cost_only",
+      "route_policy": "search_free",
+      "fixed_fields": []
+    },
+    {
+      "id": "COST_CARBON",
+      "search": true,
+      "search_objective": "operating_cost_plus_0.07502_times_charging_emissions",
+      "search_carbon_price_cny_per_kg": 0.07502,
+      "charging_timing_objective": "electricity_cost_plus_0.07502_times_charging_emissions",
+      "route_policy": "search_free",
+      "fixed_fields": []
+    },
+    {
+      "id": "FIXED_ROUTE_RETIME",
+      "search": false,
+      "search_objective": "none_no_search",
+      "search_carbon_price_cny_per_kg": 0.07502,
+      "charging_timing_objective": "electricity_cost_plus_0.07502_times_charging_emissions",
+      "route_policy": "copy_same_seed_COST_final_solution",
+      "fixed_fields": [
+        "routes",
+        "vehicle_types",
+        "physical_vehicle_assignment",
+        "trip_structure",
+        "customer_service_assignment",
+        "charging_station_ids",
+        "charging_energy_kwh",
+        "charging_occupancy_minutes",
+        "charging_curve_fields",
+        "charge_day_offset"
+      ],
+      "allowed_change": "charge_start_second_only",
+      "failure_rule": "record_run_failure_as_HALT_RETIME_INFEASIBLE_without_relaxation_or_second_strategy"
+    }
+  ],
+  "carbon_price": {
+    "value": 0.07502,
+    "unit": "CNY_per_kgCO2e",
+    "source": "docs/handoff/china_policy_scenario_contract_20260717.md#section-3"
+  },
+  "frozen_contract": {
+    "evaluator": "setp_solver.china81_completion.exact_china81_score",
+    "checker": "setp_solver.check.check_solution_via_exact_china81_score",
+    "fleet_authority": "data/ChinaInstances/china81_finite_fleet_authority_v3_20260802",
+    "model_config": {
+      "strict_multitrip": true,
+      "depot_charger_capacity_mode": "unbounded"
+    },
+    "checkpoint_interval_iterations": 100,
+    "archive_limit_per_view": 8,
+    "exact_elites_per_view": 2,
+    "sp_time_limit_seconds": 0.5,
+    "wallclock_safety_seconds_per_view": 540.0,
+    "single_run_wallclock_limit_seconds": 1800.0,
+    "pythonhashseed": "0",
+    "protected_files": [
+      "solver/src/setp_solver/cost.py",
+      "solver/src/setp_solver/check.py",
+      "solver/src/setp_solver/search/evaluation.py"
+    ],
+    "protected_file_change_rule": "HALT_REQUIRES_PROTECTED_FILE_CHANGE"
+  },
+  "fixed_route_retime_procedure": {
+    "source": "same_seed_COST_final_solution_in_memory_and_solution_witness",
+    "station_and_energy_rule": "copy_exactly_from_COST_solution",
+    "timing_window_rule": "use_existing_route-feasibility window without changing route, station, energy, occupancy, or constraints",
+    "timing_selector": "registered_exact_breakpoint_selector_electricity_cost_plus_carbon_price_times_charging_emissions",
+    "verification": [
+      "route_signature_unchanged_after_vehicle_label_normalization",
+      "customer_assignment_signature_unchanged",
+      "directed_arc_set_signature_unchanged",
+      "charging_station_energy_occupancy_and_curve_fields_unchanged",
+      "exact_china81_score",
+      "check_solution",
+      "service_count_50_of_50",
+      "service_demand_13264_of_13264"
+    ],
+    "no_fallback": true
+  },
+  "required_raw_metrics": [
+    "full_model_objective_cny",
+    "operating_cost_cny",
+    "fuel_direct_emissions_kg",
+    "charging_emissions_kg",
+    "system_emissions_kg",
+    "actual_carbon_intensity_kg_per_kwh",
+    "charging_energy_kwh",
+    "charging_cost_cny",
+    "total_distance_km",
+    "enabled_physical_vehicles",
+    "assigned_cv",
+    "assigned_ev",
+    "total_trips",
+    "completed_customer_count",
+    "required_customer_count",
+    "completed_demand",
+    "required_demand",
+    "route_signature_sha256",
+    "customer_assignment_sha256",
+    "arc_set_sha256",
+    "search_objective_value",
+    "search_objective_closure_abs",
+    "slot_distribution_48"
+  ],
+  "decomposition": {
+    "schedule_layer_reduction": "COST.system_emissions - FIXED_ROUTE_RETIME.system_emissions",
+    "total_reduction": "COST.system_emissions - COST_CARBON.system_emissions",
+    "path_layer_contribution": "total_reduction - schedule_layer_reduction",
+    "ev_workload_confound_rule": "mark_confounded_if_abs(COST_CARBON.charging_energy - COST.charging_energy) > 10 kWh",
+    "route_change_rule": "compare normalized route, customer-assignment, and directed-arc signatures; pure same-type same-depot label replacement is not a route change"
+  },
+  "stop_rules": [
+    "HALT_REQUIRES_PROTECTED_FILE_CHANGE",
+    "HALT_AWAITING_USER_APPROVAL",
+    "HALT_RETIME_INFEASIBLE",
+    "mark_service_shortfall_on_any_run_and_continue_recording",
+    "stop_any_single_run_at_1800_seconds",
+    "do_not_change_instance_date_seed_budget_carbon_price_evaluator_checker_fleet_contract_or_constraints"
+  ],
+  "result_blindness": {
+    "preregistration_written_before_any_T8_result": true,
+    "result_dependent_changes_forbidden": true,
+    "seed_or_arm_replacement_forbidden": true
+  }
+}

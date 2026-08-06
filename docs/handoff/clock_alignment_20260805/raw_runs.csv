@@ -1,0 +1,6 @@
+gate,scope,status,passed,skipped,failed,details
+T15_target_pytest,7 targeted tests,PASS,7,0,0,"public 2; refined 2; search h2/h3/m0 3"
+T15_positive_witnesses,3 required positive witnesses,PASS,3,0,0,"all CHARGING_TRIP_OVERLAP; actual seconds in regression_results.json"
+T10_legal_witnesses,18 archived solutions,PASS,18,0,0,"all legal under default mode"
+full_suite,solver/tests,PASS_BASELINE_COMPARISON,906,1,6,"baseline 898/1/14; 8 residual baseline failures recovered; 0 new failures"
+mode_probe,cn-jjj-10c-01-V2-LOCATIONS,PASS_WITH_ONE_UNFOUND_CONFIGURATION,2,0,1,"same_day_predeparture and full_gap pass; prev_night solver did not find a configuration under registered caps"

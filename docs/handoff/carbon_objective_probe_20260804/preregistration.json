@@ -1,0 +1,141 @@
+{
+  "schema": "resetp.t5-carbon-objective-probe-preregistration.v1",
+  "task_id": "T5-CARBON-OBJ-PROBE",
+  "status": "DRAFT_METHOD_AWAITING_USER_APPROVAL",
+  "created_at_utc": "2026-08-04T08:17:47Z",
+  "last_pre_result_correction_at_utc": "2026-08-04T08:29:00Z",
+  "formal_search_allowed": false,
+  "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+  "scenario_date": "2025-02-12",
+  "instance_substitution_allowed": false,
+  "seed_substitution_allowed": false,
+  "date_substitution_allowed": false,
+  "run_order": [
+    {"budget": 100, "seed": 1, "arms": ["O", "C", "P"]},
+    {"budget": 100, "seed": 2, "arms": ["O", "C", "P"]},
+    {"budget": 100, "seed": 3, "arms": ["O", "C", "P"]},
+    {"budget": 1000, "seed": 1, "arms": ["O", "C", "P"]},
+    {"budget": 1000, "seed": 2, "arms": ["O", "C", "P"]},
+    {"budget": 1000, "seed": 3, "arms": ["O", "C", "P"]}
+  ],
+  "common_search_configuration": {
+    "algorithm": "MV-HGS-SP T4 repaired prototype",
+    "hgs_seconds_per_view": null,
+    "max_hgs_iterations_per_view": "budget",
+    "exact_checkpoint_interval_iterations": 100,
+    "max_archive_candidates_per_view": 8,
+    "exact_elites_per_view": 2,
+    "sp_time_limit_seconds": 0.5,
+    "hard_home_depot_lock": false,
+    "max_no_improvement_iterations_per_view": null,
+    "wallclock_safety_seconds_per_view": 540.0,
+    "preserve_base_pool_recombination": false,
+    "initial_solution": "finite-fleet-authority-v3 level-25 certified witness",
+    "pythonhashseed": 0,
+    "thread_count_per_numeric_backend": 1
+  },
+  "wallclock_rule": {
+    "single_arm_seed_limit_seconds": 1800,
+    "predeclared_action": "If a run reaches a wall-clock safety stop or exceeds 1800 seconds, retain it, stop the 1000 tier, and use the already paired 100 tier; never silently truncate or change the instance, seed, or date."
+  },
+  "carbon_price": {
+    "value_cny_per_kgco2e": 0.07502,
+    "value_cny_per_tco2e": 75.02,
+    "source": "docs/handoff/china_policy_scenario_contract_20260717.md section 3; repository runtime binding solver/src/setp_solver/china81.py::_china_prices"
+  },
+  "arms": {
+    "O": {
+      "search_objective": "operating_cost",
+      "search_carbon_price_cny_per_kgco2e": 0.0,
+      "tariff": "current Beijing/Tianjin 2025-02-12 tariff",
+      "timing_scalarization": "charging electricity cost only"
+    },
+    "C": {
+      "search_objective": "operating_cost + 0.07502 * charging_emissions_kg",
+      "search_carbon_price_cny_per_kgco2e": 0.07502,
+      "search_fuel_direct_emissions_weight": 0.0,
+      "tariff": "current Beijing/Tianjin 2025-02-12 tariff",
+      "timing_scalarization": "charging electricity cost + 0.07502 * charging_emissions_kg"
+    },
+    "P": {
+      "search_objective": "operating_cost",
+      "search_carbon_price_cny_per_kgco2e": 0.0,
+      "tariff": "constructed Shijiazhuang-style midday-valley membership",
+      "timing_scalarization": "charging electricity cost only",
+      "changed_slots": [25, 26, 27, 28, 29, 30],
+      "changed_interval": "12:00:00-15:00:00",
+      "construction": "For each of Beijing and Tianjin independently, copy that city's existing valley-period depot energy price, public energy price, service fee, public total price, tariff_period, and tariff_row_class into slots 25-30; retain every other field, including carbon intensity, date, city, source binding, and all prices outside slots 25-30.",
+      "city_period_prices_cny_per_kwh": {
+        "beijing": {
+          "valley": {"depot_energy": 0.56328575, "public_energy": 0.56328575, "public_service_fee": 0.4, "public_total": 0.96328575},
+          "flat": {"depot_energy": 0.83644275, "public_energy": 0.83644275, "public_service_fee": 0.4, "public_total": 1.23644275},
+          "peak": {"depot_energy": 1.14862175, "public_energy": 1.14862175, "public_service_fee": 0.4, "public_total": 1.54862175}
+        },
+        "tianjin": {
+          "valley": {"depot_energy": 0.43996875, "public_energy": 0.43996875, "public_service_fee": 0.4, "public_total": 0.83996875},
+          "flat": {"depot_energy": 0.79746875, "public_energy": 0.79746875, "public_service_fee": 0.4, "public_total": 1.19746875},
+          "peak": {"depot_energy": 1.12856875, "public_energy": 1.12856875, "public_service_fee": 0.4, "public_total": 1.52856875}
+        }
+      }
+    }
+  },
+  "full_evaluation_contract": {
+    "objective": "unchanged repository total_cost = operating_cost + registered carbon cost",
+    "operating_cost": "cost_fix + cost_km + cost_fuel + cost_elec + cost_occ + cost_time + cost_transship",
+    "emissions": "E_cv_direct + E_ev_indirect",
+    "carbon_profile": "unchanged true city-specific 48-slot profile",
+    "carbon_price_cny_per_kgco2e": 0.07502,
+    "checker": "existing exact_china81_score, check_solution, and finite depot-fleet checks",
+    "reporting_bundle": "O/C use current tariff; P uses only the predeclared slot-membership construction"
+  },
+  "pre_result_attempt_ledger": [
+    {
+      "attempt": 0,
+      "status": "HALT_BEFORE_SEARCH",
+      "reason": "monitor launch omitted PYTHONHASHSEED=0; runner refused before loading/running any arm",
+      "completed_run_count": 0,
+      "results_read": false,
+      "evidence_path": ".attempt0_preflight_halt"
+    },
+    {
+      "attempt": 1,
+      "status": "HALT_CONTRACT_SCOPE_CORRECTION",
+      "reason": "C search bundle would have weighted total system emissions, but the user contract requires only sum_t gamma_t*y_qt; process was stopped and no result file was accepted or read",
+      "results_read": false,
+      "evidence_path": ".attempt1_wrong_c_scope_halt"
+    }
+  ],
+  "protected_files": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "frozen_input_hashes": {
+    "docs/handoff/solver_fleetcap_fix_20260804/report.md": "a59d204a71ae33c8fa6fd2806b0b53b4ccf1215b21372e311dc5e84b6f2602b5",
+    "docs/handoff/charging_time_objective_modeling_survey_20260804/report.md": "eadb92608287cfc41c5f021d09a6be085896fd02f6fb72cefe6571ac7b1985ad",
+    "docs/paper_gci_dmm_vrp_20260804/paper_main_foundation.md": "85e30a5555c72740d9454f60e41c595fa3e521b80273c43a4628dfe514c77120",
+    "docs/handoff/tariff_carbon_misalignment_20260804/report.md": "35d9d75da90055b9125974a0fc67b7a3cc117a2b26964417e0c5ef91f3533641",
+    "docs/handoff/china_policy_scenario_contract_20260717.md": "a5ae194784b1924fbf58241aada77b478a5af611e76823393f026caf246e1c96",
+    "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b",
+    "data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv": "ed9a584a31cc257eb064d5df9042f2df82a6b1868b73657474a9629e425f00b1",
+    "data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/witnesses/cn-jjj-50c-01-V2-LOCATIONS.json": "054963ea197c3ff94ea4534f1ace55bb7619046b59e5f9a7977be35e559ed843"
+  },
+  "implementation_hashes_at_freeze": {
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": "661969f95ef7e86660d4ee250a48f8921c37990eb7721448d6126240677d6fbd",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py": "a00bfe1f6d43acd5539856a2324de077f8ff8d88de3576382156f08d1538a3bc",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "58dd67eff098bc038865744a2b6e00d559960d4a0f4428ff9305b38d257eb6e1",
+    "solver/src/setp_solver/china81.py": "65a1f783dd9b6c7154172bcbdab1fa61a6cf63c5e1ce6635b31dc4ab2f9bc75b",
+    "solver/src/setp_solver/china81_completion.py": "c9535ec068a42218bd2bec8e5fe99f952362cb26a2065bb48e8ee2e0f1d49dc9",
+    "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py": "9fe3b5289024be98eab3ce8cf4718af824af57a538ef27e05c794233d038e6ca",
+    "solver/src/setp_solver/algorithms/resetp_alns/support/carbon_charging.py": "046cb89a52b47f5025045c21242926fa1efc9557b01d957b9767871e56aad2f5"
+  },
+  "environment": {
+    "git_head": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+    "python": "3.13.9",
+    "numpy": "2.5.1",
+    "scipy": "1.16.3",
+    "pyvrp": "0.12.2",
+    "logical_cpu": 8,
+    "physical_memory_bytes": 8589934592
+  }
+}

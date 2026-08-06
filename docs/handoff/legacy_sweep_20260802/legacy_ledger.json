@@ -1,0 +1,435 @@
+{
+  "task_id": "X2",
+  "generated_at": "2026-08-02",
+  "status": "X2_LEGACY_SWEEP_PARTIAL",
+  "items": [
+    {
+      "id": "X2-DC-001",
+      "类别": "死代码",
+      "路径与行号": [
+        "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py:381-395",
+        "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py:647-658"
+      ],
+      "事实": "multi_customer_removal 只在 647-658 行定义；当前 destroy_ops 清单在 381-395 行注册 random/worst/Shaw/whole-route/segment/vehicle-swap，没有注册该函数。对 solver、tests、baselines/algorithm_prototypes 的符号检索只命中这一定义。",
+      "是否影响当前主线": "否",
+      "建议处置": "删除：在确认不存在仓库外 API 使用者后删除未注册函数，避免代理误以为它是当前算子。",
+      "风险": "若存在仓库外脚本按符号导入，直接删除会破坏该脚本；正式算法结果本身不依赖此函数。"
+    },
+    {
+      "id": "X2-DC-002",
+      "类别": "死代码",
+      "路径与行号": [
+        "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py:391-395",
+        "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py:844-848",
+        "solver/tests/test_search.py:414"
+      ],
+      "事实": "identity_repair 只在 844-848 行定义；当前 repair_ops 仅为 greedy/regret2/regret3。全仓唯一额外命中是测试明确断言 active repair 计数中不得出现 identity_repair。",
+      "是否影响当前主线": "否",
+      "建议处置": "删除：确认外部兼容边界后删除该未注册修复函数，同时保留测试对正式清单的约束。",
+      "风险": "旧实验脚本若动态 getattr 此函数会失效；误删测试断言会同时失去防回归证据。"
+    },
+    {
+      "id": "X2-DC-003",
+      "类别": "死代码",
+      "路径与行号": [
+        "solver/src/setp_solver/search/e2_alns_scan_bridge.py:1-23",
+        "solver/src/setp_solver/search/e2_alns_scan_bridge.py:385-412"
+      ],
+      "事实": "该模块自称 E2 ALNS scan-bridge gate runner，并提供独立 CLI main；仓库调用检索没有发现其他源码或脚本导入/执行这个模块，命中只来自模块自身、winner 中同名实现和旧测试。E2 门链已由 READ_ME_FIRST 退役说明覆盖。",
+      "是否影响当前主线": "否",
+      "建议处置": "归档：与旧 E2 gate 证据一起保留可复现快照，不在当前 search 包中继续暴露为活入口。",
+      "风险": "直接删除会让旧 E2 scan-bridge 包无法按原命令复算；误当活入口会重启已关闭门链。"
+    },
+    {
+      "id": "X2-DC-004",
+      "类别": "死代码",
+      "路径与行号": [
+        "solver/src/setp_solver/search/lns_policy_kernel.py:1-7",
+        "solver/src/setp_solver/search/lns_policy_kernel.py:25-34",
+        "baselines/e2_alns/lns_policy_kernel_probe.py:25"
+      ],
+      "事实": "模块文档明确标为 A13 parity diagnostic、不是正式算法。当前仓库使用者只有该模块自身、两项测试和已退役 baselines/e2_alns/lns_policy_kernel_probe.py；正式 algorithms/resetp_alns 链不导入它。",
+      "是否影响当前主线": "否",
+      "建议处置": "归档：将诊断内核、探针和对应测试作为一个历史单元归档。",
+      "风险": "只移动模块而不移动探针/测试会留下新的悬挂导入；删除则损失 A13 诊断复现。"
+    },
+    {
+      "id": "X2-RI-001",
+      "类别": "重复实现",
+      "路径与行号": [
+        "solver/src/setp_solver/algorithms/resetp_alns/PROVENANCE.md:58-66",
+        "solver/src/setp_solver/search/alns_wouda.py:1-23",
+        "solver/src/setp_solver/search/winner_operators.py:1-20",
+        "solver/src/setp_solver/search/resetp_alns/__init__.py:1-15"
+      ],
+      "事实": "PROVENANCE 将 algorithms.resetp_alns 定义为 formal entry，并把 search.alns_wouda、search.winner_operators、search.resetp_alns 明确列为 deprecated shims；三处 shim 仍重新导出正式包符号。",
+      "是否影响当前主线": "待定",
+      "建议处置": "合并：保留一个有时限的兼容入口清单，逐个迁移仍存在的调用者后再移除 shim。",
+      "风险": "立即删除会破坏大量历史 runner；无限期保留会让新代理继续从旧命名进入并误读算法血统。"
+    },
+    {
+      "id": "X2-RI-002",
+      "类别": "重复实现",
+      "路径与行号": [
+        "solver/src/setp_solver/algorithms/resetp_alns/PROVENANCE.md:40-47",
+        "solver/src/setp_solver/algorithms/resetp_alns/PROVENANCE.md:62-66",
+        "solver/src/setp_solver/search/charging.py:1-30",
+        "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py:1-30"
+      ],
+      "事实": "search/ 与 algorithms/resetp_alns/support/ 同时存在 charging、construction、elite_archive、fleet、fleet_charge_corepair、global_order_repack、order_decoder、route_pool、timing 九对同名模块。逐文件 SHA-256 比较中只有 timing 两份相同（218eb77b...）；其余八对行数或哈希不同。PROVENANCE 指定正式 ALNS 使用 algorithms/resetp_alns 私有副本，baseline 保留 search 副本。",
+      "是否影响当前主线": "是",
+      "建议处置": "保留：先把两族模块在包边界上标成 formal/private 与 baseline/historical；没有逐函数等价证明前不得机械合并。",
+      "风险": "错合会改变正式算法或历史基线；不标边界会继续出现修一份、另一份漂移。"
+    },
+    {
+      "id": "X2-RI-003",
+      "类别": "重复实现",
+      "路径与行号": [
+        "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py:16-30",
+        "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py:82-108",
+        "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py:233",
+        "solver/src/setp_solver/search/charging.py:31",
+        "solver/src/setp_solver/search/charging.py:76-102",
+        "solver/src/setp_solver/search/charging.py:227"
+      ],
+      "事实": "正式 support/charging.py 虽有自己的 solve/repair 实现，却在 27 行反向导入 search.charging._curve_aware_action；alns_core、local_search、construction 等正式模块调用 support 版本。search/charging 因此既是重复实现又是正式链路的隐含依赖，不能按目录名判为旧代码。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：把 _curve_aware_action 提升到单一中性共享模块，正式与历史实现显式依赖它；其余差异保留到等价测试闭合。",
+      "风险": "误归档 search/charging 会直接打断正式算法；草率全量合并会改变充电可行性和碳核算。"
+    },
+    {
+      "id": "X2-RI-004",
+      "类别": "重复实现",
+      "路径与行号": [
+        "solver/src/setp_solver/algorithms/resetp_alns/runtime/budgeted_scoring.py:31-52",
+        "solver/src/setp_solver/algorithms/resetp_alns/runtime/budgeted_scoring.py:55-81",
+        "solver/src/setp_solver/search/e3_multitrip_runtime.py:1-6",
+        "solver/src/setp_solver/search/e3_multitrip_runtime.py:48-58"
+      ],
+      "事实": "正式算法所有候选/参照评分通过 budgeted_scoring，再动态导入名为 e3_multitrip_runtime 的 search 适配层；适配层开关关闭时回退 legacy scorer，开启时另建多趟证书。多趟这一当前模型语义仍以退役实验 E3 命名并形成双评分路径。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：把多趟评分升级为模型级显式配置与单一入口，E3 名称只留在历史 runner。",
+      "风险": "切换默认或合并入口会改变旧封存解的复算语义；继续隐式分叉会让新结果取决于环境变量而非实验合同。"
+    },
+    {
+      "id": "X2-RI-005",
+      "类别": "重复实现",
+      "路径与行号": [
+        "solver/src/setp_solver/search/formal_runner.py:1-6",
+        "solver/src/setp_solver/search/formal_runner.py:34-45",
+        "solver/scripts/run_winner_formal_export.sh:30-82",
+        "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/decision.json:29-35"
+      ],
+      "事实": "search/formal_runner.py 是旧 E0-E7 通用正式 runner，多个 solver/scripts 仍调用它；现行 China E4/E5/E6/E7 则各自用 baselines/china_e3_e7 下的专用封装。旧 runner 的算法入口、参数和产物协议与当前专包并存。",
+      "是否影响当前主线": "否",
+      "建议处置": "归档：把旧 runner 与只服务它的 shell 脚本、formal reports 作为历史执行链整体归档。",
+      "风险": "只归档 Python 不归档脚本会留下坏命令；误把它当当前入口会生成与 China81 当前合同不一致的新结果。"
+    },
+    {
+      "id": "X2-RA-001",
+      "类别": "退役资产",
+      "路径与行号": [
+        "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:30-43",
+        "docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md:14-40"
+      ],
+      "事实": "READ_ME_FIRST 已明确 Goeke80、280 kWh 诊断、09x-09y、DR-ALNS 训练线和 E2-G0~G5 门链退役。它们主要落在 baselines/e2_alns（14309 个非 AppleDouble/非 pycache 文件）、formal_20260621_10001_lmain_10seed（212）、fallback3600（5）及旧 solver/reports；其中 e2_alns 仍被 24 个其他 formal metadata/decision/report 文件引用。",
+      "是否影响当前主线": "否",
+      "建议处置": "归档：按完整历史包原路径映射归档，保留引用清单；不得逐文件删除。",
+      "风险": "移动后若不重写引用映射会破坏旧 metadata；留在活目录则会继续诱发重启关闭路线。"
+    },
+    {
+      "id": "X2-RA-002",
+      "类别": "退役资产",
+      "路径与行号": [
+        "docs/paper_v2/paper_main.tex:964",
+        "docs/paper_v2/paper_main.tex:1240",
+        "docs/paper_v2/paper_main.tex:1296"
+      ],
+      "事实": "baselines/e2_final_campaign_20260720 有 15033 个有效文件，目录名属于旧 E2 campaign，但当前 paper_main.tex 仍直接输入其实例明细表与机制表；另有 14 个外部 formal metadata/decision/report 引用。",
+      "是否影响当前主线": "是",
+      "建议处置": "保留：在论文仍直接引用期间保持原路径与哈希不动；未来只可通过可追溯的 paper-local canonical 副本合并。",
+      "风险": "归档或删除会使论文编译断裂并切断表格来源；整目录当成当前证据又会把大量旧 E2 过程资产混入主线。"
+    },
+    {
+      "id": "X2-RA-003",
+      "类别": "退役资产",
+      "路径与行号": [
+        "baselines/algorithm_prototypes/china81_vs_opensource_20260727/metadata.json:1",
+        "baselines/algorithm_prototypes/china81_vs_opensource_20260727/decision.json:1",
+        "docs/paper_v2/paper_main.tex:1296"
+      ],
+      "事实": "algorithm_prototypes 顶层含 37 个原型子目录、2983 个有效文件。绝大多数是 20260718-27 的候选/失败线，但 china81_vs_opensource_20260727 的 2025 行结果被论文直接引用，且其他正式包对 algorithm_prototypes 有 2258 个文件级引用命中。",
+      "是否影响当前主线": "是",
+      "建议处置": "归档：只按子目录分类归档已关闭原型；china81_vs_opensource 及被 metadata 锁定的来源保持原位，直到论文来源合并完成。",
+      "风险": "整目录归档会破坏论文 4.2 数据和大量 source_hashes；整目录保留为活入口会让失败候选反复被当成待继续路线。"
+    },
+    {
+      "id": "X2-RA-004",
+      "类别": "退役资产",
+      "路径与行号": [
+        "baselines/china_e3_e7/e4_carbon_timing_20260729/decision.json:2-20",
+        "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/decision.json:4-35",
+        "baselines/china_e3_e7/e7_dynamic_20260731/decision.json:1",
+        "baselines/china_e3_e7/e7_o2_dispatch_20260801/zero_search_15_streams_20260801/decision.json:2-13"
+      ],
+      "事实": "china_e3_e7 顶层混有当前可用 E4 两包（E4 timing=PASS_COMPLETE_ZERO_SEARCH_REPLAY；joint panel=PASS_E4_FORMAL_PANEL_AGGREGATED）、E7 O2 零搜索设计诊断，以及大量 E3/E5/E6 历次 gate/HALT/attempt。旧 e7_dynamic 明确 verdict=NO_E7_SCIENTIFIC_RESULT。顶层 7013 个有效文件且有 5 个外部正式引用。",
+      "是否影响当前主线": "是",
+      "建议处置": "归档：建立子目录级 current-evidence / design-diagnostic / retired-attempt 分类后只归档后者，禁止移动整个 china_e3_e7。",
+      "风险": "整目录归档会丢失第 5 章当前碳证据；只按 PASS/HALT 标签粗分会把零搜索设计诊断误升为科学结果。"
+    },
+    {
+      "id": "X2-RA-005",
+      "类别": "退役资产",
+      "路径与行号": [
+        "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:32-36",
+        "docs/handoff/paper_north_star_20260713.md:27-35"
+      ],
+      "事实": "e3_ablation（3405 文件/16 外部正式引用）、e4_e5（231/6）、e6_fairness（1510/13）、e7_dynamic（1306/5）服务旧并列 E3-E7 机制实验路线；当前决策已把协同、公平、非线性充电降为模型组件，动态需求改入第 5.3 层。",
+      "是否影响当前主线": "否",
+      "建议处置": "归档：各顶层目录连同引用图整体列为 legacy evidence；先保存外部引用映射，不能删除。",
+      "风险": "提前移动会破坏其他正式包 provenance；继续放在活 baselines 根会让后续代理把旧实验编号当当前施工图。"
+    },
+    {
+      "id": "X2-RA-006",
+      "类别": "退役资产",
+      "路径与行号": [
+        "baselines/china_e3_e7/e5_nonlinear_v3_20260730/metadata.json:8-22",
+        "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:38-40"
+      ],
+      "事实": "扫描计得 solver/src/setp_solver 有 151 个、baselines 有 16857 个、docs/handoff 有 294 个 AppleDouble 文件；其中 35 个是源码旁的 ._*.py。至少 35 份非 AppleDouble metadata/decision/artifact_hashes 文件仍记录 ._* 路径，e5_nonlinear_v3 metadata 8-22 行即显式列出 15 个。",
+      "是否影响当前主线": "是",
+      "建议处置": "保留：当前不得单删被历史 metadata 锁定的 AppleDouble；先随父证据包归档并生成排除 ._* 的新规范清单，再由用户另批删除。",
+      "风险": "直接删除会使旧 manifest 不闭合；继续让它们进入新哈希会重现 AppleDouble 污染和假差异。"
+    },
+    {
+      "id": "X2-PD-001",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "solver/src/setp_solver/prices.py:22-77",
+        "solver/src/setp_solver/prices.py:95-175",
+        "solver/src/setp_solver/china81.py:871-918"
+      ],
+      "事实": "DEFAULT_PRICES 仍由 Goeke/UK 默认构造：Q=3650 kg、90 km/h、B=80 kWh、柴油 1.4331 GBP/L、电 0.82 GBP/kWh、固定费 80 GBP、c_km=0.35；China81 正式 bundle 显式覆盖为 Q=1735、B=77.28、城市柴油价、22 kW、碳价 0.07502 CNY/kg、固定费 170 CNY、c_km=0.78、NL90。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：保留 UK 历史 factory，但取消当前 China 入口对隐式 DEFAULT_PRICES 的依赖，要求显式 scenario prices。",
+      "风险": "直接改全局默认会使旧英国证据和测试数值整体漂移；继续默认注入会让漏传 prices 的 China 结果静默使用错误单位。"
+    },
+    {
+      "id": "X2-PD-002",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "solver/src/setp_solver/cost.py:73-93",
+        "solver/src/setp_solver/cost.py:96-107"
+      ],
+      "事实": "carbon_slot_index 在 n_slots=None 时使用历史 18 槽；注释说明 China 24h bundle 实际传 48。carbon_profile_row_for_slot 会按 len(carbon_profile) 显式纠正，但任何直接调用 carbon_slot_index 且漏传 n_slots 的 China 路径仍会钳制到 18 槽。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：把时段数绑定到 profile/scenario 对象，18 槽历史调用显式传入，避免 None 同时代表旧默认和漏参。",
+      "风险": "直接把默认改 48 会改变旧 NESO 复算；保留隐式 18 会在新碳时序功能中产生静默错槽。"
+    },
+    {
+      "id": "X2-PD-003",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "solver/src/setp_solver/search/e3_multitrip_runtime.py:48-58",
+        "solver/src/setp_solver/algorithms/resetp_alns/runtime/budgeted_scoring.py:31-52",
+        "docs/paper_v2/paper_main.tex:697-702"
+      ],
+      "事实": "严格实体车多趟由环境变量 SETP_E3_STRICT_MULTITRIP 控制，代码默认值为 0；关闭时正式评分回到 legacy scorer。论文算法步骤却直接叙述有限实体车多趟装载与完整排班，没有披露这是默认关闭的实验环境分支。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：将多趟语义放入显式模型配置和 metadata，当前主线入口 fail-closed 要求写明取值；旧包保留 0/1 原值。",
+      "风险": "默认切换会导致封存结果不再可复算；不显式化会让同一命令因 shell 环境不同得到不同约束语义。"
+    },
+    {
+      "id": "X2-PD-004",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "solver/src/setp_solver/china81.py:53-56",
+        "baselines/china_instances/build_china81_finite_fleet_authority_v2_20260731.py:2-16",
+        "baselines/china_instances/build_china81_finite_fleet_authority_v2_20260731.py:338-348",
+        "HANDOFF.md:5458-5477"
+      ],
+      "事实": "china81.py 仍指向 fleet authority v1；v2 decision 为 PASS、81 instances、144 fleet rows，但 v1/v2 的 fleet_caps 逐行数值相同。v2 builder 自述按新 EV 1700 kg/77.28 kWh 重算，实际 R_d 仍由全 CV 装箱构造，num_ev=max(1,ceil(0.25 R_d))；HANDOFF 已确认 0.25 无外部依据并锁死 E4/E6 的 EV 自由度。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：把 v1/v2 标为同一构造车队口径的两个 provenance 版本；当前主线另接用户批准的可推导车队规模 authority，旧包不覆盖。",
+      "风险": "只把路径从 v1 改 v2不会改变问题；误把 v2 标签当成 EV 参数已参与定容会继续污染第 5.2 车型指派结论。"
+    },
+    {
+      "id": "X2-PD-005",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "solver/src/setp_solver/china81.py:803-817",
+        "docs/paper_v2/paper_main.tex:1038-1054"
+      ],
+      "事实": "China81 对同一个 carbon_factor 同时赋 actual_gco2_per_kwh 与 forecast_gco2_per_kwh；论文已在 1046、1054 行如实说明两字段相等。现行 E4 因此不是预测误差实验，旧 forecast-vs-actual 叙事已失效。",
+      "是否影响当前主线": "是",
+      "建议处置": "保留：当前主线只研究时变碳强度时保留同值并继续明示；归档所有把两字段差异当实验轴的旧文档/脚本。",
+      "风险": "误删双字段会破坏模型接口；误把同值数据解释成预测准确性或鲁棒性会形成论文失实。"
+    },
+    {
+      "id": "X2-PD-006",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "baselines/algorithm_prototypes/china81_vs_opensource_20260727/metadata.json:1",
+        "docs/paper_v2/paper_main.tex:1296"
+      ],
+      "事实": "论文直接使用 raw_runs.json（SHA-256 4291ee...）；该包 metadata 锁定 china81.py=df082b6...、check.py=9c81e2...、cost.py=2717b4...。当前文件哈希为 china81.py=c70133...、check.py=86b813...、cost.py=7f59a4...，故纸面算法表不是在当前完整源码快照上生成。",
+      "是否影响当前主线": "是",
+      "建议处置": "补记：在第 4.2 数据说明中显式列出封存源码快照与当前模型差异，并由用户决定后续是否重算；现有 raw_runs 不删除。",
+      "风险": "不披露会把旧模型结果误称当前模型结果；贸然重跑会改变已封存算法对比并扩大任务范围。"
+    },
+    {
+      "id": "X2-PD-007",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "solver/src/setp_solver/china81.py:37-55",
+        "baselines/china_instances/build_china81_directed_matrices_20260718.py:1",
+        "baselines/china_instances/build_china81_directed_matrices_corrected_v10_20260723.py:1",
+        "baselines/china_instances/build_china81_runtime_parameter_authority_v3_20260723.py:1",
+        "baselines/china_instances/build_china81_runtime_parameter_authority_v4_20260723.py:1"
+      ],
+      "事实": "baselines/china_instances 保留草稿、v2/v3/v4/v10 等 59 个生成/审计/测试 Python 文件；当前 loader 只锁 static corrected v3、matrix corrected v10、runtime v4、fleet v1。较早 builder 仍位于同一活目录且文件名不能证明产物已失效。",
+      "是否影响当前主线": "是",
+      "建议处置": "归档：按 china81.py 的四条当前 authority 建白名单，其余 builder 连同对应旧产物和 hash 作为版本化历史归档。",
+      "风险": "只删 builder 会失去旧 authority 可复算性；不区分版本会让代理用旧矩阵或旧运行参数重建算例。"
+    },
+    {
+      "id": "X2-PD-008",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "solver/src/setp_solver/prices.py:147-148",
+        "solver/src/setp_solver/china81.py:884-918"
+      ],
+      "事实": "PriceParameters.route_time_cost_per_hour 默认 0，注释写 E5-P1 仅在敏感性 bundle 中设 75 CNY/h；China81 _china_prices 没有覆盖该字段，所以正式默认仍为 0。E5 已降为模型组件，不再是当前实验柱子。",
+      "是否影响当前主线": "否",
+      "建议处置": "保留：保持主线默认 0，并把 75 CNY/h 仅随退役 E5 敏感性包归档，不提升为 China81 默认。",
+      "风险": "误把 75 写入默认会改变路线时间成本与所有现有结果；删除字段会破坏旧 E5 复算。"
+    },
+    {
+      "id": "X2-HR-001",
+      "类别": "悬挂引用",
+      "路径与行号": [
+        "docs/paper_v2/paper_main.tex:693",
+        "docs/paper_v2/paper_main.tex:964",
+        "docs/paper_v2/paper_main.tex:1051",
+        "docs/paper_v2/paper_main.tex:1240",
+        "docs/paper_v2/paper_main.tex:1246",
+        "docs/paper_v2/paper_main.tex:1354-1357",
+        "docs/paper_v2/paper_main.tex:1462-1465"
+      ],
+      "事实": "逐条检查 7 个显式 input/includegraphics/IfFileExists 目标均存在；但两个 input 仍跨两级目录直接依赖 baselines/e2_final_campaign_20260720。对应文件 SHA-256 为 instance table 4f99e5...、table8a 6dcad7...；其余图哈希也存在。当前没有断链的正向文件引用，存在的是对退役目录的路径耦合。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：未来把论文实际使用的表体复制为 paper-local canonical 产物并记录 source_path/source_sha256；在完成前保留旧路径。",
+      "风险": "直接改路径或移动源文件会使论文无法编译或丢失来源；继续跨目录引用会阻止旧 campaign 安全归档。"
+    },
+    {
+      "id": "X2-HR-002",
+      "类别": "悬挂引用",
+      "路径与行号": [
+        "docs/paper_v2/paper_main.tex:1431-1458",
+        "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/decision.json:4-35",
+        "baselines/china_e3_e7/e4_carbon_timing_20260729/decision.json:2-20"
+      ],
+      "事实": "TeX 中 E4 数字逐项等于两份 decision（-2.679%、-13.935%、54.970%、9.746%、134.880%），但正文没有写这两个目录或 decision/hash；反向检索 paper_main.tex 也未命中 e4_joint_routing_20260801 或 e4_carbon_timing_20260729。正式产物存在但在正文中无可机读来源引用。",
+      "是否影响当前主线": "是",
+      "建议处置": "补记：为表 5.x 和补充检验增加 source package、decision hash 与分母说明，不移动原产物。",
+      "风险": "缺少反向引用会让后续清理误归档当前 E4；补错路径或只引用汇总图会切断原始分母。"
+    },
+    {
+      "id": "X2-HR-003",
+      "类别": "悬挂引用",
+      "路径与行号": [
+        "docs/paper_v2/paper_main.tex:1471-1477",
+        "HANDOFF.md:5143-5157",
+        "HANDOFF.md:5431-5442"
+      ],
+      "事实": "现稿 1471 行说 E5/E7 待正式设计，1472 起仍将合作收益与联盟分配作为正式小节；当前用户决定却要求协同/分账/非线性充电只留第 2 章组件，动态需求成为第 5.3 正式层。论文结构与当前主线尚未同步，旧 E6 内容处于悬挂状态。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：在后续论文大修中按已批准骨架迁移组件定义、删除正式 E6 实验叙事，并为第 5.3 接入新的正式动态产物。",
+      "风险": "只删 E6 小节而不迁移模型公式会损失模型完整性；继续保留会让论文中心故事与用户决策冲突。"
+    },
+    {
+      "id": "X2-DF-001",
+      "类别": "文档失效",
+      "路径与行号": [
+        "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:22-51",
+        "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:135-146",
+        "HANDOFF.md:5141-5164",
+        "HANDOFF.md:5431-5442"
+      ],
+      "事实": "READ_ME_FIRST 已在 22-36 行承认三份规划图退役，却仍在 45-51 行把 20260711-29 的 E3-E7 合同列为当前权威链，并在 135-146 行称 L-main v2 与旧 E2 重采为最高优先级。二者均被 20260802 HANDOFF 主线和定稿目录覆盖。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：保留启动纪律与历史入口说明，重写 current authority chain 和最高优先级为 20260802 主线。",
+      "风险": "不更新会让每个新代理按强制入口主动读入旧故事；删掉全文会同时丢失保护文件、标签和归档纪律。"
+    },
+    {
+      "id": "X2-DF-002",
+      "类别": "文档失效",
+      "路径与行号": [
+        "docs/handoff/project_prd_execution_map_v2_20260702.md:1-19",
+        "docs/handoff/project_planning_map_20260701.md:7-18",
+        "docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md:3-24",
+        "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:30-43"
+      ],
+      "事实": "PRD v2、planning map、MASTER 分别仍以 280 kWh/E2 门链、协同公平并列主线、Goeke80/09 系列为主体；READ_ME_FIRST 明确其主体历史化，但又要求强制读取。当前有效的仅是记录纪律、禁改语义、闭路台账等局部规则。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：为三份文档加机器可读 superseded_by/current_sections 字段，把仍有效规则提到唯一当前操作合同，正文转历史附录。",
+      "风险": "整份删除会丢失闭路与证据纪律；继续无结构强制通读会稳定地产生错误项目理解。"
+    },
+    {
+      "id": "X2-DF-003",
+      "类别": "文档失效",
+      "路径与行号": [
+        "docs/handoff/paper_north_star_20260713.md:1-9",
+        "docs/handoff/paper_north_star_20260713.md:19-35",
+        "HANDOFF.md:5143-5157",
+        "HANDOFF.md:5411-5442"
+      ],
+      "事实": "paper_north_star 把空间组织、跨场协同、预测充电、公平接受和动态保留并列为总问题，并仍自称迷路入口；当前主线把协同/公平降级，中心论点改为碳杠杆在充电时刻—车型指派—发车时机间转移。",
+      "是否影响当前主线": "是",
+      "建议处置": "归档：标为 20260713 历史北极星，并由 20260802 目录和中心论点文档取代其入口地位。",
+      "风险": "无标记保留会把写作拉回协同故事；直接删除会损失旧结果的叙事来路。"
+    },
+    {
+      "id": "X2-DF-004",
+      "类别": "文档失效",
+      "路径与行号": [
+        "docs/handoff/e1_e7_submission_contract_decision_20260711.md:1-19",
+        "docs/handoff/e1_e7_submission_contract_decision_20260711.md:47-55",
+        "docs/handoff/e3_e7_experiment_product_design_20260712.md:1-5",
+        "docs/handoff/e3_e7_experiment_product_design_20260712.md:21-49",
+        "HANDOFF.md:5143-5157"
+      ],
+      "事实": "两份文档仍分别自称唯一投稿拍板单和 E3-E7 设计权威，冻结 280 kWh/L-main/E3-E7 并列实验；20260802 用户已批准协同、公平、非线性充电不再做正式实验，且同意重做车队配置与动态正式结果。",
+      "是否影响当前主线": "是",
+      "建议处置": "归档：保留合同作为历史实验 provenance，但撤销 current/unique/authority 标签并增加 superseded_by=HANDOFF 20260802。",
+      "风险": "不撤权威标签会使后续代理按旧合同开跑；删除会让旧 E2-E7 包失去决策来源。"
+    },
+    {
+      "id": "X2-DF-005",
+      "类别": "文档失效",
+      "路径与行号": [
+        "docs/handoff/diagnosis_and_remediation_master_20260731.md:1-19",
+        "docs/handoff/diagnosis_and_remediation_master_20260731.md:854-874",
+        "docs/handoff/memory/MEMORY.md:56-65"
+      ],
+      "事实": "diagnosis master 曾自称 E3/E5/E7 整改唯一入口，文件自身已在 16-19 行声明旧待办由 20260801 文档取代；memory index 56-58 行也把它降为历史根因入口。其 873-874 行仍把 fleet v1/v2 切换说成不影响计算，但最新 HANDOFF 认定无出处 0.25 公式影响第 5.2 自由度。",
+      "是否影响当前主线": "是",
+      "建议处置": "归档：保留失败根因章节，移除唯一入口地位，并在车队段增加被 20260802 新发现覆盖的指针。",
+      "风险": "不标覆盖会让代理把数值相同误解为模型选择无影响；删除则损失 E3/E5/E7 故障证据。"
+    },
+    {
+      "id": "X2-DF-006",
+      "类别": "文档失效",
+      "路径与行号": [
+        "docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md:1-18",
+        "docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md:22-42",
+        "docs/handoff/session_handoff_20260730_codex_to_new_claude.md:1-12",
+        "docs/handoff/session_handoff_20260730_codex_to_new_claude.md:39-50"
+      ],
+      "事实": "两份 session handoff 仍被 READ_ME_FIRST 要求优先完整读取，但内容是 7/29-7/30 的进程现场、E5 A/B 阻塞、E3/E6 停滞和 E7 未授权状态；这些实时状态已由 8/1 重建结果和 8/2 主线覆盖。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：保留其故障现场与责任边界，移出冷启动强制序列；在页首添加 terminal historical snapshot 与当前入口链接。",
+      "风险": "继续强制先读会浪费上下文并复活旧阻塞；彻底删除会丢失 watchdog、HALT 和方法审批教训。"
+    }
+  ]
+}

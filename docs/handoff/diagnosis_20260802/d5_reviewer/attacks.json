@@ -1,0 +1,105 @@
+{
+  "schema": "resetp.d5-reviewer-attacks.v1",
+  "task_id": "D5",
+  "attacks": [
+    {
+      "target_number": "1 | paper_main.tex:1321 | 354胜/46平/5负，配对平均降本1.919%",
+      "strongest_rejection": "五条算法臂不是同批、同停止规则、同计算预算的比较，且整组结果运行于已经被正文车型表替换的旧车型，因此354/46/5和1.919%把算法效应、资源效应与数据版本效应混在一起，不能成立为相对性能证据。",
+      "internal_evidence": [
+        "baselines/algorithm_prototypes/china81_vs_opensource_20260727/decision.json: protocol_disclosure.F_E_M_MV=sealed v7 fixed-iteration archive reuse; protocol_disclosure.O=new NoImprovement(3000) run; archive_wallclock_available=false; same_batch_or_same_machine_claim_allowed=false; MV_vs_O={win:354,tie:46,loss:5}; mean_MV_improvement_percent_vs_O=1.919118015025895",
+        "baselines/algorithm_prototypes/china81_vs_opensource_20260727/raw_runs.json: F/E/M/MV budget_rule=V7_FIXED_25000_ITERATIONS_PER_VIEW and wallclock_seconds=null; O budget_rule=NoImprovement(3000); O stop_iterations n=405, min=3001, median=4121, max=30509",
+        "docs/handoff/e2_e7_decision_source_execution_audit_20260801.md:11: five arms use old 140.41 kWh vehicle",
+        "docs/paper_v2/paper_main.tex:979-987: current table reports EV payload 1700 kg and battery 77.28 kWh; lines 1296, 1301-1303, 1327-1329 disclose batch and stopping asymmetry"
+      ],
+      "journal_standard_or_none": {
+        "source": "陈婉茹等（2023），DOI 10.12011/SETP2022-2971",
+        "pages": "印刷页3328-3331",
+        "actual_standard": "同类算法实验报告硬件、迭代/不改进停止规则、每例10次运行、BKS偏差和时间，算法变体表同时列最优值、平均值、Gap和时间。",
+        "hard_standard": false,
+        "qualification": "没有出处规定所有对照必须同批、同停止规则或同一机器；等预算同批次是审稿人偏好，非硬标准。",
+        "url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2022-2971"
+      },
+      "defeating_evidence": "基于现行77.28 kWh、1700 kg车型的405配对五臂重跑表：同一批实例、种子、机器和预注册停止预算，逐臂给出最终成本、实际迭代或完整评价次数、CPU或墙钟，并重新报告MV对O的胜/平/负、配对平均降本和配对置信区间或预注册检验。",
+      "evidence_exists": {
+        "exists": false,
+        "current_repository_state": "只有旧车型下的非同批五臂结果，封存四臂无墙钟；没有现行车型统一预算的405配对表。"
+      },
+      "cost_tier": "需要重新搜索"
+    },
+    {
+      "target_number": "2 | paper_main.tex:1547 | 历史客户重分平均降本36.477%、里程-57.372%、排放-57.307%",
+      "strongest_rejection": "所谓历史客户归属不是任何企业历史记录，而是把外部Uniform-Unbalanced标签序列按客户组需求与车场载重容量降序一一对齐的人造反事实，并且平均121.58个客户被换承包商，所以36%-57%的头条效应无法解释为历史客户重分的经验效应。",
+      "internal_evidence": [
+        "docs/paper_v2/paper_main.tex:1381-1387: Soriano均匀-不均衡序列，客户组需求与车场载重排序匹配；lines 1413-1418: 60/60降本，平均121.58个客户改承包商",
+        "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-150c-02-V2-LOCATIONS/metadata.json: mapping_rule=descending source-label China81 demand aligned one-to-one with descending original depot payload capacity; ties by label/depot_id",
+        "formal member raw_runs.csv: candidate_family=Uniform_Unbalanced_Capacity_Rank_Aligned; source_family=Uniform_Unbalanced",
+        "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/decision.json: paired_units=60; joint_cost_lower_pairs=60; mean_cost_reduction_pct=36.477268811132966; mean_distance_reduction_pct=57.372322731126395; mean_emissions_reduction_pct=57.307070334914364; mean_joint_cross_contractor_customer_count=121.58333333333333",
+        "formal_panel_solomon_i1_20260801 contains no solutions directory; 120 aggregate rows retain only solution_sha256"
+      ],
+      "journal_standard_or_none": {
+        "source": "陈婉茹等（2023），DOI 10.12011/SETP2022-2971",
+        "pages": "印刷页3328、3330",
+        "actual_standard": "同类论文把公开基准、真实实例与构造仿真分开说明，并交代仿真数据生成及参数来源。",
+        "hard_standard": false,
+        "qualification": "没有目标期刊页码规定历史归属实验必须使用企业真实归属记录；该门槛是审稿人偏好，非硬标准。",
+        "url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2022-2971"
+      },
+      "defeating_evidence": "一份与订单档案逐行关联的六算例客户级历史归属表，包含每名客户的历史承包商、订单日期或批次和来源标识；在该观测归属上重新产生六算例乘10种子的60配对，输出成本、里程、排放、改派客户数、三个新配对均值及120份完整可验解。",
+      "evidence_exists": {
+        "exists": false,
+        "current_repository_state": "只有构造序列、映射规则、聚合指标和解哈希，没有客户级历史归属来源，也没有120份完整解。"
+      },
+      "cost_tier": "需要重新搜索"
+    },
+    {
+      "target_number": "3 | paper_main.tex:1548 | 联合优化平均减排2.679%、运营成本+0.000045%",
+      "strongest_rejection": "这个数字不能证明路线-车型-充电联合优化的减排效应，因为28/30配对的路线和车型完全不变、180/180个车场-解单元的EV名额全部触顶，且正式解没有启用论文声称的实体车多趟，观测到的2.679%主要是受限单趟解上的充电时刻重排。",
+      "internal_evidence": [
+        "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/decision.json: COST_PLUS_CARBON_vs_COST_ONLY pair_count=30; mean_system_emissions_change_pct=-2.679143431232458; mean_operating_cost_change_pct=0.0000448066640604612; route_path_changed_pairs=2; typed_path_changed_pairs=2",
+        "docs/paper_v2/paper_main.tex:1448-1450: 28/30 operating costs are identical and the objective mainly adjusts return-to-depot charging time",
+        "E4 member metadata.json and baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv: D_guangzhou.num_ev=1; D_shenzhen.num_ev=2",
+        "docs/handoff/memory/codex_audit_independent_verification_20260802.md:24-28: E4 EV route counts equal 1 and 2 in every solution, 180/180 depot-solution units at cap",
+        "docs/handoff/e2_e7_decision_source_execution_audit_20260801.md:18-24: all 90 saved E4 solutions have zero #T and route_count equals physical_vehicle_count; paper_main.tex:261-267 and 774-776 claims multitrip/full-model validation"
+      ],
+      "journal_standard_or_none": {
+        "source": "陈婉茹等（2023），DOI 10.12011/SETP2022-2971",
+        "pages": "印刷页3332-3333",
+        "actual_standard": "表10对碳价0-1元/kg按0.1步长报告成本和排放，随后把碳价扩至0-5元/kg并报告电动车占比，以阈值和决策变量响应识别碳机制。",
+        "hard_standard": false,
+        "qualification": "没有页码明文要求联合优化必须有多少配对改变路线/车型或必须启用多趟；这两个门槛是审稿人偏好，非硬标准。",
+        "url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2022-2971"
+      },
+      "defeating_evidence": "同一30个算例-种子单元、现行完整多趟模型下的三臂配对归因表：纯成本；冻结纯成本路线与车型、仅重优化充电；放开路线、车型与充电的成本加碳联合优化。报告系统排放、运营成本、路线/车型改变数、实体车多趟数、逐车场EV上限利用率，并直接给出全联合相对仅充电重排的增量减排。",
+      "evidence_exists": {
+        "exists": false,
+        "current_repository_state": "现有30配对表明2.679%主要来自充电时移，没有完整多趟的三臂归因；保存解装车诊断因返场补电接口漏账而停止。"
+      },
+      "cost_tier": "需要重新搜索"
+    },
+    {
+      "target_number": "4 | paper_main.tex:1549 | 四承包商平均节省33.018%，核仁240/240优于单干",
+      "strongest_rejection": "33.018%和240/240完全依赖一套按每条路线占一辆车求出的15联盟特征函数，而900份联盟解未启用多趟且1909/1920个联盟车场-解单元的EV名额触顶；一旦使用论文声称的多趟可行域，每个联盟成本、核、核仁和参与结论都可能改变。",
+      "internal_evidence": [
+        "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6a_panel_20260801/report.md: complete units=60/60; coalition results=900/900; mean savings=33.018%; range=28.442%-37.145%",
+        "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6s2_nucleolus_20260801/decision.json: unit_count=60; member_rows=240; nucleolus_in_core_units=60; minimum_member_gain_over_standalone_cny=265.9977564702458; shapley_in_core_units=52",
+        "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6s2_nucleolus_20260801/metadata.json: allocation_method=exact sequential linear-programming nucleolus",
+        "docs/handoff/e2_e7_decision_source_execution_audit_20260801.md:100-110: nucleolus is postprocessing of the 900-row coalition ledger; all 900 solutions omit multitrip and 1909/1920 depot-coalition-solution units hit EV cap",
+        "docs/paper_v2/paper_main.tex:1521-1525: E3 36.477% and E6 33.018% come from the same type of four-depot cooperative structure with different baselines and are not additive"
+      ],
+      "journal_standard_or_none": {
+        "source": "饶卫振等（2019），DOI 10.12011/1000-6788-2018-1668-18",
+        "pages": "印刷页1528、1531-1532",
+        "actual_standard": "四参与方示例逐一求解全部2^4-1=15个联盟c(S)后计算核仁，并用运行时间、精确/近似偏差及既有算例核对分配解。",
+        "hard_standard": false,
+        "qualification": "该文没有讨论多趟车辆；把多趟可行域重算作为一般编辑规则是审稿人偏好，非硬标准，但本文自身的多趟主张使现有c(S)与所述模型不一致。",
+        "url": "https://sysengi.cjoe.ac.cn/CN/10.12011/1000-6788-2018-1668-18"
+      },
+      "defeating_evidence": "60场景在完整多趟模型下的900份联盟完整解及独立验解账本；由新c(S)重算每场15联盟表、四家合作节省分布、精确核仁、核约束最大违反量和240个成员相对单干增益，并报告新旧特征函数逐联盟差值。",
+      "evidence_exists": {
+        "exists": false,
+        "current_repository_state": "只有900份单趟联盟解、联盟账本和核仁后处理；事后多趟装车诊断没有在多趟空间重新求解，并有3份电动车趟间补电冲突。"
+      },
+      "cost_tier": "需要重新搜索"
+    }
+  ]
+}

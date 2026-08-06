@@ -13,7 +13,8 @@ from typing import Any
 
 import numpy as np
 from epochal_hgs import HgsExactEpoch, _run_exact_epoch
-from pyvrp_adapter import build_pyvrp_problem
+from pyvrp_adapter import _skeleton_candidate_id, build_pyvrp_problem
+from setp_solver.charge_timing import DEFAULT_CHARGE_TIMING_POLICY
 from setp_solver.china81 import China81Bundle
 from setp_solver.china81_completion import (
     China81CompletionResult,
@@ -63,16 +64,38 @@ def run_hgs_route_pool_recombination(
     max_archive_candidates_per_view: int | Mapping[str, int] = 24,
     sp_time_limit_seconds: float = 5.0,
     hard_home_depot_lock: bool = False,
-    max_hgs_iterations_per_view: int | None = None,
+    max_hgs_iterations_per_view: int | Mapping[str, int] | None = None,
     wallclock_safety_seconds_per_view: float | None = None,
+    hgs_no_improvement_seconds_per_view: float | None = None,
+    hgs_no_improvement_minimum_relative_improvement: float = 0.0,
     exact_checkpoint_interval_iterations: (
         int | Mapping[str, int | None] | None
     ) = None,
     preserve_base_pool_recombination: bool = False,
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
 ) -> HgsRoutePoolRun:
     """Generate mechanism-diverse HGS elites and recombine their routes."""
 
     modes = ("cv_only", "naive_ev", "mechanism_ev")
+    if isinstance(max_hgs_iterations_per_view, Mapping):
+        if set(max_hgs_iterations_per_view) != set(modes):
+            raise ValueError(
+                "HGS iteration mapping must cover exactly the three "
+                "registered views"
+            )
+        iteration_limits = {
+            mode: int(max_hgs_iterations_per_view[mode])
+            for mode in modes
+        }
+    else:
+        iteration_limits = {
+            mode: (
+                None
+                if max_hgs_iterations_per_view is None
+                else int(max_hgs_iterations_per_view)
+            )
+            for mode in modes
+        }
     if isinstance(max_archive_candidates_per_view, Mapping):
         if set(max_archive_candidates_per_view) != set(modes):
             raise ValueError(
@@ -113,16 +136,28 @@ def run_hgs_route_pool_recombination(
         }
     if sp_time_limit_seconds <= 0.0:
         raise ValueError("MIP route-pool time limit must be positive")
-    if max_hgs_iterations_per_view is None:
+    if hgs_no_improvement_seconds_per_view is not None:
+        if hgs_no_improvement_seconds_per_view <= 0.0:
+            raise ValueError(
+                "HGS no-improvement seconds must be positive"
+            )
+        if any(limit is not None for limit in iteration_limits.values()):
+            raise ValueError(
+                "HGS no-improvement stopping cannot have iteration limits"
+            )
+        if hgs_seconds_per_view is not None:
+            raise ValueError(
+                "HGS no-improvement stopping cannot have a runtime limit"
+            )
+        if wallclock_safety_seconds_per_view is not None:
+            raise ValueError(
+                "HGS no-improvement stopping cannot have a safety limit"
+            )
+    elif all(limit is None for limit in iteration_limits.values()):
         if hgs_seconds_per_view is None or hgs_seconds_per_view <= 0.0:
             raise ValueError("legacy HGS runtime must be positive")
-    elif (
-        wallclock_safety_seconds_per_view is None
-        or wallclock_safety_seconds_per_view <= 0.0
-    ):
-        raise ValueError(
-            "deterministic HGS mode requires a wallclock safety cap"
-        )
+    elif any(limit is None for limit in iteration_limits.values()):
+        raise ValueError("HGS iteration limits must cover all views")
     if exact_elites_per_view < 1:
         raise ValueError("exact_elites_per_view must be positive")
     if any(
@@ -139,7 +174,11 @@ def run_hgs_route_pool_recombination(
         raise ValueError("checkpoint intervals must be positive")
     started = perf_counter()
     view_epochs: dict[str, HgsExactEpoch] = {}
+    view_start_elapsed_seconds: dict[str, float] = {}
     for mode in modes:
+        view_start_elapsed_seconds[mode] = float(
+            perf_counter() - started
+        )
         problem = build_pyvrp_problem(
             bundle,
             route_proxy_mode=mode,
@@ -158,13 +197,20 @@ def run_hgs_route_pool_recombination(
             warm_elites=(),
             exact_elite_count=int(exact_elites_per_view),
             max_archive_candidates=archive_limits[mode],
-            max_hgs_iterations=max_hgs_iterations_per_view,
+            max_hgs_iterations=iteration_limits[mode],
             wallclock_safety_seconds=(
                 wallclock_safety_seconds_per_view
+            ),
+            no_improvement_wallclock_seconds=(
+                hgs_no_improvement_seconds_per_view
+            ),
+            no_improvement_minimum_relative_improvement=(
+                hgs_no_improvement_minimum_relative_improvement
             ),
             exact_checkpoint_interval_iterations=checkpoint_intervals[
                 mode
             ],
+            charge_timing_policy=charge_timing_policy,
         )
     parent_completions = [
         completion
@@ -219,6 +265,7 @@ def run_hgs_route_pool_recombination(
         completion = complete_china81_route_skeleton(
             parent_completion.solution,
             bundle,
+            charge_timing_policy=charge_timing_policy,
         )
         selected_source = "best_exact_hgs_parent"
         sp_stats["fallback_parent_independent_objective"] = float(
@@ -261,29 +308,29 @@ def run_hgs_route_pool_recombination(
         for epoch in view_epochs.values()
     )
     total_complete_attempts = epoch_attempts + 2
-    expected_complete_attempts = (
+    expected_complete_attempts: int | None = (
         sum(archive_limits[mode] + 2 for mode in modes) + 2
     )
     if any(
         interval is not None
         for interval in checkpoint_intervals.values()
     ):
-        if max_hgs_iterations_per_view is None:
-            raise ValueError(
-                "exact checkpoints require an HGS iteration budget"
+        if any(limit is None for limit in iteration_limits.values()):
+            expected_complete_attempts = None
+        else:
+            expected_complete_attempts += sum(
+                0
+                if checkpoint_intervals[mode] is None
+                else (
+                    int(iteration_limits[mode])
+                    // int(checkpoint_intervals[mode])
+                )
+                for mode in modes
             )
-        expected_complete_attempts += sum(
-            0
-            if checkpoint_intervals[mode] is None
-            else (
-                int(max_hgs_iterations_per_view)
-                // int(checkpoint_intervals[mode])
-            )
-            for mode in modes
-        )
     if preserve_base_pool_recombination:
         total_complete_attempts += 2
-        expected_complete_attempts += 2
+        if expected_complete_attempts is not None:
+            expected_complete_attempts += 2
     safety_triggered = any(
         bool(epoch.stats["wallclock_safety_triggered"])
         for epoch in view_epochs.values()
@@ -300,6 +347,19 @@ def run_hgs_route_pool_recombination(
                     **item,
                 }
             )
+    improvement_trace: list[dict[str, Any]] = []
+    for mode in modes:
+        for sequence, item in enumerate(
+            view_epochs[mode].stats["proxy_improvement_trace"],
+            start=1,
+        ):
+            improvement_trace.append(
+                {
+                    "view": mode,
+                    "improvement_sequence": int(sequence),
+                    **item,
+                }
+            )
     for source in (
         "route_pool_candidate_or_parent",
         "final_independent_certificate",
@@ -308,10 +368,17 @@ def run_hgs_route_pool_recombination(
             {
                 "evaluation_index": len(evaluation_trace) + 1,
                 "view": "route_pool",
+                "candidate_id": _skeleton_candidate_id(
+                    completion.solution
+                ),
                 "source": source,
                 "iteration": None,
+                "completion_succeeded": True,
                 "complete_objective": float(completion.objective),
                 "status": "PASS",
+                "exception_type": None,
+                "exception_message": None,
+                "failure_category": None,
             }
         )
     if len(evaluation_trace) != total_complete_attempts:
@@ -353,15 +420,14 @@ def run_hgs_route_pool_recombination(
                 "audited time-limited MIP layer recombines routes across views"
             ),
             "seed": int(seed),
+            "charge_timing_policy": charge_timing_policy,
             "hgs_seconds_per_view": (
                 None
                 if hgs_seconds_per_view is None
                 else float(hgs_seconds_per_view)
             ),
             "max_hgs_iterations_per_view": (
-                None
-                if max_hgs_iterations_per_view is None
-                else int(max_hgs_iterations_per_view)
+                iteration_limits
             ),
             "wallclock_safety_seconds_per_view": (
                 None
@@ -369,6 +435,15 @@ def run_hgs_route_pool_recombination(
                 else float(wallclock_safety_seconds_per_view)
             ),
             "wallclock_safety_triggered": safety_triggered,
+            "hgs_no_improvement_seconds_per_view": (
+                None
+                if hgs_no_improvement_seconds_per_view is None
+                else float(hgs_no_improvement_seconds_per_view)
+            ),
+            "hgs_no_improvement_minimum_relative_improvement": float(
+                hgs_no_improvement_minimum_relative_improvement
+            ),
+            "view_start_elapsed_seconds": view_start_elapsed_seconds,
             "primary_budget_unit": (
                 "complete_candidate_evaluation_attempt"
             ),
@@ -379,7 +454,8 @@ def run_hgs_route_pool_recombination(
                 expected_complete_attempts
             ),
             "complete_candidate_budget_exactly_consumed": (
-                total_complete_attempts == expected_complete_attempts
+                expected_complete_attempts is not None
+                and total_complete_attempts == expected_complete_attempts
             ),
             "complete_candidate_evaluation_trace": evaluation_trace,
             "last_strict_improvement_evaluation": (
@@ -400,6 +476,88 @@ def run_hgs_route_pool_recombination(
                     epoch.stats["exact_checkpoint_attempts"]
                 )
                 for mode, epoch in view_epochs.items()
+            },
+            "proxy_improvement_trace": improvement_trace,
+            "proxy_improvement_count": len(improvement_trace),
+            "view_search_instrumentation": {
+                mode: {
+                    "checkpoint_interval_iterations": (
+                        checkpoint_intervals[mode]
+                    ),
+                    "hgs_iterations": int(
+                        view_epochs[mode].stats["hgs_iterations"]
+                    ),
+                    "hgs_stop_mode": view_epochs[mode].stats[
+                        "hgs_stop_mode"
+                    ],
+                    "hgs_stop_reason": view_epochs[mode].stats[
+                        "hgs_stop_reason"
+                    ],
+                    "wallclock_safety_enabled": bool(
+                        view_epochs[mode].stats[
+                            "wallclock_safety_enabled"
+                        ]
+                    ),
+                    "wallclock_safety_triggered": bool(
+                        view_epochs[mode].stats[
+                            "wallclock_safety_triggered"
+                        ]
+                    ),
+                    "no_improvement_wallclock_seconds": (
+                        view_epochs[mode].stats[
+                            "no_improvement_wallclock_seconds"
+                        ]
+                    ),
+                    "no_improvement_wallclock_triggered": bool(
+                        view_epochs[mode].stats[
+                            "no_improvement_wallclock_triggered"
+                        ]
+                    ),
+                    "no_improvement_minimum_relative_improvement": (
+                        view_epochs[mode].stats[
+                            "no_improvement_minimum_relative_improvement"
+                        ]
+                    ),
+                    "no_improvement_timer_reset_count": (
+                        view_epochs[mode].stats[
+                            "no_improvement_timer_reset_count"
+                        ]
+                    ),
+                    "no_improvement_ignored_strict_improvement_count": (
+                        view_epochs[mode].stats[
+                            "no_improvement_ignored_strict_improvement_count"
+                        ]
+                    ),
+                    "no_improvement_trigger_iteration": (
+                        view_epochs[mode].stats[
+                            "no_improvement_trigger_iteration"
+                        ]
+                    ),
+                    "no_improvement_last_improvement_iteration": (
+                        view_epochs[mode].stats[
+                            "no_improvement_last_improvement_iteration"
+                        ]
+                    ),
+                    "no_improvement_trigger_elapsed_seconds": (
+                        view_epochs[mode].stats[
+                            "no_improvement_trigger_elapsed_seconds"
+                        ]
+                    ),
+                    "no_improvement_last_improvement_elapsed_seconds": (
+                        view_epochs[mode].stats[
+                            "no_improvement_last_improvement_elapsed_seconds"
+                        ]
+                    ),
+                    "no_improvement_elapsed_seconds_at_trigger": (
+                        view_epochs[mode].stats[
+                            "no_improvement_elapsed_seconds_at_trigger"
+                        ]
+                    ),
+                    "improvement_trace": view_epochs[mode].stats[
+                        "proxy_improvement_trace"
+                    ],
+                }
+                for mode in modes
             },
             "preserve_base_pool_recombination": bool(
                 preserve_base_pool_recombination
@@ -544,20 +702,8 @@ def _accepted_mip_completion(
             "accepted route-pool incumbent failed complete-model recheck"
         )
     mip_objective = mip_stats.get("objective")
-    if (
-        mip_objective is None
-        or not math.isclose(
-            float(mip_objective),
-            float(objective),
-            rel_tol=1.0e-9,
-            abs_tol=1.0e-6,
-        )
-    ):
-        raise ValueError(
-            "route-pool incumbent objective does not close under the "
-            "complete model: "
-            f"mip={mip_objective!r}, exact={objective!r}"
-        )
+    if mip_objective is None:
+        raise ValueError("route-pool incumbent has no MIP surrogate objective")
     return China81CompletionResult(
         solution=annotated,
         objective=float(objective),
@@ -576,10 +722,11 @@ def _accepted_mip_completion(
                 annotated.charging_actions
             ),
             "mip_status_class": mip_stats.get("status_class"),
-            "mip_objective": float(mip_objective),
+            "mip_surrogate_objective": float(mip_objective),
             "mip_dual_bound": mip_stats.get("dual_bound"),
             "mip_gap": mip_stats.get("mip_gap"),
             "complete_model_recheck": "PASS",
+            "objective_authority": "shared_complete_evaluator",
         },
     )
 
@@ -626,6 +773,21 @@ def _solve_set_partitioning(
             "mip_gap": None,
             "mip_node_count": None,
             "time_limit_seconds": float(time_limit_seconds),
+            "initial_time_limit_seconds": float(time_limit_seconds),
+            "final_time_limit_seconds": float(time_limit_seconds),
+            "actual_elapsed_seconds": 0.0,
+            "mip_invoked": False,
+            "time_limit_reached": False,
+            "finished_before_time_limit": None,
+            "extension_supported": False,
+            "incumbent_trace_supported": False,
+            "extension_unavailable_reason": (
+                "scipy.optimize.milp exposes neither an incumbent callback "
+                "nor a resumable solver handle"
+            ),
+            "extended": False,
+            "extension_count": 0,
+            "extension_trigger_evidence": [],
             "optimality_proven": False,
             "selected_route_count": 0,
             "independent_violation_count": None,
@@ -646,47 +808,7 @@ def _solve_set_partitioning(
             ub=np.ones(len(customers)),
         )
     ]
-    for vehicle_type, limit in (
-        ("cv", bundle.instance.num_cv),
-        ("ev", bundle.instance.num_ev),
-    ):
-        if limit is None:
-            continue
-        row = np.array(
-            [
-                1.0
-                if record.route.vehicle_type.lower() == vehicle_type
-                else 0.0
-                for record in records
-            ]
-        )
-        constraints.append(
-            LinearConstraint(
-                row,
-                lb=-np.inf,
-                ub=float(limit),
-            )
-        )
-    for depot_id, caps in sorted(bundle.fleet_caps_by_depot.items()):
-        for vehicle_type in ("cv", "ev"):
-            row = np.array(
-                [
-                    1.0
-                    if (
-                        record.route.vehicle_type.lower() == vehicle_type
-                        and record.route.home_depot_id == depot_id
-                    )
-                    else 0.0
-                    for record in records
-                ]
-            )
-            constraints.append(
-                LinearConstraint(
-                    row,
-                    lb=-np.inf,
-                    ub=float(caps[f"num_{vehicle_type}"]),
-                )
-            )
+    mip_started = perf_counter()
     result = milp(
         c=costs,
         integrality=np.ones(len(records)),
@@ -697,9 +819,20 @@ def _solve_set_partitioning(
         constraints=constraints,
         options={"time_limit": float(time_limit_seconds)},
     )
+    mip_elapsed_seconds = perf_counter() - mip_started
+    time_limit_reached = int(result.status) == 1
     stats: dict[str, Any] = {
         "solver": "scipy.optimize.milp/HiGHS",
         "component": "time-limited MIP route-pool recombination",
+        "formulation": "customer exact cover surrogate",
+        "fleet_semantics": (
+            "route-count caps omitted because strict multi-trip assigns "
+            "physical vehicles only in the shared complete evaluator"
+        ),
+        "objective_semantics": (
+            "sum of route proxy costs; final authority is the shared "
+            "complete evaluator"
+        ),
         "success": bool(result.success),
         "status": int(result.status),
         "status_class": (
@@ -732,6 +865,24 @@ def _solve_set_partitioning(
             else int(result.mip_node_count)
         ),
         "time_limit_seconds": float(time_limit_seconds),
+        "initial_time_limit_seconds": float(time_limit_seconds),
+        "final_time_limit_seconds": float(time_limit_seconds),
+        "actual_elapsed_seconds": float(mip_elapsed_seconds),
+        "mip_invoked": True,
+        "time_limit_reached": bool(time_limit_reached),
+        "finished_before_time_limit": bool(
+            not time_limit_reached
+            and mip_elapsed_seconds < float(time_limit_seconds)
+        ),
+        "extension_supported": False,
+        "incumbent_trace_supported": False,
+        "extension_unavailable_reason": (
+            "scipy.optimize.milp exposes neither an incumbent callback nor "
+            "a resumable solver handle"
+        ),
+        "extended": False,
+        "extension_count": 0,
+        "extension_trigger_evidence": [],
         "optimality_proven": bool(
             result.success and int(result.status) == 0
         ),
@@ -812,7 +963,5 @@ def _solve_set_partitioning(
     if violations:
         stats["status_class"] = "REJECTED_COMPLETE_MODEL_VIOLATIONS"
         return None, stats
-    if not stats["objective_closes_under_complete_model"]:
-        stats["status_class"] = "REJECTED_OBJECTIVE_MISMATCH"
-        return None, stats
+    stats["objective_is_search_surrogate"] = True
     return solution, stats

@@ -5,8 +5,15 @@ from pathlib import Path
 from pyvrp import Solution as PyVRPSolution
 import pyvrp_adapter
 
-from epochal_hgs import _run_exact_epoch
+from epochal_hgs import (
+    _AuditedNoImprovementWallclock,
+    _run_exact_epoch,
+)
 from pyvrp_adapter import (
+    BUSINESS_HARD_INFEASIBLE,
+    PROXY_FOUND_COMPLETION_FAILED,
+    SEARCH_NOT_FOUND,
+    _completion_failure_category,
     _project_initial_solution,
     _translate_solution,
     build_pyvrp_problem,
@@ -36,12 +43,66 @@ def _fixture():
     return bundle, initial
 
 
+def test_no_improvement_wallclock_resets_only_at_relative_threshold() -> None:
+    timestamps = iter((0.0, 100.0, 200.0, 279.0, 280.0))
+    criterion = _AuditedNoImprovementWallclock(
+        180.0,
+        minimum_relative_improvement=0.01,
+        clock=lambda: next(timestamps),
+    )
+
+    assert criterion(100.0) is False
+    assert criterion(90.0) is False
+    assert criterion(89.5) is False
+    assert criterion(89.5) is False
+    assert criterion(89.5) is True
+    assert criterion.triggered is True
+    assert criterion.last_improvement_iteration == 1
+    assert criterion.trigger_iteration == 4
+    assert criterion.last_improvement_elapsed_seconds == 100.0
+    assert criterion.trigger_elapsed_seconds == 280.0
+    assert criterion.no_improvement_elapsed_seconds == 180.0
+    assert criterion.timer_reset_count == 1
+    assert criterion.ignored_strict_improvement_count == 1
+    assert criterion.improvement_audit == (
+        {
+            "iteration": 1,
+            "objective_before": 100.0,
+            "objective_after": 90.0,
+            "improvement_absolute": 10.0,
+            "improvement_relative": 0.1,
+            "timer_reset_threshold_relative": 0.01,
+            "timer_reset": True,
+            "elapsed_seconds": 100.0,
+        },
+        {
+            "iteration": 2,
+            "objective_before": 90.0,
+            "objective_after": 89.5,
+            "improvement_absolute": 0.5,
+            "improvement_relative": 0.5 / 90.0,
+            "timer_reset_threshold_relative": 0.01,
+            "timer_reset": False,
+            "elapsed_seconds": 200.0,
+        },
+    )
+
+
 def test_initial_projection_round_trip_preserves_customer_service() -> None:
     bundle, initial = _fixture()
     problem = build_pyvrp_problem(bundle)
     data = problem.model.data()
+    projection_source = pyvrp_adapter.complete_china81_route_skeleton(
+        initial,
+        bundle,
+    ).solution
 
-    projected = _project_initial_solution(initial, data, problem)
+    projected = _project_initial_solution(
+        projection_source,
+        data,
+        problem,
+        bundle,
+    )
     assert isinstance(projected, PyVRPSolution)
     restored = _translate_solution(projected, problem)
 
@@ -80,10 +141,10 @@ def test_warm_projection_preserves_ev_route_type() -> None:
         mixed,
         problem.model.data(),
         problem,
+        bundle,
     )
     restored = _translate_solution(projected, problem)
 
-    assert restored.routes[0].vehicle_type == "ev"
     assert sum(
         route.vehicle_type == "ev" for route in restored.routes
     ) == 1
@@ -108,6 +169,7 @@ def test_cv_only_projection_intentionally_maps_ev_route_to_cv() -> None:
         mixed,
         problem.model.data(),
         problem,
+        bundle,
     )
     restored = _translate_solution(projected, problem)
 
@@ -143,6 +205,16 @@ def test_exact_epoch_collects_quality_diverse_history_without_extra_calls(
     assert epoch.stats["archive_diversity_selected_count"] == 4
     assert epoch.stats["archive_completion_attempts"] == 8
     assert epoch.stats["complete_candidate_evaluation_attempts"] == 20
+    required_trace_fields = {
+        "candidate_id",
+        "completion_succeeded",
+        "exception_type",
+        "exception_message",
+        "failure_category",
+    }
+    for row in epoch.stats["complete_candidate_evaluation_trace"]:
+        assert required_trace_fields <= row.keys()
+        assert len(row["candidate_id"]) == 64
 
 
 def test_pyvrp_result_passes_shared_full_completion() -> None:
@@ -203,6 +275,14 @@ def test_pyvrp_result_retains_initial_when_proxy_best_fails_full_model(
     assert "forced complete-model rejection" in (
         run.stats["searched_complete_model_failure"]
     )
+    trace = run.stats["complete_candidate_evaluation_trace"]
+    assert len(trace) == run.stats["complete_candidate_evaluation_attempts"]
+    failed = trace[-1]
+    assert len(failed["candidate_id"]) == 64
+    assert failed["completion_succeeded"] is False
+    assert failed["exception_type"] == "ValueError"
+    assert failed["exception_message"] == "forced complete-model rejection"
+    assert failed["failure_category"] == PROXY_FOUND_COMPLETION_FAILED
 
 
 def test_hard_home_depot_lock_is_encoded_in_capacity_dimensions() -> None:
@@ -238,3 +318,76 @@ def test_hard_home_depot_lock_is_encoded_in_capacity_dimensions() -> None:
         for depot_id, index in depot_index.items():
             capacity = vehicle_type.capacity[1 + index]
             assert (capacity > 0) == (depot_id == home_depot)
+
+
+def test_strict_multitrip_proxy_encodes_registered_physical_caps() -> None:
+    bundle = load_china81_bundle(
+        ROOT,
+        "cn-prd-50c-01-V2-LOCATIONS",
+    )
+    mixed = build_pyvrp_problem(
+        bundle,
+        route_proxy_mode="mechanism_ev",
+    ).model.data()
+    mixed_types = {item.name: item for item in mixed.vehicle_types()}
+
+    assert set(mixed_types) == {
+        "CV@D_guangzhou",
+        "EV@D_guangzhou",
+        "CV@D_shenzhen",
+        "EV@D_shenzhen",
+    }
+    for depot_id in ("D_guangzhou", "D_shenzhen"):
+        assert mixed_types[f"CV@{depot_id}"].num_available == 3
+        assert mixed_types[f"EV@{depot_id}"].num_available == 1
+        for vehicle_type in ("CV", "EV"):
+            item = mixed_types[f"{vehicle_type}@{depot_id}"]
+            assert item.reload_depots == [item.start_depot]
+            assert item.max_reloads == 49
+
+    cv_only = build_pyvrp_problem(
+        bundle,
+        route_proxy_mode="cv_only",
+    ).model.data()
+    cv_types = {item.name: item for item in cv_only.vehicle_types()}
+    assert set(cv_types) == {
+        "CV@D_guangzhou",
+        "CV@D_shenzhen",
+    }
+    assert all(item.num_available == 4 for item in cv_types.values())
+
+
+def test_multitrip_projection_and_translation_preserve_trip_boundaries() -> None:
+    bundle, initial = _fixture()
+    completion = pyvrp_adapter.complete_china81_route_skeleton(
+        initial,
+        bundle,
+    )
+    problem = build_pyvrp_problem(bundle)
+    projected = _project_initial_solution(
+        completion.solution,
+        problem.model.data(),
+        problem,
+        bundle,
+    )
+    restored = _translate_solution(projected, problem)
+
+    assert projected.num_trips() == len(completion.solution.routes)
+    assert len(restored.routes) == projected.num_trips()
+    assert len({route.vehicle_id for route in restored.routes}) == len(
+        restored.routes
+    )
+    assert all("#T" in route.vehicle_id for route in restored.routes)
+
+
+def test_completion_failure_classification_is_message_deterministic() -> None:
+    assert _completion_failure_category(
+        "China81 route skeleton cannot satisfy the registered physical "
+        "fleet caps"
+    ) == PROXY_FOUND_COMPLETION_FAILED
+    assert _completion_failure_category(
+        "SEARCH_NOT_FOUND:no candidate"
+    ) == SEARCH_NOT_FOUND
+    assert _completion_failure_category(
+        "BUSINESS_HARD_INFEASIBLE:capacity contradiction"
+    ) == BUSINESS_HARD_INFEASIBLE

@@ -1,0 +1,131 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/units"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/monitor.json",
+  "csv_rules": [
+    {
+      "duplicate_key_fields": [
+        "task_id"
+      ],
+      "max_duplicate_fraction": 0,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 300,
+      "required_fields": [
+        "task_id",
+        "instance_id",
+        "arm_id",
+        "seed",
+        "terminal_status",
+        "objective_cny",
+        "solution_sha256",
+        "solution_structure_sha256"
+      ]
+    }
+  ],
+  "forbidden_command_substrings": [
+    "prepare",
+    "--smoke",
+    "--debug"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 3,
+  "max_rss_mb": 12000,
+  "max_runtime_seconds": 21600,
+  "milestones": [
+    {
+      "min_size": 4096,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/raw_runs.csv"
+    }
+  ],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "xa2-formal-ablation-200c-20260803",
+  "objective": "完成已预注册的200客户三臂组件消融30次运行并写出XA2_ABLATION_COMPLETE",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/raw_runs.csv"
+  ],
+  "protected_files": [
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/metadata.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/run_xa2_formal.py"
+    },
+    {
+      "kind": "algorithm",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_algorithm_20260802/run_xa_formal.py"
+    },
+    {
+      "kind": "algorithm",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "algorithm",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/model_config.py"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/witnesses/cn-prd-200c-01-V2-LOCATIONS.json"
+    },
+    {
+      "kind": "paper_conclusion",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/paper_main.tex"
+    }
+  ],
+  "required_command_substrings": [
+    "run_xa2_formal.py",
+    "run"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/report.md",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_ablation_200c_20260803/discriminability_check.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 1200,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

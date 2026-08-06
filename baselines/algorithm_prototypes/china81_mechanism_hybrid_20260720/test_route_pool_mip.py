@@ -81,7 +81,8 @@ def test_time_limited_mip_reports_status_bound_gap_and_incumbent() -> None:
     assert stats["incumbent_vector_integral"] is True
     assert stats["incumbent_cover_exact"] is True
     assert stats["independent_violation_count"] == 0
-    assert stats["objective_closes_under_complete_model"] is True
+    assert stats["objective_closes_under_complete_model"] is False
+    assert stats["objective_is_search_surrogate"] is True
 
     completion = _accepted_mip_completion(
         solution,
@@ -181,7 +182,7 @@ def test_nonintegral_or_absent_incumbent_is_rejected(monkeypatch) -> None:
     assert stats["optimality_proven"] is False
 
 
-def test_paired_arms_consume_the_same_complete_candidate_budget() -> None:
+def test_paired_arms_register_the_same_complete_candidate_budget() -> None:
     bundle, records = _fixture()
     initial = _initial_solution(records)
     observed = []
@@ -199,13 +200,44 @@ def test_paired_arms_consume_the_same_complete_candidate_budget() -> None:
             wallclock_safety_seconds_per_view=30.0,
         )
         assert run.stats["wallclock_safety_triggered"] is False
-        assert run.stats[
-            "complete_candidate_budget_exactly_consumed"
-        ] is True
-        observed.append(
+        assert run.stats["complete_candidate_budget_expected"] == 80
+        assert (
             run.stats["complete_candidate_evaluation_attempts"]
+            <= run.stats["complete_candidate_budget_expected"]
+        )
+        observed.append(
+            run.stats["complete_candidate_budget_expected"]
         )
     assert observed == [80, 80]
+
+
+def test_uncapped_views_stop_only_after_no_improvement_wallclock() -> None:
+    bundle, records = _fixture()
+    run = run_hgs_route_pool_recombination(
+        bundle,
+        _initial_solution(records),
+        seed=1,
+        hgs_seconds_per_view=None,
+        exact_elites_per_view=2,
+        max_archive_candidates_per_view=4,
+        sp_time_limit_seconds=0.1,
+        hard_home_depot_lock=True,
+        max_hgs_iterations_per_view=None,
+        wallclock_safety_seconds_per_view=None,
+        hgs_no_improvement_seconds_per_view=0.01,
+        exact_checkpoint_interval_iterations=20,
+    )
+
+    assert run.stats["max_hgs_iterations_per_view"] == {
+        "cv_only": None,
+        "naive_ev": None,
+        "mechanism_ev": None,
+    }
+    for view in ("cv_only", "naive_ev", "mechanism_ev"):
+        audit = run.stats["view_search_instrumentation"][view]
+        assert audit["hgs_stop_reason"] == "NO_IMPROVEMENT_WALLCLOCK"
+        assert audit["no_improvement_wallclock_triggered"] is True
+        assert audit["no_improvement_elapsed_seconds_at_trigger"] >= 0.01
 
 
 def test_route_pool_uses_all_already_scored_archive_completions() -> None:

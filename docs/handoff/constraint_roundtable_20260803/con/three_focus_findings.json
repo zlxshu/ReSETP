@@ -1,0 +1,59 @@
+{
+  "task_id": "RT-CON",
+  "status": "RT_CON_COMPLETE",
+  "findings": [
+    {
+      "focus": "C1_C3_STOPPING_AND_INSTANCE_SCALE",
+      "verdicts": {
+        "C1": "修改",
+        "C3": "修改"
+      },
+      "facts": [
+        "100c current-contract batch used maximum 2000 HGS iterations and 150 no-improvement stop; all five algorithms and all three ablation arms ended at 3621.569908 (baselines/china_e3_e7/formal_algorithm_20260802/report.md:5-25).",
+        "200c current-contract ablation used the same 2000/150 rule; all three arms ended at 7820.181472, pairwise directions were 0/10/0, and solution structures were identical 10/10 (baselines/china_e3_e7/formal_ablation_200c_20260803/report.md:7-41).",
+        "The 200c full and no-SP arms ran 1569-2000 iterations, while the no-multiview arm ran only 441-1203; the arm iteration ranges did not overlap although all outputs were structurally identical (formal_ablation_200c_20260803/report.md:35-41).",
+        "The sealed old-contract batch used 25000 iterations per view. Across 405 M-to-MV pairs it recorded improve=114, regress=0, tie=291 (baselines/algorithm_prototypes/china81_vs_opensource_20260727/report.md:10-17).",
+        "One old-contract 100c candidate recorded M-to-MV improvement in all five seeds, with regress_seed_count=0 (docs/handoff/representative_instance_selection_20260803/discriminating_power_matrix.json:13-64).",
+        "The 51-149 domain was imported from Chen's 71-customer example and admitted only 75c and 100c China81 instances (docs/handoff/representative_instance_selection_20260803/selection_rule.json:10-15)."
+      ],
+      "inference": "The strongest repository evidence identifies the stopping condition as the primary loss of discrimination. Increasing customer count from 100 to 200 under the same 2000/150 rule did not restore any difference, while 100c was capable of discriminating M from MV under the old longer-budget contract. The old batch cannot establish a current-model effect because vehicle and fleet contracts differ, but it does establish that budget is a legitimate diagnostic variable. Instance identity and size may moderate difficulty, but no evidence here proves scale itself caused the flatness.",
+      "answer_to_user_question": {
+        "stopping_condition": "有直接主因证据：同一 2000/150 规则跨 100c 与 200c 均全平，且长预算旧合同存在大量非平转移。",
+        "instance_scale": "不是已证主因：扩大到 200c 没有恢复差异，100c 在长预算旧合同下能出现差异。固定 51-149 仍应修改，因为它是外部论文内部标定，不是本项目标定。",
+        "both": "应同时修改，但证据强度不同：C1 是当前首要诊断对象；C3 是不当迁移和代表性风险，不应被写成已证真因。"
+      },
+      "recommended_replacements": {
+        "C1": "停止条件不得复制陈婉茹的 2000/150。先在当前模型、当前评价器和跑前冻结的主实例上做不读取臂间优劣的长程收敛标定，按各臂进入稳定平台所需的完整评价数设共同上限；连续无改善只能作为经本项目标定的辅助提前停止，并记录实际迭代、完整评价数和终止原因。",
+        "C3": "代表实例规模不得固定为 51--149。应在正式结果出现前，依据当前模型的可行性、机制活跃度和收敛/判别诊断选择主实例及稳定性实例；规模只是候选维度，不得用另一篇论文的客户数区间代替本项目标定。"
+      }
+    },
+    {
+      "focus": "D1_D7_LEGITIMATE_TROUBLESHOOTING",
+      "verdicts": {
+        "D1": "修改",
+        "D7": "修改"
+      },
+      "facts": [
+        "The 200c protocol explicitly prohibited changing instance, seed, or budget after a 30-value tie (baselines/china_e3_e7/formal_ablation_200c_20260803/report.md:7-17).",
+        "The same batch exposed unequal early termination and identical solutions across arms (formal_ablation_200c_20260803/report.md:35-41).",
+        "The old 25000-iteration-per-view evidence contains 114 M-to-MV improvements and zero regressions, so budget cannot be treated as an inherently illegitimate variable (baselines/algorithm_prototypes/china81_vs_opensource_20260727/report.md:10-17)."
+      ],
+      "inference": "D1 and D7 correctly prohibit replacing an adverse formal batch with a favorable one. Their absolute wording also blocks a new, separately versioned diagnostic batch that changes one factor symmetrically. That prevents distinguishing an inactive mechanism, an easy instance, a premature stop, and an implementation defect—the four causes the repository itself requires investigators to separate (docs/handoff/memory/user_operating_principles.md:31-35).",
+      "cost_assessment": "High. Without a diagnostic exception, the current evidence can only say the registered 2000/150 batch was flat; it cannot support the stronger claim that the components have no effect at China81 maximum scale. The cost is a wrong causal conclusion, not merely extra runtime.",
+      "required_boundary": "Original batches remain sealed and fully reported. Any changed budget or instance must be a new numbered, preregistered, single-factor, symmetric diagnostic task; it cannot delete or replace the original batch, and formal redesign remains a user decision. Seed replacement after seeing outcomes remains prohibited."
+    },
+    {
+      "focus": "B7_PAGE_SUPPORT_AND_PROJECT_CALIBRATION",
+      "verdicts": {
+        "B7": "修改"
+      },
+      "facts": [
+        "The evidence inventory copied 51-149 customers, 2000/150 stopping, one-instance ten-run design, and three-arm ablation directly from Chen (docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md:62-69).",
+        "The project-aligned contract separately states that target-journal authors chose parameters through literature plus repeated testing, and that pre-experiment calibration is legitimate (docs/handoff/experiment_contract_v2_journal_aligned_20260730.md:25-25,39-41).",
+        "The copied stopping and size settings yielded zero discrimination at both 100c and 200c (formal_algorithm_20260802/report.md:13-25; formal_ablation_200c_20260803/report.md:23-25)."
+      ],
+      "inference": "B7 was misused. A page citation proves that another paper used a number under its own solver, instance, and calibration; it does not validate copying that number into ReSETP. The correct evidentiary chain has two independent parts: the paper supports the type and purpose of the procedure, while current-project, outcome-blind calibration supports the numeric value.",
+      "recommended_replacement": "凡决定实验能否启动、数据能否进入结果或主张是否成立的门槛，须用目标期刊原文确认其用途和完整前提；文献中的实例规模、种群、迭代数、无改进次数等内部标定值不得原样移植。项目专属数值必须在不读取正式结果方向的前提下，用本项目收敛、功效或可行性标定并版本化预登记；只有文献结构支持而无项目标定的数值，只能作试算起点，不得作科学门槛。"
+    }
+  ]
+}

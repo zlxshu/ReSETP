@@ -1,0 +1,5148 @@
+{
+  "schema": "resetp.y1.docs-supersede-dag.v1",
+  "generated_at": "2026-08-02T08:05:40.635102+00:00",
+  "scope": {
+    "docs_handoff_files_excluding_round2_outputs": 688,
+    "handoff_root_included": true,
+    "all_files_byte_hashed": true,
+    "text_files_full_line_scanned": 653,
+    "binary_files_inventory_only": 36,
+    "edge_rule": "显式 superseded_by/self/two-path 覆盖陈述与第一轮核实 seed；成环候选不进 DAG。",
+    "relationship_method": "对 689 个文件逐字节哈希；676 个可解码文本逐行扫描。自动候选只作线索，最终边必须有明确“覆盖/取代/当前状态”文字或第一轮已核验证据；引用、取证、扩展关系不当作 superseded_by。边带 coverage_scope，避免把部分覆盖误写成整篇作废。"
+  },
+  "summary": {
+    "files_scanned": 689,
+    "candidate_edges": 24,
+    "unique_candidate_edges": 21,
+    "dag_edges": 17,
+    "cycle_rejected_edges": 0,
+    "superseded_documents": 17,
+    "current_authoritative_documents": 8,
+    "conflicts_without_direct_edge": 2,
+    "claims_current_or_authority": 2053,
+    "claims_historical_or_superseded": 479,
+    "manual_false_supersession_candidates_rejected": 7
+  },
+  "current_authoritative_documents": [
+    {
+      "path": "HANDOFF.md",
+      "scope": "canonical current decisions and status"
+    },
+    {
+      "path": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "scope": "startup hierarchy and retained discipline"
+    },
+    {
+      "path": "docs/handoff/TODO_施工总清单_20260802.md",
+      "scope": "current user decisions, blockers and authorized next surfaces"
+    },
+    {
+      "path": "docs/handoff/model_scope_reduction_review_20260802/report.md",
+      "scope": "current model-component necessity and multi-trip retention decision"
+    },
+    {
+      "path": "docs/handoff/e2_final_closeout_20260727.md",
+      "scope": "sealed E2 terminal claims"
+    },
+    {
+      "path": "docs/handoff/memory/carbon_forecast_semantics_restore_20260801.md",
+      "scope": "current forecast/actual carbon-field semantics"
+    },
+    {
+      "path": "docs/paper_v2/paper_main.tex",
+      "scope": "current manuscript body, not automatically current scientific authority"
+    },
+    {
+      "path": "docs/handoff/model_change_approval_register_20260718.md",
+      "scope": "approval history except specifically superseded pending statuses"
+    }
+  ],
+  "superseded_documents": [
+    {
+      "path": "docs/handoff/project_prd_execution_map_v2_20260702.md",
+      "superseded_by": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "coverage_scope": "current-entry status and retired UK-track body; record discipline retained",
+      "evidence": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:22-43",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/project_planning_map_20260701.md",
+      "superseded_by": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "coverage_scope": "current-entry status and retired UK-track body; no-do list retained",
+      "evidence": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:23-43",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md",
+      "superseded_by": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "coverage_scope": "current-entry and old Goeke/280kWh route; discipline retained",
+      "evidence": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:26-43",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/project_experiment_master_plan_20260711.md",
+      "superseded_by": "docs/handoff/e3_e7_experiment_product_design_20260712.md",
+      "coverage_scope": "E3-E7 experiment and artifact design",
+      "evidence": "docs/handoff/e3_e7_experiment_product_design_20260712.md:4-5",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/claude_advisor_issue_register_20260711.md",
+      "superseded_by": "docs/handoff/e1_e7_submission_contract_decision_20260711.md",
+      "coverage_scope": "old submission proposals and decision order; evidence register retained",
+      "evidence": "docs/handoff/e1_e7_submission_contract_decision_20260711.md:1-7",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/carbon_forecast_minimal_fix_20260731/report.md",
+      "superseded_by": "docs/handoff/memory/carbon_forecast_semantics_restore_20260801.md",
+      "coverage_scope": "current conclusion on forecast/actual carbon fields",
+      "evidence": "docs/handoff/memory/carbon_forecast_semantics_restore_20260801.md:13-17",
+      "relation": "CURRENT_CONCLUSION_SUPERSEDED_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/diagnosis_and_remediation_master_20260731.md",
+      "superseded_by": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "coverage_scope": "current experiment status, old one-page end-state, old remediation TODO and sections 6-9 execution order",
+      "evidence": "docs/handoff/diagnosis_and_remediation_master_20260731.md:16-19",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md",
+      "superseded_by": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "coverage_scope": "E3/E5/E6/E7 current status and decision branches",
+      "evidence": "docs/handoff/legacy_sweep_20260802/legacy_ledger.json:X2-DF-006",
+      "relation": "CURRENT_STATUS_SUPERSEDED_VERIFIED_FIRST_ROUND"
+    },
+    {
+      "path": "docs/handoff/session_handoff_20260730_codex_to_new_claude.md",
+      "superseded_by": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "coverage_scope": "E3/E5/E6/E7 current status and decision branches",
+      "evidence": "docs/handoff/legacy_sweep_20260802/legacy_ledger.json:X2-DF-006",
+      "relation": "CURRENT_STATUS_SUPERSEDED_VERIFIED_FIRST_ROUND"
+    },
+    {
+      "path": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "superseded_by": "docs/handoff/TODO_施工总清单_20260802.md",
+      "coverage_scope": "M1/M2 pending state only; user selected multi-trip on",
+      "evidence": "docs/handoff/TODO_施工总清单_20260802.md:20-33",
+      "relation": "DECISION_STATUS_SUPERSEDED_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/model_change_approval_register_20260718.md",
+      "superseded_by": "docs/handoff/TODO_施工总清单_20260802.md",
+      "coverage_scope": "AWAITING_USER_DECISION M1/M2 at lines 2487-2493 only",
+      "evidence": "docs/handoff/model_change_approval_register_20260718.md:2487-2493; docs/handoff/TODO_施工总清单_20260802.md:20-33",
+      "relation": "DECISION_STATUS_SUPERSEDED_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/paper_north_star_20260713.md",
+      "superseded_by": "HANDOFF.md",
+      "coverage_scope": "paper center story and chapter logic only",
+      "evidence": "HANDOFF.md:5141-5164,5411-5442",
+      "relation": "CURRENT_STORY_SUPERSEDED_BY_USER_DECISION"
+    },
+    {
+      "path": "docs/handoff/e3_e7_experiment_product_design_20260712.md",
+      "superseded_by": "HANDOFF.md",
+      "coverage_scope": "E3-E7 as separate formal mechanism experiments and old chapter structure",
+      "evidence": "HANDOFF.md:5141-5164,5411-5442",
+      "relation": "MAINLINE_EXPERIMENT_ROLE_SUPERSEDED"
+    },
+    {
+      "path": "docs/handoff/e2_final_algorithm_experiment_construction_20260720.md",
+      "superseded_by": "docs/handoff/memory/e2_final_campaign_p3_p4_complete_20260722.md",
+      "coverage_scope": "P3/P4 execution status and P2/P5 remaining status",
+      "evidence": "HANDOFF.md:1595-1606",
+      "relation": "EXECUTION_STATUS_SUPERSEDED"
+    },
+    {
+      "path": "docs/handoff/algorithm_comparison_foundation_v3_20260719.md",
+      "superseded_by": "docs/handoff/e2_final_closeout_20260727.md",
+      "coverage_scope": "algorithm performance status and permitted claims; foundation geometry retained",
+      "evidence": "docs/handoff/e2_final_closeout_20260727.md:5-29",
+      "relation": "PERFORMANCE_STATUS_SUPERSEDED"
+    },
+    {
+      "path": "docs/handoff/e2_hgs_ils_cross_domain_contract_20260725.md",
+      "superseded_by": "HANDOFF.md",
+      "coverage_scope": "planned run state; current terminal STOP",
+      "evidence": "HANDOFF.md:120-122",
+      "relation": "EXECUTION_STATUS_SUPERSEDED_EXPLICIT"
+    },
+    {
+      "path": "docs/handoff/e2_hgs_ils_xd_comparative_positioning_20260725.md",
+      "superseded_by": "HANDOFF.md",
+      "coverage_scope": "planned run state; current terminal STOP",
+      "evidence": "HANDOFF.md:120-122",
+      "relation": "EXECUTION_STATUS_SUPERSEDED_EXPLICIT"
+    }
+  ],
+  "edges": [
+    {
+      "from": "docs/handoff/project_prd_execution_map_v2_20260702.md",
+      "to": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "coverage_scope": "current-entry status and retired UK-track body; record discipline retained",
+      "evidence": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:22-43",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/project_planning_map_20260701.md",
+      "to": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "coverage_scope": "current-entry status and retired UK-track body; no-do list retained",
+      "evidence": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:23-43",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md",
+      "to": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "coverage_scope": "current-entry and old Goeke/280kWh route; discipline retained",
+      "evidence": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:26-43",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/project_experiment_master_plan_20260711.md",
+      "to": "docs/handoff/e3_e7_experiment_product_design_20260712.md",
+      "coverage_scope": "E3-E7 experiment and artifact design",
+      "evidence": "docs/handoff/e3_e7_experiment_product_design_20260712.md:4-5",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/claude_advisor_issue_register_20260711.md",
+      "to": "docs/handoff/e1_e7_submission_contract_decision_20260711.md",
+      "coverage_scope": "old submission proposals and decision order; evidence register retained",
+      "evidence": "docs/handoff/e1_e7_submission_contract_decision_20260711.md:1-7",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/carbon_forecast_minimal_fix_20260731/report.md",
+      "to": "docs/handoff/memory/carbon_forecast_semantics_restore_20260801.md",
+      "coverage_scope": "current conclusion on forecast/actual carbon fields",
+      "evidence": "docs/handoff/memory/carbon_forecast_semantics_restore_20260801.md:13-17",
+      "relation": "CURRENT_CONCLUSION_SUPERSEDED_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/diagnosis_and_remediation_master_20260731.md",
+      "to": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "coverage_scope": "current experiment status, old one-page end-state, old remediation TODO and sections 6-9 execution order",
+      "evidence": "docs/handoff/diagnosis_and_remediation_master_20260731.md:16-19",
+      "relation": "PARTIAL_SUPERSESSION_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md",
+      "to": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "coverage_scope": "E3/E5/E6/E7 current status and decision branches",
+      "evidence": "docs/handoff/legacy_sweep_20260802/legacy_ledger.json:X2-DF-006",
+      "relation": "CURRENT_STATUS_SUPERSEDED_VERIFIED_FIRST_ROUND"
+    },
+    {
+      "from": "docs/handoff/session_handoff_20260730_codex_to_new_claude.md",
+      "to": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "coverage_scope": "E3/E5/E6/E7 current status and decision branches",
+      "evidence": "docs/handoff/legacy_sweep_20260802/legacy_ledger.json:X2-DF-006",
+      "relation": "CURRENT_STATUS_SUPERSEDED_VERIFIED_FIRST_ROUND"
+    },
+    {
+      "from": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "to": "docs/handoff/TODO_施工总清单_20260802.md",
+      "coverage_scope": "M1/M2 pending state only; user selected multi-trip on",
+      "evidence": "docs/handoff/TODO_施工总清单_20260802.md:20-33",
+      "relation": "DECISION_STATUS_SUPERSEDED_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/model_change_approval_register_20260718.md",
+      "to": "docs/handoff/TODO_施工总清单_20260802.md",
+      "coverage_scope": "AWAITING_USER_DECISION M1/M2 at lines 2487-2493 only",
+      "evidence": "docs/handoff/model_change_approval_register_20260718.md:2487-2493; docs/handoff/TODO_施工总清单_20260802.md:20-33",
+      "relation": "DECISION_STATUS_SUPERSEDED_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/paper_north_star_20260713.md",
+      "to": "HANDOFF.md",
+      "coverage_scope": "paper center story and chapter logic only",
+      "evidence": "HANDOFF.md:5141-5164,5411-5442",
+      "relation": "CURRENT_STORY_SUPERSEDED_BY_USER_DECISION"
+    },
+    {
+      "from": "docs/handoff/e3_e7_experiment_product_design_20260712.md",
+      "to": "HANDOFF.md",
+      "coverage_scope": "E3-E7 as separate formal mechanism experiments and old chapter structure",
+      "evidence": "HANDOFF.md:5141-5164,5411-5442",
+      "relation": "MAINLINE_EXPERIMENT_ROLE_SUPERSEDED"
+    },
+    {
+      "from": "docs/handoff/e2_final_algorithm_experiment_construction_20260720.md",
+      "to": "docs/handoff/memory/e2_final_campaign_p3_p4_complete_20260722.md",
+      "coverage_scope": "P3/P4 execution status and P2/P5 remaining status",
+      "evidence": "HANDOFF.md:1595-1606",
+      "relation": "EXECUTION_STATUS_SUPERSEDED"
+    },
+    {
+      "from": "docs/handoff/algorithm_comparison_foundation_v3_20260719.md",
+      "to": "docs/handoff/e2_final_closeout_20260727.md",
+      "coverage_scope": "algorithm performance status and permitted claims; foundation geometry retained",
+      "evidence": "docs/handoff/e2_final_closeout_20260727.md:5-29",
+      "relation": "PERFORMANCE_STATUS_SUPERSEDED"
+    },
+    {
+      "from": "docs/handoff/e2_hgs_ils_cross_domain_contract_20260725.md",
+      "to": "HANDOFF.md",
+      "coverage_scope": "planned run state; current terminal STOP",
+      "evidence": "HANDOFF.md:120-122",
+      "relation": "EXECUTION_STATUS_SUPERSEDED_EXPLICIT"
+    },
+    {
+      "from": "docs/handoff/e2_hgs_ils_xd_comparative_positioning_20260725.md",
+      "to": "HANDOFF.md",
+      "coverage_scope": "planned run state; current terminal STOP",
+      "evidence": "HANDOFF.md:120-122",
+      "relation": "EXECUTION_STATUS_SUPERSEDED_EXPLICIT"
+    }
+  ],
+  "cycle_rejected_candidates": [],
+  "conflicting_pairs": [
+    {
+      "a": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "a_evidence": "lines 45-50 still call the 2026-07-11/12/13 chain current authority",
+      "b": "HANDOFF.md",
+      "b_evidence": "lines 5141-5164 and 5411-5442 record a new 2026-08-02 mainline and chapter logic",
+      "conflict": "startup authority label points at documents whose scientific story/experiment roles are now partially obsolete",
+      "direct_supersession_edge": false,
+      "reason_no_edge": "READ_ME remains authoritative for startup discipline and is not wholly superseded by HANDOFF"
+    },
+    {
+      "a": "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+      "a_evidence": "lines 4 and 35 onward state ACTIVE and prescribe E3/E5/E6/E7 experiment regimes",
+      "b": "HANDOFF.md",
+      "b_evidence": "lines 5143-5157 demote collaboration, allocation and nonlinear charging to cited model components rather than formal experiments",
+      "conflict": "ACTIVE label overstates the current scientific role of several mechanism experiments",
+      "direct_supersession_edge": false,
+      "reason_no_edge": "contract redlines and record discipline remain useful; only its experiment-role scope conflicts"
+    }
+  ],
+  "file_inventory": [
+    {
+      "path": "HANDOFF.md",
+      "size_bytes": 976301,
+      "sha256": "518d8c943773c9fa9e122fd66c564519a59b3fe313bf8b5dee17c940bf5a5bd0",
+      "text_scanned": true,
+      "line_count": 5628
+    },
+    {
+      "path": "docs/handoff/E2_TEMP_EXECUTION_MEMO_20260711.md",
+      "size_bytes": 9509,
+      "sha256": "cb94043bb039451a4295c8eca8d95a65a5dc4b29ca5095dd5fad20a1083008c7",
+      "text_scanned": true,
+      "line_count": 91
+    },
+    {
+      "path": "docs/handoff/M1_claude_kickoff.md",
+      "size_bytes": 3355,
+      "sha256": "2ffe8e16d8a7388a35f7e22924b25c87d8fa89784fd43c109536f57397fe6baf",
+      "text_scanned": true,
+      "line_count": 32
+    },
+    {
+      "path": "docs/handoff/READ_ME_FIRST_FOR_AGENTS.md",
+      "size_bytes": 10094,
+      "sha256": "173e3bfd4255810ca4b5c53c2ec4c0011688ccbe64882e528314e69ecfb0fd84",
+      "text_scanned": true,
+      "line_count": 148
+    },
+    {
+      "path": "docs/handoff/RESUME_HERE_20260802_diagnosis.md",
+      "size_bytes": 6215,
+      "sha256": "a40454b8243f0f8b2e678a5c1143bfac3025a536a9bd7fa1438b71cc9775b8ec",
+      "text_scanned": true,
+      "line_count": 81
+    },
+    {
+      "path": "docs/handoff/TODO_施工总清单_20260802.md",
+      "size_bytes": 6404,
+      "sha256": "5d45f06a04d22c15c63bb4fcc01cc7ab6850596ed7a14805c715becdcba7a31e",
+      "text_scanned": true,
+      "line_count": 103
+    },
+    {
+      "path": "docs/handoff/adversarial_review_20260731/done.json",
+      "size_bytes": 746,
+      "sha256": "a08d4e29c078a0d91057ace9cd042968bb95686af288e65b2c549ef91204710b",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/adversarial_review_20260731/report.md",
+      "size_bytes": 34700,
+      "sha256": "686dfd822eb6748258fdfd93598ae752c3117a331bd7c43d8a85b4ddf87f2b0d",
+      "text_scanned": true,
+      "line_count": 201
+    },
+    {
+      "path": "docs/handoff/advisor_instance_selection_01_20260729/report.md",
+      "size_bytes": 34925,
+      "sha256": "144c2b6d7a6c93190d8f4812f2d63c20ccd61b73e4b2a454772cdfad0d2a0d06",
+      "text_scanned": true,
+      "line_count": 472
+    },
+    {
+      "path": "docs/handoff/algorithm_comparison_foundation_20260719.md",
+      "size_bytes": 12292,
+      "sha256": "8e2829d6621475bc708fbc91741c0b7121c29ebea169bea557d1f092499687c8",
+      "text_scanned": true,
+      "line_count": 232
+    },
+    {
+      "path": "docs/handoff/algorithm_comparison_foundation_v2_20260719.md",
+      "size_bytes": 13928,
+      "sha256": "aaf3f3766aab108e763ebe47baa7d398cf7aadf65bbc85e6e43cfe25dddb4dca",
+      "text_scanned": true,
+      "line_count": 289
+    },
+    {
+      "path": "docs/handoff/algorithm_comparison_foundation_v3_20260719.md",
+      "size_bytes": 12989,
+      "sha256": "c659f295be158469e58cf8bdf654ac49ded53e8ca9b5e27af7700d62cdd598a4",
+      "text_scanned": true,
+      "line_count": 250
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/carbon_nonlinear_charging/artifact_hashes.json",
+      "size_bytes": 628,
+      "sha256": "6bc64715f235fdc7895a3d875516e8059e849648ae7cc6a40e4c7d591cc8eae6",
+      "text_scanned": true,
+      "line_count": 18
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/carbon_nonlinear_charging/candidates.json",
+      "size_bytes": 15493,
+      "sha256": "0a9a26dc666ae26dbf0cb60e8c626d8be166943575f4220f330dae9474ba8c5d",
+      "text_scanned": true,
+      "line_count": 250
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/carbon_nonlinear_charging/decision.json",
+      "size_bytes": 2338,
+      "sha256": "9de3f6127ac28f12609bff269becc104d19e27e6474b36d1970fc8e0b2a7bfd7",
+      "text_scanned": true,
+      "line_count": 43
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/carbon_nonlinear_charging/report.md",
+      "size_bytes": 15040,
+      "sha256": "be9d96dbd4b6d99edbc2ad573fb355c1905a96afdb70f2a3b995f99230719fb9",
+      "text_scanned": true,
+      "line_count": 89
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/carbon_nonlinear_charging/source_evidence.csv",
+      "size_bytes": 6320,
+      "sha256": "2f82cc3294030dc49d24c2f0723c96f8441bea349045335dfd0b0058343cac52",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/collaboration_fairness/artifact_hashes.json",
+      "size_bytes": 579,
+      "sha256": "4d8d28e65da647043bd199f62389529d7d395bf17a1ce323701a97cf191289b0",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/collaboration_fairness/candidates.json",
+      "size_bytes": 13949,
+      "sha256": "a1bca1a55dba100b89cec2cf38cac3b7787ed670452ac7f304dc8092f9b1f38e",
+      "text_scanned": true,
+      "line_count": 191
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/collaboration_fairness/decision.json",
+      "size_bytes": 2663,
+      "sha256": "2b77387e26a68b665ef4ca31178b9587c50fe3531f07ced8e480ecf71fcae82a",
+      "text_scanned": true,
+      "line_count": 57
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/collaboration_fairness/report.md",
+      "size_bytes": 13051,
+      "sha256": "2f211cda0fe09f7b6990b987e87e5909373a61ebcccb98d12b038aca3d86315b",
+      "text_scanned": true,
+      "line_count": 77
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/collaboration_fairness/source_evidence.csv",
+      "size_bytes": 7621,
+      "sha256": "4005ac5c52c481e320b171a6fdde80314b6f27762a2ccc1b32e992e7aa096f30",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/dynamic_replanning/artifact_hashes.json",
+      "size_bytes": 558,
+      "sha256": "3f37feb69bb08bdcd28392b9602d1bdcf315cf0d76fba043d0be124702af5fde",
+      "text_scanned": true,
+      "line_count": 13
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/dynamic_replanning/candidates.json",
+      "size_bytes": 18462,
+      "sha256": "a22b26bc2d8c7a044a7430c8c56c2b2f7f255b4ddbde5a77b2f7d1e0533e917f",
+      "text_scanned": true,
+      "line_count": 299
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/dynamic_replanning/decision.json",
+      "size_bytes": 2055,
+      "sha256": "6be8cb9df8afb4db0b8aa7eb70c81f7c62fe356a56e0140ab1778e89526492bc",
+      "text_scanned": true,
+      "line_count": 37
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/dynamic_replanning/report.md",
+      "size_bytes": 16355,
+      "sha256": "6173a30f86febea7ecb7c41190ee190acd4bc9b3f0ed5120d7bd7ca9a558f3a1",
+      "text_scanned": true,
+      "line_count": 87
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/dynamic_replanning/source_evidence.csv",
+      "size_bytes": 8298,
+      "sha256": "b950b215ae8b8f566ebc360b68d1a61e3e494940434e5862076aa300ecf3eb89",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/fleet_charging/artifact_hashes.json",
+      "size_bytes": 949,
+      "sha256": "a4979abfecec4ad45a20791c4604d5bcc006ed91771219d9ede15dbd8360acfb",
+      "text_scanned": true,
+      "line_count": 24
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/fleet_charging/candidates.json",
+      "size_bytes": 16478,
+      "sha256": "f464dedc385d7c9d156deeb96751b8ef8a900e09566d1245fa2c99da0af9e8fc",
+      "text_scanned": true,
+      "line_count": 276
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/fleet_charging/decision.json",
+      "size_bytes": 3829,
+      "sha256": "c6ff29a2e7a23f861a1d5179de175f5435204effbea977fbd07ac4a04a32767e",
+      "text_scanned": true,
+      "line_count": 85
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/fleet_charging/report.md",
+      "size_bytes": 16072,
+      "sha256": "eb726051dcfa41020189f45c405943b1abed7d30d3e5993d6993fbc858ee82a2",
+      "text_scanned": true,
+      "line_count": 81
+    },
+    {
+      "path": "docs/handoff/algorithm_exploration_20260718/fleet_charging/source_evidence.csv",
+      "size_bytes": 9332,
+      "sha256": "ae80d1721fc62662c503c9781313ed78ea4382c3f0b4ad09568e057fc074d577",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/algorithm_forensics_and_generation_blueprint_20260719.md",
+      "size_bytes": 13778,
+      "sha256": "3cb0e357af529cb951ccace28cff3d0dae2f745c3ef6827d9b685182e8f22942",
+      "text_scanned": true,
+      "line_count": 160
+    },
+    {
+      "path": "docs/handoff/algorithm_hgs_alns_fusion_reset_20260719.md",
+      "size_bytes": 3875,
+      "sha256": "ac3bfcd4ce91fcbf617e0e64b0daa228c2b5331745ed5e7ee2c60796e9376251",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/algorithm_naming_map_20260722.md",
+      "size_bytes": 3140,
+      "sha256": "7221274c2d524e878a485efe0b0a083145f562e2076115548e35debe0da93066",
+      "text_scanned": true,
+      "line_count": 50
+    },
+    {
+      "path": "docs/handoff/algorithm_optimization_prd_20260718.md",
+      "size_bytes": 36244,
+      "sha256": "4f23c9542c2ba44c2ac187088d60120bfb38aa907eea041256bb05fab3141ad5",
+      "text_scanned": true,
+      "line_count": 317
+    },
+    {
+      "path": "docs/handoff/algorithm_source_and_license_register_20260719.md",
+      "size_bytes": 28196,
+      "sha256": "d1ebd3af476ebdab417ea508ed37878ea9383907f68bde7cda1225599e38a7c5",
+      "text_scanned": true,
+      "line_count": 82
+    },
+    {
+      "path": "docs/handoff/algorithm_source_traceability_20260718.md",
+      "size_bytes": 12228,
+      "sha256": "7014a92069855d344551b6173500ee775a83572248cedb1cec6543aef9023ea9",
+      "text_scanned": true,
+      "line_count": 63
+    },
+    {
+      "path": "docs/handoff/algorithm_stage2_architecture_20260719.md",
+      "size_bytes": 15128,
+      "sha256": "8af6b74be3ea896617827f5922212a66c7cbf0b6080e7a803f74410838e6e4c8",
+      "text_scanned": true,
+      "line_count": 198
+    },
+    {
+      "path": "docs/handoff/allocation_mechanism_survey_20260731/done.json",
+      "size_bytes": 279,
+      "sha256": "3538829e1e476e491bbfb90c2341aaa2b6a14fec16336945094e3bdbb64b0324",
+      "text_scanned": true,
+      "line_count": 9
+    },
+    {
+      "path": "docs/handoff/allocation_mechanism_survey_20260731/report.md",
+      "size_bytes": 40350,
+      "sha256": "a04380128ab548ff778940e8448dc322479d553d03046d664d214d0683751aec",
+      "text_scanned": true,
+      "line_count": 382
+    },
+    {
+      "path": "docs/handoff/alns_mechanism_innovation_exploration_contract_20260718.md",
+      "size_bytes": 3812,
+      "sha256": "17c93f09f8ff3c4998c59d5500aee12815ff161086019c5f7ffba31c46320b28",
+      "text_scanned": true,
+      "line_count": 33
+    },
+    {
+      "path": "docs/handoff/attachment_report_review_20260718.md",
+      "size_bytes": 3839,
+      "sha256": "fd26d37034c00903ef5f086eb2327b786386a02d8aae736f4ca0da3050a0b21f",
+      "text_scanned": true,
+      "line_count": 49
+    },
+    {
+      "path": "docs/handoff/averaged_segmented_roulette_training_contract_20260719.md",
+      "size_bytes": 3312,
+      "sha256": "47b418c14d33ec71503e7c75828e39430c54dfeaa03fc40dd52ad5796e0c2440",
+      "text_scanned": true,
+      "line_count": 72
+    },
+    {
+      "path": "docs/handoff/battery_history_reuse_contract_20260711.md",
+      "size_bytes": 3710,
+      "sha256": "b0790569043ef78b90450952b567e43d6809b51fd81bfa4e16f28daf18b127fe",
+      "text_scanned": true,
+      "line_count": 39
+    },
+    {
+      "path": "docs/handoff/bks_borrowing_and_hybrid_design_20260719.md",
+      "size_bytes": 11259,
+      "sha256": "ccef288205da5da31d95cc9c1febd38b6d826e43720adb8c77d3e4d481f093f3",
+      "text_scanned": true,
+      "line_count": 141
+    },
+    {
+      "path": "docs/handoff/bounded_dual_view_archive_contract_20260719.md",
+      "size_bytes": 9439,
+      "sha256": "d25d31ade75c32e6156bebfc8bb24a14e8ba05a863ce8dbaa717287d7944da60",
+      "text_scanned": true,
+      "line_count": 192
+    },
+    {
+      "path": "docs/handoff/bounded_dual_view_archive_p1_execution_contract_20260719.md",
+      "size_bytes": 5428,
+      "sha256": "1f1ec3f1622c17d066ad9e1e872f0142f49fab7af5c0820ba5d47bf322dcd10a",
+      "text_scanned": true,
+      "line_count": 107
+    },
+    {
+      "path": "docs/handoff/carbon_forecast_minimal_fix_20260731/compile.after.log",
+      "size_bytes": 68692,
+      "sha256": "4a29e18de9e859f109a7e8410d4934f73d34b76b4c50b46d73796f1dfe491fb9",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/carbon_forecast_minimal_fix_20260731/compile.before.log",
+      "size_bytes": 68733,
+      "sha256": "88f8f0be155b3e33e3ed47f1b33ee7db7f157fd89b75d63b2d2a2921fc4e1911",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/carbon_forecast_minimal_fix_20260731/done.json",
+      "size_bytes": 1514,
+      "sha256": "5e7a3c89790e9323afe7a286d6774ae919027587aee49f9413b211e8087c441d",
+      "text_scanned": true,
+      "line_count": 30
+    },
+    {
+      "path": "docs/handoff/carbon_forecast_minimal_fix_20260731/paper_main.after.pdf",
+      "size_bytes": 626375,
+      "sha256": "ccc89e0c55f98ceb061088d64f0e59e13747b13af806a37624076a9e13522a3b",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/carbon_forecast_minimal_fix_20260731/paper_main.after.tex",
+      "size_bytes": 107975,
+      "sha256": "ecff28babf113c23a18174a192fd00860cb3750de37a4ef94d046269a58bfa00",
+      "text_scanned": true,
+      "line_count": 1752
+    },
+    {
+      "path": "docs/handoff/carbon_forecast_minimal_fix_20260731/paper_main.before.tex",
+      "size_bytes": 107961,
+      "sha256": "64b40408988d3d3c3555cf520a7253daa79067061df7978b8e4adfa82cf7b453",
+      "text_scanned": true,
+      "line_count": 1751
+    },
+    {
+      "path": "docs/handoff/carbon_forecast_minimal_fix_20260731/report.md",
+      "size_bytes": 5616,
+      "sha256": "fd3ac8154036f3e51e83cafa469ecbd510190c673138e9e18ef18c7129461335",
+      "text_scanned": true,
+      "line_count": 82
+    },
+    {
+      "path": "docs/handoff/chen_yudie_2025_master_reverse_engineering_20260716.md",
+      "size_bytes": 25640,
+      "sha256": "d8c2780808a3b72e7aeb4b1944176ed1fdf627e2e2b8f6cb59df1fe33cda7431",
+      "text_scanned": true,
+      "line_count": 172
+    },
+    {
+      "path": "docs/handoff/chen_yudie_2025_typography_audit_20260716.json",
+      "size_bytes": 55828,
+      "sha256": "473225ae48d352cbd83c00c5e4174ede72d16b90dba3421ba9a88e748c913a09",
+      "text_scanned": true,
+      "line_count": 3205
+    },
+    {
+      "path": "docs/handoff/china81_hardening_audit_20260717.md",
+      "size_bytes": 4541,
+      "sha256": "3b9bdd0af10aaafad7dd00a3fad7e93bba3b75984f8e0c4af6fc20d9938e1b7a",
+      "text_scanned": true,
+      "line_count": 32
+    },
+    {
+      "path": "docs/handoff/china81_nonlinear_core_g1_contract_20260720.md",
+      "size_bytes": 5076,
+      "sha256": "4a532b65dfe972045bc64a76f0e057dc16981f4d025cacd1e1875325642eca1b",
+      "text_scanned": true,
+      "line_count": 102
+    },
+    {
+      "path": "docs/handoff/china81_vs_opensource_design_20260727.md",
+      "size_bytes": 6795,
+      "sha256": "ad80c2973a0bae94c7037780956627f9fb721ce4b5a91004bb54bf9ce5d13dfa",
+      "text_scanned": true,
+      "line_count": 121
+    },
+    {
+      "path": "docs/handoff/china_2025_default_date_decision_surface_20260718.md",
+      "size_bytes": 2937,
+      "sha256": "a3c4181fd7856bbaf92080d1e0d39160a92b96c61536fb5108dd3d76016e8367",
+      "text_scanned": true,
+      "line_count": 26
+    },
+    {
+      "path": "docs/handoff/china_3x3_instance_design_20260717.md",
+      "size_bytes": 5907,
+      "sha256": "3532e5beea40922734514ed679e6a1317212e95bcb7ca8bc9069404d8ac47bf3",
+      "text_scanned": true,
+      "line_count": 64
+    },
+    {
+      "path": "docs/handoff/china_3x3_instance_probe_20260717.md",
+      "size_bytes": 5181,
+      "sha256": "9c6c81b6539d8897caf0a534f86f7a555cb38833ff062e07ad317ebc2a7960b2",
+      "text_scanned": true,
+      "line_count": 52
+    },
+    {
+      "path": "docs/handoff/china_81_instance_design_20260717.md",
+      "size_bytes": 10918,
+      "sha256": "f24dbbe7a582160708de9c34ea2b1de56cbd8b58e7ca4276e9e04d09b59a796a",
+      "text_scanned": true,
+      "line_count": 99
+    },
+    {
+      "path": "docs/handoff/china_carbon_tariff_calendar_alignment_contract_v2_20260718.md",
+      "size_bytes": 4061,
+      "sha256": "6f15e7878a2ef5ff0aced57bb034f6eabee9d62f25995ca8de4b6d3f05d36c94",
+      "text_scanned": true,
+      "line_count": 58
+    },
+    {
+      "path": "docs/handoff/china_cost_proxy_evidence_20260718.md",
+      "size_bytes": 15248,
+      "sha256": "9b3cc398bfe1062ad2f81f18c9da1ab1a95bc0b01b4d10572724fc6485d0a23d",
+      "text_scanned": true,
+      "line_count": 165
+    },
+    {
+      "path": "docs/handoff/china_depot_field_verification_form_v2_20260718.csv",
+      "size_bytes": 1018,
+      "sha256": "93c51b9ea828c73cf28800438ece48195dc578461891feb97dcf89ff8a6c403e",
+      "text_scanned": true,
+      "line_count": 10
+    },
+    {
+      "path": "docs/handoff/china_directed_road_and_vehicle_semantic_upgrade_v2_20260718.md",
+      "size_bytes": 5322,
+      "sha256": "03feb3d5efb1fb53f3791a601ac90c904ddc9ee6054935863169573ef9a75bf1",
+      "text_scanned": true,
+      "line_count": 86
+    },
+    {
+      "path": "docs/handoff/china_e3_e7_foundation_adapter_contract_20260723.md",
+      "size_bytes": 5160,
+      "sha256": "46d80f6e0b6cc76ae863526bd02acd1738a50983f91590e668255a86e265ee05",
+      "text_scanned": true,
+      "line_count": 50
+    },
+    {
+      "path": "docs/handoff/china_e3_e7_preflight_full_chain_audit_contract_20260723.md",
+      "size_bytes": 7985,
+      "sha256": "09c7fe57cf28a32c1099e85d4b5a9e6a0ac2a49669e1aa9f5a9d273c8ae8a09f",
+      "text_scanned": true,
+      "line_count": 146
+    },
+    {
+      "path": "docs/handoff/china_e3_e7_significance_and_algorithm_gate_20260718.md",
+      "size_bytes": 4746,
+      "sha256": "a4c74ccfec040055a1285ce3131223b05fe7f429ce858f18115b6382b545f190",
+      "text_scanned": true,
+      "line_count": 39
+    },
+    {
+      "path": "docs/handoff/china_e3_formal_release_contract_20260723.md",
+      "size_bytes": 7042,
+      "sha256": "077da71a59ba9f4bdaadf41aa07440ffe8f355cc9086c16276df431bb66441c9",
+      "text_scanned": true,
+      "line_count": 122
+    },
+    {
+      "path": "docs/handoff/china_ev_truck_parameter_candidates_20260718.md",
+      "size_bytes": 5409,
+      "sha256": "14ece954b1eacea827f96f66d30f60c20a051d430953650f94b7b7f88a2c3747",
+      "text_scanned": true,
+      "line_count": 37
+    },
+    {
+      "path": "docs/handoff/china_ev_truck_parameter_candidates_20260718_sources/artifact_hashes.json",
+      "size_bytes": 1014,
+      "sha256": "cc7742887eb2fce8fc39444e96771eb21c93d61dfeaa53503190d89d667e6b8b",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/china_ev_truck_parameter_candidates_20260718_sources/raw/01_byd_t5ev_official_2026-07-17.txt",
+      "size_bytes": 875,
+      "sha256": "587ef15140cd72fe8d968d4cc9a9b5f8b4fead607e2b967b80579356f5560f6f",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/china_ev_truck_parameter_candidates_20260718_sources/raw/02_byd_miit_byd1042a3ev2_2021-07.txt",
+      "size_bytes": 899,
+      "sha256": "8452b008d9b0eccbe4936b1953df6685c41f8277098bc48c3255b365b825f815",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/china_ev_truck_parameter_candidates_20260718_sources/raw/03_farizon_xingzhi_h9e_official_2026-07-17.txt",
+      "size_bytes": 949,
+      "sha256": "05d677876dd7bc7d75a8a2a3882526c131d255f8af808d0dee1054f8d947e5a5",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/china_ev_truck_parameter_candidates_20260718_sources/raw/04_foton_aumark_es1_official_2025-06.txt",
+      "size_bytes": 1075,
+      "sha256": "456ce927cdc076eb2fb4407f5df4295eacad64d2ca971ad0a52a3f360034330d",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/china_ev_truck_parameter_candidates_20260718_sources/raw/05_miit_dongfeng_dfa5040_2022-04.txt",
+      "size_bytes": 1097,
+      "sha256": "5705f437763291cfcd9778ab0ffff519ce267720b5fab6074d8a3de243f3e8e4",
+      "text_scanned": true,
+      "line_count": 13
+    },
+    {
+      "path": "docs/handoff/china_ev_truck_parameter_candidates_20260718_sources/source_evidence.csv",
+      "size_bytes": 3336,
+      "sha256": "9f937fd843a9313f59c72cdcc19994cfb04d833bbe45b121d53a03f9453df8c2",
+      "text_scanned": true,
+      "line_count": 8
+    },
+    {
+      "path": "docs/handoff/china_facility_manifest_v2_20260718.json",
+      "size_bytes": 34893,
+      "sha256": "2fec9298f044fb213e0e9193050e548e773840a95c4301625f7afdfa009d90c4",
+      "text_scanned": true,
+      "line_count": 517
+    },
+    {
+      "path": "docs/handoff/china_facility_manifest_v2_20260718_sources/artifact_hashes.json",
+      "size_bytes": 1642,
+      "sha256": "c741abb1d3338b9eff617637747be01ecf7bc50353a83450027114a908ed723b",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/china_facility_manifest_v2_20260718_sources/raw/shenzhen_international_logistics_design_review_LG202500781.pdf",
+      "size_bytes": 214960,
+      "sha256": "ebdc6e32d551612bb3811a16238ecc7942f553c47cd55136ae90604947871c2e",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/china_facility_manifest_v2_20260718_sources/raw/shenzhen_international_logistics_planning_permit_4403072023GG0164314_rev1.pdf",
+      "size_bytes": 254297,
+      "sha256": "3cd4b4dee405a7ae3d080c5f308fbf34a9847750526e7613bd68638817b3e687",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/china_facility_source_register_v2_20260718.md",
+      "size_bytes": 6509,
+      "sha256": "37280d69b52e80481aa91590b303a7a567988869994f97a6ad5138d41ab13323",
+      "text_scanned": true,
+      "line_count": 25
+    },
+    {
+      "path": "docs/handoff/china_full_experiment_cutover_and_uk_retirement_contract_20260718.md",
+      "size_bytes": 6596,
+      "sha256": "1c8f785fce0a55f875d8001dcad012573524c003eedb525011203035c94acfa5",
+      "text_scanned": true,
+      "line_count": 75
+    },
+    {
+      "path": "docs/handoff/china_full_localization_parameter_contract_20260717.md",
+      "size_bytes": 6376,
+      "sha256": "c8055d29b86681c7571ec1fe7d9abe258c7286aff838a30ca65807368599a2ba",
+      "text_scanned": true,
+      "line_count": 44
+    },
+    {
+      "path": "docs/handoff/china_nine_city_electricity_price_closure_v2_20260718.md",
+      "size_bytes": 11301,
+      "sha256": "2d60fe4b7da4a811f9b05c968f108a848d29ed288dc57926ea18945bceaa241e",
+      "text_scanned": true,
+      "line_count": 99
+    },
+    {
+      "path": "docs/handoff/china_open_ev_vrp_instance_search_20260717.md",
+      "size_bytes": 8866,
+      "sha256": "91d999de325c9ed061e0de4ec9e401f623c6652dc2c482cbf4940bd68810bf45",
+      "text_scanned": true,
+      "line_count": 57
+    },
+    {
+      "path": "docs/handoff/china_open_instance_search_20260717.md",
+      "size_bytes": 19339,
+      "sha256": "4af13cf1ee23b2b5873afed88110c9a5504e1c5744bb290dff2bb3c50fa09210",
+      "text_scanned": true,
+      "line_count": 141
+    },
+    {
+      "path": "docs/handoff/china_operational_depot_entrance_candidates_v2_20260718.md",
+      "size_bytes": 5801,
+      "sha256": "bd9e598e4d91c266b7c575df6a0f4301b7fb04356562a05741f6d0c9a4485c79",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/china_order_attribute_contract_v2_20260718.md",
+      "size_bytes": 4122,
+      "sha256": "594f3202f71dc541091bb07ba0f64e01007b35978004b011136a556452586a29",
+      "text_scanned": true,
+      "line_count": 37
+    },
+    {
+      "path": "docs/handoff/china_ordinary_commercial_depot_candidates_v2_20260718.md",
+      "size_bytes": 5917,
+      "sha256": "0dd4d73f1f0f5c1da93418d925a28e093721298ea5572f6c446f57412dc239ed",
+      "text_scanned": true,
+      "line_count": 51
+    },
+    {
+      "path": "docs/handoff/china_parameter_lock_and_v2_freeze_contract_20260718.md",
+      "size_bytes": 19904,
+      "sha256": "ba37e853b14e64b5b12333cd0a46f26c08695cafc535737aa622a8129237bcef",
+      "text_scanned": true,
+      "line_count": 159
+    },
+    {
+      "path": "docs/handoff/china_policy_scenario_contract_20260717.md",
+      "size_bytes": 9066,
+      "sha256": "a5ae194784b1924fbf58241aada77b478a5af611e76823393f026caf246e1c96",
+      "text_scanned": true,
+      "line_count": 92
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718.md",
+      "size_bytes": 6823,
+      "sha256": "f0703aa078582d7cdb60a601c2c57f40bafffee4ff69a3613d256a5f733b5588",
+      "text_scanned": true,
+      "line_count": 43
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/artifact_hashes.json",
+      "size_bytes": 1356,
+      "sha256": "4229c60cbc1dfc9272c8b1f5feab51e477ca7c6c7247af1e99f301f708bb530e",
+      "text_scanned": true,
+      "line_count": 17
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/raw/01_gbt_20234_3_2023_registry.txt",
+      "size_bytes": 1007,
+      "sha256": "f47bdd5411350de3e27c660afbd5c82d83aa294d1bca4bac08a501c388a08eb6",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/raw/02_nea_public_charging_statistics_2025-12.txt",
+      "size_bytes": 759,
+      "sha256": "332727914a0ba6c39fe1540b3dd7e96795f3bae0f690bf5bc003a33bdc5e4615",
+      "text_scanned": true,
+      "line_count": 11
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/raw/03_nea_three_year_action_plan_2025-2027.txt",
+      "size_bytes": 797,
+      "sha256": "739ae012bef1b7ff88756e2e6389c4fe70b11147032be9aba9e1f80227e74896",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/raw/04_nea_sinopec_station_examples_2024-03-08.txt",
+      "size_bytes": 936,
+      "sha256": "ed756bc64d2dd1a5aee5f40b56bf62839fed4ceac9078271a52787365b2e9569",
+      "text_scanned": true,
+      "line_count": 13
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/raw/05_csg_120kw_euro_dual_gun_2024-06-17.txt",
+      "size_bytes": 787,
+      "sha256": "60b4f451ec24360fdee6168d790d61f319618d6054fcc5118d6de4766a8a21ea",
+      "text_scanned": true,
+      "line_count": 11
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/raw/06_csg_60kw_dc_chargers_2024-01-24.txt",
+      "size_bytes": 688,
+      "sha256": "c53352472181847a380c0f773c9815bb5a0831040985b07d9f7af17ab98f40f8",
+      "text_scanned": true,
+      "line_count": 11
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/raw/07_csg_120-360kw_framework_2024-09-06.txt",
+      "size_bytes": 815,
+      "sha256": "663edc585e86de3fd18eb0286d79f12d5e5c4674f05ec0d9970c805b6cb4d5bb",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/raw/08_csg_40kw_dual_gun_2021-05-24.txt",
+      "size_bytes": 772,
+      "sha256": "2652ed2fb44c88de18a16d6d05cda39c6fd6b6dec3304ba0abd0ab2cc95655c5",
+      "text_scanned": true,
+      "line_count": 11
+    },
+    {
+      "path": "docs/handoff/china_public_charger_parameter_evidence_20260718_sources/source_evidence.csv",
+      "size_bytes": 3752,
+      "sha256": "f65c84310832458f34c4f1154ea858d7a587b9aaf4c489b9de9fc58023953ac5",
+      "text_scanned": true,
+      "line_count": 9
+    },
+    {
+      "path": "docs/handoff/china_rebuild_execution_dashboard_20260718.md",
+      "size_bytes": 6925,
+      "sha256": "8274f64cb9181df291cc3f493aac5951c286e8afb6f26cff0278766e5e639ac8",
+      "text_scanned": true,
+      "line_count": 67
+    },
+    {
+      "path": "docs/handoff/china_region_price_source_gate_20260717.md",
+      "size_bytes": 3255,
+      "sha256": "770d8343d46d0b7b2b38b59ab57432fe5e818811ce4c464b8db0fd91770eeef9",
+      "text_scanned": true,
+      "line_count": 19
+    },
+    {
+      "path": "docs/handoff/china_stage2_g1_independent_execution_contract_20260718.md",
+      "size_bytes": 9087,
+      "sha256": "0e4c1b871ac2cd6a2a1e980a1f0742e93e1f64a413c5722614533f06cd7c9d05",
+      "text_scanned": true,
+      "line_count": 180
+    },
+    {
+      "path": "docs/handoff/china_stage2_pending_freezes_20260718.md",
+      "size_bytes": 1733,
+      "sha256": "b31f0fa0943425c40174743c1d0ae66480f8ab42ecf3d7c9e5c63d77df8a5da7",
+      "text_scanned": true,
+      "line_count": 19
+    },
+    {
+      "path": "docs/handoff/china_vehicle_parameter_sources_20260718/artifact_hashes.json",
+      "size_bytes": 542,
+      "sha256": "2561d9b34ed7a7a4d9267f1cb10b14ce55763d4fe0f17de3413a300fad5d1c8d",
+      "text_scanned": true,
+      "line_count": 10
+    },
+    {
+      "path": "docs/handoff/china_vehicle_parameter_sources_20260718/raw/foton_es1_140_cargo_official_20260718.txt",
+      "size_bytes": 1053,
+      "sha256": "1e34a9dbbc44a921a4ad77c21d64a82a0836fe44278508dbcec175d472467431",
+      "text_scanned": true,
+      "line_count": 18
+    },
+    {
+      "path": "docs/handoff/china_vehicle_parameter_sources_20260718/raw/jac_wling_k7_official_20260718.txt",
+      "size_bytes": 1334,
+      "sha256": "cd5b965614166efb1ae06aed6d89127d7246adf8012eb2822b678f06fbd616d1",
+      "text_scanned": true,
+      "line_count": 21
+    },
+    {
+      "path": "docs/handoff/china_vehicle_parameter_sources_20260718/source_evidence.csv",
+      "size_bytes": 929,
+      "sha256": "a9ffab1e3801f21293c26a41e2f82b769c6dbf99bd457f2b7a7bd9e9739f3869",
+      "text_scanned": true,
+      "line_count": 3
+    },
+    {
+      "path": "docs/handoff/claim_verification_ledger_20260731.md",
+      "size_bytes": 18037,
+      "sha256": "3e6b8779d6ef535aca07c5bac3ce13b7d9bbd2032c9628c964e40eb05604bb72",
+      "text_scanned": true,
+      "line_count": 212
+    },
+    {
+      "path": "docs/handoff/claim_verification_result_20260731/done.json",
+      "size_bytes": 808,
+      "sha256": "2cbd56a3591de16ddd266ad54dff88146686e1fae1bd91c391e331f4e429ab68",
+      "text_scanned": true,
+      "line_count": 26
+    },
+    {
+      "path": "docs/handoff/claim_verification_result_20260731/report.md",
+      "size_bytes": 36041,
+      "sha256": "7067d006a3e848f85dd3a21d46f1abaf5eafdeaa813fa09df7eeb316c3d29c0e",
+      "text_scanned": true,
+      "line_count": 387
+    },
+    {
+      "path": "docs/handoff/claim_verification_result_20260731/scripts/recompute_claims.py",
+      "size_bytes": 49557,
+      "sha256": "6b35cccd2cd53ace0625d7bcbbcd0634a97adaa176f3bd3b7947a407fd255993",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/claim_verification_result_20260731/verdicts.json",
+      "size_bytes": 18456,
+      "sha256": "26b87e6477c06466fa1494c45e3d6da784d639ae7750254dc9d167a3a41623b8",
+      "text_scanned": true,
+      "line_count": 308
+    },
+    {
+      "path": "docs/handoff/claude_advisor_findings_20260711.md",
+      "size_bytes": 13350,
+      "sha256": "31d4857fe35a0419e2ebc2d7aad9049fde2bb9d456c2ac394d79383cff572dcd",
+      "text_scanned": true,
+      "line_count": 136
+    },
+    {
+      "path": "docs/handoff/claude_advisor_issue_register_20260711.md",
+      "size_bytes": 15583,
+      "sha256": "580f88ae3e6476a393b8e505c912aa97442d6476bc8136a274c88432d5f4fef3",
+      "text_scanned": true,
+      "line_count": 95
+    },
+    {
+      "path": "docs/handoff/claude_v2_gatekeeper_review_20260718.md",
+      "size_bytes": 4836,
+      "sha256": "ad740f654d935148c5a57253161b9f4437096cfdb542d0f9cf0d6da1e4f4b114",
+      "text_scanned": true,
+      "line_count": 40
+    },
+    {
+      "path": "docs/handoff/codex_prompts/01_offline_probe.md",
+      "size_bytes": 3687,
+      "sha256": "f7663e958294552bf948ed5e01da71d27097911b1cb5edfce00acacb7efa6117",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/codex_prompts/02_baselines.md",
+      "size_bytes": 3524,
+      "sha256": "e61d9141f0f1c377610f20779f9f28774055d985c1f3194d232c8131fbe089fa",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/codex_prompts/03_baseline_speedup.md",
+      "size_bytes": 5494,
+      "sha256": "fe8796df6e5ff867ac7aa59108f3aebe21b86fbf55c2455a640ad1f73cfbb4fa",
+      "text_scanned": true,
+      "line_count": 58
+    },
+    {
+      "path": "docs/handoff/codex_prompts/04_dr_curriculum_pilot_build.md",
+      "size_bytes": 14102,
+      "sha256": "40116d629fdad5052af95129a1a7d9ef5f0d73112d7ab24223aff51791195219",
+      "text_scanned": true,
+      "line_count": 106
+    },
+    {
+      "path": "docs/handoff/codex_prompts/05_dr_curriculum_pilot_run.md",
+      "size_bytes": 9949,
+      "sha256": "a965fdd43775bb19deadd1db0ea6e08f824d5c08a195523de7c47f17d623d00c",
+      "text_scanned": true,
+      "line_count": 78
+    },
+    {
+      "path": "docs/handoff/codex_prompts/06_x86_migration_prep.md",
+      "size_bytes": 5480,
+      "sha256": "611fcf5d795d0982a0fcb716b016b0ffa7e620f1b4b2526a6ae3288605ac522c",
+      "text_scanned": true,
+      "line_count": 49
+    },
+    {
+      "path": "docs/handoff/codex_prompts/07_dr_reduced_budget_pilot.md",
+      "size_bytes": 7864,
+      "sha256": "0da05b652690b4db9d23169f90e5605197c36893f794720535905dbd0c416960",
+      "text_scanned": true,
+      "line_count": 59
+    },
+    {
+      "path": "docs/handoff/codex_prompts/08_e2_instance_generation.md",
+      "size_bytes": 5891,
+      "sha256": "dfc54ba1f237d59420f15c90f10fe8bd892a3d1f877337664286563ad842eef0",
+      "text_scanned": true,
+      "line_count": 47
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09_e2_alns_literature_best.md",
+      "size_bytes": 5799,
+      "sha256": "15b50953eceee2f145a1a8cdf0baf92f970ed2aacb09aa0011bb71ea1a5ab9de",
+      "text_scanned": true,
+      "line_count": 43
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09b_e2_alns_scan_bridge.md",
+      "size_bytes": 4650,
+      "sha256": "f6e5d4b638cfa785ca196ae4354933af3be4b36d928f77b0aa58f863465c6eb6",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09c_e2_alns_sa_acceptance.md",
+      "size_bytes": 4901,
+      "sha256": "a4ff3b831db8c7308f3f49186320a6cfa4d434c2b46773ea31673988a7fc2d8c",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09d_e2_alns_throughput.md",
+      "size_bytes": 4846,
+      "sha256": "e75526ab207bb380a1c81e8d5e699b328fb3c9a7d2f0eb38d013b9373b11256b",
+      "text_scanned": true,
+      "line_count": 43
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09e_instance_param_diagnostic.md",
+      "size_bytes": 4594,
+      "sha256": "5866edcbf7c759a7e43ab4ab103953afb95063a77dcffbb1f90b7302111097eb",
+      "text_scanned": true,
+      "line_count": 38
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09f_largescale_allcv_diagnostic.md",
+      "size_bytes": 3768,
+      "sha256": "101fd25f0fc0d8f5f41b7a2182759fb859856e344fd42f10cd407946004593df",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09g_urban_reopt_confirmation.md",
+      "size_bytes": 3032,
+      "sha256": "fd952078ce45b50d9175bac8ba8a841d81a87fc004212ddce4c29bf40bc7e340",
+      "text_scanned": true,
+      "line_count": 30
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09h_parameter_evidence_review.md",
+      "size_bytes": 7930,
+      "sha256": "76b136da859db4e5f402e75a3dd951b3fa3f25fe55de932d138ecc69c7194bed",
+      "text_scanned": true,
+      "line_count": 144
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09i_evidence_bound_reopt_confirmation.md",
+      "size_bytes": 3486,
+      "sha256": "cef8f89b6fea79ef5173e23d8b17bf44e80e71cac69cd661f1e2a6bc23ca4b53",
+      "text_scanned": true,
+      "line_count": 64
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09l_source_bound_practical_mixed_band_gate.md",
+      "size_bytes": 6034,
+      "sha256": "e7b9236ef35a50d20588510a03f69289dd8c075414efa950007d7b2ef66460e3",
+      "text_scanned": true,
+      "line_count": 44
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09m_operational_structure_mixed_band_diagnostic.md",
+      "size_bytes": 6794,
+      "sha256": "116038d11878006c1954ee915746d563b7cbdbedcb82d6c32372eb0286e66ef0",
+      "text_scanned": true,
+      "line_count": 45
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09p_depot_charger_capacity_evidence_gate.md",
+      "size_bytes": 5125,
+      "sha256": "eedfc558321a15520ce7dbbd959d7c48c4b6441a1bedd958d7c2f4fb4776ba15",
+      "text_scanned": true,
+      "line_count": 39
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09q_source_bound_operational_mix_map.md",
+      "size_bytes": 6436,
+      "sha256": "92452d669a1c4f1c85f3b31d83a585f7a74806aa72dfcb1d22f409904038c58a",
+      "text_scanned": true,
+      "line_count": 90
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09v_high_tension_alns_vs_lns_regime_probe_20260627.md",
+      "size_bytes": 9875,
+      "sha256": "153685742e9a56d2e96fe0469445a2e37352e256c5566d617898fe3a298392cd",
+      "text_scanned": true,
+      "line_count": 113
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09w_battery_override_search_penetration_fix_and_rerun_20260627.md",
+      "size_bytes": 7563,
+      "sha256": "5f1d0f9e36d005577224283e49a29561efd5e4d5f5703b31c41c3c4b82489eb8",
+      "text_scanned": true,
+      "line_count": 81
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09x_alns_operator_completion_and_fair_recompare_20260627.md",
+      "size_bytes": 6927,
+      "sha256": "8e0c8eb2b64f989b2f0f86fa43a6381f4a7031db55ced9bb6c44efcb42b08700",
+      "text_scanned": true,
+      "line_count": 61
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09y_ev_feasibility_economics_construction_test_20260627.md",
+      "size_bytes": 3811,
+      "sha256": "0559458f4a6c404b09d5346836397eaa0cd9617202f509e260d66c1c0c0c343f",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/codex_prompts/09z_master_full_decision_tree_xyz_20260627.md",
+      "size_bytes": 5556,
+      "sha256": "7082e8a09a802b758eef20bed26b49d9f3a2e480447823cfcccdd0cd4bc7fa9e",
+      "text_scanned": true,
+      "line_count": 57
+    },
+    {
+      "path": "docs/handoff/codex_prompts/10_e2_baselines_literature_best.md",
+      "size_bytes": 5660,
+      "sha256": "e386b540995cd3dbd4d8645841b64bea63fb087f2af83512171c7b8ed03a3060",
+      "text_scanned": true,
+      "line_count": 44
+    },
+    {
+      "path": "docs/handoff/codex_prompts/11_e2_protocol_and_run.md",
+      "size_bytes": 4494,
+      "sha256": "e7e02333460a5e1cc65919cce3c9645914fdf638ad85198c881f3108e012426d",
+      "text_scanned": true,
+      "line_count": 39
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260702_c1_e2_g0_plateau_5174_audit.md",
+      "size_bytes": 6696,
+      "sha256": "8f520f2fe3a368505454bdff9e919dfb8a777a4f1dcdce15012c958449fb23e5",
+      "text_scanned": true,
+      "line_count": 166
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260709_e2_a13_full_parity_resume.md",
+      "size_bytes": 1576,
+      "sha256": "382510a805e3e90b8f1fa23a03da8971855a380969def15f1ad0c5bd999b1409",
+      "text_scanned": true,
+      "line_count": 44
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260711_e2_final_candidate_paper_matrix.md",
+      "size_bytes": 2915,
+      "sha256": "010b967f357a6f8116fec55903091beb98de5cfa95e5a1378c281ad25a6bc021",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260711_e2_proportional_true_lns_middle_gate.md",
+      "size_bytes": 1542,
+      "sha256": "25fa0657db4ca16ddb162603fd5dd837aebcb0c5d07baf9c5cf2a6a659d4770b",
+      "text_scanned": true,
+      "line_count": 19
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260711_e2_route_block_headroom_audit.md",
+      "size_bytes": 2506,
+      "sha256": "451c20b916510a35caa6d1189a0fe9395ddb7abf63cee4ce1c67f32e8d7587c3",
+      "text_scanned": true,
+      "line_count": 42
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260711_e2_unseen_seed_4000_validation.md",
+      "size_bytes": 3079,
+      "sha256": "927169cd5ef6e0442980f943fe13001f893f1dc6881586b829b373278c58cba7",
+      "text_scanned": true,
+      "line_count": 48
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260719_mechanism_route_pool_incremental_gate.md",
+      "size_bytes": 2222,
+      "sha256": "8c20514fd66f8178ad4139d8a6e7981a5aea4907eb1913db272c4bdeba7f5206",
+      "text_scanned": true,
+      "line_count": 59
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260722_s2_revision_v2.md",
+      "size_bytes": 1443,
+      "sha256": "f26f8fba89f78a5af53a92933aee05570804141a7a47305598195bd2cbb5ca98",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260722_s4_revision_v2.md",
+      "size_bytes": 696,
+      "sha256": "86834d041d15484f615438e7df2d4eb79568b9cb2dea1d4434c4c79a7a6f28ec",
+      "text_scanned": true,
+      "line_count": 5
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260722_s5_revision_v2.md",
+      "size_bytes": 817,
+      "sha256": "43375d3493955b977573dc7e7659faf3ab3d9e029054ee3b97f78b4c481728b9",
+      "text_scanned": true,
+      "line_count": 5
+    },
+    {
+      "path": "docs/handoff/codex_prompts/20260722_s5_revision_v3.md",
+      "size_bytes": 1136,
+      "sha256": "6b70b0d133874c07a04c67001c37211236291c99810216aaa9b60dcabd83ab07",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/codex_prompts/ALGORITHM_COMPARISON_FULL_RETROSPECTIVE_20260627.md",
+      "size_bytes": 25337,
+      "sha256": "3fef75202f4eaf1cb3acfb7ebe79962c53294191ad0a0dff6098f406db7df053",
+      "text_scanned": true,
+      "line_count": 697
+    },
+    {
+      "path": "docs/handoff/codex_prompts/FEEDBACK_codex_claude_workflow_evidence_index_20260627.md",
+      "size_bytes": 6715,
+      "sha256": "74b23524dff0f7b9f6f89fbec62ba4c83a2eaf35788493b3cb12403900271508",
+      "text_scanned": true,
+      "line_count": 72
+    },
+    {
+      "path": "docs/handoff/codex_prompts/FEEDBACK_codex_claude_workflow_retrospective_20260627.md",
+      "size_bytes": 24745,
+      "sha256": "87203f7cce39e28a82099c4ecee014d59985d126dd5193041b8f8b6655879ac5",
+      "text_scanned": true,
+      "line_count": 273
+    },
+    {
+      "path": "docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md",
+      "size_bytes": 17936,
+      "sha256": "ed2d426d32a26985da08332862ddd4cb7ebea81da8f89a7b03bece494d3faa42",
+      "text_scanned": true,
+      "line_count": 68
+    },
+    {
+      "path": "docs/handoff/codex_prompts/README.md",
+      "size_bytes": 3525,
+      "sha256": "9b97e4e2fa964946c3349860817ed802c8d2d3166fac5f8ae24a4068c9061705",
+      "text_scanned": true,
+      "line_count": 29
+    },
+    {
+      "path": "docs/handoff/context_gated_exact_mechanism_contract_20260719.md",
+      "size_bytes": 6174,
+      "sha256": "19f9dbc585c2c6c2aaa62165361268ba7a47b0bb4f2d7856c6bfc508314d46f5",
+      "text_scanned": true,
+      "line_count": 72
+    },
+    {
+      "path": "docs/handoff/contract_e5e7_blind_01_20260728/report.md",
+      "size_bytes": 46308,
+      "sha256": "e7b97df277fdfea481db90d0a89bd5303302f11ff1a77569c9b80a76b4ef725b",
+      "text_scanned": true,
+      "line_count": 613
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d1_storyline/artifact_hashes.json",
+      "size_bytes": 489,
+      "sha256": "a1ad37033cf834953f7b1bae6812a0f69f6ca2fb3b856c549160c24d04e80886",
+      "text_scanned": true,
+      "line_count": 13
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d1_storyline/done.json",
+      "size_bytes": 117,
+      "sha256": "0de07e0e9598bf42ac8d71387ce26630a472397eecf7b7d4635afb31c0ffd0fc",
+      "text_scanned": true,
+      "line_count": 5
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d1_storyline/report.md",
+      "size_bytes": 22844,
+      "sha256": "8ac7eb9268114f1146f21fa787e68cdd22ff3d98ed7da8ccdee0091148f3faf9",
+      "text_scanned": true,
+      "line_count": 102
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d1_storyline/verdict.json",
+      "size_bytes": 13989,
+      "sha256": "56bdc91a252a5728f53561b0fec4b38803cec93c537a8eef389c73abd1ebd19a",
+      "text_scanned": true,
+      "line_count": 335
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d2_tautology/artifact_hashes.json",
+      "size_bytes": 543,
+      "sha256": "0c245ccd7e3650e1b17b4ac4d43f1bc62044006b6c0a5acee81cfe1fa4e67054",
+      "text_scanned": true,
+      "line_count": 22
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d2_tautology/done.json",
+      "size_bytes": 440,
+      "sha256": "b5515c18521a6f67cb9c0a72b767fff5d84c4cc05e3212af4b5a67e4bb18ee81",
+      "text_scanned": true,
+      "line_count": 18
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d2_tautology/report.md",
+      "size_bytes": 23943,
+      "sha256": "1b5c68416968085a7b871b220091db91a4e488fd47404b2a485bf529f1641b59",
+      "text_scanned": true,
+      "line_count": 127
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d2_tautology/verdict.json",
+      "size_bytes": 10200,
+      "sha256": "e0aba15bd753622e0ae7ddac4037ac3cedb3f329db9af214fde63843d76c75e7",
+      "text_scanned": true,
+      "line_count": 158
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d3_rootcause/artifact_hashes.json",
+      "size_bytes": 430,
+      "sha256": "89f4aab07c5934b57faecc2d4306caff5f675a52735e109b0795666538b340a5",
+      "text_scanned": true,
+      "line_count": 9
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d3_rootcause/done.json",
+      "size_bytes": 396,
+      "sha256": "07875ccf118a94a36eae9c44c20ffeba728b7afd82ab5ac69ce9760912437ab7",
+      "text_scanned": true,
+      "line_count": 17
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d3_rootcause/report.md",
+      "size_bytes": 14039,
+      "sha256": "af568871a53abcd809e00f36417ce77ea4b062aa52f9ae59d2f19873e9ea345b",
+      "text_scanned": true,
+      "line_count": 75
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d3_rootcause/verdict.json",
+      "size_bytes": 5961,
+      "sha256": "9e02ab87af23278a80ff2b279a3f0163ee805d8bbdbb8ccfcfb6ceddb2f6f571",
+      "text_scanned": true,
+      "line_count": 116
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d3b_rebuttal/artifact_hashes.json",
+      "size_bytes": 440,
+      "sha256": "9e54565f7dcef60e40206b873a5d2edb6de77af4d02f3da016b3a9830829e068",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d3b_rebuttal/done.json",
+      "size_bytes": 480,
+      "sha256": "ab5dc1ec8b38d032cb288ce994ff0943239d77aa99cc72364cc18f5b186cda47",
+      "text_scanned": true,
+      "line_count": 18
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d3b_rebuttal/report.md",
+      "size_bytes": 11136,
+      "sha256": "69f9b3dcf2b2a8ff7bd51d972f42a289e451e65f9938679af858f0cc0fc019ac",
+      "text_scanned": true,
+      "line_count": 112
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d3b_rebuttal/verdict.json",
+      "size_bytes": 4539,
+      "sha256": "7beef09f5a1640fb1bd5e59f0ae67175d3b1c1e7dc8480322a0163447df579c3",
+      "text_scanned": true,
+      "line_count": 80
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/artifact_hashes.json",
+      "size_bytes": 818,
+      "sha256": "434fb91cb3e4b0821a749a3e7543a445625076d336d713793b7109198342b851",
+      "text_scanned": true,
+      "line_count": 31
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/done.json",
+      "size_bytes": 422,
+      "sha256": "8a63bd066de4452707583f8f2cab09bb1cacec2c4ef295f072859b739a764eb1",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json",
+      "size_bytes": 22579,
+      "sha256": "9498653b8f09e06986785d5b3fb0c218fbdf679b920ae9cab0e99b2eb23b7e62",
+      "text_scanned": true,
+      "line_count": 401
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/report.md",
+      "size_bytes": 20436,
+      "sha256": "1aa80946ef287f6c9b7eb4cd0e30c563b7c9b5119faca3d56c582dc6d22c71eb",
+      "text_scanned": true,
+      "line_count": 155
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/wording_gaps.json",
+      "size_bytes": 5999,
+      "sha256": "78d124660835bfe3f5f66555a2716701a3ea3d8f50ffa0fd98bd9c4a71b21bc8",
+      "text_scanned": true,
+      "line_count": 62
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d5_reviewer/artifact_hashes.json",
+      "size_bytes": 748,
+      "sha256": "c68c8a9d947fe3238f0289f2eef9849aac6f25560e1e03509651d5d5d7cb3cc6",
+      "text_scanned": true,
+      "line_count": 30
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d5_reviewer/attacks.json",
+      "size_bytes": 11166,
+      "sha256": "0f328f044b833f3065c86ff8f093925cd448d758b03f85ad924a31e8b01550a1",
+      "text_scanned": true,
+      "line_count": 105
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d5_reviewer/done.json",
+      "size_bytes": 365,
+      "sha256": "6c59ebb0177343fa9a997304a7c2b6334f15546afd5149a8bd3620b842b9109f",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d5_reviewer/report.md",
+      "size_bytes": 13107,
+      "sha256": "b8201cc0c220edab931f46ad3f9eab688837a693d3e5f5e915c55cefcdb1950f",
+      "text_scanned": true,
+      "line_count": 62
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d5_reviewer/structural_killer.json",
+      "size_bytes": 1220,
+      "sha256": "c4dd9888dce170ca514cc0b390a7dbe996bfcd7a6ca7fb99ca3ece2f6639ff2f",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d6_algorithm/artifact_hashes.json",
+      "size_bytes": 610,
+      "sha256": "cf97e4b845fe70e9ad74500a6b13ad46f804a92ae525d90ba9a10bb891e7e164",
+      "text_scanned": true,
+      "line_count": 26
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d6_algorithm/done.json",
+      "size_bytes": 475,
+      "sha256": "f657ec745d31b91690b3f587de926b8cecd5edf18edd6a75985f5108cef65780",
+      "text_scanned": true,
+      "line_count": 18
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d6_algorithm/report.md",
+      "size_bytes": 23723,
+      "sha256": "c84151c667967724b91f6f7f20a9221f6df88154f7f8e20ef15806b8a6cdc497",
+      "text_scanned": true,
+      "line_count": 171
+    },
+    {
+      "path": "docs/handoff/diagnosis_20260802/d6_algorithm/verdict.json",
+      "size_bytes": 14386,
+      "sha256": "70f477bdf3826912d66e956352d67470540b7bc4a18df53c246a4538a4573105",
+      "text_scanned": true,
+      "line_count": 261
+    },
+    {
+      "path": "docs/handoff/diagnosis_and_remediation_master_20260731.md",
+      "size_bytes": 64985,
+      "sha256": "9031aa37a1316e8b9b8b70c5d1c07aab65147923c753434221da6521ada01f0f",
+      "text_scanned": true,
+      "line_count": 972
+    },
+    {
+      "path": "docs/handoff/dual_basin_mechanism_alns_fresh_gate_contract_20260719.md",
+      "size_bytes": 9224,
+      "sha256": "c224ce8df36aa3f9aa55d69e12d7a7e764e84ccbca55519d4c694ccd69fbbe17",
+      "text_scanned": true,
+      "line_count": 167
+    },
+    {
+      "path": "docs/handoff/dynamic_replanning_literature_20260731/done.json",
+      "size_bytes": 17431,
+      "sha256": "92395203229a60b459a8c71e41d8efee674d7f957997a4f2f8b43d872bf41789",
+      "text_scanned": true,
+      "line_count": 231
+    },
+    {
+      "path": "docs/handoff/dynamic_replanning_literature_20260731/report.md",
+      "size_bytes": 52737,
+      "sha256": "299cb6aaa894ea5c57d708b2bcb4e0cc22bb71527031a3fa7ab78911016bf242",
+      "text_scanned": true,
+      "line_count": 715
+    },
+    {
+      "path": "docs/handoff/dynamic_replanning_literature_20260731/scripts/extract_corpus.py",
+      "size_bytes": 6141,
+      "sha256": "18cc2ff65bf8088b9a223a9c1952917d5332b1499647af2b3883e1100c281ce3",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/dynamic_replanning_literature_20260731/scripts/grep_pages.py",
+      "size_bytes": 1025,
+      "sha256": "839bbcf255f84e5ad3e690c8feea734f9075befe0d85e4b949700db3d2d96edf",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/dynamic_replanning_literature_20260731/scripts/q6_library_sweep.py",
+      "size_bytes": 3883,
+      "sha256": "74d562f2a6e4b42895b16180b3ca20973389b9dd4e72e9fc05b1e78f6a12a137",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/e1_280_structure_closeout_20260711.md",
+      "size_bytes": 2372,
+      "sha256": "a17c650cb4be4e8626f173f37422d77081bfe1ce06f399307bb09e4350e21d7d",
+      "text_scanned": true,
+      "line_count": 28
+    },
+    {
+      "path": "docs/handoff/e1_e7_submission_contract_decision_20260711.md",
+      "size_bytes": 15701,
+      "sha256": "17630c47aed35b17a19f2e5dfb954edc1b91d032249833eea0e9bb382665d7c0",
+      "text_scanned": true,
+      "line_count": 85
+    },
+    {
+      "path": "docs/handoff/e2_12h_finalization_protocol_20260711.md",
+      "size_bytes": 9360,
+      "sha256": "274265ff66ecf3212e98ad55de26d2107f4a8df66082f641d196302ffcf6aa09",
+      "text_scanned": true,
+      "line_count": 119
+    },
+    {
+      "path": "docs/handoff/e2_80k_robustness_closeout_20260711.md",
+      "size_bytes": 2569,
+      "sha256": "598ad9617d41142053ac7fe682a7216d0a3bd9a9c6cd40736dd636e2f0683f00",
+      "text_scanned": true,
+      "line_count": 27
+    },
+    {
+      "path": "docs/handoff/e2_algorithm_design_candidate_20260726.md",
+      "size_bytes": 13253,
+      "sha256": "c06e5e05d013858c355d51325aed81d76a83fad03bf0f5b1ba0e662de897a169",
+      "text_scanned": true,
+      "line_count": 200
+    },
+    {
+      "path": "docs/handoff/e2_algorithm_exploration_current_setting_final_stop_20260725.md",
+      "size_bytes": 5214,
+      "sha256": "8e01825fc841bfe7d897c0706aef46cb491e383de413b8c8beca6e56422401b2",
+      "text_scanned": true,
+      "line_count": 104
+    },
+    {
+      "path": "docs/handoff/e2_algorithm_journey_20260725_to_27.md",
+      "size_bytes": 17923,
+      "sha256": "9763a3c8bf7db7207898ba16129c35f126471c13ec5bc991dea9ecb9e771ada8",
+      "text_scanned": true,
+      "line_count": 297
+    },
+    {
+      "path": "docs/handoff/e2_alns_budget_g0_patch_plan_20260717.md",
+      "size_bytes": 9416,
+      "sha256": "ec08b6711318f9e6848ed28f268fe62d9e9c3652937341510cc330c6bbd339db",
+      "text_scanned": true,
+      "line_count": 125
+    },
+    {
+      "path": "docs/handoff/e2_alns_g1_artifact_authority_20260718.json",
+      "size_bytes": 1616,
+      "sha256": "5e6dd80dd90e7fdb9f0d3303a243f9ca4e66e5aff3771ee045dd80e7b446a3a8",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/e2_alns_g1_sisr_task_card_20260718.md",
+      "size_bytes": 5235,
+      "sha256": "39c858e166a3877f3bff2a327ae5943ab5f386b5ecaec90f04f428475a021c2d",
+      "text_scanned": true,
+      "line_count": 42
+    },
+    {
+      "path": "docs/handoff/e2_alns_g1_stage1_closeout_20260718.md",
+      "size_bytes": 5400,
+      "sha256": "944a54043cf068197308ee97557b91cc4f7bd4eb53bc1e798ed4f8b5755eb8df",
+      "text_scanned": true,
+      "line_count": 43
+    },
+    {
+      "path": "docs/handoff/e2_alns_g1_true_swapstar_task_card_20260718.md",
+      "size_bytes": 4099,
+      "sha256": "041590632b6f223d3a7dda9725d21ca5fc7e9500fe890285db03d12a1f6373e6",
+      "text_scanned": true,
+      "line_count": 37
+    },
+    {
+      "path": "docs/handoff/e2_alns_g1a_true_swapstar_contract_20260718.md",
+      "size_bytes": 2118,
+      "sha256": "57026c3c9043699acd6a3b154a5a47c13679d091615a16511da8ec65e96c2a29",
+      "text_scanned": true,
+      "line_count": 24
+    },
+    {
+      "path": "docs/handoff/e2_alns_upgrade_outcome_contract_20260717.md",
+      "size_bytes": 5758,
+      "sha256": "8b50bb54fb36715772ac33e60f0f68772696ef98f6c06d12166da99d853a4692",
+      "text_scanned": true,
+      "line_count": 51
+    },
+    {
+      "path": "docs/handoff/e2_claims_correction_register_20260726.md",
+      "size_bytes": 6488,
+      "sha256": "0ae3e8e5d64baaf333260bc5756e5a66036df39f5d0352729712cd0e94af6804",
+      "text_scanned": true,
+      "line_count": 108
+    },
+    {
+      "path": "docs/handoff/e2_cvrplib_optimal_search_contract_20260716.md",
+      "size_bytes": 6923,
+      "sha256": "6e41d928e3f78710a492ab8676885639f360f61250cb769c881aba7ea46398a7",
+      "text_scanned": true,
+      "line_count": 59
+    },
+    {
+      "path": "docs/handoff/e2_cvrplib_post_e7_activation_checklist_20260716.md",
+      "size_bytes": 4237,
+      "sha256": "5caa566131f26067be134b466d4194445207175fa56d55ffe47f60cdaeaf6196",
+      "text_scanned": true,
+      "line_count": 96
+    },
+    {
+      "path": "docs/handoff/e2_dual_guided_resource_order_contract_20260725.md",
+      "size_bytes": 11749,
+      "sha256": "599f5c6bdf6200803af8288636a85dd01936cff82dbb31cbb61e8304e36f8d5f",
+      "text_scanned": true,
+      "line_count": 190
+    },
+    {
+      "path": "docs/handoff/e2_e3_reframing_20260731/compile_log_after_20260731.log",
+      "size_bytes": 20414,
+      "sha256": "216b37255bad6cae24847ee3b65ff290860b24dfca53ac25fbf6640568ec4d8d",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/e2_e3_reframing_20260731/compile_log_before_20260731.log",
+      "size_bytes": 20444,
+      "sha256": "3474fef24eeaa793d090cf8e7b3c0f8353d7364b56e2d66a65e075046829664e",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/e2_e3_reframing_20260731/done.json",
+      "size_bytes": 244,
+      "sha256": "5e526f1b61396dfa76872277ad925cbd613abfdf81276ea691544afe84580447",
+      "text_scanned": true,
+      "line_count": 11
+    },
+    {
+      "path": "docs/handoff/e2_e3_reframing_20260731/paper_main.tex.before_20260731.bak",
+      "size_bytes": 102466,
+      "sha256": "63364081342b8ff5cf5564013cdf2cc0919f76890d5a0d1ebc59ce142c67b5cc",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/e2_e3_reframing_20260731/report.md",
+      "size_bytes": 14245,
+      "sha256": "bf39bec05dab9e05042ea9e57b0a1eb36c2d902b67805c7f75d22c087984af64",
+      "text_scanned": true,
+      "line_count": 89
+    },
+    {
+      "path": "docs/handoff/e2_e7_decision_source_execution_audit_20260801.md",
+      "size_bytes": 22305,
+      "sha256": "f65fdbd9820dd1c189bba8acbccb1ae99086a686ff77d1691b86cdea4bc06e70",
+      "text_scanned": true,
+      "line_count": 141
+    },
+    {
+      "path": "docs/handoff/e2_feasibility_guided_vns_contract_20260725.md",
+      "size_bytes": 6943,
+      "sha256": "ac04bb53cfbea4361787842f03b9a2a66dd2137c410aff0ad54ae78b6cfff9f2",
+      "text_scanned": true,
+      "line_count": 128
+    },
+    {
+      "path": "docs/handoff/e2_final_algorithm_experiment_construction_20260720.md",
+      "size_bytes": 11643,
+      "sha256": "73fe26e98805004e0724930853e00260742be8b74237f3c78aa38504307e5980",
+      "text_scanned": true,
+      "line_count": 141
+    },
+    {
+      "path": "docs/handoff/e2_final_closeout_20260727.md",
+      "size_bytes": 3403,
+      "sha256": "9f7896447dafb6d4271381e4b689a398a9257d33a48ae444fba5ce62f2e391eb",
+      "text_scanned": true,
+      "line_count": 56
+    },
+    {
+      "path": "docs/handoff/e2_full_closeout_20260711.md",
+      "size_bytes": 3844,
+      "sha256": "029895f10553b4001993c8a3dc7f8afa09035dcdba44ee643559245852878a76",
+      "text_scanned": true,
+      "line_count": 39
+    },
+    {
+      "path": "docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md",
+      "size_bytes": 23559,
+      "sha256": "b413db0aaf8a3283ba15ac77d7a0d4a15e49781bb578799940406042a79434d5",
+      "text_scanned": true,
+      "line_count": 392
+    },
+    {
+      "path": "docs/handoff/e2_genuine_hybrid_implementation_gap_audit_20260724.md",
+      "size_bytes": 8489,
+      "sha256": "e708d53227cac7ce2c4b7ab7d39044423df6d1bf4856a7c1d3d96ccf9ca04802",
+      "text_scanned": true,
+      "line_count": 139
+    },
+    {
+      "path": "docs/handoff/e2_genuine_hybrid_literature_basis_20260724.md",
+      "size_bytes": 6507,
+      "sha256": "1d90292a3fd55463e2cb40cd65fc770470f4551bf085be20f2990847bd027455",
+      "text_scanned": true,
+      "line_count": 80
+    },
+    {
+      "path": "docs/handoff/e2_genuine_hybrid_redesign_contract_20260725.md",
+      "size_bytes": 7299,
+      "sha256": "e5facd9c650c758cee3725ae35366bc4a00b03f8994113412a01076ea4b5da20",
+      "text_scanned": true,
+      "line_count": 132
+    },
+    {
+      "path": "docs/handoff/e2_hgs_ils_cross_domain_contract_20260725.md",
+      "size_bytes": 11132,
+      "sha256": "7a42654aa3b989e84df5b1798bd914a7741d649144480c4556d37d893a3f5b68",
+      "text_scanned": true,
+      "line_count": 196
+    },
+    {
+      "path": "docs/handoff/e2_hgs_ils_xd_comparative_positioning_20260725.md",
+      "size_bytes": 9678,
+      "sha256": "611bb7306cb64aa0c3e8cb0d02b3a802193899c85a0554250d5878123323ebc9",
+      "text_scanned": true,
+      "line_count": 124
+    },
+    {
+      "path": "docs/handoff/e2_homberger_200_development_bundle_gate_20260717.md",
+      "size_bytes": 1970,
+      "sha256": "a25a9c34e8045756e948fb9acee73e9dce7d8a87614ae1ebebb9e6313b0d2cd7",
+      "text_scanned": true,
+      "line_count": 23
+    },
+    {
+      "path": "docs/handoff/e2_homberger_200_source_gate_20260717.md",
+      "size_bytes": 2265,
+      "sha256": "92d8bc0aa829d5b7d0915bf2cab03df11d21ce85da60a8eeadc1e46885c930af",
+      "text_scanned": true,
+      "line_count": 21
+    },
+    {
+      "path": "docs/handoff/e2_joint_route_charge_exact_neighborhood_contract_20260725.md",
+      "size_bytes": 3941,
+      "sha256": "6e6573e7bc906a8198fee846cfd7d5d5860ae476f54e71783305f02c66a1d600",
+      "text_scanned": true,
+      "line_count": 71
+    },
+    {
+      "path": "docs/handoff/e2_joint_route_charge_exact_neighborhood_final_stop_20260725.md",
+      "size_bytes": 1024,
+      "sha256": "0c882d8aaf237d1b1b42c644f6302499b45cf18b2c0d8b31c9d0f0ba04f26f55",
+      "text_scanned": true,
+      "line_count": 18
+    },
+    {
+      "path": "docs/handoff/e2_joint_route_charge_exact_neighborhood_v2_execution_authorization_20260725.md",
+      "size_bytes": 992,
+      "sha256": "2c0426edefcf11a461236b0211645e147d2e348e9a2b95235d4cbd7220eb8ccf",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/e2_joint_route_charge_exact_neighborhood_v2_final_stop_20260725.md",
+      "size_bytes": 1835,
+      "sha256": "66955a84e511ed28c272a6ee33b9db4ace83870ec9152dd2a3fa2ec8beacce3b",
+      "text_scanned": true,
+      "line_count": 31
+    },
+    {
+      "path": "docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md",
+      "size_bytes": 30882,
+      "sha256": "b840185cd91a3549855f9f3bc5c2576edef4b5a148e3d1c4b85df321d3f6d2c7",
+      "text_scanned": true,
+      "line_count": 181
+    },
+    {
+      "path": "docs/handoff/e2_lmain_reconstruction_design_20260710.md",
+      "size_bytes": 6046,
+      "sha256": "afd27b82ea7c758ae3c2c2c52d029ce88fabf8f427d5ca1d3eab09bfa583624c",
+      "text_scanned": true,
+      "line_count": 84
+    },
+    {
+      "path": "docs/handoff/e2_loss_recovery_closeout_20260711.md",
+      "size_bytes": 3184,
+      "sha256": "c6839a2517b11ed0e8f93756c0a253b46ad960d8eb7593c6726d7fedf018849f",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/e2_loss_recovery_literature_contingency_20260711.md",
+      "size_bytes": 6980,
+      "sha256": "07bfdfe3adc1fdbcc76e79277d5d9699602c27e056b2141e16d9cae99ab6d694",
+      "text_scanned": true,
+      "line_count": 53
+    },
+    {
+      "path": "docs/handoff/e2_order_changing_hybrid_literature_review_20260725.md",
+      "size_bytes": 7968,
+      "sha256": "04db32e148b8757b4f943239af7afeb6d9c1b2107be86935032f81856e37f8a3",
+      "text_scanned": true,
+      "line_count": 108
+    },
+    {
+      "path": "docs/handoff/e2_post_v7_algorithm_paper_action_contract_20260725.md",
+      "size_bytes": 12849,
+      "sha256": "0d8441d82a6317b24b277aaa08ab0f56f82f14ff2a2f8a9c6d75fc01d2ad3653",
+      "text_scanned": true,
+      "line_count": 215
+    },
+    {
+      "path": "docs/handoff/e2_post_v7_paper_rewrite_blueprint_20260725.md",
+      "size_bytes": 12994,
+      "sha256": "490a1de8f6a51e80d767e4f2095bae044e5fc80486e8e96387332732cafa70b6",
+      "text_scanned": true,
+      "line_count": 226
+    },
+    {
+      "path": "docs/handoff/e2_reproduction_gap_diagnosis_20260727.md",
+      "size_bytes": 4404,
+      "sha256": "0c07394dd904cdce4b53364fa8807ced39ec150ed6e97363866ae82dcec2c923",
+      "text_scanned": true,
+      "line_count": 74
+    },
+    {
+      "path": "docs/handoff/e2_resource_constrained_split_contract_20260725.md",
+      "size_bytes": 7481,
+      "sha256": "565a21c3811389589f538972ac51e07d2933afe044c66d42d8ea0d1cbbf05ecb",
+      "text_scanned": true,
+      "line_count": 122
+    },
+    {
+      "path": "docs/handoff/e2_resource_coupled_hgs_misranking_audit_contract_20260725.md",
+      "size_bytes": 4131,
+      "sha256": "007a810c7dfea8121c31c8ca59a237dc8708f44ab6029d49d7c64b128831cf31",
+      "text_scanned": true,
+      "line_count": 95
+    },
+    {
+      "path": "docs/handoff/e2_resource_coupled_hgs_misranking_audit_final_stop_20260725.md",
+      "size_bytes": 2823,
+      "sha256": "1b1190cae9e9b73ab31a813055477c1c467208042f23e42e4e8d0adcb06dab26",
+      "text_scanned": true,
+      "line_count": 53
+    },
+    {
+      "path": "docs/handoff/e2_resource_slot_pricing_candidate_review_20260725.md",
+      "size_bytes": 12619,
+      "sha256": "8b97f3c9cc9f6d252cb2d05a63406f44a775df89a49d454a950887c466ae9364",
+      "text_scanned": true,
+      "line_count": 197
+    },
+    {
+      "path": "docs/handoff/e2_resource_slot_pricing_import_repair_v2_20260725.md",
+      "size_bytes": 1251,
+      "sha256": "d5e043578b444e5de994c3dbb77dee3425a25e157a29b4204da96f9767363255",
+      "text_scanned": true,
+      "line_count": 23
+    },
+    {
+      "path": "docs/handoff/e2_resource_slot_pricing_isolated_final_v4_20260725.md",
+      "size_bytes": 1546,
+      "sha256": "233279e21c95ddf83edece1978f2e889a9ec04f3e11f455b8cd87e81f8e6415a",
+      "text_scanned": true,
+      "line_count": 26
+    },
+    {
+      "path": "docs/handoff/e2_resource_slot_pricing_spawn_repair_v3_20260725.md",
+      "size_bytes": 1375,
+      "sha256": "8d58f6f622fb75dfef0bb453f23bcc3a5c855b79a8b58e33681c25096f4e517d",
+      "text_scanned": true,
+      "line_count": 20
+    },
+    {
+      "path": "docs/handoff/e2_resource_slot_pricing_v2_final_stop_20260725.md",
+      "size_bytes": 1936,
+      "sha256": "560ba9630f722610c86db1c4c0bdc67136710db75f50c6a2fbcdf8eb16889362",
+      "text_scanned": true,
+      "line_count": 37
+    },
+    {
+      "path": "docs/handoff/e2_resource_slot_pricing_v3_g0_halt_20260725.md",
+      "size_bytes": 2323,
+      "sha256": "cfe3fea54f17d8dc290553bd7c62f45c22a0bf52d0284da720f9204f06e145a9",
+      "text_scanned": true,
+      "line_count": 48
+    },
+    {
+      "path": "docs/handoff/e2_resource_slot_pricing_v4_final_stop_20260725.md",
+      "size_bytes": 3153,
+      "sha256": "1ac661f718d6c8ed7f9340719787ce0eea160a0ed21b0ace1e46fc57be522bb0",
+      "text_scanned": true,
+      "line_count": 52
+    },
+    {
+      "path": "docs/handoff/e2_route_column_direct_stop_root_cause_20260725.md",
+      "size_bytes": 3030,
+      "sha256": "48b35851edc3d80721447dc51fbb37be1b60f72df8f6402252e67b97d4794410",
+      "text_scanned": true,
+      "line_count": 56
+    },
+    {
+      "path": "docs/handoff/e2_route_column_mip_contract_20260725.md",
+      "size_bytes": 4167,
+      "sha256": "7f3ae1d154b19712536d1230c79a19088a1ff3fc0766802688f10a5be27cc2ec",
+      "text_scanned": true,
+      "line_count": 73
+    },
+    {
+      "path": "docs/handoff/e2_solomon_external_strong_baseline_interface_20260717.md",
+      "size_bytes": 6915,
+      "sha256": "83724cc0e34b6df1f8b886ff577e5ec95340b4f8b71dc4373033d74d618277e1",
+      "text_scanned": true,
+      "line_count": 23
+    },
+    {
+      "path": "docs/handoff/e2_solomon_literature_metric_trace_20260717.md",
+      "size_bytes": 5565,
+      "sha256": "d1c6ab50e06eabe256810f456753213c8d0cb763f9fd5239ddfe6332c91c44af",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/e2_solomon_primary_benchmark_contract_20260717.md",
+      "size_bytes": 9645,
+      "sha256": "f12b01679e0252c8ef0a45c65dcff8999975c9d4859f87cb7d58e8d1a169455b",
+      "text_scanned": true,
+      "line_count": 81
+    },
+    {
+      "path": "docs/handoff/e2_type_aware_resource_chromosome_contract_20260725.md",
+      "size_bytes": 5998,
+      "sha256": "785cf8d766fcb522d0a039758ba288b2dbe518deeb78571682aaa90b2c090e05",
+      "text_scanned": true,
+      "line_count": 129
+    },
+    {
+      "path": "docs/handoff/e2_type_aware_resource_chromosome_evidence_review_20260725.md",
+      "size_bytes": 5580,
+      "sha256": "2161ac9fc98dbac2b151d1c100df60d41a0d458d68556a9c18f31682bda5b001",
+      "text_scanned": true,
+      "line_count": 104
+    },
+    {
+      "path": "docs/handoff/e2_unordered_route_pair_resplit_contract_20260725.md",
+      "size_bytes": 4359,
+      "sha256": "7724fff8b68477e78d9f8d579e867a773e3bb850a544a1830f12e9df8ab61ee2",
+      "text_scanned": true,
+      "line_count": 79
+    },
+    {
+      "path": "docs/handoff/e2_v7_frontmatter_literature_revision_20260724.md",
+      "size_bytes": 2643,
+      "sha256": "9960aa276e8fb661582b33bcbc90a54fa2ccf0e67fa05473153e7e1e64aea2b2",
+      "text_scanned": true,
+      "line_count": 38
+    },
+    {
+      "path": "docs/handoff/e2_x86_migration_handoff_20260712.md",
+      "size_bytes": 2959,
+      "sha256": "59e312d904ee797624e834a3f6788a6ff38d7414553db4b050c7766964957738",
+      "text_scanned": true,
+      "line_count": 49
+    },
+    {
+      "path": "docs/handoff/e3_charging_power_and_collaboration_evidence_20260712.md",
+      "size_bytes": 8522,
+      "sha256": "7f9376587d553ea8de431010dad1ecaf30f665a4df3948abbe53cf60a68c8046",
+      "text_scanned": true,
+      "line_count": 104
+    },
+    {
+      "path": "docs/handoff/e3_clean_conclusion_research_plan_20260712.md",
+      "size_bytes": 14967,
+      "sha256": "f7a6154e668d6be495af1b0200cf7d9bea01d11fa9b06b28b5771455818c3994",
+      "text_scanned": true,
+      "line_count": 143
+    },
+    {
+      "path": "docs/handoff/e3_cumulative_ablation_closeout_20260711.md",
+      "size_bytes": 3575,
+      "sha256": "2649ab9b1572f7de541f7442a306360254913c60609f64d7ba5c05f1c1289bf5",
+      "text_scanned": true,
+      "line_count": 47
+    },
+    {
+      "path": "docs/handoff/e3_e4_paper_story_and_exhibit_contract_20260713.md",
+      "size_bytes": 13231,
+      "sha256": "6de98474b528120c172643f6a76c7afb2b6515265d4e02b33e2546a4e089fceb",
+      "text_scanned": true,
+      "line_count": 121
+    },
+    {
+      "path": "docs/handoff/e3_e7_experiment_product_design_20260712.md",
+      "size_bytes": 74942,
+      "sha256": "67869833b5b4f35667f57094fa0a2153b8fddd256deaf501fef71960e83d3917",
+      "text_scanned": true,
+      "line_count": 587
+    },
+    {
+      "path": "docs/handoff/e3_evidence_led_reconstruction_20260713.md",
+      "size_bytes": 17914,
+      "sha256": "6a928bdd6c055d9c1ce894ae4b997fc49ffc6adccc06a54c43f52bfa38871d71",
+      "text_scanned": true,
+      "line_count": 132
+    },
+    {
+      "path": "docs/handoff/e3_formal_multitrip_feasibility_audit_20260712.md",
+      "size_bytes": 8676,
+      "sha256": "9a233ea034ab565fd49c7ff783d94200cd912f8cb9be10aee3d716fed12b7930",
+      "text_scanned": true,
+      "line_count": 95
+    },
+    {
+      "path": "docs/handoff/e3_idealization_program_20260713.md",
+      "size_bytes": 16599,
+      "sha256": "4c949977ff0c07de4a9b3d4c7baed9554251b7746447f8a1d5536a02c51edfb3",
+      "text_scanned": true,
+      "line_count": 169
+    },
+    {
+      "path": "docs/handoff/e3_m0_search_asymmetry_audit_20260712.md",
+      "size_bytes": 7310,
+      "sha256": "53d119363fe781fd0b7656d6d449fd908fc166603f2eb9a6992d25c41c1a8c33",
+      "text_scanned": true,
+      "line_count": 79
+    },
+    {
+      "path": "docs/handoff/e3_multitrip_rebuild_ruling_20260712.md",
+      "size_bytes": 11067,
+      "sha256": "fa2bbb31b89b4fc9ebad5a01ec47dd945beb07bb7c415a316cd906fe90478277",
+      "text_scanned": true,
+      "line_count": 107
+    },
+    {
+      "path": "docs/handoff/e3_one_page_summary_20260713.md",
+      "size_bytes": 4069,
+      "sha256": "902b1b7111b8f812ba2702275f62500ad982ce0de31a2d32202f5aa645dda8d6",
+      "text_scanned": true,
+      "line_count": 50
+    },
+    {
+      "path": "docs/handoff/e3_paper_story_script_20260713.md",
+      "size_bytes": 5556,
+      "sha256": "4aedb35ae49c181651f017d63e7ee32b7cc0a901a1447cefca6e6dcbf352d1b5",
+      "text_scanned": true,
+      "line_count": 67
+    },
+    {
+      "path": "docs/handoff/e3_rectification_master_plan_20260713.md",
+      "size_bytes": 9491,
+      "sha256": "c0a4b96518443b1b9f029e1f1f1df064069c57ad583f8e9caee3987737bf16ea",
+      "text_scanned": true,
+      "line_count": 76
+    },
+    {
+      "path": "docs/handoff/e3e6_forensics_20260730/done.json",
+      "size_bytes": 278,
+      "sha256": "f78467409da85b1cfc5c8cfeb67ea8743a6981d8213cbd666a83c3cdbb533350",
+      "text_scanned": true,
+      "line_count": 8
+    },
+    {
+      "path": "docs/handoff/e3e6_forensics_20260730/report.md",
+      "size_bytes": 24067,
+      "sha256": "a10ea66f03cd85e1b24ea266645fcd384f85d528404a4c403c2bfd86677f8aed",
+      "text_scanned": true,
+      "line_count": 236
+    },
+    {
+      "path": "docs/handoff/e3e6_input_builder_perf_20260730/interim_status.json",
+      "size_bytes": 441,
+      "sha256": "280146bdaae99560e9ac80510abbd41ca888f8ccdb268a92efb9b64fe7b32497",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/e3e6_input_builder_perf_20260730/report.md",
+      "size_bytes": 16783,
+      "sha256": "5d23492a4866b842ee62081873998f8894fd6b18072dd5c2f1584d74412bfd58",
+      "text_scanned": true,
+      "line_count": 146
+    },
+    {
+      "path": "docs/handoff/e4_e5_contract_audit_20260711.md",
+      "size_bytes": 4833,
+      "sha256": "a04cffe011cb1a7f96905350dba93bd1fc35fb730bce4c9e7d4bd555cc8c2fbd",
+      "text_scanned": true,
+      "line_count": 53
+    },
+    {
+      "path": "docs/handoff/e5b_literature_and_infrastructure_diagnosis_20260801.md",
+      "size_bytes": 17415,
+      "sha256": "33166ad8cb2b916d9802ccd41112113882f22f21cbd911d356ae279ee015a4f4",
+      "text_scanned": true,
+      "line_count": 145
+    },
+    {
+      "path": "docs/handoff/e6_fairness_contract_audit_20260711.md",
+      "size_bytes": 4697,
+      "sha256": "30b504e9ff19b35e9b8a42c69765c06320f389ee834325ca8bc985efa3af6a2c",
+      "text_scanned": true,
+      "line_count": 51
+    },
+    {
+      "path": "docs/handoff/e6_participation_ex_ante_20260731/done.json",
+      "size_bytes": 4596,
+      "sha256": "59276e2771339b3b502eae4794651027be2d5d1dca97a933ea79b54f39e3b157",
+      "text_scanned": true,
+      "line_count": 38
+    },
+    {
+      "path": "docs/handoff/e6_participation_ex_ante_20260731/report.md",
+      "size_bytes": 27628,
+      "sha256": "17fad041769f3be3cfa7d0f35841323657e1d249d10bd11908fdae9bae8d5cd5",
+      "text_scanned": true,
+      "line_count": 276
+    },
+    {
+      "path": "docs/handoff/e7_dynamic_contract_audit_20260711.md",
+      "size_bytes": 5679,
+      "sha256": "c574f9d05bdd5039633ab3d02bd5e636734e25ccbfc2ae22a77e82aa3578b544",
+      "text_scanned": true,
+      "line_count": 65
+    },
+    {
+      "path": "docs/handoff/e7_economic_dispatch_threshold_options_20260801.md",
+      "size_bytes": 13482,
+      "sha256": "b517d93feedc6eb6b8c7c7319230aba4c0d9cc5ba533fd0f393a6d6d80bfca5f",
+      "text_scanned": true,
+      "line_count": 133
+    },
+    {
+      "path": "docs/handoff/e7_exact_trigger_boundary_fix_proposal_20260716.md",
+      "size_bytes": 6375,
+      "sha256": "1c4b3138ac77dd7e64c5aa419ee006c978ecc6f01c5388be6f1864cdc9b5410a",
+      "text_scanned": true,
+      "line_count": 90
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/diagnosis_numbers.json",
+      "size_bytes": 54448,
+      "sha256": "8e40afd2623ca62a4df8d21f23339520306dff68a3a8b9ffb6b65f6926aa0abb",
+      "text_scanned": true,
+      "line_count": 2229
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/done.json",
+      "size_bytes": 7764,
+      "sha256": "6e51b908b5f09e96681cac7f8f0d9cc37db6746f12b6e23b361dd889db344ce7",
+      "text_scanned": true,
+      "line_count": 118
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/report.md",
+      "size_bytes": 31860,
+      "sha256": "72b72d49883566ded8d2c5f8531ea37cac49ae904a12ce375a67f5ea4ed8dac7",
+      "text_scanned": true,
+      "line_count": 483
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/build_numbers.py",
+      "size_bytes": 6727,
+      "sha256": "df48684c77160658af156f1991071fb42274c4208882bb51197e0fbbad316743",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/collect_units.py",
+      "size_bytes": 2594,
+      "sha256": "ef1c4153a2046b9963f4a66ac8ed0a5fb81c7a553747ab0ed06257be2e1ca2d0",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/q1_event_vs_fleet.json",
+      "size_bytes": 87313,
+      "sha256": "928e32810732737f3b69330866b8bde4470087ba8e088af6a9fb3112f8512fed",
+      "text_scanned": true,
+      "line_count": 3574
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/q1_event_vs_fleet.py",
+      "size_bytes": 7107,
+      "sha256": "e4a31f7102e1d4a7532f9cf42308eb1632c03ab4f8dbeea9a62802e922b25599",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/q1_expired_vs_failstage.json",
+      "size_bytes": 3266,
+      "sha256": "6298f032043df5b5b108e518c56aae4f6c89d0200bcdc387a3423dd42fc96201",
+      "text_scanned": true,
+      "line_count": 235
+    },
+    {
+      "path": "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/units_table.json",
+      "size_bytes": 164775,
+      "sha256": "e0fb5556a964ba9d3e327df78a0526a085ea882c7394ea88aa6a186d514f180d",
+      "text_scanned": true,
+      "line_count": 3362
+    },
+    {
+      "path": "docs/handoff/e7_non_timing_anomaly_20260716.md",
+      "size_bytes": 3090,
+      "sha256": "7b1c49d4df4a2992457f879cfcb5b264bf6db5d977f2149881b752adaa292d6a",
+      "text_scanned": true,
+      "line_count": 51
+    },
+    {
+      "path": "docs/handoff/e7_rescue_and_e5_aggregate_20260731/done.json",
+      "size_bytes": 657,
+      "sha256": "99c0fd5481abb416684293400f0df78c6bba7b26a38b3368c4e0d9fd1711ae3d",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/e7_rescue_and_e5_aggregate_20260731/report.md",
+      "size_bytes": 29131,
+      "sha256": "8656b3c11e61834d7322974dd8b9c2e47adc30445d3ce25a346c911bf6583cdf",
+      "text_scanned": true,
+      "line_count": 263
+    },
+    {
+      "path": "docs/handoff/e7_steps_1_to_6_postevent_preflight_20260717.md",
+      "size_bytes": 4059,
+      "sha256": "6957d47dfff47272322dd4dce8cdbea4fb54ff8833a09bd5337ca22e44edaca9",
+      "text_scanned": true,
+      "line_count": 33
+    },
+    {
+      "path": "docs/handoff/effect_strength_audit_20260731/done.json",
+      "size_bytes": 874,
+      "sha256": "422278b6cae41f5defe81a3121161e692670c7095617bb19eeec125bfa29d05e",
+      "text_scanned": true,
+      "line_count": 24
+    },
+    {
+      "path": "docs/handoff/effect_strength_audit_20260731/report.md",
+      "size_bytes": 32208,
+      "sha256": "7b8c3b2931b231139716793f49df43759811317e28664aa213cde21b47efe99d",
+      "text_scanned": true,
+      "line_count": 302
+    },
+    {
+      "path": "docs/handoff/electrification_relocate_resize_contract_20260719.md",
+      "size_bytes": 12733,
+      "sha256": "f5bdd6ced39de57a06c6675dba5a67710f38b72bda6e1bb84f37f30c1c55f46d",
+      "text_scanned": true,
+      "line_count": 209
+    },
+    {
+      "path": "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+      "size_bytes": 8488,
+      "sha256": "0e10e8ea20917eb140a945909539cc3ee1e649774758252c0477741d4e742c35",
+      "text_scanned": true,
+      "line_count": 113
+    },
+    {
+      "path": "docs/handoff/experiment_execution_harness_absolute_paths_closeout_20260725.md",
+      "size_bytes": 1561,
+      "sha256": "07724a396a761399eab366cf4b74f677a50e9f25d26cc08705d7f12c59740b82",
+      "text_scanned": true,
+      "line_count": 26
+    },
+    {
+      "path": "docs/handoff/experiment_execution_harness_absolute_paths_contract_20260725.md",
+      "size_bytes": 1498,
+      "sha256": "e7fa992e7cb21b22cca6b8a50edd827884e74bc51668f5e8013c6232d3b393f7",
+      "text_scanned": true,
+      "line_count": 26
+    },
+    {
+      "path": "docs/handoff/figure_table_necessity_20260731/done.json",
+      "size_bytes": 1022,
+      "sha256": "175e9494fe16e500ca96a5c0b8ee1706a2f0803aeb3555b4fe5c5717f44c2c81",
+      "text_scanned": true,
+      "line_count": 38
+    },
+    {
+      "path": "docs/handoff/figure_table_necessity_20260731/report.md",
+      "size_bytes": 35718,
+      "sha256": "d3162529b70cc3bb34fe0d1a32ae961359858e36d79d714ea97216f737f7753d",
+      "text_scanned": true,
+      "line_count": 223
+    },
+    {
+      "path": "docs/handoff/fleet_hard_cap_multidepot_evidence_20260626.md",
+      "size_bytes": 9047,
+      "sha256": "16eb64381a8616ed008599bdb26dbbffbfe5f80cec36b0d9c4117368b493c836",
+      "text_scanned": true,
+      "line_count": 113
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_derivation_20260802/artifact_hashes.json",
+      "size_bytes": 733,
+      "sha256": "ba8e04e6c79a0983dcf616655e9115a7805dc602049833f7f6ed61b2dd06f988",
+      "text_scanned": true,
+      "line_count": 17
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_derivation_20260802/done.json",
+      "size_bytes": 812,
+      "sha256": "862a605016b3e31ee77dee45141d82d4bae1c89be8670dbcc4a9e2a4903ad4ce",
+      "text_scanned": true,
+      "line_count": 30
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_derivation_20260802/fleet_sizing.json",
+      "size_bytes": 332328,
+      "sha256": "6745ff6314de9d9b36b01340510e3d5df9acebeb000b6f6aab3b3d42aec67cd9",
+      "text_scanned": true,
+      "line_count": 6988
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_derivation_20260802/legacy_relation.json",
+      "size_bytes": 2976,
+      "sha256": "2da1870d8e6ade3aee91be1b15269bf4d2d6de11eb6f24262b63014bc63468b0",
+      "text_scanned": true,
+      "line_count": 36
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_derivation_20260802/levels_design.json",
+      "size_bytes": 418308,
+      "sha256": "baa54acddb5576a124718ad34f2275dffb145197a8c0c0406185b9d75fe35725",
+      "text_scanned": true,
+      "line_count": 16087
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_derivation_20260802/literature_methods.json",
+      "size_bytes": 4332,
+      "sha256": "5e5e062f13ea24d60d7f513e677fdc7c90fbf408afdaf906ea9ddc8cf56da840",
+      "text_scanned": true,
+      "line_count": 47
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_derivation_20260802/report.md",
+      "size_bytes": 23598,
+      "sha256": "18f6a0dcd7e750f83fdc51c67d67c95e27a57769c4f033ef8b7aa4841a94a904",
+      "text_scanned": true,
+      "line_count": 199
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_multitrip_20260802/.y2_compute.py",
+      "size_bytes": 62513,
+      "sha256": "436b9760d09170eaf5c753e3400ecb0a082a9e0156231798861715cc8fe05b5a",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_multitrip_20260802/artifact_hashes.json",
+      "size_bytes": 1052,
+      "sha256": "64cde2c62a438a8f034c698b451ec86616e914609ac9ad413bfb1ef8a58e21e7",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_multitrip_20260802/done.json",
+      "size_bytes": 685,
+      "sha256": "e0d26015b25e7a6304e1c4e5d96b40bb55bd29176cb93c3832b06f8ad3f3e8b8",
+      "text_scanned": true,
+      "line_count": 24
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_multitrip_20260802/fleet_sizing_multitrip.json",
+      "size_bytes": 2675248,
+      "sha256": "eb893d7cb84bee770d9cd680b545bb1e9e669e1df0de0820b6e45a8889b0352b",
+      "text_scanned": true,
+      "line_count": 72947
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_multitrip_20260802/legacy_experiment_impact.json",
+      "size_bytes": 2234,
+      "sha256": "625ed8ae68d179cf574dbb3ef9d7b1de3f08f4c3143d20af1b591dd4d6adf49a",
+      "text_scanned": true,
+      "line_count": 37
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_multitrip_20260802/levels_design_multitrip.json",
+      "size_bytes": 1106523,
+      "sha256": "ac1202553bc02d7fa4a1cab8d201c375e54ec085ab9f1a426d8a67c2f17ea29f",
+      "text_scanned": true,
+      "line_count": 34131
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_multitrip_20260802/report.md",
+      "size_bytes": 13308,
+      "sha256": "ad800cdd93601abdef522ea77e51b96e2260cc13cfc8c477c56a5b1ec44cfae7",
+      "text_scanned": true,
+      "line_count": 173
+    },
+    {
+      "path": "docs/handoff/fleet_sizing_multitrip_20260802/single_vs_multitrip_relation.json",
+      "size_bytes": 1184,
+      "sha256": "cc80cd4610738cabe5e7f4d26cbaa77fb6d82f04f7e4ac99b179b7d395740dad",
+      "text_scanned": true,
+      "line_count": 21
+    },
+    {
+      "path": "docs/handoff/fuel_route_retirement_ev_repack_contract_20260719.md",
+      "size_bytes": 10747,
+      "sha256": "3f894d272dc8c04b662575b6539c88716517db43e8dcba089087b03715614163",
+      "text_scanned": true,
+      "line_count": 172
+    },
+    {
+      "path": "docs/handoff/generation_side_segment_trial_closeout_20260719.md",
+      "size_bytes": 2881,
+      "sha256": "5d8ce33931b0e4924983f638ab5ca5fd275229562fab44f4416478dfa570402c",
+      "text_scanned": true,
+      "line_count": 33
+    },
+    {
+      "path": "docs/handoff/generation_side_segment_trial_contract_20260719.md",
+      "size_bytes": 5662,
+      "sha256": "777c9663b0376920fb91d447d43172f392fc7794d5cd1c2d95bea3c71e75be0c",
+      "text_scanned": true,
+      "line_count": 96
+    },
+    {
+      "path": "docs/handoff/hgs_adaptive_elite_alns_contract_20260719.md",
+      "size_bytes": 5888,
+      "sha256": "53ed28f1dcf2a32680127ff660fc70f5155f9fc6eac4c3e02edcebb5e08b7e14",
+      "text_scanned": true,
+      "line_count": 109
+    },
+    {
+      "path": "docs/handoff/hgs_aealns_03_forensics_and_next_decision_20260719.md",
+      "size_bytes": 5135,
+      "sha256": "3c8cd64943e384883ac455edfb5a058ab3de07663abf427a25fc9dd1c58792a6",
+      "text_scanned": true,
+      "line_count": 87
+    },
+    {
+      "path": "docs/handoff/hgs_safe_record_lns_contract_20260719.md",
+      "size_bytes": 5488,
+      "sha256": "5945132c9866d05c848f64a3bbc90993261116746f50e99ee2d8a0851bbeb552",
+      "text_scanned": true,
+      "line_count": 103
+    },
+    {
+      "path": "docs/handoff/instance_design_literature_20260731/done.json",
+      "size_bytes": 7814,
+      "sha256": "0a4bf7b633c12468c9b1f9a457dec67b7c52960d7ae9acd8286157711c7e457e",
+      "text_scanned": true,
+      "line_count": 65
+    },
+    {
+      "path": "docs/handoff/instance_design_literature_20260731/report.md",
+      "size_bytes": 48532,
+      "sha256": "539fc8277aacdfb1e0eed72eaa65496fa69586884eafd9e44616fb9cc4fbb7bf",
+      "text_scanned": true,
+      "line_count": 670
+    },
+    {
+      "path": "docs/handoff/instance_design_literature_20260731/scripts/batch_grep.sh",
+      "size_bytes": 353,
+      "sha256": "6fb2cfe82afcd41845145b428514d0ac503fc9b962f29db93f878997ef383d37",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/instance_design_literature_20260731/scripts/instance_geometry.py",
+      "size_bytes": 1280,
+      "sha256": "025f1c8494906626b62b3965a29b04afb5c31a6d1902693bdb31826c6c90b273",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/instance_design_literature_20260731/scripts/pdfgrep.py",
+      "size_bytes": 732,
+      "sha256": "313500c9ad72f2f5906a444f59eb54482787470fdce343944ba7ee09df3f26c1",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/instance_design_literature_20260731/scripts/zot_lookup.py",
+      "size_bytes": 2451,
+      "sha256": "fbc34adf15d7f7627a9fda726c059565172594bf6b322c4642f7a084b6d84c77",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/iwd_fidelity_closeout_20260712.md",
+      "size_bytes": 4242,
+      "sha256": "a0722fd81f3050296fa56c41149a4b48a155492a022fd7a7f60e8868e4bc3c68",
+      "text_scanned": true,
+      "line_count": 52
+    },
+    {
+      "path": "docs/handoff/journal_convention_alignment_20260730/done.json",
+      "size_bytes": 70,
+      "sha256": "79218b5fcdb22b5fd636439df29b7751feb0bf901c173ee1445dbdb6435f6cfd",
+      "text_scanned": true,
+      "line_count": 5
+    },
+    {
+      "path": "docs/handoff/journal_convention_alignment_20260730/report.md",
+      "size_bytes": 34761,
+      "sha256": "a4835f99f6fd060f197d3ebe4f5e32b1bf7afc1374133bc11a797fb246e31ce7",
+      "text_scanned": true,
+      "line_count": 401
+    },
+    {
+      "path": "docs/handoff/ledger_input_provenance_01_20260728/ledger.csv",
+      "size_bytes": 28521,
+      "sha256": "5c267e69df3f01b6a3f98177537f52deccb7e25f071b1ac735cea3a67f9b4e93",
+      "text_scanned": true,
+      "line_count": 44
+    },
+    {
+      "path": "docs/handoff/ledger_input_provenance_01_20260728/report.md",
+      "size_bytes": 54829,
+      "sha256": "9e3e95e741a46cf8eb757c784422df10ce1f39a5691780314349a650a9e5e384",
+      "text_scanned": true,
+      "line_count": 616
+    },
+    {
+      "path": "docs/handoff/legacy_sweep_20260802/artifact_hashes.json",
+      "size_bytes": 500,
+      "sha256": "d7f2efe5181b469b383e95c57026dacce789d2071c3f22e3b0a251ede5ddc43e",
+      "text_scanned": true,
+      "line_count": 13
+    },
+    {
+      "path": "docs/handoff/legacy_sweep_20260802/done.json",
+      "size_bytes": 2455,
+      "sha256": "6b97321f632d9304b79a66aea0bb07995a0ccd3397aaac1000d827968894fe88",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/legacy_sweep_20260802/legacy_ledger.json",
+      "size_bytes": 31036,
+      "sha256": "78c73657c65eff0b47b7a69da0b6ea0ae7d6fafac13fbb9a3d9acf8972d56b01",
+      "text_scanned": true,
+      "line_count": 435
+    },
+    {
+      "path": "docs/handoff/legacy_sweep_20260802/report.md",
+      "size_bytes": 20558,
+      "sha256": "b1ea331e9226a36aae995322bdcee2dc282ba7de30cc31d9b37f3b0657dcafd2",
+      "text_scanned": true,
+      "line_count": 266
+    },
+    {
+      "path": "docs/handoff/m1_e2_deferred_tasks_20260711.md",
+      "size_bytes": 2639,
+      "sha256": "aac8346b92c6ba70f82c0eb1b21dadc3230b7dd1cc6ec9760017bfaf08149c5f",
+      "text_scanned": true,
+      "line_count": 25
+    },
+    {
+      "path": "docs/handoff/m1_independent_root_cause_20260710.md",
+      "size_bytes": 19911,
+      "sha256": "ed234d0b9f027da6146ca2d5ee8351793c51b0eec596fc783f800496e26fa353",
+      "text_scanned": true,
+      "line_count": 139
+    },
+    {
+      "path": "docs/handoff/matrix_claims_evidence_01_20260728/report.md",
+      "size_bytes": 83015,
+      "sha256": "49bfafe0787039c9ed182402711d75fc7a125bbd4e2e907973b5ce538669ba68",
+      "text_scanned": true,
+      "line_count": 390
+    },
+    {
+      "path": "docs/handoff/mda_ils_vns_adaptive_contract_20260720.md",
+      "size_bytes": 6442,
+      "sha256": "6eacdc1791fd20961a3262cb7460259b799d884ccfade93627b2299503521d6f",
+      "text_scanned": true,
+      "line_count": 123
+    },
+    {
+      "path": "docs/handoff/mda_ils_vns_foundation_contract_20260720.md",
+      "size_bytes": 4647,
+      "sha256": "31a08b2f20adf211cc770d35c8653b26ca94adb237ba7a92c67fad64223e75c3",
+      "text_scanned": true,
+      "line_count": 92
+    },
+    {
+      "path": "docs/handoff/mda_ils_vns_late_stage_contract_20260720.md",
+      "size_bytes": 4039,
+      "sha256": "f32d521bf799751221c54a135e68ea502ade0a3f45683a3750a1b7d2e74e77c7",
+      "text_scanned": true,
+      "line_count": 81
+    },
+    {
+      "path": "docs/handoff/mda_ils_vns_parameter_race_contract_20260720.md",
+      "size_bytes": 4477,
+      "sha256": "a8e76c71d0e4b657dd09c51ef839822a3d57340d9ca3d07d2ad82c34ab09405d",
+      "text_scanned": true,
+      "line_count": 98
+    },
+    {
+      "path": "docs/handoff/mechanism_hybrid_algorithm_blueprint_v2_20260719.md",
+      "size_bytes": 8598,
+      "sha256": "a0d5a99638d3aa7ef45f6816190fced91ec868f115eadf32a663fc757d62584a",
+      "text_scanned": true,
+      "line_count": 166
+    },
+    {
+      "path": "docs/handoff/mechanism_lever_rethink_20260731/done.json",
+      "size_bytes": 715,
+      "sha256": "2a98ab838bf13836aea4aa426f4cbfc6e41c078e9ef290f920ae06f28e73a168",
+      "text_scanned": true,
+      "line_count": 21
+    },
+    {
+      "path": "docs/handoff/mechanism_lever_rethink_20260731/report.md",
+      "size_bytes": 46526,
+      "sha256": "0cfefd48ba333fac660930676c278fe19d5055f6f0585e0dd71f8c10853a4f65",
+      "text_scanned": true,
+      "line_count": 384
+    },
+    {
+      "path": "docs/handoff/mechanism_priced_pair_resplit_contract_20260719.md",
+      "size_bytes": 13795,
+      "sha256": "82e7d42b535ecee64a6be010b19e23463d3d1488e7c7b2ad5c87ab72f66107a0",
+      "text_scanned": true,
+      "line_count": 198
+    },
+    {
+      "path": "docs/handoff/memory/MEMORY.md",
+      "size_bytes": 241110,
+      "sha256": "8f0829a5fcda3a83019ef6cd40a7b8ecdc82e4c590b482caad5ff337b304d35c",
+      "text_scanned": true,
+      "line_count": 1475
+    },
+    {
+      "path": "docs/handoff/memory/algorithm-pivot-ca-alns.md",
+      "size_bytes": 3382,
+      "sha256": "b48024812e82e3d2ca9781883d9bdaaaaac5dcf7a24030f32e5bf1147c8858b4",
+      "text_scanned": true,
+      "line_count": 21
+    },
+    {
+      "path": "docs/handoff/memory/algorithm_comparison_foundation_20260719.md",
+      "size_bytes": 2662,
+      "sha256": "0e70b6f3394c6a54add2e80f3971244d1d521ddda64a9edf0d03709725e99040",
+      "text_scanned": true,
+      "line_count": 59
+    },
+    {
+      "path": "docs/handoff/memory/algorithm_comparison_foundation_v3_20260719.md",
+      "size_bytes": 2749,
+      "sha256": "cfc1002d42832d45050024aa50a2ff91cb583e881463db73f4838563a799a93f",
+      "text_scanned": true,
+      "line_count": 43
+    },
+    {
+      "path": "docs/handoff/memory/algorithm_exploration_carbon_nonlinear_charging_20260718.md",
+      "size_bytes": 3276,
+      "sha256": "359831d1ee0380088e94f523c76c40325853ee5ff478d00bdace5f768f557549",
+      "text_scanned": true,
+      "line_count": 21
+    },
+    {
+      "path": "docs/handoff/memory/alns-crush-root-cause.md",
+      "size_bytes": 22467,
+      "sha256": "ad5d6f96eb1549e612d1a367e42ff04586e4bc6c7c12ac05bc40be097b618b4c",
+      "text_scanned": true,
+      "line_count": 96
+    },
+    {
+      "path": "docs/handoff/memory/alns_mechanism_exploration_20260718.md",
+      "size_bytes": 2721,
+      "sha256": "6f743060728151730bccdc9fca33ff5b985f5e41f0c7057b06a643664f8f3ca7",
+      "text_scanned": true,
+      "line_count": 23
+    },
+    {
+      "path": "docs/handoff/memory/baseline-algorithm-catalog.md",
+      "size_bytes": 13877,
+      "sha256": "d5179de0c315cf5f8e7092e89454bc1af33404a97a05c7c893e1673cf114fbcf",
+      "text_scanned": true,
+      "line_count": 62
+    },
+    {
+      "path": "docs/handoff/memory/carbon_forecast_semantics_restore_20260801.md",
+      "size_bytes": 3536,
+      "sha256": "dad52cce4c1cac8480c96dcec05c7715ae94fcc7f911fc1c5f3fef4a460af132",
+      "text_scanned": true,
+      "line_count": 49
+    },
+    {
+      "path": "docs/handoff/memory/china-81-instance-lineage-20260717.md",
+      "size_bytes": 2790,
+      "sha256": "397bf083630df450a50bcf1ae27d0cb63d295b02b2cc389d3feddd5c93d71836",
+      "text_scanned": true,
+      "line_count": 22
+    },
+    {
+      "path": "docs/handoff/memory/china81_nonlinear_core_nl0_20260720.md",
+      "size_bytes": 1612,
+      "sha256": "1d76d5e624f1a2dd14632ea77ce271b854e70a48687bbba1bbe321207b2c66ea",
+      "text_scanned": true,
+      "line_count": 26
+    },
+    {
+      "path": "docs/handoff/memory/china81_nonlinear_cost_check_nl2_20260720.md",
+      "size_bytes": 1972,
+      "sha256": "b8cdb3a4fcd3962bb321585ec9fa2bc107e3a97452b2d5a1895b862910091f09",
+      "text_scanned": true,
+      "line_count": 31
+    },
+    {
+      "path": "docs/handoff/memory/china81_nonlinear_dynamic_nl3a_20260720.md",
+      "size_bytes": 1367,
+      "sha256": "06de108e305341789f29e4436345b915d4fcae1598f8b6dc7ff8a831b6e5ee69",
+      "text_scanned": true,
+      "line_count": 24
+    },
+    {
+      "path": "docs/handoff/memory/china_e3_e7_foundation_adapter_20260723.md",
+      "size_bytes": 803,
+      "sha256": "0d6500f67b6e6c95d0926862d05c9fefc43c75e75158e1d31ae44147e96bdeb6",
+      "text_scanned": true,
+      "line_count": 5
+    },
+    {
+      "path": "docs/handoff/memory/china_e3_full_chain_audit_20260723.md",
+      "size_bytes": 5066,
+      "sha256": "0f5b79bd1afb40141d48df3191ab11e65178e59b0acfa6269c6b269879af089e",
+      "text_scanned": true,
+      "line_count": 81
+    },
+    {
+      "path": "docs/handoff/memory/china_p2_parameter_evidence_20260717.md",
+      "size_bytes": 1043,
+      "sha256": "f36c77b894789007b9592c09f8720b2aa93ae289ff08da7c55650863b9238661",
+      "text_scanned": true,
+      "line_count": 6
+    },
+    {
+      "path": "docs/handoff/memory/china_v2_parameter_lock_20260718.md",
+      "size_bytes": 14787,
+      "sha256": "f049e2cd3d8558eeace737e92387e4cdf44f59f796f92af96f241be31c9d761b",
+      "text_scanned": true,
+      "line_count": 74
+    },
+    {
+      "path": "docs/handoff/memory/codex_audit_independent_verification_20260802.md",
+      "size_bytes": 9064,
+      "sha256": "a708badbf551abc6a41502f093a3fe253b3ce25ee31e1ce40a75f0738c842892",
+      "text_scanned": true,
+      "line_count": 123
+    },
+    {
+      "path": "docs/handoff/memory/control-console.md",
+      "size_bytes": 855,
+      "sha256": "f49ad0015a7c9299dc60758742e89a68421493df670b1f57fb3341947b0d3b61",
+      "text_scanned": true,
+      "line_count": 24
+    },
+    {
+      "path": "docs/handoff/memory/deferred-instance-robustness.md",
+      "size_bytes": 1716,
+      "sha256": "1ef5eeb9bca3920b97fab1377ce815b768e91c1ddd2eb216a16debd68b118948",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/memory/document-hierarchy-correction.md",
+      "size_bytes": 2248,
+      "sha256": "c7aa1fec4c1b3386ca81313f81495bf06e18265eb6effd3e917ad9a9cce8734b",
+      "text_scanned": true,
+      "line_count": 48
+    },
+    {
+      "path": "docs/handoff/memory/dynamic-demand-integration.md",
+      "size_bytes": 19361,
+      "sha256": "8ce690c433d8e101ab7f95404ef27b31a44fccbfe6a77c18c3a91f5372d93190",
+      "text_scanned": true,
+      "line_count": 89
+    },
+    {
+      "path": "docs/handoff/memory/e2_algorithm_repair_and_mechanism_case_20260724.md",
+      "size_bytes": 25220,
+      "sha256": "41defc9f4da47de4e8b3db12acb7a2932654edcaa8337c617ef9fd0b1a072150",
+      "text_scanned": true,
+      "line_count": 327
+    },
+    {
+      "path": "docs/handoff/memory/e2_current_setting_algorithm_exploration_final_stop_20260725.md",
+      "size_bytes": 1546,
+      "sha256": "0260b5a512751e1b6ea49a068922dbf700999b970b60f0a904b597132d052abb",
+      "text_scanned": true,
+      "line_count": 28
+    },
+    {
+      "path": "docs/handoff/memory/e2_dual_guided_resource_order_20260725.md",
+      "size_bytes": 2710,
+      "sha256": "7d5f01dd66c2501820d3075957f81a15ab884eab140127bca640050a48cf900a",
+      "text_scanned": true,
+      "line_count": 38
+    },
+    {
+      "path": "docs/handoff/memory/e2_final_campaign_p3_p4_complete_20260722.md",
+      "size_bytes": 21820,
+      "sha256": "dd947466c10b15a0c6d51dcd2b14a18581c872baade2487f5a3f84fe1755bc69",
+      "text_scanned": true,
+      "line_count": 156
+    },
+    {
+      "path": "docs/handoff/memory/e2_payload_gate_root_cause_20260725.md",
+      "size_bytes": 2416,
+      "sha256": "bfa14e65618a13e8f21fec2219b9b28165d4c272c3303cfacf7803a0cb3d8a0f",
+      "text_scanned": true,
+      "line_count": 36
+    },
+    {
+      "path": "docs/handoff/memory/e2_public_equal_budget_finding_20260726.md",
+      "size_bytes": 2891,
+      "sha256": "db0665f6d1b58d6acd40e61b4001fa60a8f1920b0f643b8109729ea88c4ed75d",
+      "text_scanned": true,
+      "line_count": 47
+    },
+    {
+      "path": "docs/handoff/memory/e2_resource_coupled_hgs_misranking_stop_20260725.md",
+      "size_bytes": 1015,
+      "sha256": "9325792222598b96c74a906f491154faff9d74312a26ade4c839a58db8b9c332",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/memory/e2_resource_slot_pricing_final_stop_20260725.md",
+      "size_bytes": 903,
+      "sha256": "1696e59d708f38374c7efebc93bf09f0e75a108ea1a44eb71dcea2f2ea588098",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/memory/e3-partial-recharge-ruling.md",
+      "size_bytes": 2405,
+      "sha256": "72025458461c4c5d5b231c1e93e5255a7cfddb05c1b9ecc7571f4aa002d94cf8",
+      "text_scanned": true,
+      "line_count": 20
+    },
+    {
+      "path": "docs/handoff/memory/e3_e7_rebuild_foundation_20260801.md",
+      "size_bytes": 34264,
+      "sha256": "46937110b7643104c6a5ad7b07efeba889dbe82bb43a618b503c625853c483fa",
+      "text_scanned": true,
+      "line_count": 165
+    },
+    {
+      "path": "docs/handoff/memory/e3_mismatch_restart_20260731.md",
+      "size_bytes": 4322,
+      "sha256": "db00e2396fc518f7ab9a0d9867279e4f0e5fcca7594bf442b05f688476fb9f7a",
+      "text_scanned": true,
+      "line_count": 83
+    },
+    {
+      "path": "docs/handoff/memory/e3_responsibility_mismatch_20260729.md",
+      "size_bytes": 2756,
+      "sha256": "2afc3018e570529fcbc18d1dc56014a356d4f5175f2673c8b6f714a370217b0d",
+      "text_scanned": true,
+      "line_count": 40
+    },
+    {
+      "path": "docs/handoff/memory/e3_structural_20260731.md",
+      "size_bytes": 4426,
+      "sha256": "0306255a6d903e66519f05178c8e4b5b0bb385213ba4a6196054a5a135148741",
+      "text_scanned": true,
+      "line_count": 88
+    },
+    {
+      "path": "docs/handoff/memory/e3_zone_joint_20260731.md",
+      "size_bytes": 3702,
+      "sha256": "23c3788a9c5aa16e342ccc60c59347bd852027e71aa32505166737b0e363bd8f",
+      "text_scanned": true,
+      "line_count": 60
+    },
+    {
+      "path": "docs/handoff/memory/e3e6_gates_01_20260729.md",
+      "size_bytes": 1959,
+      "sha256": "a57522a72d6c3bece0ddf6bfaad683cbf73720b7c4b59490b8a8b26c13a60ee2",
+      "text_scanned": true,
+      "line_count": 28
+    },
+    {
+      "path": "docs/handoff/memory/e3e6_input_builder_perf_20260730.md",
+      "size_bytes": 2354,
+      "sha256": "135aecad4d5073bc55b21ccc33d01b4ea35634f7855e7de03c37c90894d4b6ba",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/memory/e4_carbon_timing_20260729.md",
+      "size_bytes": 3581,
+      "sha256": "968dd64e89c1df0033957ca736fe021b93a5d57df7ae68fc71ac91eca06b06ef",
+      "text_scanned": true,
+      "line_count": 57
+    },
+    {
+      "path": "docs/handoff/memory/e4_figure_table_20260731.md",
+      "size_bytes": 2973,
+      "sha256": "2c1ccc2a9887d1faae2a1cc15302398c6e76363049642b91e3a07471d85db71a",
+      "text_scanned": true,
+      "line_count": 43
+    },
+    {
+      "path": "docs/handoff/memory/e5_literature_curve_20260731.md",
+      "size_bytes": 2985,
+      "sha256": "71cef0ebe80a2b49ec1a72ed4257d89bed76069d15c5b33694a75ecbc14e9b52",
+      "text_scanned": true,
+      "line_count": 54
+    },
+    {
+      "path": "docs/handoff/memory/e5_nonlinear_charging_01_20260729.md",
+      "size_bytes": 2912,
+      "sha256": "55d74407386e5faf7683c7c8539c59874c55e924cd4773e40eae3cd81f7cd81e",
+      "text_scanned": true,
+      "line_count": 40
+    },
+    {
+      "path": "docs/handoff/memory/e5_nonlinear_final_20260730.md",
+      "size_bytes": 4422,
+      "sha256": "545ae1bde91ffbddcb7f5f0e8e5ab5dafc124fc31ea9c693d9c04110fed7e3ad",
+      "text_scanned": true,
+      "line_count": 84
+    },
+    {
+      "path": "docs/handoff/memory/e5_nonlinear_v2_probe_halt_20260730.md",
+      "size_bytes": 2186,
+      "sha256": "f48b2ce08e33f0492db33d60a86d3913dc32c3f980b689f6a8b2bf01e56096cc",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/memory/e5_nonlinear_v3_probe_halt_20260730.md",
+      "size_bytes": 3732,
+      "sha256": "a01cb0f426125f1d8c5dc7a222dc5d340797f360888e2fa4b6aee66220eda87a",
+      "text_scanned": true,
+      "line_count": 73
+    },
+    {
+      "path": "docs/handoff/memory/e5_nonlinear_v4_halt_20260730.md",
+      "size_bytes": 3624,
+      "sha256": "e719a2fa3e1f984c45630c8b538106c06793c2835be39c65663609a1274fe6eb",
+      "text_scanned": true,
+      "line_count": 63
+    },
+    {
+      "path": "docs/handoff/memory/e6_allocation_20260731.md",
+      "size_bytes": 2406,
+      "sha256": "d3409b30f8c8f3c43827ffcab94aaa98bbe210ffb18cca0759623f47e3486e02",
+      "text_scanned": true,
+      "line_count": 45
+    },
+    {
+      "path": "docs/handoff/memory/e6_fairness_20260731.md",
+      "size_bytes": 3204,
+      "sha256": "0750a8d3dc792999b742768f9c707953f20eef1dc981637d94387839995a3cee",
+      "text_scanned": true,
+      "line_count": 50
+    },
+    {
+      "path": "docs/handoff/memory/e6_fairness_v2_20260731.md",
+      "size_bytes": 4319,
+      "sha256": "53397958f19230f5e001afafef12289fcc346bd0d85cda2a8068f63d32d73d6d",
+      "text_scanned": true,
+      "line_count": 76
+    },
+    {
+      "path": "docs/handoff/memory/e6_fairness_v3_20260731.md",
+      "size_bytes": 5071,
+      "sha256": "29ef69ba0a2bd3b8cb57cc3a03a8f8991920392baf7b991ee21710132c7b5417",
+      "text_scanned": true,
+      "line_count": 82
+    },
+    {
+      "path": "docs/handoff/memory/e7_dynamic_20260731_halt.md",
+      "size_bytes": 3114,
+      "sha256": "5baf23bf85ae990bd0c31e3635eb29d0ceb50d3cd55525ab2bcb99d77f3879d2",
+      "text_scanned": true,
+      "line_count": 29
+    },
+    {
+      "path": "docs/handoff/memory/e7_dynamic_v2_20260731_halt.md",
+      "size_bytes": 2818,
+      "sha256": "688a8b9654ade46b5201e400e728a026209eaf4ec9ecfdb6934a89b8fd8857e7",
+      "text_scanned": true,
+      "line_count": 61
+    },
+    {
+      "path": "docs/handoff/memory/e7_root_cause_20260731.md",
+      "size_bytes": 4893,
+      "sha256": "1ba081cec8400c0036103bff5a47088117dd258f1fa41ac90e3a22433ea22517",
+      "text_scanned": true,
+      "line_count": 86
+    },
+    {
+      "path": "docs/handoff/memory/feedback_communication_style.md",
+      "size_bytes": 759,
+      "sha256": "c83cf3a9af922c00e63cd935bd42790231b01257661d037fb79010f137c95ee7",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/memory/figure-redesign-task.md",
+      "size_bytes": 31100,
+      "sha256": "11e96827af1d29a20cc3538bfbc91d91ddb436b80906c984d001c14fd7af9be9",
+      "text_scanned": true,
+      "line_count": 163
+    },
+    {
+      "path": "docs/handoff/memory/fuel_route_retirement_ev_repack_20260719.md",
+      "size_bytes": 3602,
+      "sha256": "957e6d22e415b2934d6037e840b5cfa67a4e313cf63e32973953ee1ac585b196",
+      "text_scanned": true,
+      "line_count": 38
+    },
+    {
+      "path": "docs/handoff/memory/instance-lineage.md",
+      "size_bytes": 2591,
+      "sha256": "dd67f999c9c26ffbbc9a309a79762051e77f5a472587bf90fceca7ccb2b1a712",
+      "text_scanned": true,
+      "line_count": 53
+    },
+    {
+      "path": "docs/handoff/memory/literature_verdict_20260731.md",
+      "size_bytes": 6626,
+      "sha256": "8fc7818739efe6506044dde45e4e647370f612762f4023a9524b1f3be6f2045a",
+      "text_scanned": true,
+      "line_count": 80
+    },
+    {
+      "path": "docs/handoff/memory/mda_ils_vns_adaptive_stop_20260720.md",
+      "size_bytes": 2305,
+      "sha256": "a7a67541813ba02f082d265c4544948c43092421508ffcea33b028f3c65785e8",
+      "text_scanned": true,
+      "line_count": 52
+    },
+    {
+      "path": "docs/handoff/memory/mda_ils_vns_foundation_20260720.md",
+      "size_bytes": 2621,
+      "sha256": "c65db4e16fd69035376453935750c6eab5b9aa785a73c3db045a12e2faf73a60",
+      "text_scanned": true,
+      "line_count": 54
+    },
+    {
+      "path": "docs/handoff/memory/mda_ils_vns_late_stage_stop_20260720.md",
+      "size_bytes": 1584,
+      "sha256": "ab2d120cf20294e2330d4e23922ba5c64b0e58f212ea119f91be0abce2530481",
+      "text_scanned": true,
+      "line_count": 39
+    },
+    {
+      "path": "docs/handoff/memory/mda_ils_vns_parameter_race_stop_20260720.md",
+      "size_bytes": 1271,
+      "sha256": "30b51c8912c19ca40b50ec087271810b9d2cf134a6e3d3e1ec15501f995c8e04",
+      "text_scanned": true,
+      "line_count": 20
+    },
+    {
+      "path": "docs/handoff/memory/mechanism_condition_absent_20260731.md",
+      "size_bytes": 3754,
+      "sha256": "aa6c62365b41ff95f618beea1f30d6a3cfafd348873058ba3329292bffc889c2",
+      "text_scanned": true,
+      "line_count": 70
+    },
+    {
+      "path": "docs/handoff/memory/mechanism_foundation_options_20260730.md",
+      "size_bytes": 1716,
+      "sha256": "40aa497467726364a749fc1543623fe9799983922978a783af19a140e69f276a",
+      "text_scanned": true,
+      "line_count": 25
+    },
+    {
+      "path": "docs/handoff/memory/mechanism_priced_pair_resplit_20260719.md",
+      "size_bytes": 3996,
+      "sha256": "d91d42a13e7705acbe01aa4f21dfb41c350bccb039e53b00cd3dc60bc0b10a84",
+      "text_scanned": true,
+      "line_count": 39
+    },
+    {
+      "path": "docs/handoff/memory/mechanism_segment_generation_20260719.md",
+      "size_bytes": 1850,
+      "sha256": "ac8f976f181021d4ecd46cce7e2e038d19707df6b54fb34c507c31913400d197",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/memory/mpd_ils_vns_dual_regime_stop_20260720.md",
+      "size_bytes": 1238,
+      "sha256": "250e1cd2524c239da73e322bba9c995f8ed49ccff264201a26b9106a87f2a985",
+      "text_scanned": true,
+      "line_count": 19
+    },
+    {
+      "path": "docs/handoff/memory/mpils_mvns_c2_g0_20260720.md",
+      "size_bytes": 4175,
+      "sha256": "a4e1065d5b4d1cbcc3b22c99d1b66e1790bb28664ef8d3569726fcafc388fc2d",
+      "text_scanned": true,
+      "line_count": 69
+    },
+    {
+      "path": "docs/handoff/memory/mpils_mvns_c2_g1_b_first_fire_20260720.md",
+      "size_bytes": 1286,
+      "sha256": "9fd71fb4f6a181948da349d1da77309f247fa8d6075c424eee2974e76e9f94d4",
+      "text_scanned": true,
+      "line_count": 22
+    },
+    {
+      "path": "docs/handoff/memory/mpils_mvns_c2_two_fire_closeout_20260720.md",
+      "size_bytes": 1115,
+      "sha256": "e5a81dd44134f93182c959e0432ceb2d522bf3ddf98641fa583d6402b5070c48",
+      "text_scanned": true,
+      "line_count": 23
+    },
+    {
+      "path": "docs/handoff/memory/mpils_mvns_candidate1_closeout_20260719.md",
+      "size_bytes": 1288,
+      "sha256": "4f4cc2f14a12b39f18f7d7daf14cadbd2aa646a9875c9d9b3be2c9e46332a3a6",
+      "text_scanned": true,
+      "line_count": 19
+    },
+    {
+      "path": "docs/handoff/memory/multitrip_interface_completion_20260802.md",
+      "size_bytes": 1787,
+      "sha256": "c1958189fc898f1f84a7a78961b1012f6256d5e55ed28d3a6e309e2b93cf3922",
+      "text_scanned": true,
+      "line_count": 21
+    },
+    {
+      "path": "docs/handoff/memory/mv_hgs_sp_stage1_closeout_20260720.md",
+      "size_bytes": 1661,
+      "sha256": "f97ad5bd365077e719a85c82b14306fa841b01a8a776d3f0388baee7e1c8ce05",
+      "text_scanned": true,
+      "line_count": 26
+    },
+    {
+      "path": "docs/handoff/memory/number_resolution_20260731.md",
+      "size_bytes": 4597,
+      "sha256": "47d6e2b3a16cbfbf22a34906b43734196b24047164cd7e5b8e9f93be761329d1",
+      "text_scanned": true,
+      "line_count": 58
+    },
+    {
+      "path": "docs/handoff/memory/outcome_first_hybrid_20260719.md",
+      "size_bytes": 2573,
+      "sha256": "dde7cb8959dd5026892a1513d8ab0811124b289691ea20867b24a211845f6d63",
+      "text_scanned": true,
+      "line_count": 35
+    },
+    {
+      "path": "docs/handoff/memory/paper-v2-rewrite-20260720.md",
+      "size_bytes": 2053,
+      "sha256": "8c601ed9a86d49e9253dafa560ce86239e45d52c8c8235d649a162c618fbc955",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/memory/paper-writing-style.md",
+      "size_bytes": 23193,
+      "sha256": "b726701615b745acd48bd8fb220f2a58064f5fb7075c52baefd19741ffbd17c0",
+      "text_scanned": true,
+      "line_count": 136
+    },
+    {
+      "path": "docs/handoff/memory/project-plan-overview.md",
+      "size_bytes": 9726,
+      "sha256": "4c819f929ac16d086c4e580d2d9635f8d01f144ef70dbd61d436fe31c4fc6d8a",
+      "text_scanned": true,
+      "line_count": 45
+    },
+    {
+      "path": "docs/handoff/memory/project-prd-execution-v2.md",
+      "size_bytes": 129639,
+      "sha256": "28b1ecf335288d091d9d6924f0479ba48e46145f86a69b285ec342082306b912",
+      "text_scanned": true,
+      "line_count": 805
+    },
+    {
+      "path": "docs/handoff/memory/remix_v13_six_instance_development_closeout_20260719.md",
+      "size_bytes": 2066,
+      "sha256": "8e0c547247a8101010731b2575005b2a0ac639195cd4e6190a01b07335eb7e9b",
+      "text_scanned": true,
+      "line_count": 33
+    },
+    {
+      "path": "docs/handoff/memory/resetp-alns-independence.md",
+      "size_bytes": 2453,
+      "sha256": "27c0adfd1c61a2a2b62d5b5e708c057a60d9a281b487447b4fdf6a0cfc9be089",
+      "text_scanned": true,
+      "line_count": 60
+    },
+    {
+      "path": "docs/handoff/memory/shenzhen_tariff_closure_20260723.md",
+      "size_bytes": 1207,
+      "sha256": "9a3011880f52333d85ea548eb316a78aff938c85aeb29f060053ea5457bcb857",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/memory/style_cleanup_20260731.md",
+      "size_bytes": 1695,
+      "sha256": "dc606cb48798ea3fa0893f5d775f3669a043a636d01c3d46e8249914b4e4ce39",
+      "text_scanned": true,
+      "line_count": 25
+    },
+    {
+      "path": "docs/handoff/memory/tex_evidence_reconciliation_20260731.md",
+      "size_bytes": 5502,
+      "sha256": "d2771a9f356322103803a0145dbd9eb97344c9127e2546f42a6f19889ab9e6eb",
+      "text_scanned": true,
+      "line_count": 36
+    },
+    {
+      "path": "docs/handoff/memory/tex_fix_20260731.md",
+      "size_bytes": 3628,
+      "sha256": "78db62f5130dca9289a8587d4ce666e07e7c91d920c5be3e5b534b12d8101243",
+      "text_scanned": true,
+      "line_count": 52
+    },
+    {
+      "path": "docs/handoff/memory/user_operating_principles.md",
+      "size_bytes": 20698,
+      "sha256": "24325735044fb97df57d57377222c27b3c6701734dfbf3b4b15d37e5cf9aa89c",
+      "text_scanned": true,
+      "line_count": 185
+    },
+    {
+      "path": "docs/handoff/memory/waiting_loss_evidence_20260802.md",
+      "size_bytes": 2467,
+      "sha256": "84128247fc4654389ca90a800957f869a67bc76013f1aadc99d8573aa645b9c7",
+      "text_scanned": true,
+      "line_count": 34
+    },
+    {
+      "path": "docs/handoff/model_change_approval_register_20260718.md",
+      "size_bytes": 210256,
+      "sha256": "e4ed91503fccb7773a936e6af188e1df2d499b37b27b04244a33050650e00b49",
+      "text_scanned": true,
+      "line_count": 2507
+    },
+    {
+      "path": "docs/handoff/model_reconstruction_spec_20260716.md",
+      "size_bytes": 8011,
+      "sha256": "5c464f8dfe70183532a45ab51089e70e7f4815f267d7be57c03a5e9be577a3ea",
+      "text_scanned": true,
+      "line_count": 128
+    },
+    {
+      "path": "docs/handoff/model_scope_reduction_review_20260802/artifact_hashes.json",
+      "size_bytes": 578,
+      "sha256": "4f8baea7bc485ed8380a0594a4dd359c3c5ed2e1a9795b9ba7a956e75bf21837",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/model_scope_reduction_review_20260802/components.json",
+      "size_bytes": 39396,
+      "sha256": "cbb3888dff07d2488d8341c14de446c9ebbc659ada7eb922e79027c7c97bd40b",
+      "text_scanned": true,
+      "line_count": 530
+    },
+    {
+      "path": "docs/handoff/model_scope_reduction_review_20260802/done.json",
+      "size_bytes": 241,
+      "sha256": "fe9d1068a104d59571d0f88d02b1d5946bf16fd3afa43f81e6e027a736aa6fc0",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/model_scope_reduction_review_20260802/gaps.json",
+      "size_bytes": 4378,
+      "sha256": "4c5cb1b604b778fc4d6458710c163bae4dd7b6df2ab32b9cbcdc8b01ec260cd6",
+      "text_scanned": true,
+      "line_count": 66
+    },
+    {
+      "path": "docs/handoff/model_scope_reduction_review_20260802/report.md",
+      "size_bytes": 34375,
+      "sha256": "f8df87672ac55ca99ce2b1b9d99830d0e8735410a52a0da89fa8277656f3fcdb",
+      "text_scanned": true,
+      "line_count": 296
+    },
+    {
+      "path": "docs/handoff/mpd_ils_vns_dual_regime_contract_20260720.md",
+      "size_bytes": 4525,
+      "sha256": "fe35c3ff8adea4f0c5b9361de0bd92c51af68683ca5615e357614f35c3d93fdc",
+      "text_scanned": true,
+      "line_count": 91
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_architecture_and_microgate_contract_20260719.md",
+      "size_bytes": 10614,
+      "sha256": "a06cd0ffd6ffa2b3f401810f242025c4072ada7132c2ddac21ff128eb328790b",
+      "text_scanned": true,
+      "line_count": 215
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_c2_a_constant_diagnosis_contract_20260720.md",
+      "size_bytes": 1430,
+      "sha256": "b4fb5f5db53c87dfae6a793b68915616259d2480a8d1f90ce8feac4cddd92c85",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_c2_g1_b_first_fire_contract_20260720.md",
+      "size_bytes": 3573,
+      "sha256": "28b273db788e5d14eee0110993e9172bc47a7342428fd30c81dda324dd3de334",
+      "text_scanned": true,
+      "line_count": 90
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_c2_g1_b_first_fire_diagnosis_20260720.md",
+      "size_bytes": 2100,
+      "sha256": "e4f97d80576d0ffbde33701e1a467ad58830d73d49f22d248f61577cb74f626c",
+      "text_scanned": true,
+      "line_count": 39
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_c2_g1_b_second_fire_contract_20260720.md",
+      "size_bytes": 1521,
+      "sha256": "bdc2f86d6a69194265ce2c348609015e82600ba107b91e57fe0b007002bc9c9f",
+      "text_scanned": true,
+      "line_count": 45
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_c2_g1_startup_failures_20260720.md",
+      "size_bytes": 961,
+      "sha256": "ec48fd96c3269e90ead67f2fb59eabd846d2cebcc420e4dbb2e6d97a92fd08c0",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_c2_revised_contract_20260720.md",
+      "size_bytes": 6739,
+      "sha256": "050a6401ab3f94434e395f3d40fe94bf14ae64c42fd1479a24d581290694aa4f",
+      "text_scanned": true,
+      "line_count": 131
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_c2_two_fire_closeout_20260720.md",
+      "size_bytes": 2191,
+      "sha256": "cd7671fa675d6d2a9a4ecdaa74c3ce759b2a4b3b575497323dfc96cc0c38ac6e",
+      "text_scanned": true,
+      "line_count": 43
+    },
+    {
+      "path": "docs/handoff/mpils_mvns_candidate1_closeout_20260719.md",
+      "size_bytes": 3295,
+      "sha256": "08e342e3cbbc77bc5b29c592d7cac6238d6041596cb902bb8bddf29b523a10dc",
+      "text_scanned": true,
+      "line_count": 60
+    },
+    {
+      "path": "docs/handoff/mv_hgs_sp_stage1_closeout_20260720.md",
+      "size_bytes": 6993,
+      "sha256": "6144340bd599e282f26f12ab2843365ba399518d404cb9a0b78bf3fd5ef87327",
+      "text_scanned": true,
+      "line_count": 130
+    },
+    {
+      "path": "docs/handoff/nonlinear_charging_core_upgrade_plan_20260717.md",
+      "size_bytes": 9352,
+      "sha256": "c2729ed492d2c6b5105d9c4fc33554e33a80b5816becb3e69c276f64e7397c96",
+      "text_scanned": true,
+      "line_count": 108
+    },
+    {
+      "path": "docs/handoff/nonlinear_charging_robustness_contract_20260717.md",
+      "size_bytes": 10756,
+      "sha256": "437c4c5ae6806c31fe91d911200aca1c200b4e5e6e2ae292e6add35398d1888b",
+      "text_scanned": true,
+      "line_count": 118
+    },
+    {
+      "path": "docs/handoff/number_resolution_20260731/compile_log_20260731.txt",
+      "size_bytes": 20410,
+      "sha256": "43500ce8340013b82e04ec3d2a16dc5bdc2ab1946ed3d501f114916bca9cde25",
+      "text_scanned": true,
+      "line_count": 444
+    },
+    {
+      "path": "docs/handoff/number_resolution_20260731/done.json",
+      "size_bytes": 336,
+      "sha256": "6572e64d5b482569da5bcf32deb624db4fc8ea5bd354a7a5f5d4b71250a472b2",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/number_resolution_20260731/paper_main_AFTER_20260731.pdf",
+      "size_bytes": 626664,
+      "sha256": "ee99e0895e9ce13cebf326f1b032ee107773121d5ccdeb4de45632b059f1cf7e",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/number_resolution_20260731/paper_main_AFTER_20260731.tex",
+      "size_bytes": 107961,
+      "sha256": "64b40408988d3d3c3555cf520a7253daa79067061df7978b8e4adfa82cf7b453",
+      "text_scanned": true,
+      "line_count": 1751
+    },
+    {
+      "path": "docs/handoff/number_resolution_20260731/paper_main_BEFORE_20260731.tex",
+      "size_bytes": 107456,
+      "sha256": "7e580bd3d176cf5d83b6df01c610774801e3bda62e2cc7808abdbb098b5f2fd6",
+      "text_scanned": true,
+      "line_count": 1751
+    },
+    {
+      "path": "docs/handoff/number_resolution_20260731/report.md",
+      "size_bytes": 20050,
+      "sha256": "9c5119ac3e5c54479d519ca14de016a76f943d2f6c209c45e309e8c5394f067c",
+      "text_scanned": true,
+      "line_count": 236
+    },
+    {
+      "path": "docs/handoff/open_issues_20260731.md",
+      "size_bytes": 22311,
+      "sha256": "babbda190d657be19678bd908c70df066817c300a6476551b946679a0079aeef",
+      "text_scanned": true,
+      "line_count": 182
+    },
+    {
+      "path": "docs/handoff/openai_goal_mode_bug_report_20260711.md",
+      "size_bytes": 3710,
+      "sha256": "ff080ee2e1e20de787ce726e1ff465504748c5cb45030cacab4afedd6d766765",
+      "text_scanned": true,
+      "line_count": 59
+    },
+    {
+      "path": "docs/handoff/outcome_first_multiengine_hybrid_contract_20260719.md",
+      "size_bytes": 11935,
+      "sha256": "f08b0be6d0d656ae99af1e2f2ff22a428a87e735002c74b5cf17035cda233a50",
+      "text_scanned": true,
+      "line_count": 175
+    },
+    {
+      "path": "docs/handoff/paper_algchapter_01_20260727/report.md",
+      "size_bytes": 5607,
+      "sha256": "7fb2763b4adec7315100c3bbbf1f4e005aa6e2a0fa78c938208c70f4ed43ead7",
+      "text_scanned": true,
+      "line_count": 59
+    },
+    {
+      "path": "docs/handoff/paper_blueprint_20260713.md",
+      "size_bytes": 9815,
+      "sha256": "03e767ffb39fd0fb9bd6fd205817bc4c77b114687a4c7efffd2239b82278f947",
+      "text_scanned": true,
+      "line_count": 93
+    },
+    {
+      "path": "docs/handoff/paper_desk_reject_gate_20260717.md",
+      "size_bytes": 7941,
+      "sha256": "56f16762b29eb4c923eab70acf53295b53fe4d51e58453ea3a95ecdcb612fd50",
+      "text_scanned": true,
+      "line_count": 73
+    },
+    {
+      "path": "docs/handoff/paper_final_solution_exhibit_contract_20260717.md",
+      "size_bytes": 5288,
+      "sha256": "305baee5e7c3c03ed50858ad9739ecb1ba560fe5e1dd99e87b835a23ce58bd9d",
+      "text_scanned": true,
+      "line_count": 49
+    },
+    {
+      "path": "docs/handoff/paper_north_star_20260713.md",
+      "size_bytes": 4730,
+      "sha256": "8151fd89037cc03a0b357c07f4bf97d26634a18b07ad730bfa247dfff0659856",
+      "text_scanned": true,
+      "line_count": 37
+    },
+    {
+      "path": "docs/handoff/paper_positioning_final_ruling_20260712.md",
+      "size_bytes": 8271,
+      "sha256": "1f784b7804e36b66b08cbcf85dcf3874b7ab4e0d205a27cc44d8f24d25fb19a2",
+      "text_scanned": true,
+      "line_count": 68
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/SYNTHESIS_施工图_20260802.md",
+      "size_bytes": 15366,
+      "sha256": "2e11cd285657592a9d636ed9e74c3e5c86b04df5fb0f8b09772346b9db3e43bf",
+      "text_scanned": true,
+      "line_count": 194
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r1_master_logic/artifact_hashes.json",
+      "size_bytes": 818,
+      "sha256": "9ac71494a7ae75bb3298090554c770321048ca8d115d86ca85d8a33f2e7fdd25",
+      "text_scanned": true,
+      "line_count": 31
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r1_master_logic/artifact_plan.json",
+      "size_bytes": 8005,
+      "sha256": "b9ec849d7f98697973f28c7045cbac80d22de2b174f87910fafb9a76d56c0a19",
+      "text_scanned": true,
+      "line_count": 123
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r1_master_logic/design_choices.json",
+      "size_bytes": 11585,
+      "sha256": "68cee729038ce44768e77afd29134f4e8076b9aaa0a3600d07176bd83e97ec54",
+      "text_scanned": true,
+      "line_count": 141
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r1_master_logic/done.json",
+      "size_bytes": 1084,
+      "sha256": "c9cbb9cbbfb6101298d8d6c5eac6d9241150001d3e951adc85a025d53463715e",
+      "text_scanned": true,
+      "line_count": 32
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r1_master_logic/leftovers.json",
+      "size_bytes": 8855,
+      "sha256": "5b17ab4259f2ed34246d083d14fdab0f72ca234b2c77e02a11d0cfcf8c6ba73c",
+      "text_scanned": true,
+      "line_count": 150
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r1_master_logic/report.md",
+      "size_bytes": 35100,
+      "sha256": "e07bae1a478d5ce297f12fe4e8830da91183b1deee1eba20f318e19f0c08dffd",
+      "text_scanned": true,
+      "line_count": 133
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/artifact_hashes.json",
+      "size_bytes": 587,
+      "sha256": "b14ec23957000a39eed5c44d48b98271aa48493437c8052c72b9f211b9ce33dd",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/done.json",
+      "size_bytes": 584,
+      "sha256": "8949f0d65fc88e1fcd8f5418737d6f62d4f361f348c05328f6087fa3f9fb9270",
+      "text_scanned": true,
+      "line_count": 23
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/inventory.json",
+      "size_bytes": 10402,
+      "sha256": "b0bd8d0e0a2337fec28ffb5184cde442ea2f91908d520322ebbc89cf801cac59",
+      "text_scanned": true,
+      "line_count": 172
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md",
+      "size_bytes": 15127,
+      "sha256": "e70e4904205d35d2d25d740e3d888bfec937707664f6c32c596ec0302caedeb0",
+      "text_scanned": true,
+      "line_count": 75
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/r2_evidence_inventory/rerun_plan.json",
+      "size_bytes": 2350,
+      "sha256": "298c36e94c596879777fb3ccd7106a748081743e70a845fc6ec6e4d7f0f93909",
+      "text_scanned": true,
+      "line_count": 29
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w1_selfplay/artifact_hashes.json",
+      "size_bytes": 904,
+      "sha256": "612bdcb66a57401bbe7b7fe3f3fa5ad095040476e79e6a8686300396e79caa39",
+      "text_scanned": true,
+      "line_count": 34
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w1_selfplay/done.json",
+      "size_bytes": 730,
+      "sha256": "f4f47486166d9bdb5f50f1b8c9d87dfc6189bfea3a7be289a92c02a4726bbd15",
+      "text_scanned": true,
+      "line_count": 25
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w1_selfplay/experiment_verdicts.json",
+      "size_bytes": 7167,
+      "sha256": "78d361450c1130c0573106742aa12f9f177ecc94cbe16472cd8b7d2d89d58efc",
+      "text_scanned": true,
+      "line_count": 83
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w1_selfplay/report.md",
+      "size_bytes": 27911,
+      "sha256": "caf930b4781c0d17eeba7b1d35747fa95ff89def1911e7a04fe6f87f576a42e6",
+      "text_scanned": true,
+      "line_count": 155
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w1_selfplay/section_chain.json",
+      "size_bytes": 6670,
+      "sha256": "697c65673435e02ae6489fb3e470071d8d7821f52235624170aeb2e63be04e0e",
+      "text_scanned": true,
+      "line_count": 96
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w1_selfplay/theses.json",
+      "size_bytes": 9103,
+      "sha256": "31d5580c5d332f53956266cfae322c4e426bd0dd7a97463453b0b48bca70d5f1",
+      "text_scanned": true,
+      "line_count": 131
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w1_selfplay/writing_devices.json",
+      "size_bytes": 6581,
+      "sha256": "51141491132b5c70b401c6b26efe4a4ae0c710b529026a61b6fe84ac5cab1a61",
+      "text_scanned": true,
+      "line_count": 77
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w2_precise_mapping/artifact_hashes.json",
+      "size_bytes": 440,
+      "sha256": "98a1585908ca4136b0e1d5d4911f17fa146757b2db48147bf0e01cd5bcf7443a",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w2_precise_mapping/done.json",
+      "size_bytes": 652,
+      "sha256": "b7de7461183b705c49ccbb0c61ab0d0c5f52fa849dc6fbb1686e848c621bc015",
+      "text_scanned": true,
+      "line_count": 27
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w2_precise_mapping/mapping.json",
+      "size_bytes": 54466,
+      "sha256": "483b9fd94478b13d3b37e526dc70e23ac6543ec7ead30c80154b93cf1b3255fe",
+      "text_scanned": true,
+      "line_count": 698
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/w2_precise_mapping/report.md",
+      "size_bytes": 43079,
+      "sha256": "621d9ef74dc859c7ba7b879ec432b3d0f35fd39766020534977f18a118c204d3",
+      "text_scanned": true,
+      "line_count": 72
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/x3_chapters_1_4/artifact_hashes.json",
+      "size_bytes": 437,
+      "sha256": "8f276319f4f3956e7510b3b153163a96563f6506cf0e71d8c0a918b58f39ff0f",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/x3_chapters_1_4/done.json",
+      "size_bytes": 899,
+      "sha256": "22dd5587875d4302b9b987b05654e0b53db083ea7bf882b917f5b9db22312fba",
+      "text_scanned": true,
+      "line_count": 32
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/x3_chapters_1_4/mapping.json",
+      "size_bytes": 16494,
+      "sha256": "30b273c8aadae7f1e053fc6503783b04d3145f4c46d6e070f833120faabb9ec7",
+      "text_scanned": true,
+      "line_count": 151
+    },
+    {
+      "path": "docs/handoff/paper_restructure_20260802/x3_chapters_1_4/report.md",
+      "size_bytes": 26972,
+      "sha256": "d7dd82da826ea2d2a1f9475a28b7bf6066ef6382641c61e3c192c90c1e3d91f8",
+      "text_scanned": true,
+      "line_count": 48
+    },
+    {
+      "path": "docs/handoff/parameter_evidence_brief_20260623.md",
+      "size_bytes": 13268,
+      "sha256": "0b83f27e84a2b5051b44aad0c7182317bae1f0fafcda89e18cf310fe3a8a6b09",
+      "text_scanned": true,
+      "line_count": 164
+    },
+    {
+      "path": "docs/handoff/patches/e2_cvrplib_winner_metrics_20260716.patch",
+      "size_bytes": 2236,
+      "sha256": "36fcb47543e66c4aab254c8f3cd7e519502b62279fd4b4af52d3e6b50ea9a9f5",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/phase1_parallel_completion_contract_20260718.md",
+      "size_bytes": 8399,
+      "sha256": "a8afecc2b507ff9b952e5eaf784f3108a02d42f2d7e5d840fdf4f87b669dbc91",
+      "text_scanned": true,
+      "line_count": 86
+    },
+    {
+      "path": "docs/handoff/phase1_parallel_status_and_user_gate_20260718.md",
+      "size_bytes": 7752,
+      "sha256": "4807aa767d2a246c415707afb7f624ba3da28e274eb47bf4ef2b9e57a06d1a9e",
+      "text_scanned": true,
+      "line_count": 68
+    },
+    {
+      "path": "docs/handoff/phase1_three_blockers_approval_sheet_20260718.md",
+      "size_bytes": 8819,
+      "sha256": "6006e3cb2832d627ca1b2440c5de95754404eb105ab62ba61a145211a63d4b9a",
+      "text_scanned": true,
+      "line_count": 88
+    },
+    {
+      "path": "docs/handoff/project_board_20260711.md",
+      "size_bytes": 6419,
+      "sha256": "82790ca873946d810ed73eda25a5bb8ee60a645d2e0c7797619eeae59287174f",
+      "text_scanned": true,
+      "line_count": 46
+    },
+    {
+      "path": "docs/handoff/project_experiment_master_plan_20260711.md",
+      "size_bytes": 31186,
+      "sha256": "6303a834ce027a3c009ca8029a7b49d53bdf56255cc1e63100f325ae876fb391",
+      "text_scanned": true,
+      "line_count": 532
+    },
+    {
+      "path": "docs/handoff/project_parallel_execution_plan_20260711.md",
+      "size_bytes": 5675,
+      "sha256": "21de68e90d2928d4109f879764d799667a0e1782013fd83c12888212be0f0d6a",
+      "text_scanned": true,
+      "line_count": 78
+    },
+    {
+      "path": "docs/handoff/project_planning_map_20260701.md",
+      "size_bytes": 15897,
+      "sha256": "a84d20eabade3270083fbd561426d6acbdea9506344df6df1e73628f524ba6b0",
+      "text_scanned": true,
+      "line_count": 256
+    },
+    {
+      "path": "docs/handoff/project_prd_execution_map_v2_20260702.md",
+      "size_bytes": 41663,
+      "sha256": "a0259515f65c52d3d617a8c23f118893a6535eb8f26b7baeeda182e1a03f5222",
+      "text_scanned": true,
+      "line_count": 885
+    },
+    {
+      "path": "docs/handoff/pyvrp_v13_time_quality_curve_contract_20260720.md",
+      "size_bytes": 2258,
+      "sha256": "f32f3a718358b2db8e859a37a79b075eff5ca80001298621943b271b08ace6fc",
+      "text_scanned": true,
+      "line_count": 59
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/done.json",
+      "size_bytes": 1691,
+      "sha256": "7b7fcaf3f15b5d8bba3ea336eff5de3a9d8c0e280db90999fe03fcaa400f950b",
+      "text_scanned": true,
+      "line_count": 25
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p01.txt",
+      "size_bytes": 94473,
+      "sha256": "a832bb2438a63b60790dafe9c9b55c2ae5b2f18d5fba542e171a3bcbeaf646c8",
+      "text_scanned": true,
+      "line_count": 503
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p02.txt",
+      "size_bytes": 70794,
+      "sha256": "d1490ed15149e6c4ca3c30d82ab76a13c0554b8b11dd969b753f9228cd13e9a1",
+      "text_scanned": true,
+      "line_count": 446
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p03.txt",
+      "size_bytes": 20634,
+      "sha256": "171af77a0b316cbc3d222d9d466f01e24541cb5a2d6a9fcb817dfb5c12844646",
+      "text_scanned": true,
+      "line_count": 198
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p04.txt",
+      "size_bytes": 31632,
+      "sha256": "31ba94c382484a7f4ca9eb1be748b69b9d138625b89e4666a200bd6551a233a5",
+      "text_scanned": true,
+      "line_count": 288
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p05.txt",
+      "size_bytes": 108515,
+      "sha256": "3df91d859b088dd8b6bcc867bf001ee81ecf2b7f29cfec3bc79384e6f56a9279",
+      "text_scanned": true,
+      "line_count": 630
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p06.txt",
+      "size_bytes": 83002,
+      "sha256": "e814d8e3424b59c80f1a22ee7a4dfcf5f5b27185442924aee3b24503bbb5ccbb",
+      "text_scanned": true,
+      "line_count": 480
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p07.txt",
+      "size_bytes": 145389,
+      "sha256": "87a6d2d3e80c636818e39f81024682408a85206dd06492cf3e1eb9525b7a3ff9",
+      "text_scanned": true,
+      "line_count": 692
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p08.txt",
+      "size_bytes": 108785,
+      "sha256": "64ab7328ae049d950ce5bac239e9fa103967869301e2dd38424423631bb7b161",
+      "text_scanned": true,
+      "line_count": 519
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p09.txt",
+      "size_bytes": 178055,
+      "sha256": "393f9bd13446420e854a3cd8dcd87b58ddaad161d360efd541626c33c71aeada",
+      "text_scanned": true,
+      "line_count": 742
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p10.txt",
+      "size_bytes": 110065,
+      "sha256": "def076964a1df78315bdcd88239339474251eae62cae50523a5cd883eb402038",
+      "text_scanned": true,
+      "line_count": 595
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p11.txt",
+      "size_bytes": 181218,
+      "sha256": "9c40d524d6d257de9f7c028800cf356494cab0490443da5f72603b6c41897a68",
+      "text_scanned": true,
+      "line_count": 853
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p12.txt",
+      "size_bytes": 154621,
+      "sha256": "0b518436d6374b144a3b0aa42b59e348f4feaa8e9df1ef792d99bb96baa218a7",
+      "text_scanned": true,
+      "line_count": 904
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p13.txt",
+      "size_bytes": 153873,
+      "sha256": "e8018d0b4ed6b5cd631d7b9c474419e48205b042527773ee777879fe9d53b88d",
+      "text_scanned": true,
+      "line_count": 738
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p14.txt",
+      "size_bytes": 184295,
+      "sha256": "f27161634b0b13b8cfb072c7bfc85180427e1087772e38f591f71a95085d892f",
+      "text_scanned": true,
+      "line_count": 863
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p15.txt",
+      "size_bytes": 106282,
+      "sha256": "ef7f520d92b3fb3e83ed929419dad375c0b3c35c330739f2fe55512916581a24",
+      "text_scanned": true,
+      "line_count": 597
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p16.txt",
+      "size_bytes": 132875,
+      "sha256": "f7595fdda5ffe391bff5d7d2c9231e52c95813bbd7a27700f33bd83cc0a74a4b",
+      "text_scanned": true,
+      "line_count": 932
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p17.txt",
+      "size_bytes": 124923,
+      "sha256": "c05243b3ffa66affd8653b4edde7491ab02b3272bf72cfed56eb8a0b1f048766",
+      "text_scanned": true,
+      "line_count": 602
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019/p18.txt",
+      "size_bytes": 190508,
+      "sha256": "523343f93605c58ebcdf31ac9044615543975d9d95fc10d3079ee51b1c8c6f0d",
+      "text_scanned": true,
+      "line_count": 798
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p01.txt",
+      "size_bytes": 7595,
+      "sha256": "747e13f837fd1f3c0908517b27090e4d198acf46ceb6cdc1f8b41019884be613",
+      "text_scanned": true,
+      "line_count": 97
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p02.txt",
+      "size_bytes": 6172,
+      "sha256": "b4b37f0d16c98872b8eb4665fe89cd725aeb55c11a5fdc153c7fd3b47413eec7",
+      "text_scanned": true,
+      "line_count": 90
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p03.txt",
+      "size_bytes": 3136,
+      "sha256": "2ddc0b72523d3b8e00bfa17a0427d36d95384405586781b5b7d96feaac6af356",
+      "text_scanned": true,
+      "line_count": 48
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p04.txt",
+      "size_bytes": 3139,
+      "sha256": "4bd5f6c49594977141d03d75c47ff2fdb583ab810e2c8f3497e9a7589af1771c",
+      "text_scanned": true,
+      "line_count": 63
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p05.txt",
+      "size_bytes": 3977,
+      "sha256": "830a4539a9fc933a01248e97c84804a42de5922067b8f18099a86b1e2d0755b8",
+      "text_scanned": true,
+      "line_count": 181
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p06.txt",
+      "size_bytes": 4139,
+      "sha256": "1c3ec100fc18fafb48a7d060f7662affd7a6464fa2705c6385ef5aa174d0fb68",
+      "text_scanned": true,
+      "line_count": 129
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p07.txt",
+      "size_bytes": 4328,
+      "sha256": "1065e480e86bc0895d2aa3890294735786713e85b5d77727586979be97ff1348",
+      "text_scanned": true,
+      "line_count": 205
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p08.txt",
+      "size_bytes": 4860,
+      "sha256": "a0ec3577046816b599cee2eb31d4c4b523bd6f5884e4833a716909de7cd6e16b",
+      "text_scanned": true,
+      "line_count": 169
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p09.txt",
+      "size_bytes": 5358,
+      "sha256": "f60127cf169450aaa2725cbb4afc280f8b5800361711be234705aca2ca7b697d",
+      "text_scanned": true,
+      "line_count": 236
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p10.txt",
+      "size_bytes": 3644,
+      "sha256": "6687d89df9c0d8aa4075f1311b0d22901248da3956f6208b5e945e3b1957f337",
+      "text_scanned": true,
+      "line_count": 151
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p11.txt",
+      "size_bytes": 5599,
+      "sha256": "4829585e00b905bafc12566e451cffc0e45fc50492fad057cac29171cb46b00d",
+      "text_scanned": true,
+      "line_count": 250
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p12.txt",
+      "size_bytes": 6660,
+      "sha256": "2edc15cc294dbe8dd91d22f925a1027a16ae7c0e94e82d1e7aa4b03d6a179ce9",
+      "text_scanned": true,
+      "line_count": 72
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p13.txt",
+      "size_bytes": 5306,
+      "sha256": "d2a07b118569b5c1dad5635df9a1a2f516f9f91071e92934eaf36171ef2e9304",
+      "text_scanned": true,
+      "line_count": 1149
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p14.txt",
+      "size_bytes": 6084,
+      "sha256": "373fbd4255f25fef67802dfc01b6dea32d23072045d77059a8832d3ce114c04a",
+      "text_scanned": true,
+      "line_count": 128
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p15.txt",
+      "size_bytes": 5082,
+      "sha256": "d826b5b5cf45b1982840c234c5670f091f532051b1f80e8e4f131a4eaf4b905a",
+      "text_scanned": true,
+      "line_count": 105
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p16.txt",
+      "size_bytes": 5926,
+      "sha256": "3a9bd5fefa09a808f18f95e6ce8cf9d30c9915948f5ca72e6b4c498a3891f22e",
+      "text_scanned": true,
+      "line_count": 186
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p17.txt",
+      "size_bytes": 6995,
+      "sha256": "b4b746f9477bbfd5f4f4d9859357c774533eac1e4c7b7b487749e46d7beedf32",
+      "text_scanned": true,
+      "line_count": 173
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2019_ft/p18.txt",
+      "size_bytes": 9140,
+      "sha256": "561b50dadc907a0b7d7faec4fdfff8286388b7bcd09d554a2d49366240f02a49",
+      "text_scanned": true,
+      "line_count": 279
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p01.txt",
+      "size_bytes": 135265,
+      "sha256": "da895b488f33d516c25426065bdc68f9c18ba73911bc3423e2780038af056bf2",
+      "text_scanned": true,
+      "line_count": 485
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p02.txt",
+      "size_bytes": 94054,
+      "sha256": "c8fd2023bcc3494e4ef1e68ad918f74220a14b9ffb9a4a9434c897c3adea1f6e",
+      "text_scanned": true,
+      "line_count": 499
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p03.txt",
+      "size_bytes": 84692,
+      "sha256": "5a5708ff20cbfb74f610ba85452f1ba0650465c7b07d10e41d2d32e30ba6d444",
+      "text_scanned": true,
+      "line_count": 615
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p04.txt",
+      "size_bytes": 61870,
+      "sha256": "583790a6f82987e0e8804475b4e4d1985dd116412c39bd59a9c91ca606bb1873",
+      "text_scanned": true,
+      "line_count": 428
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p05.txt",
+      "size_bytes": 78289,
+      "sha256": "3e69b1a4fd5c7641283ee44ee026d7e88b57b32c8b51f1529a14444e7d00e75d",
+      "text_scanned": true,
+      "line_count": 489
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p06.txt",
+      "size_bytes": 83781,
+      "sha256": "5cb033393a450eb265704ad04bcc1a17ccb396b8a4f518f5498be1e29d07abf5",
+      "text_scanned": true,
+      "line_count": 529
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p07.txt",
+      "size_bytes": 94458,
+      "sha256": "3a589d8ff5d8907f8efc46206aa43ed779e486f5a27d46f5572891c25591197e",
+      "text_scanned": true,
+      "line_count": 520
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p08.txt",
+      "size_bytes": 85331,
+      "sha256": "41b402a40e2ce853130a9854831994c3c0fb1afe3c0945d7755ba30699ea5716",
+      "text_scanned": true,
+      "line_count": 460
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p09.txt",
+      "size_bytes": 32524,
+      "sha256": "f72512533f428cfd32424f8a1508c3bdb0bdc74e84732ee353fdc4552f3f8ec2",
+      "text_scanned": true,
+      "line_count": 274
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p10.txt",
+      "size_bytes": 77154,
+      "sha256": "87840c5d3436b57e4b9163a908f941bbe08cdf0821c45af2080e70d9546dc73a",
+      "text_scanned": true,
+      "line_count": 455
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p11.txt",
+      "size_bytes": 276708,
+      "sha256": "85a42fc55fb811d1608e4342cb7c43f985a0e39e5ac109d6389c226be0290c3d",
+      "text_scanned": true,
+      "line_count": 1442
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p12.txt",
+      "size_bytes": 147896,
+      "sha256": "78a909342f81675b346754dd0d933f335d171b79882e01b71714ea0d294d1d8d",
+      "text_scanned": true,
+      "line_count": 802
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p13.txt",
+      "size_bytes": 144569,
+      "sha256": "640f11adfb4b6f3e3baa380eea7c1798909ee14a60258f2a6951767563a4555a",
+      "text_scanned": true,
+      "line_count": 712
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p14.txt",
+      "size_bytes": 109181,
+      "sha256": "9f96d0ecddbccd005b3e34a6b35b54f62475ef131603c2182a7657fa5233ba73",
+      "text_scanned": true,
+      "line_count": 547
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p15.txt",
+      "size_bytes": 27409,
+      "sha256": "74e9bbab579a468c4effb9e782f33e84619bf900fcb1fb1df35bafe12da3015d",
+      "text_scanned": true,
+      "line_count": 228
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p16.txt",
+      "size_bytes": 99178,
+      "sha256": "26391307332bd765ea85275b64ac99426b2b26c054043a3663217069f679607a",
+      "text_scanned": true,
+      "line_count": 570
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p17.txt",
+      "size_bytes": 64961,
+      "sha256": "94817c7f85612aef275a718f7320864550238c65318f117216f19d87d9884e9d",
+      "text_scanned": true,
+      "line_count": 446
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p18.txt",
+      "size_bytes": 224343,
+      "sha256": "fdf33015a99985804c5bc489a3214bebbaeff052f6424edb61d2f89a1b4681d6",
+      "text_scanned": true,
+      "line_count": 724
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022/p19.txt",
+      "size_bytes": 162343,
+      "sha256": "064c24e1d49d4a0db76e3b5d10a6805a528c4dd1e25690514b14135666632a10",
+      "text_scanned": true,
+      "line_count": 563
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p01.txt",
+      "size_bytes": 7905,
+      "sha256": "755f28c092a35deb3bc1bc146e8d9a6ae669bf3a8649f11d6837f35feaf1fc38",
+      "text_scanned": true,
+      "line_count": 138
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p02.txt",
+      "size_bytes": 7692,
+      "sha256": "a78c476dc8beb81de9a470afcb771ebe490d8796d1a18cde66590bbfb9a10b1d",
+      "text_scanned": true,
+      "line_count": 113
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p03.txt",
+      "size_bytes": 5141,
+      "sha256": "837ae899cd6802091b30b1d705e91f9e1aea64e7903d53d8bab86d0552e9bc9a",
+      "text_scanned": true,
+      "line_count": 60
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p04.txt",
+      "size_bytes": 6121,
+      "sha256": "8e8c37b685ff84b121d18da38b7d6acd96f7b597e968a7abd805e71c0fea9eae",
+      "text_scanned": true,
+      "line_count": 75
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p05.txt",
+      "size_bytes": 4639,
+      "sha256": "11da39ee5dceef6b1a90e709fc31797c0d64d7a589ae38bc82da2cfe0668a7b9",
+      "text_scanned": true,
+      "line_count": 133
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p06.txt",
+      "size_bytes": 3628,
+      "sha256": "7d3a5d660c43a56e8d764a0a8310d178efb9478dbb803ffafea54917eaded23d",
+      "text_scanned": true,
+      "line_count": 149
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p07.txt",
+      "size_bytes": 4514,
+      "sha256": "66a81afc05fb1d067dacf6f82bd9916799672554ba7ef2a83d379de7a87fdef4",
+      "text_scanned": true,
+      "line_count": 141
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p08.txt",
+      "size_bytes": 4755,
+      "sha256": "739db46230a4fba629a14af214bb4194352fcbd62fe0ae0c09b876c1ffadb843",
+      "text_scanned": true,
+      "line_count": 116
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p09.txt",
+      "size_bytes": 3083,
+      "sha256": "6bc72c88a721874a8d1a1a5229e696f7520455f823274579d82f15b096861c66",
+      "text_scanned": true,
+      "line_count": 67
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p10.txt",
+      "size_bytes": 5798,
+      "sha256": "14156053e6710ab06b8824dd83d7fc6907f52607ee109e700181c668632f963b",
+      "text_scanned": true,
+      "line_count": 104
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p11.txt",
+      "size_bytes": 8791,
+      "sha256": "c70f3cd06c653c72a7e77e63cb04cf793cbe634b9a5549da860b5fe5a41a4a84",
+      "text_scanned": true,
+      "line_count": 102
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p12.txt",
+      "size_bytes": 6135,
+      "sha256": "722e2e43b1c51a6416bff0119d4c0b4b64ba41eac00e4b9d6ac69fdae9c23e7e",
+      "text_scanned": true,
+      "line_count": 159
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p13.txt",
+      "size_bytes": 6401,
+      "sha256": "2f45085c66eff93dfc94d6f7f89ec0ee1fabd0d69638ae0139a8c456ac6a3fc3",
+      "text_scanned": true,
+      "line_count": 82
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p14.txt",
+      "size_bytes": 5317,
+      "sha256": "9587a20cda4360db518eaba11639b7207838686265f24b1274f433688926c86a",
+      "text_scanned": true,
+      "line_count": 109
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p15.txt",
+      "size_bytes": 2998,
+      "sha256": "f579d47eaeb7553a4f29777adf2ffb812a1cfa3cb2656beff40cc2ac99154226",
+      "text_scanned": true,
+      "line_count": 38
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p16.txt",
+      "size_bytes": 5100,
+      "sha256": "d3108aff98d2959fc919bc16225a1ed103661d655de0be0c966b2e864bd17df9",
+      "text_scanned": true,
+      "line_count": 61
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p17.txt",
+      "size_bytes": 6234,
+      "sha256": "99375a22b44aaf4939c25cf3dfbe0f9117ea1db4b069a5df9da4256a8b430623",
+      "text_scanned": true,
+      "line_count": 69
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p18.txt",
+      "size_bytes": 9419,
+      "sha256": "427e2378476301a2d42f3818cd6771d07d72f1923cfb6f711426d5c62b763f89",
+      "text_scanned": true,
+      "line_count": 349
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/extracted/rao2022_ft/p19.txt",
+      "size_bytes": 6930,
+      "sha256": "88ff05ee4a920484bc6b785ebc64b317eefbeca583eef5d2882ec25383e8393a",
+      "text_scanned": true,
+      "line_count": 270
+    },
+    {
+      "path": "docs/handoff/rao_posthoc_allocation_reading_20260731/report.md",
+      "size_bytes": 31013,
+      "sha256": "a04ecf8223c3bb4c59fe8a4f0e185b0a3d16a4b4da2ba5fa9d71c04cfaae2feb",
+      "text_scanned": true,
+      "line_count": 307
+    },
+    {
+      "path": "docs/handoff/redteam_reviewer_01_20260728/report.md",
+      "size_bytes": 49889,
+      "sha256": "4fddd9b808df9c859df3fd7938feb6f298db63179b9623a67d25055427ccb016",
+      "text_scanned": true,
+      "line_count": 267
+    },
+    {
+      "path": "docs/handoff/remediation_redteam_01_20260728/report.md",
+      "size_bytes": 26472,
+      "sha256": "24c6c6dc9a70525b19a2f54f3958749f8ca81fe4e0fce79f03dd0474a581b7be",
+      "text_scanned": true,
+      "line_count": 58
+    },
+    {
+      "path": "docs/handoff/remix_hgs_supplier_bridge_audit_note_20260719.md",
+      "size_bytes": 786,
+      "sha256": "c81c34be79b412dc04e73942a8fc8f45d81638c26badfdf44c311a856e9400a9",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/remix_pr17a_behavior_gate_audit_note_20260719.md",
+      "size_bytes": 938,
+      "sha256": "6ed61cb9bb201a9e534f1b3fc78f1c2bc7ac8d8f6673e46dab29f61c070fcfd9",
+      "text_scanned": true,
+      "line_count": 19
+    },
+    {
+      "path": "docs/handoff/remix_pr17a_behavior_gate_contract_20260719.md",
+      "size_bytes": 5536,
+      "sha256": "1920d593f9d26a25b134343a4621f62b568169f5c73b59df2d0bed40eec78c8a",
+      "text_scanned": true,
+      "line_count": 123
+    },
+    {
+      "path": "docs/handoff/remix_v13_development_forensics_20260719.md",
+      "size_bytes": 6755,
+      "sha256": "459f2f65dcb5df3fe58613244be5edb2e48482bb83bd4379fc1b91579f4222cb",
+      "text_scanned": true,
+      "line_count": 116
+    },
+    {
+      "path": "docs/handoff/remix_v13_six_instance_development_contract_20260719.md",
+      "size_bytes": 7800,
+      "sha256": "f3a14eb34f1420592ede5b3cf9762ccf28c7abdf8142d50ecdc589595f06a9a8",
+      "text_scanned": true,
+      "line_count": 169
+    },
+    {
+      "path": "docs/handoff/repo_hygiene_report_20260710.md",
+      "size_bytes": 4990,
+      "sha256": "d26bb8149a3d026b874f835367bb4a9cb4108d3ae6a8a3f973ae511e2d381952",
+      "text_scanned": true,
+      "line_count": 65
+    },
+    {
+      "path": "docs/handoff/research_benchmark_expsection_01/report.md",
+      "size_bytes": 43973,
+      "sha256": "449289e36cb1dc879cf4a250bc81a81294609d060e5c4cb2615794cb8aa12c4c",
+      "text_scanned": true,
+      "line_count": 191
+    },
+    {
+      "path": "docs/handoff/research_e3e4_design_02_20260728/report.md",
+      "size_bytes": 23764,
+      "sha256": "1470266f588b9f36f649e8c912e852e87c78c5abe1e54dcd9e855ed680db6206",
+      "text_scanned": true,
+      "line_count": 110
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/artifact_hashes.json",
+      "size_bytes": 2381,
+      "sha256": "098e7540803c9abd2ae4119435a2b36e94606e8f34b99af9cf9306fdb32ba5cf",
+      "text_scanned": true,
+      "line_count": 24
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/README.md",
+      "size_bytes": 560,
+      "sha256": "b0dca65a2ea1de99b53ece2f84f43b941bd0d87031290d4f7bc34102bcd0904b",
+      "text_scanned": true,
+      "line_count": 8
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/policy/P01_gb1589_status.md",
+      "size_bytes": 986,
+      "sha256": "68414cb5ef618a63c500dc28a42c3774cae8b5169d321cc45ac2ebf1625bf77f",
+      "text_scanned": true,
+      "line_count": 17
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/policy/P02_gb1589_2026_revision_explanation.md",
+      "size_bytes": 1155,
+      "sha256": "d484589b5098d5ad9f689f79451c7011c1b38fc330a0a960226e11e4e04843c1",
+      "text_scanned": true,
+      "line_count": 17
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/policy/P03_miit_2022_blue_plate_rule.md",
+      "size_bytes": 1251,
+      "sha256": "fcb802b5c244cce0d8204c4928f7c842f8c00b738d62da799f6705089030a61e",
+      "text_scanned": true,
+      "line_count": 20
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/policy/P04_local_access_nanchang.md",
+      "size_bytes": 711,
+      "sha256": "b4eae1f02e7b22ca20d4574624ab28acd166392369900668c226aaeb72d15f53",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/policy/P05_policy_scope_audit.md",
+      "size_bytes": 853,
+      "sha256": "e3c2be2b1a65506c251680c6ba5087d55f14ff20c42802c0607df84037aa8248",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/V01_jac_shuailing_ev5.md",
+      "size_bytes": 870,
+      "sha256": "fc0fd1b9289414d14392c0aa3ebd019cb61afffd6a85b6727a2ddcc2740d4705",
+      "text_scanned": true,
+      "line_count": 15
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/V02_jac_shuailing_es6.md",
+      "size_bytes": 523,
+      "sha256": "e9d7e2d97a8b4a8621300dde5363918f2a7f94f87cdaf118f37a87c034773aa7",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/V03_jac_xingrui_6ev.md",
+      "size_bytes": 595,
+      "sha256": "8cea10730478f0fa5cb9a5b47c823f84db8094f9eb3ec9e9aadb1a01757fdbc0",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/V04_foton_aumark_es1.md",
+      "size_bytes": 825,
+      "sha256": "006626c698bda63606c8a60e98b0044a821928951b27901129b45ab8eb6412d7",
+      "text_scanned": true,
+      "line_count": 14
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/V05_farizon_h9e.md",
+      "size_bytes": 727,
+      "sha256": "77d4dd2d90375c234aa8179fc4b2fa8ee3dec9f114800895d94963c86fb4c086",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/V06_incomplete_models_audit.md",
+      "size_bytes": 849,
+      "sha256": "32b18bf48b30b4ac1b68a57f0c1c6fa86729dcd4181627feaeb9ef29acaa631d",
+      "text_scanned": true,
+      "line_count": 20
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/zotero/Z01_query_log.md",
+      "size_bytes": 1493,
+      "sha256": "1a86a2859310b6ad8e81f1f865675ad0e55040365f5351a13f34bea5add56b2d",
+      "text_scanned": true,
+      "line_count": 25
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/zotero/Z02_literature_extracts.csv",
+      "size_bytes": 1477,
+      "sha256": "de1797a2de386656d7491025f3f580cb399a4998f8b87fac6067755231f3593c",
+      "text_scanned": true,
+      "line_count": 7
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/evidence/zotero/Z03_literature_notes.md",
+      "size_bytes": 1614,
+      "sha256": "5da4fe286a20aedf9a9ff6e72478af609f36638605758d12e6a2d791c317fae3",
+      "text_scanned": true,
+      "line_count": 29
+    },
+    {
+      "path": "docs/handoff/research_ev_payload_01_20260727/report.md",
+      "size_bytes": 8799,
+      "sha256": "e9fd661cc1c025a006e2a62266422afb70dbd3f83085bc1b0b880d9936a8e720",
+      "text_scanned": true,
+      "line_count": 86
+    },
+    {
+      "path": "docs/handoff/resetp_goal_completion_matrix_20260716.md",
+      "size_bytes": 10983,
+      "sha256": "5cdf955d01cacefbc69cd2553bdb73104695c06bd6e2d038220b5b690a0d8f54",
+      "text_scanned": true,
+      "line_count": 48
+    },
+    {
+      "path": "docs/handoff/resetp_gpt56_outcome_contract_20260716.md",
+      "size_bytes": 3335,
+      "sha256": "b9f120de784277fd7b95ead597e7a176424a89e9ce6b7ec02f6d7f4c3b191ef8",
+      "text_scanned": true,
+      "line_count": 41
+    },
+    {
+      "path": "docs/handoff/resetp_research_experiment_writing_quality_gates_20260715.md",
+      "size_bytes": 11466,
+      "sha256": "41099dc2c30586a52a5f8c914716df3bfc7808bef1d1b8480bae931f874d03a3",
+      "text_scanned": true,
+      "line_count": 101
+    },
+    {
+      "path": "docs/handoff/risk_remediation_20260802/artifact_hashes.json",
+      "size_bytes": 711,
+      "sha256": "a806ff26a24b8d24a1e42a1d82fd2fb0dd6c0a388521956fc914a1e79810e858",
+      "text_scanned": true,
+      "line_count": 28
+    },
+    {
+      "path": "docs/handoff/risk_remediation_20260802/done.json",
+      "size_bytes": 814,
+      "sha256": "0f0c0f5272b7dea381770caf3ccbeb7f84efd31532070b3f1408236546a04365",
+      "text_scanned": true,
+      "line_count": 33
+    },
+    {
+      "path": "docs/handoff/risk_remediation_20260802/report.md",
+      "size_bytes": 22532,
+      "sha256": "34a791aaf9ddcdbc53997548e468b35ebbe924d6f72f5e5a1e717a29d5853206",
+      "text_scanned": true,
+      "line_count": 200
+    },
+    {
+      "path": "docs/handoff/risk_remediation_20260802/risks.json",
+      "size_bytes": 33554,
+      "sha256": "96eb09aa68911e1d9f972b0750ada879dc68002bcf16df309e81892cf047c3ef",
+      "text_scanned": true,
+      "line_count": 418
+    },
+    {
+      "path": "docs/handoff/runbook_e2_closeout_01_20260728/report.md",
+      "size_bytes": 51486,
+      "sha256": "fe9942cbe5f3554f5202e28acc823f6b456a3b83083f550fa34e98477a13fd86",
+      "text_scanned": true,
+      "line_count": 932
+    },
+    {
+      "path": "docs/handoff/serendipity_ledger.md",
+      "size_bytes": 19554,
+      "sha256": "2e1f7ae3e16d20bc25a2e66d7a431ed91c4f981b43d75ca23641254adfa57fd5",
+      "text_scanned": true,
+      "line_count": 164
+    },
+    {
+      "path": "docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md",
+      "size_bytes": 24081,
+      "sha256": "b79a64daa28f3f5b35e3f02946030911cdbc31e6116edf75d712fb3d6acab257",
+      "text_scanned": true,
+      "line_count": 430
+    },
+    {
+      "path": "docs/handoff/session_handoff_20260730_codex_to_new_claude.md",
+      "size_bytes": 8966,
+      "sha256": "93b1fa1d8a42796f07146c5bf2763869f003f573eeb2efcbd539b66fd3be28f8",
+      "text_scanned": true,
+      "line_count": 95
+    },
+    {
+      "path": "docs/handoff/session_handoff_20260731_claude_night_shift.md",
+      "size_bytes": 27868,
+      "sha256": "75458eb7190595eda263a77cdbf8dab9af198d3688828a7402a7e4bf986c5e09",
+      "text_scanned": true,
+      "line_count": 375
+    },
+    {
+      "path": "docs/handoff/setp_external_ai_review_adjudication_20260716.md",
+      "size_bytes": 6779,
+      "sha256": "86118799e0841e19e11e6181c9b49bc5e1aa751644ad25ab6e7946967c00610a",
+      "text_scanned": true,
+      "line_count": 45
+    },
+    {
+      "path": "docs/handoff/setp_paper_engineering_and_resetp_surgery_20260716.md",
+      "size_bytes": 24084,
+      "sha256": "7b34e466baf8b14935f557d8be1623551f29008d2beb39bfaef7fb3a4e404775",
+      "text_scanned": true,
+      "line_count": 224
+    },
+    {
+      "path": "docs/handoff/setp_template_traceability_20260716.md",
+      "size_bytes": 24832,
+      "sha256": "4caed8535fd02b3a181d03089cd3a1bf56aa1f156ec361fe7983debb20746f5e",
+      "text_scanned": true,
+      "line_count": 102
+    },
+    {
+      "path": "docs/handoff/setp_tri_advisor_review_adjudication_20260716.md",
+      "size_bytes": 5198,
+      "sha256": "8d50bb781f5004476613c36206f64462fafb904211dc147b1b30f4f0b011d59d",
+      "text_scanned": true,
+      "line_count": 52
+    },
+    {
+      "path": "docs/handoff/shenzhen_2025_02_tariff_closure_20260723.md",
+      "size_bytes": 2944,
+      "sha256": "da06040d5d280d6d7395ff9693e0d3c34b54a41b45e24a929e112e765c0db25f",
+      "text_scanned": true,
+      "line_count": 48
+    },
+    {
+      "path": "docs/handoff/softmax_mechanism_training_contract_20260719.md",
+      "size_bytes": 3397,
+      "sha256": "23305502fa251f9a05edb2f7599b8310fd789aadf47906fa5931753907024734",
+      "text_scanned": true,
+      "line_count": 81
+    },
+    {
+      "path": "docs/handoff/style_cleanup_20260731/done.json",
+      "size_bytes": 245,
+      "sha256": "a00f87593a7057185c77edb95d8829cd039a3a18d9263e1db87582b1d7352e2c",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/style_cleanup_20260731/latexmk_xelatex.log",
+      "size_bytes": 40310,
+      "sha256": "24f8f550053e0e3e45bfb9e23d23f0abbfecac722a7ffc01263a8634b99cbbed",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/style_cleanup_20260731/paper_main_before_style_cleanup.tex",
+      "size_bytes": 106831,
+      "sha256": "fdb31f5f4001abce2b03cae53c977f57d95c21c5143259ae31082e59410d8d6a",
+      "text_scanned": true,
+      "line_count": 1767
+    },
+    {
+      "path": "docs/handoff/style_cleanup_20260731/report.md",
+      "size_bytes": 15370,
+      "sha256": "fc5fadbf1f31f3e7c8b619594a889d84cf1c2c009fa2f9ddc51be50cea550911",
+      "text_scanned": true,
+      "line_count": 106
+    },
+    {
+      "path": "docs/handoff/style_cleanup_20260731/xelatex_final.log",
+      "size_bytes": 68103,
+      "sha256": "a8f40a1ac68c498bf9ba7b47f26fa72f3304362f364d01eca64486272a95fc29",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/templates/EXPERIMENT_CARD_TEMPLATE.md",
+      "size_bytes": 1195,
+      "sha256": "e1dbb0ea6cc67fe6083e20e404d4eda292bdc3d0f4801e7f56f8d789e1a1caca",
+      "text_scanned": true,
+      "line_count": 55
+    },
+    {
+      "path": "docs/handoff/templates/e2_external_baseline_freeze_template_20260717.json",
+      "size_bytes": 709,
+      "sha256": "b48099bb7c9ef3df0fcd4f7f75d809b63de96cf958455620c406cef7bd887530",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/templates/e2_final_algorithm_freeze_template_20260717.json",
+      "size_bytes": 1915,
+      "sha256": "eb6019e3a73faa055488b9d329ba43db5418be86bb1a3c847186c6d4f0038082",
+      "text_scanned": true,
+      "line_count": 53
+    },
+    {
+      "path": "docs/handoff/tex_evidence_reconciliation_20260731/done.json",
+      "size_bytes": 240,
+      "sha256": "7184654a15c333fff02a466c1b0cad02597115e82c3c77430d325a46a58e5dba",
+      "text_scanned": true,
+      "line_count": 12
+    },
+    {
+      "path": "docs/handoff/tex_evidence_reconciliation_20260731/report.md",
+      "size_bytes": 29140,
+      "sha256": "65c3c642c5c1640bf13f2a6477016f4164359a341618ae24e9ee56ae7b142650",
+      "text_scanned": true,
+      "line_count": 144
+    },
+    {
+      "path": "docs/handoff/tex_fix_20260731/compile_log_20260731.txt",
+      "size_bytes": 40088,
+      "sha256": "524cdd4b365f3889cb099b721cdcf9ca8d7a9f4f657fa685901d717f2b14c373",
+      "text_scanned": true,
+      "line_count": 868
+    },
+    {
+      "path": "docs/handoff/tex_fix_20260731/done.json",
+      "size_bytes": 375,
+      "sha256": "c6575f59edc55d6dd39a39e3f303ec2c0c4417f39bfbdbaf56e1ded99661fc53",
+      "text_scanned": true,
+      "line_count": 16
+    },
+    {
+      "path": "docs/handoff/tex_fix_20260731/paper_main_AFTER_20260731.pdf",
+      "size_bytes": 622188,
+      "sha256": "ad4599a64f94ef239e5466f02cf60318cc66ebcf32ac7eb3e8a3544923ee6387",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/tex_fix_20260731/paper_main_AFTER_20260731.tex",
+      "size_bytes": 107456,
+      "sha256": "7e580bd3d176cf5d83b6df01c610774801e3bda62e2cc7808abdbb098b5f2fd6",
+      "text_scanned": true,
+      "line_count": 1751
+    },
+    {
+      "path": "docs/handoff/tex_fix_20260731/paper_main_BEFORE_20260731.tex",
+      "size_bytes": 104994,
+      "sha256": "62e4761277dd842f6736d4d9794263194babc9bf368e14ff77a51caab0116aa4",
+      "text_scanned": true,
+      "line_count": 1742
+    },
+    {
+      "path": "docs/handoff/tex_fix_20260731/report.md",
+      "size_bytes": 19934,
+      "sha256": "7d69377000a44fb9c5dc4c807e2ce0116b54bd9d1ad57a456d2a1db114fcc8db",
+      "text_scanned": true,
+      "line_count": 182
+    },
+    {
+      "path": "docs/handoff/tex_sync_debt_20260712.md",
+      "size_bytes": 814,
+      "sha256": "db8f3ebd3aa43b8875d790e04d588d089cf288dbb9af58a4c3b14bd9d16db06b",
+      "text_scanned": true,
+      "line_count": 10
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/compile_build/paper_main.aux",
+      "size_bytes": 15931,
+      "sha256": "af80515a30f37406f9ca5e3d5c2eb3b98e92b307b932d10ee07de47c58888b51",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/compile_build/paper_main.fdb_latexmk",
+      "size_bytes": 36474,
+      "sha256": "7cfe664fb689fb0d712cb8aab999a1112b5bd3cc10f9cb1f68b8103369d20e55",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/compile_build/paper_main.fls",
+      "size_bytes": 47454,
+      "sha256": "a0b1166b616e33ee08dcc95c4c1acaa2ad90168a6c23eb9e77e9134af9b4581b",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/compile_build/paper_main.log",
+      "size_bytes": 68718,
+      "sha256": "39a2ec57cbf43a286f250e0d0baffe8c52e41de8502046370677445f30d5e651",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/compile_build/paper_main.out",
+      "size_bytes": 4429,
+      "sha256": "e69985277d15be4afb910e1748077fd15de4ff47ecc128aaf5f1c94697110b9e",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/compile_build/paper_main.pdf",
+      "size_bytes": 560205,
+      "sha256": "40854149b6c09bded66286ec423dd09aa21614a2aec9f33b2dec2309759ea42d",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/compile_build/paper_main.synctex.gz",
+      "size_bytes": 287117,
+      "sha256": "62f62e13858bff2355fd6dd8bc32acb9b9696856863ff2853c92ed0b4669f8f4",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/compile_build/paper_main.xdv",
+      "size_bytes": 712164,
+      "sha256": "d9402cfb5665002864b2ddd621174673911956e42944164b66dea27d9da561d7",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/done.json",
+      "size_bytes": 596,
+      "sha256": "b838b33b44d3566633e84bc7202a8f2938bc4bb80c4aff5287c32d1626b70638",
+      "text_scanned": true,
+      "line_count": 19
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/math_verification_output.json",
+      "size_bytes": 29621,
+      "sha256": "32c8e0d04e2c433598558bf43e10d9c19aec2160c534ff4d99e04536a37dfca8",
+      "text_scanned": true,
+      "line_count": 651
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/paper_main.pre_transfer_payment_revision_20260731.tex",
+      "size_bytes": 104785,
+      "sha256": "452eaf7bf789c74461388650763d4e25f8b1767a25e8df7b20fdc37a79e24c70",
+      "text_scanned": true,
+      "line_count": 1729
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/paper_main_xelatex_compile.log",
+      "size_bytes": 68718,
+      "sha256": "39a2ec57cbf43a286f250e0d0baffe8c52e41de8502046370677445f30d5e651",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/report.md",
+      "size_bytes": 17057,
+      "sha256": "f13287c4cdcbc426c6646a9353c00721fc658695c3d4db042668df1054dd11ec",
+      "text_scanned": true,
+      "line_count": 375
+    },
+    {
+      "path": "docs/handoff/transfer_payment_applied_20260731/verify_transfer_payment_math_independent.py",
+      "size_bytes": 21744,
+      "sha256": "6c9022b505326ead5130004bc34829410e84bbfd6a2c0ebe3dad9fec1361cfb7",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/transfer_payment_model_revision_20260731/done.json",
+      "size_bytes": 757,
+      "sha256": "aef4fe2f95178be00039b5d27ec2feb8c68625aefe9306ac4f5b0266dc2c546a",
+      "text_scanned": true,
+      "line_count": 22
+    },
+    {
+      "path": "docs/handoff/transfer_payment_model_revision_20260731/paper_main_transfer_payment_revision.patch.md",
+      "size_bytes": 16535,
+      "sha256": "18636a7fefae55add14ce72cc3eb062aea3c81b87e0341df4ede773cad6f8b4d",
+      "text_scanned": true,
+      "line_count": 367
+    },
+    {
+      "path": "docs/handoff/transfer_payment_model_revision_20260731/report.md",
+      "size_bytes": 12093,
+      "sha256": "05c8a69589e3299026ea8613d1e326b15f6a347c0246b80aaf8c8a3ecd937205",
+      "text_scanned": true,
+      "line_count": 321
+    },
+    {
+      "path": "docs/handoff/transfer_payment_model_revision_20260731/verify_transfer_payment_math.py",
+      "size_bytes": 15549,
+      "sha256": "cf61c1407414bbfc99243c9f7a333ea234afaec93655d5f812cded0a3c1e08d2",
+      "text_scanned": false,
+      "line_count": null
+    },
+    {
+      "path": "docs/handoff/unified_mechanism_alns_execution_contract_20260719.md",
+      "size_bytes": 7712,
+      "sha256": "0d760274550ce4389297cdb03dbc187baa24b329e74033b03ffbc5f4973778cd",
+      "text_scanned": true,
+      "line_count": 145
+    },
+    {
+      "path": "docs/handoff/user_requirements_traceability_and_writing_hold_20260717.md",
+      "size_bytes": 18953,
+      "sha256": "6f95c6e44f2c2683c86df8b84ec93f7a6d321227dd97e5cbddb74c4690829fc0",
+      "text_scanned": true,
+      "line_count": 137
+    },
+    {
+      "path": "docs/handoff/waiting_loss_evidence_20260802/artifact_hashes.json",
+      "size_bytes": 501,
+      "sha256": "25e35c4efd2a199d0ef1c02d7a50b32a6647b18e9338cfcba92a8d25306011aa",
+      "text_scanned": true,
+      "line_count": 9
+    },
+    {
+      "path": "docs/handoff/waiting_loss_evidence_20260802/candidates.json",
+      "size_bytes": 12498,
+      "sha256": "43ec356848e0e76e608b155b11e7a1c3a7d21791f3b1ecebd0278bb769ae2ac9",
+      "text_scanned": true,
+      "line_count": 183
+    },
+    {
+      "path": "docs/handoff/waiting_loss_evidence_20260802/done.json",
+      "size_bytes": 165,
+      "sha256": "843466978ee5f23269794f592014243999963a0adb55fe7869fa5801dc69c873",
+      "text_scanned": true,
+      "line_count": 7
+    },
+    {
+      "path": "docs/handoff/waiting_loss_evidence_20260802/report.md",
+      "size_bytes": 22674,
+      "sha256": "4730644c7d31308f8393be7980ef9deb86c6c0b1d31ec51443f5b05856fa431d",
+      "text_scanned": true,
+      "line_count": 168
+    }
+  ]
+}

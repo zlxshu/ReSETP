@@ -1,0 +1,57 @@
+{
+  "schema_version": "resetp.t23-charging-timing-run-halt.v1",
+  "task_id": "T23",
+  "created_at_utc": "2026-08-05T11:19:12Z",
+  "status": "HALT_T23_RUNNER_STOP_AND_FAILURE_CONTRACT_UNAVAILABLE_NO_SEARCH",
+  "batch_type": "EXPLORATORY",
+  "paper_claim_allowed": false,
+  "registered_run_count": 90,
+  "started_run_count": 0,
+  "completed_run_count": 0,
+  "failed_run_count": 0,
+  "search_started": false,
+  "runner_executed": false,
+  "monitor_started": false,
+  "planned_workers": 6,
+  "global_hgs_wallclock_seconds": null,
+  "planned_command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py --mode full --output docs/handoff/charging_timing_three_arms_run_20260805 --workers 6",
+  "planned_command_executed": false,
+  "halt_before_command_reason": [
+    "full mode passes the reference iteration mapping as a hard MaxIterations stop for every view",
+    "no registered plateau window or external stop authorization exists for deciding the eventual stop after continuation",
+    "one future exception aborts the batch instead of recording the failed unit and continuing",
+    "run artifacts are materialized only after all futures return, so completed-unit state is not durably preserved on a future exception"
+  ],
+  "evidence_locations": {
+    "runner_reference_iterations": "baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py:101",
+    "runner_full_configuration": "baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py:1023",
+    "runner_unhandled_future_result": "baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py:1041",
+    "hgs_hard_max_iterations": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:197",
+    "hgs_stop_reason": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:724"
+  },
+  "input_sha256": {
+    "baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py": "6a4f0ef70f3fd364e0b3d2e846d5c0b7c8a2d060d34bf77d586cb31e69d5e659",
+    "docs/handoff/charging_timing_three_arms_20260805/preregistration.json": "2391f0fb4396f3230e02149e34fae6df397061293a7cdf5c8db56b55f662a2a1"
+  },
+  "protected_file_sha256_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_file_sha256_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_files_unchanged": true,
+  "environment": {
+    "python": "3.13.9",
+    "python_executable": "/opt/anaconda3/bin/python3.13",
+    "numpy": "2.3.5",
+    "scipy": "1.16.3",
+    "pyvrp": "0.12.2",
+    "PYTHONHASHSEED_required": "0",
+    "PYTHONHASHSEED_used_for_search": null
+  },
+  "appledouble_sidecars_removed_before_hashing": 7
+}

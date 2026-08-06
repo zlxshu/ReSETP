@@ -1,0 +1,21 @@
+{
+  "conditions": [
+    "Use separate table identifiers and titles: route slots for X4, physical assets for Y2.",
+    "Never compare X4 R_d or candidate_total directly with Y2 physical-vehicle counts without the trips-to-assets mapping.",
+    "Only Y2 can support the paper's retained physical multi-trip fleet claim.",
+    "X4 can explain why a route-count fleet rule overstates assets and why its 75/81 all-EV result does not transfer to fixed physical-trip chains."
+  ],
+  "counts": {
+    "better_instances": 0,
+    "multitrip_100_percent_certified": 41,
+    "single_trip_100_percent_certified": 75,
+    "worse_instances": 34
+  },
+  "decision": "BOTH_MAY_APPEAR_ONLY_WITH_DIFFERENT_EVIDENTIARY_ROLES",
+  "formal_table": "Y2 multitrip physical-fleet table",
+  "main_text_rule": "Do not place both as two estimates of one experiment. If X4 is retained, label it a restricted single-trip diagnostic and place it outside the main multitrip level table.",
+  "schema": "resetp.y2-single-vs-multitrip-relation.v1",
+  "status": "Y2_FLEET_MULTITRIP_COMPLETE",
+  "task_id": "Y2",
+  "x4_disposition": "route-level single-trip diagnostic or appendix only; not a coequal fleet-sizing result"
+}

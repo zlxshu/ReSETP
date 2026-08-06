@@ -1,0 +1,10 @@
+E1 repaired route=['D0', 'F2', 'C3', 'D0']
+E1 A timing={'route_id': 'EV_T14_E1', 'vehicle_type': 'ev', 'home_depot_id': 'D0', 'earliest_departure_second': 0.0, 'return_second': 14516.411895758229, 'drive_energy_kwh': 83.5053949457802, 'public_charge_energy_kwh': 3.5053949457801963, 'required_departure_battery_kwh': 80.0}
+E1 B depot window={'earliest': 9073.829432129312, 'latest': 22442.0614769616, 'arrival_used': 0.0}
+E1 B public window={'earliest': 425.79162846189837, 'latest': 22381.093839624275, 'arrival_used': 425.79162846189837}
+E2 certificate trip count=8
+E2 transitions=[{'physical_vehicle_id': 'CV_D_beijing_1', 'previous_route_id': 'CV_D_beijing_1#T1', 'previous_return_second': 50586.92724, 'current_route_id': 'CV_D_beijing_1#T2', 'current_departure_second': 50609.73646, 'gap_seconds': 22.809220000002824, 'constraint_observed': True}]
+E2 B timing={'route_id': 'EV_D_beijing_1#T1', 'vehicle_type': 'ev', 'home_depot_id': 'D_beijing', 'earliest_departure_second': 42560.10838, 'return_second': 58990.435099999995, 'drive_energy_kwh': 27.74184851091978, 'public_charge_energy_kwh': 0.0, 'required_departure_battery_kwh': None}
+E2 B depot window={'earliest': 58990.435099999995, 'latest': 208491.0182891222, 'arrival_used': 21600.0}
+E2 C timing={'route_id': 'EV_D_beijing_1#T1', 'vehicle_type': 'ev', 'home_depot_id': 'D_beijing', 'earliest_departure_second': 42560.10838, 'return_second': 58990.435099999995, 'drive_energy_kwh': 27.74184851091978, 'public_charge_energy_kwh': 0.0, 'required_departure_battery_kwh': None}
+E2 C depot window={'earliest': 0.0, 'latest': 35691.018289122214, 'route_departure_anchor': 40230.593499999995}

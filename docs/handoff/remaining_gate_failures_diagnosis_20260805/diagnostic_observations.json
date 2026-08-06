@@ -1,0 +1,2092 @@
+{
+  "environment": {
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH_contract": "solver/src:models/src",
+    "repository": "/Volumes/移动硬盘（512G）/ReSETP"
+  },
+  "refined": {
+    "fixture": {
+      "nodes": [
+        {
+          "node_id": "D0",
+          "node_type": "d",
+          "physical_station_id": "D0"
+        },
+        {
+          "node_id": "C1",
+          "node_type": "c",
+          "physical_station_id": "C1"
+        },
+        {
+          "node_id": "F1",
+          "node_type": "f",
+          "physical_station_id": "F1"
+        }
+      ]
+    },
+    "integrated_route_repair": {
+      "actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_end_second": 21090.90909090909,
+          "charge_start_second": 8000.0,
+          "energy_kwh": 80.0,
+          "node_type": "d",
+          "occupancy_minutes": 218.18181818181816,
+          "overlap_seconds": 2492.7836661404344,
+          "physical_station_id": "D0",
+          "route_node_sequence": [
+            "D0",
+            "F1",
+            "C1",
+            "D0"
+          ],
+          "skip_public_station_branch": false,
+          "station_id": "D0",
+          "station_id_in_route_node_sequence": true,
+          "trip_interval": [
+            0.0,
+            10492.783666140434
+          ],
+          "vehicle_id": "EV1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_end_second": 5692.783666140434,
+          "charge_start_second": 5400.0,
+          "energy_kwh": 4.879727769007232,
+          "node_type": "f",
+          "occupancy_minutes": 4.879727769007233,
+          "overlap_seconds": 292.78366614043443,
+          "physical_station_id": "F1",
+          "route_node_sequence": [
+            "D0",
+            "F1",
+            "C1",
+            "D0"
+          ],
+          "skip_public_station_branch": true,
+          "station_id": "F1",
+          "station_id_in_route_node_sequence": true,
+          "trip_interval": [
+            0.0,
+            10492.783666140434
+          ],
+          "vehicle_id": "EV1"
+        }
+      ],
+      "route_node_sequence": [
+        "D0",
+        "F1",
+        "C1",
+        "D0"
+      ],
+      "route_timing": {
+        "earliest_departure_second": 0.0,
+        "return_second": 10492.783666140434
+      },
+      "violations": [
+        {
+          "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[8000.000000,21090.909091), trip=[0.000000,10492.783666)",
+          "location": "EV1",
+          "type": "CHARGING_TRIP_OVERLAP",
+          "vehicle_id": "EV1"
+        }
+      ]
+    },
+    "refined_reset_reconstruction": {
+      "actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_end_second": 22090.90909090909,
+          "charge_start_second": 9000.0,
+          "energy_kwh": 80.0,
+          "node_type": "d",
+          "occupancy_minutes": 218.18181818181816,
+          "overlap_seconds": 1492.7836661404344,
+          "physical_station_id": "D0",
+          "route_node_sequence": [
+            "D0",
+            "F1",
+            "C1",
+            "D0"
+          ],
+          "skip_public_station_branch": false,
+          "station_id": "D0",
+          "station_id_in_route_node_sequence": true,
+          "trip_interval": [
+            0.0,
+            10492.783666140434
+          ],
+          "vehicle_id": "EV1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_end_second": 5692.783666140434,
+          "charge_start_second": 5400.0,
+          "energy_kwh": 4.879727769007232,
+          "node_type": "f",
+          "occupancy_minutes": 4.879727769007233,
+          "overlap_seconds": 292.78366614043443,
+          "physical_station_id": "F1",
+          "route_node_sequence": [
+            "D0",
+            "F1",
+            "C1",
+            "D0"
+          ],
+          "skip_public_station_branch": true,
+          "station_id": "F1",
+          "station_id_in_route_node_sequence": true,
+          "trip_interval": [
+            0.0,
+            10492.783666140434
+          ],
+          "vehicle_id": "EV1"
+        }
+      ],
+      "candidate_result": {
+        "actual_evals_added": 1,
+        "hard_violation_count": 0
+      },
+      "route_node_sequence": [
+        "D0",
+        "F1",
+        "C1",
+        "D0"
+      ],
+      "route_timing": {
+        "earliest_departure_second": 0.0,
+        "return_second": 10492.783666140434
+      },
+      "violations": [
+        {
+          "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[9000.000000,22090.909091), trip=[0.000000,10492.783666)",
+          "location": "EV1",
+          "type": "CHARGING_TRIP_OVERLAP",
+          "vehicle_id": "EV1"
+        }
+      ]
+    }
+  },
+  "search": {
+    "deterministic_C3_window_comparison": {
+      "battery_capacity_kwh": 80.0,
+      "chosen_actions": [
+        {
+          "end_second": 22164.738523038402,
+          "energy_kwh": 80.0,
+          "start_second": 9073.829432129312,
+          "station_id": "D0"
+        },
+        {
+          "end_second": 9000.0,
+          "energy_kwh": 3.5053949457801963,
+          "start_second": 8789.676303253189,
+          "station_id": "F2"
+        }
+      ],
+      "customer_ready_due": {
+        "C3_due": 24873.4,
+        "C3_ready": 5839.4
+      },
+      "depot_open_ready_second": 0.0,
+      "direct_energy_kwh": 83.48426334435885,
+      "generated_windows": {
+        "formula_diff": "none in search/charging.py; current git diff only moves _curve_aware_action import",
+        "post_T10": {
+          "depot": [
+            9073.829432129312,
+            22442.0614769616
+          ],
+          "public_F2": [
+            425.79162846189837,
+            22381.093839624275
+          ]
+        },
+        "pre_T10": {
+          "depot": [
+            9073.829432129312,
+            22442.0614769616
+          ],
+          "public_F2": [
+            425.79162846189837,
+            22381.093839624275
+          ]
+        }
+      },
+      "post_T10_route_timing_with_public_action": {
+        "departure_second": 0.0,
+        "interval": [
+          0.0,
+          14516.411895758229
+        ],
+        "return_second": 14516.411895758229
+      },
+      "route": [
+        "D0",
+        "C3",
+        "D0"
+      ],
+      "route_clock_without_public_charge": {
+        "departure_second": 3132.970567870687,
+        "return_second": 9073.829432129312
+      },
+      "route_due_second": 32400.0,
+      "window_widths": {
+        "depot_seconds": 13368.232044832288,
+        "public_F2_seconds": 21955.302211162376
+      }
+    },
+    "enumeration": {
+      "candidate_count": 50,
+      "candidate_rows": [
+        {
+          "base_route": [
+            "D0",
+            "C1",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C1",
+          "depot_id": "D0",
+          "direct_energy_kwh": 59.56310498739108,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 19324.143059415237,
+              "charge_start_second": 6233.233968506146,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C1",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9000.0,
+              "charge_start_second": 7009.796295659113,
+              "energy_kwh": 33.17006173901479,
+              "node_type": "f",
+              "occupancy_minutes": 33.17006173901479,
+              "overlap_seconds": null,
+              "physical_station_id": "F3",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C1",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F3",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C1",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [6233.234,19324.143) and [7009.796,9000.000)",
+              "location": "D1->F3",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[6233.233969,19324.143059), trip=[0.000000,13889.103134)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=6233.234, completion=19324.143, departure=0.000, return=7915.167, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7009.796 is early by 15340.411 s (earliest=22350.207)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C1",
+          "depot_id": "D1",
+          "direct_energy_kwh": 86.83841543558096,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [6233.234,19324.143) and [7009.796,9000.000)",
+              "location": "D1->F3",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=6233.234, completion=19324.143, departure=0.000, return=7915.167, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7009.796 is early by 15340.411 s (earliest=22350.207)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F3",
+              "C1",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C2",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C2",
+          "depot_id": "D0",
+          "direct_energy_kwh": 134.98999027494125,
+          "exception": "ValueError: No feasible charging insert between C2 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C2",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C2",
+          "depot_id": "D1",
+          "direct_energy_kwh": 40.90109135996963,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 22164.738523038402,
+              "charge_start_second": 9073.829432129312,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D0",
+              "route_node_sequence": [
+                "D0",
+                "F2",
+                "C3",
+                "D0"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D0",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9000.0,
+              "charge_start_second": 8789.676303253189,
+              "energy_kwh": 3.5053949457801963,
+              "node_type": "f",
+              "occupancy_minutes": 3.505394945780199,
+              "overlap_seconds": null,
+              "physical_station_id": "F2",
+              "route_node_sequence": [
+                "D0",
+                "F2",
+                "C3",
+                "D0"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F2",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D0",
+            "C3",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[9073.829432,22164.738523), trip=[0.000000,14516.411896)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C3",
+          "depot_id": "D0",
+          "direct_energy_kwh": 83.48426334435885,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": true,
+          "pre_T10_checker_simulation_violations": [],
+          "repaired_route": [
+            [
+              "D0",
+              "F2",
+              "C3",
+              "D0"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D1",
+            "C3",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C3",
+          "depot_id": "D1",
+          "direct_energy_kwh": 50.83910731432175,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C4",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C4",
+          "depot_id": "D0",
+          "direct_energy_kwh": 1.7069258119129311,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 20967.87964052771,
+              "charge_start_second": 7876.970549618618,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C4",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9000.0,
+              "charge_start_second": 7170.030711519572,
+              "energy_kwh": 30.49948814134047,
+              "node_type": "f",
+              "occupancy_minutes": 30.49948814134047,
+              "overlap_seconds": null,
+              "physical_station_id": "F3",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C4",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F3",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C4",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7170.031,9000.000) and [7876.971,20967.880)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[7876.970550,20967.879641), trip=[0.000000,13871.095896)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7876.971, completion=20967.880, departure=0.000, return=7897.160, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7170.031 is early by 16823.913 s (earliest=23993.943)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C4",
+          "depot_id": "D1",
+          "direct_energy_kwh": 110.19186378226952,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7170.031,9000.000) and [7876.971,20967.880)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7876.971, completion=20967.880, departure=0.000, return=7897.160, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7170.031 is early by 16823.913 s (earliest=23993.943)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F3",
+              "C4",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C5",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C5",
+          "depot_id": "D0",
+          "direct_energy_kwh": 90.37924865357992,
+          "exception": "ValueError: No feasible charging insert between C5 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C5",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C5",
+          "depot_id": "D1",
+          "direct_energy_kwh": 21.128722389523418,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C6",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C6",
+          "depot_id": "D0",
+          "direct_energy_kwh": 110.30564205828395,
+          "exception": "ValueError: No feasible charging insert between C6 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C6",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C6",
+          "depot_id": "D1",
+          "direct_energy_kwh": 65.26897794636818,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C7",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C7",
+          "depot_id": "D0",
+          "direct_energy_kwh": 8.222020786889573,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 20029.221005354237,
+              "charge_start_second": 6938.311914445147,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C7",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9000.0,
+              "charge_start_second": 7616.4145891678445,
+              "energy_kwh": 23.059756847202593,
+              "node_type": "f",
+              "occupancy_minutes": 23.059756847202596,
+              "overlap_seconds": null,
+              "physical_station_id": "F2",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C7",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F2",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C7",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [6938.312,20029.221) and [7616.415,9000.000)",
+              "location": "D1->F2",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[6938.311914,20029.221005), trip=[0.000000,12737.048071)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=6938.312, completion=20029.221, departure=0.000, return=6966.560, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7616.415 is early by 15642.318 s (earliest=23258.733)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C7",
+          "depot_id": "D1",
+          "direct_energy_kwh": 102.62394401180826,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [6938.312,20029.221) and [7616.415,9000.000)",
+              "location": "D1->F2",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=6938.312, completion=20029.221, departure=0.000, return=6966.560, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7616.415 is early by 15642.318 s (earliest=23258.733)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F2",
+              "C7",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C8",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C8",
+          "depot_id": "D0",
+          "direct_energy_kwh": 1.132459852155518,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 21838.37121513024,
+              "charge_start_second": 8747.462124221147,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C8",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9000.0,
+              "charge_start_second": 7189.042676547623,
+              "energy_kwh": 30.182622057539618,
+              "node_type": "f",
+              "occupancy_minutes": 30.182622057539614,
+              "overlap_seconds": null,
+              "physical_station_id": "F3",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C8",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F3",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C8",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7189.043,9000.000) and [8747.462,21838.371)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[8747.462124,21838.371215), trip=[0.000000,14745.745103)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=8747.462, completion=21838.371, departure=0.000, return=8771.809, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7189.043 is early by 17675.392 s (earliest=24864.435)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C8",
+          "depot_id": "D1",
+          "direct_energy_kwh": 109.8120058601425,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7189.043,9000.000) and [8747.462,21838.371)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=8747.462, completion=21838.371, departure=0.000, return=8771.809, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7189.043 is early by 17675.392 s (earliest=24864.435)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F3",
+              "C8",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C9",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C9",
+          "depot_id": "D0",
+          "direct_energy_kwh": 111.43482474249544,
+          "exception": "ValueError: No feasible charging insert between C9 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C9",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C9",
+          "depot_id": "D1",
+          "direct_energy_kwh": 3.118560447969158,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C10",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C10",
+          "depot_id": "D0",
+          "direct_energy_kwh": 65.7520563658273,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C10",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C10",
+          "depot_id": "D1",
+          "direct_energy_kwh": 50.65726521456699,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C11",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C11",
+          "depot_id": "D0",
+          "direct_energy_kwh": 45.97291055367743,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C11",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C11",
+          "depot_id": "D1",
+          "direct_energy_kwh": 123.6153072097467,
+          "exception": "ValueError: No feasible charging insert between C11 and D1",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C12",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C12",
+          "depot_id": "D0",
+          "direct_energy_kwh": 24.27282282473677,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 20940.627404749328,
+              "charge_start_second": 7849.71831384024,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C12",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9000.0,
+              "charge_start_second": 6639.190088735939,
+              "energy_kwh": 39.34683185440102,
+              "node_type": "f",
+              "occupancy_minutes": 39.34683185440102,
+              "overlap_seconds": null,
+              "physical_station_id": "F2",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C12",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F2",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C12",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [6639.190,9000.000) and [7849.718,20940.627)",
+              "location": "F2->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[7849.718314,20940.627405), trip=[0.000000,13800.159011)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7849.718, completion=20940.627, departure=0.000, return=8029.671, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=6639.190 is early by 17530.949 s (earliest=24170.139)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C12",
+          "depot_id": "D1",
+          "direct_energy_kwh": 116.56957467642269,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [6639.190,9000.000) and [7849.718,20940.627)",
+              "location": "F2->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7849.718, completion=20940.627, departure=0.000, return=8029.671, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=6639.190 is early by 17530.949 s (earliest=24170.139)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F2",
+              "C12",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C13",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C13",
+          "depot_id": "D0",
+          "direct_energy_kwh": 118.1633966350994,
+          "exception": "ValueError: No feasible charging insert between C13 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C13",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C13",
+          "depot_id": "D1",
+          "direct_energy_kwh": 9.232655738092419,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C14",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C14",
+          "depot_id": "D0",
+          "direct_energy_kwh": 3.2628011083010167,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 20422.002456201142,
+              "charge_start_second": 7331.093365292051,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C14",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 8890.118325011814,
+              "charge_start_second": 7200.0,
+              "energy_kwh": 28.168638750196905,
+              "node_type": "f",
+              "occupancy_minutes": 28.168638750196905,
+              "overlap_seconds": null,
+              "physical_station_id": "F3",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C14",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F3",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C14",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7200.000,8890.118) and [7331.093,20422.002)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[7331.093365,20422.002456), trip=[0.000000,13248.728018)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7331.093, completion=20422.002, departure=0.000, return=7384.673, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7200.000 is early by 16248.066 s (earliest=23448.066)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C14",
+          "depot_id": "D1",
+          "direct_energy_kwh": 107.33322588986417,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7200.000,8890.118) and [7331.093,20422.002)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7331.093, completion=20422.002, departure=0.000, return=7384.673, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7200.000 is early by 16248.066 s (earliest=23448.066)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F3",
+              "C14",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C15",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C15",
+          "depot_id": "D0",
+          "direct_energy_kwh": 114.40196967533112,
+          "exception": "ValueError: No feasible charging insert between C15 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C15",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C15",
+          "depot_id": "D1",
+          "direct_energy_kwh": 8.229942053769324,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C16",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C16",
+          "depot_id": "D0",
+          "direct_energy_kwh": 25.427116806079766,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 20857.96838705297,
+              "charge_start_second": 7767.059296143878,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C16",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9517.996852239528,
+              "charge_start_second": 7200.0,
+              "energy_kwh": 38.63328087065883,
+              "node_type": "f",
+              "occupancy_minutes": 38.63328087065882,
+              "overlap_seconds": null,
+              "physical_station_id": "F2",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C16",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F2",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C16",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7200.000,9517.997) and [7767.059,20857.968)",
+              "location": "F2->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[7767.059296,20857.968387), trip=[0.000000,14300.678836)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7767.059, completion=20857.968, departure=0.000, return=8012.194, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7200.000 is early by 16887.480 s (earliest=24087.480)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C16",
+          "depot_id": "D1",
+          "direct_energy_kwh": 114.76280959975459,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7200.000,9517.997) and [7767.059,20857.968)",
+              "location": "F2->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7767.059, completion=20857.968, departure=0.000, return=8012.194, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7200.000 is early by 16887.480 s (earliest=24087.480)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F2",
+              "C16",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C17",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C17",
+          "depot_id": "D0",
+          "direct_energy_kwh": 23.27083148537446,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 21078.88885766265,
+              "charge_start_second": 7987.97976675356,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C17",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9000.0,
+              "charge_start_second": 6792.5692401010065,
+              "energy_kwh": 36.79051266498322,
+              "node_type": "f",
+              "occupancy_minutes": 36.790512664983225,
+              "overlap_seconds": null,
+              "physical_station_id": "F3",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C17",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F3",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C17",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [6792.569,9000.000) and [7987.980,21078.889)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[7987.979767,21078.888858), trip=[0.000000,14119.814993)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7987.980, completion=21078.889, departure=0.000, return=8145.879, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=6792.569 is early by 17312.383 s (earliest=24104.953)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C17",
+          "depot_id": "D1",
+          "direct_energy_kwh": 114.29933020751673,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [6792.569,9000.000) and [7987.980,21078.889)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=7987.980, completion=21078.889, departure=0.000, return=8145.879, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=6792.569 is early by 17312.383 s (earliest=24104.953)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F3",
+              "C17",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C18",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C18",
+          "depot_id": "D0",
+          "direct_energy_kwh": 136.1950695551467,
+          "exception": "ValueError: No feasible charging insert between C18 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C18",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C18",
+          "depot_id": "D1",
+          "direct_energy_kwh": 27.444397517219414,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C19",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C19",
+          "depot_id": "D0",
+          "direct_energy_kwh": 28.465635220513178,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 21735.046812941233,
+              "charge_start_second": 8644.137722032145,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C19",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 10038.780789467142,
+              "charge_start_second": 7200.0,
+              "energy_kwh": 47.31301315778572,
+              "node_type": "f",
+              "occupancy_minutes": 47.31301315778572,
+              "overlap_seconds": null,
+              "physical_station_id": "F2",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C19",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F2",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C19",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7200.000,10038.781) and [8644.138,21735.047)",
+              "location": "F2->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[8644.137722,21735.046813), trip=[0.000000,15592.924123)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=8644.138, completion=21735.047, departure=0.000, return=8783.655, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7200.000 is early by 17764.559 s (earliest=24964.559)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C19",
+          "depot_id": "D1",
+          "direct_energy_kwh": 125.14986912428526,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7200.000,10038.781) and [8644.138,21735.047)",
+              "location": "F2->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=8644.138, completion=21735.047, departure=0.000, return=8783.655, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7200.000 is early by 17764.559 s (earliest=24964.559)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F2",
+              "C19",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C20",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C20",
+          "depot_id": "D0",
+          "direct_energy_kwh": 92.0679750275909,
+          "exception": "ValueError: No feasible charging insert between C20 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C20",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C20",
+          "depot_id": "D1",
+          "direct_energy_kwh": 20.53943745852505,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C21",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C21",
+          "depot_id": "D0",
+          "direct_energy_kwh": 47.35566504203992,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C21",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C21",
+          "depot_id": "D1",
+          "direct_energy_kwh": 120.78089373091143,
+          "exception": "ValueError: No feasible charging insert between C21 and D1",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C22",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C22",
+          "depot_id": "D0",
+          "direct_energy_kwh": 86.73313583473853,
+          "exception": "ValueError: No feasible charging insert between C22 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C22",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C22",
+          "depot_id": "D1",
+          "direct_energy_kwh": 52.941334923454065,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C23",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C23",
+          "depot_id": "D0",
+          "direct_energy_kwh": 3.931810681815674,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 21347.08951090111,
+              "charge_start_second": 8256.18041999202,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C23",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 8839.858206593624,
+              "charge_start_second": 7200.0,
+              "energy_kwh": 27.330970109893755,
+              "node_type": "f",
+              "occupancy_minutes": 27.330970109893755,
+              "overlap_seconds": null,
+              "physical_station_id": "F3",
+              "route_node_sequence": [
+                "D1",
+                "F3",
+                "C23",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F3",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C23",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7200.000,8839.858) and [8256.180,21347.090)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[8256.180420,21347.089511), trip=[0.000000,14126.959997)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=8256.180, completion=21347.090, departure=0.000, return=8313.166, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7200.000 is early by 17173.153 s (earliest=24373.153)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C23",
+          "depot_id": "D1",
+          "direct_energy_kwh": 106.44571003625038,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7200.000,8839.858) and [8256.180,21347.090)",
+              "location": "F3->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=8256.180, completion=21347.090, departure=0.000, return=8313.166, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7200.000 is early by 17173.153 s (earliest=24373.153)",
+              "location": "F3",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F3",
+              "C23",
+              "D1"
+            ]
+          ]
+        },
+        {
+          "base_route": [
+            "D0",
+            "C24",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C24",
+          "depot_id": "D0",
+          "direct_energy_kwh": 136.41082299413762,
+          "exception": "ValueError: No feasible charging insert between C24 and D0",
+          "generation_stage": "repair_exception"
+        },
+        {
+          "base_route": [
+            "D1",
+            "C24",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C24",
+          "depot_id": "D1",
+          "direct_energy_kwh": 26.858454918461426,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "base_route": [
+            "D0",
+            "C25",
+            "D0"
+          ],
+          "battery_kwh": 80.0,
+          "customer_id": "C25",
+          "depot_id": "D0",
+          "direct_energy_kwh": 3.117831876462837,
+          "generation_stage": "skipped_energy_not_over_battery"
+        },
+        {
+          "action_count": 2,
+          "actions": [
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 21731.30783506573,
+              "charge_start_second": 8640.398744156642,
+              "energy_kwh": 80.0,
+              "node_type": "d",
+              "occupancy_minutes": 218.18181818181816,
+              "overlap_seconds": null,
+              "physical_station_id": "D1",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C25",
+                "D1"
+              ],
+              "skip_public_station_branch": false,
+              "station_id": "D1",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "charge_day_offset": 0,
+              "charge_end_second": 9000.0,
+              "charge_start_second": 7341.083606136405,
+              "energy_kwh": 27.648606564393248,
+              "node_type": "f",
+              "occupancy_minutes": 27.64860656439325,
+              "overlap_seconds": null,
+              "physical_station_id": "F2",
+              "route_node_sequence": [
+                "D1",
+                "F2",
+                "C25",
+                "D1"
+              ],
+              "skip_public_station_branch": true,
+              "station_id": "F2",
+              "station_id_in_route_node_sequence": true,
+              "trip_interval": null,
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "base_route": [
+            "D1",
+            "C25",
+            "D1"
+          ],
+          "battery_kwh": 80.0,
+          "current_candidate_passes": false,
+          "current_checker_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7341.084,9000.000) and [8640.399,21731.308)",
+              "location": "F2->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "charging interval intersects the same physical vehicle's outside interval: charge=[8640.398744,21731.307835), trip=[0.000000,14457.083993)",
+              "location": "EV1#T1",
+              "type": "CHARGING_TRIP_OVERLAP",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=8640.399, completion=21731.308, departure=0.000, return=8686.596, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7341.084 is early by 17619.736 s (earliest=24960.820)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "customer_id": "C25",
+          "depot_id": "D1",
+          "direct_energy_kwh": 106.93902841747946,
+          "generation_stage": "candidate_built",
+          "pre_T10_checker_candidate_passes": false,
+          "pre_T10_checker_simulation_violations": [
+            {
+              "detail": "one physical vehicle has overlapping charging sessions [7341.084,9000.000) and [8640.399,21731.308)",
+              "location": "F2->D1",
+              "type": "STATION_CAPACITY",
+              "vehicle_id": "EV1"
+            },
+            {
+              "detail": "depot charging must finish before current departure or lie between route return and the next departure (start=8640.399, completion=21731.308, departure=0.000, return=8686.596, next_departure=86400.000)",
+              "location": "D1",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "detail": "charge_start=7341.084 is early by 17619.736 s (earliest=24960.820)",
+              "location": "F2",
+              "type": "CHARGING_START",
+              "vehicle_id": "EV1#T1"
+            }
+          ],
+          "repaired_route": [
+            [
+              "D1",
+              "F2",
+              "C25",
+              "D1"
+            ]
+          ]
+        }
+      ]
+    },
+    "fixture_path": "/Volumes/移动硬盘（512G）/ReSETP/models/data_bundle/generated_instances/verify_20251113",
+    "instance": {
+      "battery_capacity_kwh": 80.0,
+      "depot_nodes": [
+        {
+          "due_time": 32400.0,
+          "node_id": "D0",
+          "ready_time": 0.0
+        },
+        {
+          "due_time": 32400.0,
+          "node_id": "D1",
+          "ready_time": 0.0
+        }
+      ],
+      "num_cv": 10,
+      "num_ev": 10,
+      "station_nodes": [
+        {
+          "charge_power_kw": 60.0,
+          "due_time": 32400.0,
+          "node_id": "F1",
+          "node_type": "f",
+          "physical_station_id": "F1",
+          "ready_time": 0.0
+        },
+        {
+          "charge_power_kw": 60.0,
+          "due_time": 32400.0,
+          "node_id": "F2",
+          "node_type": "f",
+          "physical_station_id": "F2",
+          "ready_time": 0.0
+        },
+        {
+          "charge_power_kw": 60.0,
+          "due_time": 32400.0,
+          "node_id": "F3",
+          "node_type": "f",
+          "physical_station_id": "F3",
+          "ready_time": 0.0
+        }
+      ]
+    },
+    "test_entry_outcomes": {
+      "h2": {
+        "exception": "ValueError: HALT_H2: no feasible EV route with a nonzero charging action",
+        "status": "exception"
+      },
+      "h3": {
+        "exception": "ValueError: HALT_H2: no feasible EV route with a nonzero charging action",
+        "status": "exception"
+      },
+      "m0": {
+        "exception": "ValueError: HALT_H2: no feasible EV route with a nonzero charging action",
+        "status": "exception"
+      }
+    }
+  }
+}

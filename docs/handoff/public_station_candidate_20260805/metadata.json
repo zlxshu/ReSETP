@@ -1,0 +1,137 @@
+{
+  "schema": "resetp.t18-public-station-candidate.v1",
+  "status": "HALT_REGRESSION_FAILED",
+  "paper_claim_allowed": false,
+  "started_at": "2026-08-05T08:18:57Z",
+  "ended_at": "2026-08-05T08:42:15Z",
+  "repo_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "environment": {
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH": "solver/src:models/src",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "switch": {
+    "name": "public_station_candidate_mode",
+    "values": [
+      "fallback",
+      "parallel"
+    ],
+    "default": "fallback"
+  },
+  "source_files_modified": [
+    "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py",
+    "solver/src/setp_solver/china81_completion.py"
+  ],
+  "protected_hashes_start": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_end": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "targeted_regression": {
+    "pytest": {
+      "result": "7 passed in 3.49s",
+      "exit_code": 0
+    },
+    "positive_overlap_samples": [
+      {
+        "key": "C_seed2_budget1000",
+        "violation_types": ["CHARGING_TRIP_OVERLAP"],
+        "overlap_seconds": 6563.0712245500035
+      },
+      {
+        "key": "C_seed1_budget100",
+        "violation_types": ["CHARGING_TRIP_OVERLAP"],
+        "overlap_seconds": 6365.9078330282355
+      },
+      {
+        "key": "C_seed3_budget1000",
+        "violation_types": ["CHARGING_TRIP_OVERLAP"],
+        "overlap_seconds": 6239.742124296223
+      }
+    ],
+    "t10_legal_checked": 18,
+    "t10_legal_passed": 18
+  },
+  "parallel_minimal_case": {
+    "source_instance": "cn-jjj-50c-01-V2-LOCATIONS",
+    "subinstance_nodes": ["D_beijing", "S_beijing", "C003"],
+    "route": ["D_beijing", "C003", "D_beijing"],
+    "candidate_count": 2,
+    "depot_candidate": {
+      "objective_cny": 245.8269329581829,
+      "distance_m": 80371.46081407,
+      "charging_electricity_cost_cny": 21.678085995586443,
+      "emissions_kgco2e": 3.9985099596052143,
+      "occupancy_cost_cny": 0.0,
+      "time_cost_cny": 0.0,
+      "violations": []
+    },
+    "public_station_candidate": {
+      "objective_cny": 267.38322772138827,
+      "distance_m": 87555.644999438,
+      "charging_electricity_cost_cny": 28.602201671528793,
+      "public_service_fee_cny": 7.593571132806687,
+      "emissions_kgco2e": 8.354838499436376,
+      "occupancy_cost_cny": 9.491963916008359,
+      "time_cost_cny": 0.0,
+      "violations": []
+    },
+    "selected": "depot_fallback",
+    "objective_gap_public_minus_depot_cny": 21.556294763205358
+  },
+  "failed_minimal_probe_before_correction": {
+    "exit_code": 1,
+    "candidate_count": 1,
+    "exception": "ValueError: No feasible charging insert between D_beijing and C003",
+    "observed_initial_battery_kwh": 0.0
+  },
+  "full_suite": {
+    "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src PYTHONDONTWRITEBYTECODE=1 /opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider solver/tests",
+    "expected": {
+      "passed": 906,
+      "skipped": 1,
+      "failed": 6
+    },
+    "actual": {
+      "passed": 905,
+      "skipped": 1,
+      "failed": 7,
+      "seconds": 425.13,
+      "exit_code": 1
+    },
+    "failure_tests": [
+      "solver/tests/test_alns_budget_accounting_g0_20260718.py::test_g0_static_audit_has_zero_blockers_and_five_surfaces",
+      "solver/tests/test_e2_80k_robustness_gate.py::test_protected_semantics_and_goeke80_parameters_match_frozen_commit",
+      "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+      "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts",
+      "solver/tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps",
+      "solver/tests/test_paper_evidence_boundaries.py::test_current_e2b_e3_e4_and_e6_identity_matrices_are_exact",
+      "solver/tests/test_strong_bridge_backend_alignment.py::StrongBridgeBackendAlignmentTests::test_decision_gate_reports_backend_only_and_main_local_search_separately"
+    ]
+  },
+  "raise_assert_audit": {
+    "existing_raise_deleted": 0,
+    "existing_assert_deleted": 0,
+    "existing_validation_weakened": 0,
+    "moved_direct_raise_branches": [
+      {
+        "condition": "unknown charging-repair strategy",
+        "destination": "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py:505"
+      },
+      {
+        "condition": "no charging stations available",
+        "destination": "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py:584"
+      },
+      {
+        "condition": "no feasible charging insert",
+        "destination": "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py:607"
+      }
+    ]
+  },
+  "excluded_names": ["._*", "__pycache__", ".pytest_cache"]
+}

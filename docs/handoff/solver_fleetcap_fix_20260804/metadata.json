@@ -1,0 +1,1381 @@
+{
+  "classification_rules": [
+    {
+      "category": "搜索未找到",
+      "message_rule": "startswith('SEARCH_NOT_FOUND:')"
+    },
+    {
+      "category": "业务硬不可行",
+      "message_rule": "startswith('BUSINESS_HARD_INFEASIBLE:')"
+    },
+    {
+      "category": "代理找到但完成失败",
+      "message_rule": "all other non-empty caught completion exception messages"
+    },
+    {
+      "action": "raise RuntimeError; do not classify by guess",
+      "message_rule": "empty exception message"
+    }
+  ],
+  "fleet_authority": {
+    "authority_artifact_hashes_sha256": "7d6a5bde40e6b814ed4dc2b6bea52387d8b7ceaaddadc179f02928e7cf34e8d0",
+    "fleet_caps_sha256": "ed9a584a31cc257eb064d5df9042f2df82a6b1868b73657474a9629e425f00b1",
+    "latest_version_found": true,
+    "manifest_sha256": "6f409ea92a02198485f066e57e8a06047a3bfc1f7b176f83089180e349ee2929",
+    "metadata_sha256": "31104bcadda1449059480a1e064f88b80cda495713c329d277d2c30d721711c0",
+    "path": "data/ChinaInstances/china81_finite_fleet_authority_v3_20260802"
+  },
+  "generated_at": "2026-08-04T07:33:41.127813+00:00",
+  "monitoring": {
+    "discarded_invocation_error": {
+      "reason": "operator omitted required --output argument",
+      "result_rows": 0,
+      "used_as_evidence": false
+    },
+    "post_probe": {
+      "findings": [],
+      "state": "COMPLETED"
+    },
+    "pre_probe": {
+      "findings": [],
+      "state": "COMPLETED"
+    }
+  },
+  "probe_contract": {
+    "archive_limit_per_view": 8,
+    "budgets": [
+      100,
+      1000
+    ],
+    "checkpoint_interval": 100,
+    "exact_elites_per_view": 2,
+    "fleet_caps_by_depot": {
+      "D_guangzhou": {
+        "num_cv": 3,
+        "num_ev": 1,
+        "total_fleet_cap": 4
+      },
+      "D_shenzhen": {
+        "num_cv": 3,
+        "num_ev": 1,
+        "total_fleet_cap": 4
+      }
+    },
+    "formal_experiment": false,
+    "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+    "post_result_sha256": "7c9d9d7cfd8ad4aec3dc6af99b0ba3cd6bbd1380b5da1b355aecc768af4186fb",
+    "post_trace_sha256": "614b8157cfcc4b5045bfc5093079cc1699b94cb5944d606c46b0391f2a63cbb5",
+    "pre_result_sha256": "1eafe5658e4071fcbc748ccb26190db7a1511e0b3582a5806bb494c27cddf00a",
+    "pre_trace_sha256": "30475b3f59742741fdd5d1f2a0c0eeb018b6591aee4c09069b295f39b7d98a54",
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "sp_seconds": 0.5
+  },
+  "protected_files": {
+    "solver/src/setp_solver/check.py": {
+      "after_sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+      "before_sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+      "task_modified": false
+    },
+    "solver/src/setp_solver/cost.py": {
+      "after_sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "before_sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "task_modified": false
+    },
+    "solver/src/setp_solver/search/evaluation.py": {
+      "after_sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "before_sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "task_modified": false
+    }
+  },
+  "repository": {
+    "branch": "codex/reporting-pipeline",
+    "head": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+    "task_diff_baseline": "per-file pre-task working-tree snapshots",
+    "worktree_was_dirty_before_task": true
+  },
+  "runtime": {
+    "numpy": "2.3.5",
+    "python": "3.13.9",
+    "pythonhashseed": 0,
+    "pyvrp": "0.12.2",
+    "scipy": "1.16.3"
+  },
+  "schema": "resetp.t4-solver-fleetcap-fix.metadata.v1",
+  "scope_guards": {
+    "fleet_caps_relaxed": false,
+    "formal_experiment_batches_started": 0,
+    "handoff_or_handoff_memory_modified": false,
+    "objective_or_cost_semantics_modified": false,
+    "paper_body_modified": false
+  },
+  "source_hashes": {
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+      "after_sha256": "661969f95ef7e86660d4ee250a48f8921c37990eb7721448d6126240677d6fbd",
+      "before_sha256": "15e2233837b63eea4ea7e729482ce24e787199815cd5af1cbcb9a35cbb0ec6ff"
+    },
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py": {
+      "after_sha256": "a00bfe1f6d43acd5539856a2324de077f8ff8d88de3576382156f08d1538a3bc",
+      "before_sha256": "7556b5ec29a1d2db28b131d0fe4e3c3e5833d8fd993c60c0428d5a7453aed845"
+    },
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+      "after_sha256": "58dd67eff098bc038865744a2b6e00d559960d4a0f4428ff9305b38d257eb6e1",
+      "before_sha256": "7b570ba5a793f7ca2c5484779eb8d91b3b7e0d048a8e15311fcd01429acf355c"
+    },
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/run_adapter_g0.py": {
+      "after_sha256": "d62e58f337762de660a67e093234f869eb4628516955ed9e407885d59ecd9f6f",
+      "before_sha256": "0629fcc2b538b18a9dfe597bb0ade628bb58d50212b70013951a22f1437e68b2"
+    },
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_pyvrp_adapter.py": {
+      "after_sha256": "796f252af3b38529852a22a59541fa0456e85efa866400565ed5c0366341818f",
+      "before_sha256": "1a65a0e3f8f31384557892f121903b291a0fa405027eaefa0940aa97233c6f17"
+    }
+  },
+  "task_id": "T4-SOLVER-FLEETCAP-FIX",
+  "validation": {
+    "v1": {
+      "all_logged_completion_evaluations": {
+        "attempts": 167,
+        "failures": 3,
+        "successes": 164
+      },
+      "search_candidate_completions": {
+        "attempts": 147,
+        "failures": 3,
+        "successes": 144
+      },
+      "success_gt_zero": true
+    },
+    "v2": {
+      "runs": [
+        {
+          "objective": 1930.5499913454935,
+          "objective_float_hex": "0x1.e2a3330ee67e9p+10",
+          "route_signature": [
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C002",
+                "C008",
+                "C021",
+                "C003",
+                "C017",
+                "C018",
+                "C019",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C007",
+                "C013",
+                "C001",
+                "C010",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C016",
+                "C020",
+                "C022",
+                "C015",
+                "C014",
+                "C011",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C028",
+                "C041",
+                "C036",
+                "C046",
+                "C032",
+                "C037",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C034",
+                "C026",
+                "C048",
+                "C033",
+                "C029",
+                "C024",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C039",
+                "C050",
+                "C040",
+                "C038",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C049",
+                "C031",
+                "C025",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "ev",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C009",
+                "C023",
+                "C005",
+                "C004",
+                "C012",
+                "C006",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "ev",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C043",
+                "C035",
+                "C047",
+                "C030",
+                "C045",
+                "C044",
+                "C027",
+                "C042",
+                "D_shenzhen"
+              ]
+            ]
+          ],
+          "route_signature_sha256": "70cbaf4a3c791216c195d86e519cfe0b2912064e5c19d224c9b714d532cdadcf",
+          "seed": 1
+        },
+        {
+          "objective": 1899.1067069707444,
+          "objective_float_hex": "0x1.dac6d44979669p+10",
+          "route_signature": [
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C005",
+                "C004",
+                "C017",
+                "C018",
+                "C012",
+                "C006",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C007",
+                "C001",
+                "C010",
+                "C013",
+                "C019",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C009",
+                "C015",
+                "C014",
+                "C011",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C016",
+                "C020",
+                "C022",
+                "C002",
+                "C008",
+                "C021",
+                "C003",
+                "C023",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C039",
+                "C040",
+                "C044",
+                "C038",
+                "C049",
+                "C025",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C045",
+                "C034",
+                "C026",
+                "C033",
+                "C029",
+                "C024",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C046",
+                "C047",
+                "C041",
+                "C036",
+                "C032",
+                "C037",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C050",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "ev",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C043",
+                "C028",
+                "C035",
+                "C030",
+                "C048",
+                "C027",
+                "C042",
+                "C031",
+                "D_shenzhen"
+              ]
+            ]
+          ],
+          "route_signature_sha256": "55c2267b6e5aa9791b50dfba7e41eaeb950b26d46e32089f2fcf923217e4a448",
+          "seed": 2
+        },
+        {
+          "objective": 1861.5953792129237,
+          "objective_float_hex": "0x1.d1661ab16a0e7p+10",
+          "route_signature": [
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C007",
+                "C013",
+                "C001",
+                "C010",
+                "C012",
+                "C006",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C016",
+                "C008",
+                "C002",
+                "C009",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C020",
+                "C022",
+                "C015",
+                "C014",
+                "C011",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_guangzhou",
+              [
+                "D_guangzhou",
+                "C021",
+                "C003",
+                "C023",
+                "C005",
+                "C004",
+                "C018",
+                "C017",
+                "C019",
+                "D_guangzhou"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C045",
+                "C044",
+                "C038",
+                "C049",
+                "C042",
+                "C031",
+                "C025",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C046",
+                "C041",
+                "C036",
+                "C047",
+                "C050",
+                "C039",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "cv",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C048",
+                "C027",
+                "C026",
+                "C033",
+                "C029",
+                "C024",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "ev",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C028",
+                "C043",
+                "D_shenzhen"
+              ]
+            ],
+            [
+              "ev",
+              "D_shenzhen",
+              [
+                "D_shenzhen",
+                "C035",
+                "C032",
+                "C037",
+                "C030",
+                "C040",
+                "C034",
+                "D_shenzhen"
+              ]
+            ]
+          ],
+          "route_signature_sha256": "84b5c5d706073bb5402bd8a67a7c872ef8654cc6b890339c310bab4e5720215d",
+          "seed": 3
+        }
+      ],
+      "seed_effective": true
+    },
+    "v3": {
+      "budget_100": {
+        "archive_limit_per_view": 8,
+        "budget": 100,
+        "candidate_completion_attempts": 30,
+        "candidate_completion_failures": 1,
+        "candidate_completion_successes": 29,
+        "checkpoint_interval": 100,
+        "checkpoint_series": [
+          {
+            "candidate_id": "b8cba8f70f790b30f453dd71fc6b7a102003d816925266cc39d8222e62c11f3c",
+            "complete_objective_float_hex": "0x1.04e5574149192p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 1,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 100,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "aeebab66145645f69d169bd730b1d47a380d0a1d3bad4530a9c1cfc616bb04fd",
+            "complete_objective_float_hex": "0x1.0deb01156f44dp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 12,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 100,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 23,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 100,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          }
+        ],
+        "exact_elites_per_view": 2,
+        "failure_category_distribution": {
+          "代理找到但完成失败": 1
+        },
+        "hgs_iterations_by_view": {
+          "cv_only": 100,
+          "mechanism_ev": 100,
+          "naive_ev": 100
+        },
+        "objective": 1930.5499913454935,
+        "objective_float_hex": "0x1.e2a3330ee67e9p+10",
+        "route_count": 9,
+        "route_signature": [
+          [
+            "cv",
+            "D_guangzhou",
+            [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C003",
+              "C017",
+              "C018",
+              "C019",
+              "D_guangzhou"
+            ]
+          ],
+          [
+            "cv",
+            "D_guangzhou",
+            [
+              "D_guangzhou",
+              "C007",
+              "C013",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ]
+          ],
+          [
+            "cv",
+            "D_guangzhou",
+            [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "D_guangzhou"
+            ]
+          ],
+          [
+            "cv",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C028",
+              "C041",
+              "C036",
+              "C046",
+              "C032",
+              "C037",
+              "D_shenzhen"
+            ]
+          ],
+          [
+            "cv",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C034",
+              "C026",
+              "C048",
+              "C033",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ]
+          ],
+          [
+            "cv",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C039",
+              "C050",
+              "C040",
+              "C038",
+              "D_shenzhen"
+            ]
+          ],
+          [
+            "cv",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C049",
+              "C031",
+              "C025",
+              "D_shenzhen"
+            ]
+          ],
+          [
+            "ev",
+            "D_guangzhou",
+            [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ]
+          ],
+          [
+            "ev",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C043",
+              "C035",
+              "C047",
+              "C030",
+              "C045",
+              "C044",
+              "C027",
+              "C042",
+              "D_shenzhen"
+            ]
+          ]
+        ],
+        "route_signature_sha256": "70cbaf4a3c791216c195d86e519cfe0b2912064e5c19d224c9b714d532cdadcf",
+        "run_id": "seed1_budget100",
+        "search_trace_sha256": "332cda23435ba64799b80985b46cc1808fec251f4069e9ec0589f3b5293a6aea",
+        "seed": 1,
+        "selected_source": "best_exact_hgs_parent",
+        "solution_sha256": "f4f676c37d56174f8055399033af5188dccb0eb5957a7ce51fd97a93e3e54a2f",
+        "sp_seconds": 0.5,
+        "total_distance_m": 601311.65668655,
+        "total_emissions_kg": 173.9091789279199
+      },
+      "budget_1000": {
+        "archive_limit_per_view": 8,
+        "budget": 1000,
+        "candidate_completion_attempts": 57,
+        "candidate_completion_failures": 0,
+        "candidate_completion_successes": 57,
+        "checkpoint_interval": 100,
+        "checkpoint_series": [
+          {
+            "candidate_id": "b8cba8f70f790b30f453dd71fc6b7a102003d816925266cc39d8222e62c11f3c",
+            "complete_objective_float_hex": "0x1.04e5574149192p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 1,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 100,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "c41addc5769246a555ebc54b606e986cd3977870cf48a7428b9ac81143876916",
+            "complete_objective_float_hex": "0x1.04a1e42ef832fp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 2,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 200,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "51def9c4c3ff5c1514f8a1f3b023e652f123df693501e9b083e7b6063dc6c9ee",
+            "complete_objective_float_hex": "0x1.191b1bf52fdfdp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 3,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 300,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "51def9c4c3ff5c1514f8a1f3b023e652f123df693501e9b083e7b6063dc6c9ee",
+            "complete_objective_float_hex": "0x1.191b1bf52fdfdp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 4,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 400,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "51def9c4c3ff5c1514f8a1f3b023e652f123df693501e9b083e7b6063dc6c9ee",
+            "complete_objective_float_hex": "0x1.191b1bf52fdfdp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 5,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 500,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "51def9c4c3ff5c1514f8a1f3b023e652f123df693501e9b083e7b6063dc6c9ee",
+            "complete_objective_float_hex": "0x1.191b1bf52fdfdp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 6,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 600,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "51def9c4c3ff5c1514f8a1f3b023e652f123df693501e9b083e7b6063dc6c9ee",
+            "complete_objective_float_hex": "0x1.191b1bf52fdfdp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 7,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 700,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "38b92bdce024e5bda08d74ae3771a0be430543478670affda9f905e379bc8870",
+            "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 8,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 800,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "38b92bdce024e5bda08d74ae3771a0be430543478670affda9f905e379bc8870",
+            "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 9,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 900,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "38b92bdce024e5bda08d74ae3771a0be430543478670affda9f905e379bc8870",
+            "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 10,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 1000,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "cv_only"
+          },
+          {
+            "candidate_id": "aeebab66145645f69d169bd730b1d47a380d0a1d3bad4530a9c1cfc616bb04fd",
+            "complete_objective_float_hex": "0x1.0deb01156f44dp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 21,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 100,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "07422a1d50cde3b7574eba6a31a97e97f09d629f3bcf451cb1bd712771555298",
+            "complete_objective_float_hex": "0x1.06f8a05b8b5d3p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 22,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 200,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "b0d146e1acf5fd4c0798f74a89d36533d43bbf92ed67ba3f2bbcf2307e25e79e",
+            "complete_objective_float_hex": "0x1.055b858a56932p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 23,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 300,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "b0d146e1acf5fd4c0798f74a89d36533d43bbf92ed67ba3f2bbcf2307e25e79e",
+            "complete_objective_float_hex": "0x1.055b858a56932p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 24,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 400,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "566d79990e114dbcce62bb7eb43cf4c2b65cfc82a25f38b992375ee35dc76ef7",
+            "complete_objective_float_hex": "0x1.0532e25f4475cp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 25,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 500,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "566d79990e114dbcce62bb7eb43cf4c2b65cfc82a25f38b992375ee35dc76ef7",
+            "complete_objective_float_hex": "0x1.0532e25f4475cp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 26,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 600,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "566d79990e114dbcce62bb7eb43cf4c2b65cfc82a25f38b992375ee35dc76ef7",
+            "complete_objective_float_hex": "0x1.0532e25f4475cp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 27,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 700,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "566d79990e114dbcce62bb7eb43cf4c2b65cfc82a25f38b992375ee35dc76ef7",
+            "complete_objective_float_hex": "0x1.0532e25f4475cp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 28,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 800,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "566d79990e114dbcce62bb7eb43cf4c2b65cfc82a25f38b992375ee35dc76ef7",
+            "complete_objective_float_hex": "0x1.0532e25f4475cp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 29,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 900,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "566d79990e114dbcce62bb7eb43cf4c2b65cfc82a25f38b992375ee35dc76ef7",
+            "complete_objective_float_hex": "0x1.0532e25f4475cp+11",
+            "completion_succeeded": true,
+            "evaluation_index": 30,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 1000,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "naive_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 41,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 100,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 42,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 200,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 43,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 300,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 44,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 400,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 45,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 500,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 46,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 600,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 47,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 700,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 48,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 800,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 49,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 900,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          },
+          {
+            "candidate_id": "f76d2af07b3e0a1238fef663299a6ec22b05ec22f2394b3745cde7863aefa33d",
+            "complete_objective_float_hex": "0x1.121660bcc9814p+11",
+            "completion_succeeded": true,
+            "evaluation_index": 50,
+            "exception_message": "",
+            "exception_type": null,
+            "failure_category": "",
+            "iteration": 1000,
+            "source": "hgs_iteration_checkpoint",
+            "status": "PASS",
+            "view": "mechanism_ev"
+          }
+        ],
+        "exact_elites_per_view": 2,
+        "failure_category_distribution": {},
+        "hgs_iterations_by_view": {
+          "cv_only": 1000,
+          "mechanism_ev": 1000,
+          "naive_ev": 1000
+        },
+        "objective": 1922.1983391919891,
+        "objective_float_hex": "0x1.e08cb196ddc6fp+10",
+        "route_count": 9,
+        "route_signature": [
+          [
+            "cv",
+            "D_guangzhou",
+            [
+              "D_guangzhou",
+              "C008",
+              "C021",
+              "C011",
+              "C014",
+              "C017",
+              "C013",
+              "C010",
+              "D_guangzhou"
+            ]
+          ],
+          [
+            "cv",
+            "D_guangzhou",
+            [
+              "D_guangzhou",
+              "C019",
+              "C006",
+              "D_guangzhou"
+            ]
+          ],
+          [
+            "cv",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C035",
+              "C047",
+              "C050",
+              "C039",
+              "C030",
+              "C034",
+              "D_shenzhen"
+            ]
+          ],
+          [
+            "cv",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C041",
+              "C036",
+              "C045",
+              "C044",
+              "C042",
+              "C031",
+              "D_shenzhen"
+            ]
+          ],
+          [
+            "cv",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C048",
+              "C027",
+              "C026",
+              "C033",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ]
+          ],
+          [
+            "ev",
+            "D_guangzhou",
+            [
+              "D_guangzhou",
+              "C003",
+              "C023",
+              "C005",
+              "C007",
+              "C012",
+              "C004",
+              "C018",
+              "C001",
+              "D_guangzhou"
+            ]
+          ],
+          [
+            "ev",
+            "D_guangzhou",
+            [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C002",
+              "C009",
+              "D_guangzhou"
+            ]
+          ],
+          [
+            "ev",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C028",
+              "C043",
+              "D_shenzhen"
+            ]
+          ],
+          [
+            "ev",
+            "D_shenzhen",
+            [
+              "D_shenzhen",
+              "C046",
+              "C032",
+              "C037",
+              "C040",
+              "C038",
+              "C049",
+              "D_shenzhen"
+            ]
+          ]
+        ],
+        "route_signature_sha256": "5adff5a6c19f106e2b4af071ef4a79444c8fbd1f738e0aa1ff8ae4e957eaa882",
+        "run_id": "seed1_budget1000",
+        "search_trace_sha256": "b1b685e1366f930dcda5de2d4e91852624dc87257152b4c67e59744ff6a537cd",
+        "seed": 1,
+        "selected_source": "best_exact_hgs_parent",
+        "solution_sha256": "eed9242c963661d2f869480c8103098e619d57dc4cb5e62f0876604d155c2d7b",
+        "sp_seconds": 0.5,
+        "total_distance_m": 655252.552897816,
+        "total_emissions_kg": 148.40025954253366
+      },
+      "budget_effective": true
+    },
+    "v4": {
+      "post": {
+        "all_logged_completion_evaluations": {
+          "attempts": 167,
+          "failures": 3,
+          "successes": 164
+        },
+        "categories": {
+          "业务硬不可行": 0,
+          "代理找到但完成失败": 3,
+          "搜索未找到": 0
+        },
+        "search_candidate_completions": {
+          "attempts": 147,
+          "failures": 3,
+          "successes": 144
+        }
+      },
+      "pre": {
+        "all_logged_completion_evaluations": {
+          "attempts": 167,
+          "failures": 83,
+          "successes": 84
+        },
+        "categories": {
+          "业务硬不可行": 0,
+          "代理找到但完成失败": 83,
+          "搜索未找到": 0
+        },
+        "search_candidate_completions": {
+          "attempts": 147,
+          "failures": 83,
+          "successes": 64
+        }
+      }
+    },
+    "v5": {
+      "directed": {
+        "elapsed_seconds": 6.161,
+        "errors": 0,
+        "failed": 0,
+        "failure_tests": [],
+        "junit_sha256": "74ff7861e6533886e39484def25b8ee02f5248fe66afeb95de004f2bdca4f1c3",
+        "passed": 80,
+        "skipped": 0,
+        "tests": 80
+      },
+      "directed_command": "PYTHONPATH=solver/src:models/src:.:/opt/anaconda3/lib/python3.13/site-packages:build/python_envs/pyvrp-hgs-0.12.2/lib/python3.13/site-packages PYTHONHASHSEED=0 /opt/anaconda3/bin/python3.13 -m pytest -q [10 listed files]",
+      "directed_test_files": [
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_pyvrp_adapter.py",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_route_pool_mip.py",
+        "solver/tests/test_china81_bundle_20260720.py",
+        "solver/tests/test_china81_fleet_authority_v3_20260802.py",
+        "solver/tests/test_china81_shared_completion_20260720.py",
+        "solver/tests/test_multitrip_schedule.py",
+        "solver/tests/test_dynamic_multitrip_schedule.py",
+        "solver/tests/test_nonlinear_multitrip_schedule_20260720.py",
+        "solver/tests/test_route_pool_recombination.py",
+        "solver/tests/test_public_station_multitrip_20260723.py"
+      ],
+      "full": {
+        "elapsed_seconds": 281.355,
+        "errors": 0,
+        "failed": 3,
+        "failure_tests": [
+          "solver.tests.test_e5_ablation.E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+          "solver.tests.test_e5_ablation.E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts",
+          "solver.tests.test_ev_heavy_findability_gate.EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps"
+        ],
+        "junit_sha256": "02cc90432d1c724228a6c8bff8df6a87bc43440c5662bbb41a44e2030fa79841",
+        "passed": 909,
+        "skipped": 1,
+        "tests": 913
+      },
+      "full_command": "PYTHONPATH=solver/src:models/src:.:/opt/anaconda3/lib/python3.13/site-packages:build/python_envs/pyvrp-hgs-0.12.2/lib/python3.13/site-packages PYTHONHASHSEED=0 /opt/anaconda3/bin/python3.13 -m pytest solver/tests -q",
+      "non_authoritative_wrong_interpreter_diagnostic": {
+        "elapsed_seconds": 276.413,
+        "errors": 0,
+        "failed": 6,
+        "failure_tests": [
+          "solver.tests.test_e2_alns_throughput.E2AlnsThroughputTest::test_runner_smoke_outputs_finite_zero_violation_rows",
+          "solver.tests.test_e5_ablation.E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+          "solver.tests.test_e5_ablation.E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts",
+          "solver.tests.test_ev_heavy_findability_gate.EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps",
+          "solver.tests.test_metaheuristic_baselines.MetaheuristicBaselineTest::test_gold_environment",
+          "solver.tests.test_metaheuristic_baselines.MetaheuristicBaselineTest::test_runner_writes_profile_and_convergence_outputs"
+        ],
+        "junit_sha256": "0a3536d3682e3a4bd30984eb66135d49944afb07643e3e99e3e360a6c0d133da",
+        "passed": 922,
+        "skipped": 1,
+        "tests": 929
+      }
+    }
+  }
+}

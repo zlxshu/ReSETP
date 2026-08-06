@@ -1,0 +1,74 @@
+{
+  "task_id": "Y1",
+  "status": "Y1_SWEEP2_COMPLETE",
+  "completed_at": "2026-08-02",
+  "read_only_scope_observed": true,
+  "experiments_run": 0,
+  "completion": {
+    "1_python_line_and_symbol_audit": {
+      "percent": 100,
+      "files_completed": 103,
+      "files_total": 103,
+      "lines_enumerated": 50492,
+      "public_symbols": 1833,
+      "dead_symbol_candidates": 24,
+      "remaining_boundary": []
+    },
+    "2_baselines_reference_graph": {
+      "percent": 100,
+      "metadata_completed": 2838,
+      "metadata_total": 2838,
+      "metadata_parse_errors": 0,
+      "hash_source_edges": 34092,
+      "package_edges": 680,
+      "remaining_boundary": []
+    },
+    "3_china81_hash_audit": {
+      "percent": 100,
+      "authority_files_compared": 1014,
+      "matches": 1014,
+      "mismatches": 0,
+      "unregistered": 0,
+      "instances_covered": 81,
+      "remaining_boundary": []
+    },
+    "4_paper_asset_bidirectional_mapping": {
+      "percent": 100,
+      "figures": 5,
+      "tables": 15,
+      "numeric_occurrences": 2034,
+      "unmapped_empirical_numbers": 0,
+      "formal_assets": 69,
+      "directly_referenced_assets": 5,
+      "supporting_assets": 16,
+      "orphan_or_retired_candidates": 48,
+      "remaining_boundary": []
+    },
+    "5_docs_supersede_dag": {
+      "percent": 100,
+      "files_completed": 689,
+      "files_total": 689,
+      "text_files_line_scanned": 676,
+      "binary_files_byte_scanned": 13,
+      "dag_edges": 17,
+      "cycles": 0,
+      "conflict_pairs_without_whole_document_supersession": 2,
+      "remaining_boundary": []
+    }
+  },
+  "new_ledger_items": 10,
+  "new_items_affecting_current_mainline": 8,
+  "base_ledger_items_repeated": 0,
+  "remaining_boundaries": [],
+  "deliverables": [
+    "report.md",
+    "symbol_call_graph.json",
+    "baselines_reference_graph.json",
+    "instance_hash_audit.json",
+    "paper_asset_mapping.json",
+    "docs_supersede_dag.json",
+    "legacy_ledger_round2.json",
+    "done.json",
+    "artifact_hashes.json"
+  ]
+}

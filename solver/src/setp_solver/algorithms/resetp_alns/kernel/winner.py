@@ -17,6 +17,12 @@ import numpy as np
 
 from setp_solver.check import check_solution
 from setp_solver.cost import route_node_schedule
+from setp_solver.model_config import (
+    MissingModelConfigError,
+    ModelConfig,
+    model_config_scope,
+    strict_multitrip_enabled,
+)
 from setp_solver.prices import DEFAULT_PRICES, PriceParameters
 from setp_solver.solution import CrossSiteService, Route, Solution
 from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
@@ -303,7 +309,7 @@ class WinnerOperatorSet:
         if (
             allow_cross_depot
             and enable_cross_depot_operator
-            and os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}
+            and strict_multitrip_enabled()
         ):
             destroy_ops.append(("cross_depot_boundary_removal", cross_depot_boundary_removal))
         if include_route_elimination:
@@ -332,7 +338,7 @@ class WinnerOperatorSet:
         if (
             allow_cross_depot
             and enable_cross_depot_operator
-            and os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}
+            and strict_multitrip_enabled()
         ):
             repair_ops.append(("cross_depot_insert_repair", cross_depot_insert_repair))
         if carbon_aware:
@@ -778,6 +784,7 @@ def run_winner_kernel_in_memory(
     *,
     config: WinnerKernelConfig | None = None,
     prices: PriceParameters | None = None,
+    model_config: ModelConfig | None = None,
     variant_flags: dict[str, str] | None = None,
     policy: SearchPolicy | None = None,
     carbon_weight: float = 1.0,
@@ -795,6 +802,14 @@ def run_winner_kernel_in_memory(
     budget accounting remain exactly the same as the file-backed runner.
     """
 
+    if model_config is None:
+        raise MissingModelConfigError(
+            "China mainline in-memory entry requires explicit model_config"
+        )
+    if prices is None:
+        raise ValueError(
+            "China mainline in-memory entry requires explicit scenario prices"
+        )
     cfg = config or WinnerKernelConfig()
     if cfg.algorithm != "ALNS-Wouda":
         raise ValueError(
@@ -803,8 +818,8 @@ def run_winner_kernel_in_memory(
     flags = variant_flags or winner_variant_flags(
         include_route_elimination=cfg.include_route_elimination,
     )
-    with _temporary_flags(flags):
-        return _run_winner_kernel_loop(
+    with model_config_scope(model_config), _temporary_flags(flags):
+        run = _run_winner_kernel_loop(
             initial_solution,
             instance,
             carbon_profile,
@@ -820,6 +835,7 @@ def run_winner_kernel_in_memory(
             customer_home_depot=customer_home_depot,
             mechanism_controller=mechanism_controller,
         )
+    return replace(run, model_config=model_config.as_metadata())
 
 
 def run_staged_alns_lns_hybrid(
@@ -3309,7 +3325,7 @@ def _hard_violation_count(solution: Solution, context: EvaluationContext) -> int
     # route-level score cache.  When enabled, always run the combined check;
     # otherwise an EV-type swap can look legal only because the old cache has
     # no physical schedule field.
-    if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+    if strict_multitrip_enabled():
         return len(_hard_violations(solution, context))
     breakdown = context.score_breakdowns.get(id(solution), {})
     if "violation_count" in breakdown:

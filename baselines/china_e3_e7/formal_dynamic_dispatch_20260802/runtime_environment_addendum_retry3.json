@@ -1,0 +1,37 @@
+{
+  "schema": "resetp.xc2.runtime-environment-addendum.v3",
+  "task_id": "XC2",
+  "recorded_before_any_formal_scenario_result": true,
+  "transport_recovery": {
+    "classification": "THREAD_TRANSPORT_LEFT_PREOPTIMIZATION_ONLY_PARTIALS",
+    "completed_scenarios": 0,
+    "formal_scenario_results": 0,
+    "complete_solution_files": 0,
+    "partial_preoptimization_files": 6,
+    "partial_scope": "carbon_aware preoptimization only for per_order seeds 1 through 6",
+    "partial_directory_retained_as": "failed_start3_thread_preoptimization_only",
+    "partial_result_reuse": false,
+    "retry2_outcome": "the isolated subprocess coordinator refused to start because the late thread partials recreated scenarios/ after the earlier empty-directory inventory",
+    "retry2_formal_computation_started": false,
+    "retry2_monitor_evidence": "../.formal_dynamic_dispatch_20260802.retry2.monitor/"
+  },
+  "restart_basis": {
+    "reason": "no paired arm, dynamic stage, complete solution, scenario_result.json, or done.json existed",
+    "scope": "start the original 30 preregistered paired scenarios exactly once under isolated subprocess transport",
+    "completed_scenario_rerun": false,
+    "seed_replacement": false,
+    "adverse_result_discarded": false
+  },
+  "compatibility_action": {
+    "launcher": "baselines/china_e3_e7/formal_dynamic_dispatch_20260802_subprocess_launcher.py",
+    "launcher_sha256": "0527056c4545b012812a8ba6b6371e63d355c5f0a29ca1b5eee2818ade6de84b",
+    "immutable_runner_sha256": "fe15611014dfab12bb43f8bca2113848e04779f15948c22654b365b7ee9b43f6",
+    "preregistration_sha256": "98053790d1be73ab9074aab408d5a447390683c1bfe93cbd0e2cb431e10136f6"
+  },
+  "scientific_contract_changed": false,
+  "task_partition_changed": false,
+  "seed_changed": false,
+  "population_changed": false,
+  "generation_budget_changed": false,
+  "model_or_input_changed": false
+}

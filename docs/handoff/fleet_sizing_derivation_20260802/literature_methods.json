@@ -1,0 +1,47 @@
+{
+  "one_sentence_conclusion": "同类论文可用的总量方法包括：以总需求/较小车型载重并按车场分摊的容量法（陈婉茹等，p.3330式(30)）、无推导的固定情景总量后扫描组成（李得成等，pp.1006-1007，只能作为实验设计而非定数依据），以及把车辆购置固定成本纳入目标、令总量与构成内生决定（Hiermann et al., pp.996-998）。",
+  "records": [
+    {
+      "comparability": "成本先降后升的拐点依靠同一实例、同一每场可用总量和同一其余参数；表9的实际派遣量不是固定分母。",
+      "how_total_was_set": "p.3330式(30)：每个配送中心车辆数 w_d = ceil(ceil(sum_i q_i / min{Q_e,Q_g}) / |D|)。总需求先除以两类车中较小载重，再平均分到6个配送中心并向上取整，得到每场6辆。该式没有使用逐场需求不均衡、路网、时间窗、电池或充电约束。",
+      "page": [
+        3330,
+        3331
+      ],
+      "paper": "陈婉茹, 陈兴, 周贤琴, 陈志祥 (2023), 碳交易机制下多中心混合车队配送路径和速度优化研究, 系统工程理论与实践 43(11):3320-3335, DOI 10.12011/SETP2022-2971",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/5GXPYVZH/陈婉茹 等 _ 2023 _ 碳交易机制下多中心混合车队配送路径和速度优化研究.pdf",
+      "source_pdf_sha256": "aceb753db36f8d3c0f062ec25317fd3cbc6e6c18971bd193f0986a845a985b6f",
+      "what_varied": "p.3331表9只改变每场可用燃油/电动车构成：6/0,5/1,...,0/6。",
+      "what_was_fixed": "p.3331表9固定同一71客户、6配送中心算例、每场可用总车数6及表7其余技术/成本/碳参数；实际派遣总数允许由优化结果变化。"
+    },
+    {
+      "comparability": "p.1007明确按‘同等车队规模’比较；结果为成本随EV可用数降低，达到足以服务全部客户后继续增加EV不再降本，是平台而非先降后升拐点。",
+      "how_total_was_set": "p.1006仅写‘给定车队规模（燃油车与电动车的总量）为6辆车’，未交代6与15客户需求、载重、时间窗、电池或充电条件之间的推导依据。",
+      "page": [
+        1006,
+        1007
+      ],
+      "paper": "李得成, 陈彦如, 张宗成 (2021), 基于分支定价算法的电动车与燃油车混合车辆路径问题研究, 系统工程理论与实践 41(4), DOI 10.12011/SETP2019-1371",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/IUL5NYGA/李得成 等 _ 2021 _ 基于分支定价算法的电动车与燃油车混合车辆路径问题研究.pdf",
+      "source_pdf_sha256": "cf3e2355632887f6ce12387eb424ce17fb4736a6452ce53fc33cef01bf93083a",
+      "what_varied": "电动车可用数从0依次增加到6，燃油车数相应为6减去电动车数。",
+      "what_was_fixed": "pp.1006-1007固定所选15客户数据、总可用车数6与其他参数。"
+    },
+    {
+      "comparability": "各方案在同一购置加行驶成本目标和同一需求约束下可比；这属于内生车队规模模型，不等同于本文拟采用的固定总量组成扫描。",
+      "how_total_was_set": "p.996说明经典FSMF可设无限可用车辆并计每辆固定购置成本；p.997将E-FSMFTW定义为同时求不同车型路线、购置成本与行驶距离；p.998式(2.1)对每辆实际离场车辆计购置成本，因此总量和车型组合由优化内生决定。",
+      "page": [
+        996,
+        997,
+        998
+      ],
+      "paper": "Hiermann et al. (2016), The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations, European Journal of Operational Research 252:995-1018, DOI 10.1016/j.ejor.2016.01.038",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/NIM4H4ID/Hiermann 等 _ 2016 _ The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations.pdf",
+      "source_pdf_sha256": "b6bbcc1e5be659d8add4012f24d640b55da5ca147b0f62854cb47d01c7c8fc8c",
+      "what_varied": "实际启用的车辆总数、车型组合、路线与充电共同变化。",
+      "what_was_fixed": "客户、时间窗、车型集合及每车型容量/能耗/购置成本等参数固定；不预先固定车队总量。"
+    }
+  ],
+  "schema": "resetp.x4-literature-fleet-methods.v1",
+  "task_id": "X4"
+}

@@ -1,0 +1,89 @@
+{
+  "schema": "resetp.t7-eval-chain-carbon-consistency-metadata.v1",
+  "task_id": "T7-EVAL-CHAIN-CARBON-CONSISTENCY",
+  "status": "TECHNICAL_FIX_VALIDATED",
+  "formal_search_allowed": false,
+  "paper_claim_allowed": false,
+  "instance": {
+    "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+    "scenario_date": "2025-02-12",
+    "cities": ["beijing", "tianjin"],
+    "customers": 50,
+    "required_demand": 13264.0,
+    "same_as_t5": true
+  },
+  "frozen_design": {
+    "arms": ["O", "C", "P"],
+    "seeds": [1, 2, 3],
+    "budgets": [100, 1000],
+    "expected_run_count": 18,
+    "carbon_price_cny_per_kgco2e": 0.07502,
+    "strict_multitrip": true,
+    "depot_charger_capacity_mode": "unbounded",
+    "hgs_iterations_per_view": "budget",
+    "exact_checkpoint_interval_iterations": 100,
+    "archive_candidates_per_view": 8,
+    "exact_elites_per_view": 2,
+    "sp_time_limit_seconds": 0.5,
+    "pythonhashseed": 0,
+    "numeric_backend_threads": 1,
+    "single_run_wallclock_limit_seconds": 1800.0
+  },
+  "repair": {
+    "file": "solver/src/setp_solver/china81_completion.py",
+    "lines": "312-324",
+    "change": "Only expose the direct minimum-carbon legacy charging variant when the bundle has a positive carbon price; O/P zero-carbon-price arms now use objective-consistent integrated/immediate variants.",
+    "scope": "wiring/objective consistency only",
+    "protected_files_modified": false,
+    "carbon_price_changed": false,
+    "carbon_data_changed": false,
+    "instance_changed": false,
+    "fleet_contract_changed": false,
+    "constraint_changed": false
+  },
+  "execution": {
+    "started_at_utc": "2026-08-04T09:57:24.651245+00:00",
+    "finished_at_utc": "2026-08-04T10:00:50.147825+00:00",
+    "monitor_state": "COMPLETED",
+    "monitor_runtime_seconds": 162.27859830856323,
+    "run_count": 18,
+    "full_legal_solution_count": 18,
+    "full_violation_count": 0,
+    "max_single_run_seconds": 19.143626915989444,
+    "sum_run_elapsed_seconds": 205.24465458339546,
+    "wallclock_safety_trigger_count": 0,
+    "search_to_final_charging_emissions_max_abs_kg": 0.0,
+    "search_to_final_charging_cost_max_abs_cny": 0.0,
+    "monitor_false_alarm": "Initial command-contract false positive on PYTHONHASHSEED environment text; process was paused, config corrected, and the same PID was re-attached without restart."
+  },
+  "acceptance": {
+    "budget_1000_seed_1_route_same": false,
+    "budget_1000_seed_1_route_o_sha256": "24fb8fb9457d07981516aa1d376f50183013c002f4566474b4942d069c9cf030",
+    "budget_1000_seed_1_route_c_sha256": "f064404eb2f7b0e8c7e5852c473cad99308a8642d898cc3fb0a92245ad9aeed7",
+    "budget_1000_seed_1_charging_energy_o_kwh": 53.57218193095795,
+    "budget_1000_seed_1_charging_energy_c_kwh": 87.54867886116938,
+    "budget_1000_seed_1_charging_emissions_o_kg": 37.41765270329054,
+    "budget_1000_seed_1_charging_emissions_c_kg": 57.30456495373963,
+    "budget_1000_seed_1_charging_emissions_delta_c_minus_o_kg": 19.886912250449086,
+    "budget_1000_seed_1_system_emissions_delta_c_minus_o_kg": -16.817447150067608,
+    "six_co_pairs_route_changed": 4,
+    "six_co_pairs_system_emissions_decreased": 6,
+    "all_runs_service_redline": true,
+    "all_runs_completed_customer_count": "50/50",
+    "all_runs_completed_demand": "13264/13264"
+  },
+  "environment": {
+    "python": "3.13.9",
+    "numpy": "2.3.5",
+    "scipy": "1.16.3",
+    "pyvrp": "0.12.2",
+    "logical_cpu": 8,
+    "physical_memory_bytes": 8589934592
+  },
+  "protected_hashes_before_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "boundary": "Validation only; not a formal experiment, paper result, statistical conclusion, or manuscript authorization."
+}

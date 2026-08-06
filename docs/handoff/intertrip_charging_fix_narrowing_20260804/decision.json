@@ -1,0 +1,31 @@
+{
+  "schema": "resetp.t11-intertrip-charging-fix-narrowing-decision.v1",
+  "task_id": "T11-INTERTRIP-CHARGING-FIX-NARROWING",
+  "status": "HALT_REGRESSION_FAILED",
+  "decision": "HALT_REGRESSION_FAILED",
+  "paper_claim_allowed": false,
+  "formal_search_allowed": false,
+  "basis": {
+    "targeted_tests_required": 7,
+    "targeted_tests_passed": 0,
+    "targeted_tests_failed": 7,
+    "positive_witnesses_passed": 3,
+    "positive_witnesses_required": 3,
+    "t10_archived_runs_checked": 18,
+    "t10_archived_new_violations": 0,
+    "protected_cost_unchanged": true,
+    "protected_evaluation_unchanged": true
+  },
+  "first_trip_cross_day": {
+    "is_t10_new_behavior": false,
+    "current_code_settlement_profile": "operating-day profile 2025-02-12 despite charge_day_offset=-1",
+    "same_day_relabel_delta_kg": 0.0,
+    "previous_day_counterfactual_to_same_day_delta_kg": 95.49145959458781,
+    "user_decision_required_to_change_modeling": true
+  },
+  "full_suite": {
+    "status": "NOT_RUN_AFTER_TARGETED_STOP",
+    "t10_baseline": "898 passed / 1 skipped / 14 failed"
+  },
+  "halt": "HALT_REGRESSION_FAILED: the seven mandatory tests did not all recover; no test or protected accounting logic was changed to force a pass."
+}

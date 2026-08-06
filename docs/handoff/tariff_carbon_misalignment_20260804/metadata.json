@@ -1,0 +1,53 @@
+{
+  "task_id": "T3-TARIFF-CARBON-MISALIGN",
+  "generated_at_utc": "2026-08-04T06:30:23.200793+00:00",
+  "status": "COMPLETE_READ_ONLY_DESCRIPTIVE_CALCULATION",
+  "input": {
+    "path": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv",
+    "sha256": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b",
+    "rows": 12096,
+    "columns": [
+      "city",
+      "region",
+      "date",
+      "half_hour_slot",
+      "minute_of_day",
+      "tariff_period",
+      "depot_energy_cny_per_kwh",
+      "public_energy_cny_per_kwh",
+      "public_service_fee_cny_per_kwh",
+      "public_total_cny_per_kwh",
+      "carbon_factor_kgco2e_per_kwh",
+      "tariff_row_class",
+      "service_fee_class",
+      "carbon_source_column",
+      "price_area_id",
+      "diesel_zone",
+      "diesel_price_candidate_cny_per_l",
+      "diesel_candidate_status",
+      "diesel_source_strength",
+      "diesel_source_file",
+      "diesel_source_sha256",
+      "diesel_price_cny_per_l",
+      "diesel_parameter_status",
+      "joint_key_status"
+    ]
+  },
+  "scope": {
+    "cities": 9,
+    "regions": 3,
+    "dates": 28,
+    "slots_per_day": 48,
+    "date_min": "2025-02-01",
+    "date_max": "2025-02-28"
+  },
+  "search_evaluations": 0,
+  "solver_runs": 0,
+  "calculation_contract": {
+    "correlations": "48-slot mean profile within each scope; average ranks for Spearman",
+    "extreme_ratio": "(daily maximum - daily minimum) divided by daily mean",
+    "continuous_window": "six adjacent half-hour slots, non-circular; earliest tie-break with tie count recorded",
+    "counterfactual_energy_allocation": "uniform across six slots"
+  },
+  "carbon_source_boundary": "Figshare 28953545 CEF Scenario S1-2025 provincial hourly projection; not measured"
+}

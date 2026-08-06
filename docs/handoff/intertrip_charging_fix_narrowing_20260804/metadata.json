@@ -1,0 +1,61 @@
+{
+  "schema": "resetp.t11-intertrip-charging-fix-narrowing-metadata.v1",
+  "task_id": "T11-INTERTRIP-CHARGING-FIX-NARROWING",
+  "status": "HALT_REGRESSION_FAILED",
+  "created_at": "2026-08-04",
+  "scope": {
+    "approved_source_change": "solver/src/setp_solver/check.py::_check_charging_trip_overlap",
+    "protected_source_files": [
+      "solver/src/setp_solver/cost.py",
+      "solver/src/setp_solver/search/evaluation.py"
+    ],
+    "paper_directories_modified": false,
+    "search_rerun": false,
+    "t10_eighteen_run_rerun": false,
+    "read_only_archived_solution_recheck": true
+  },
+  "change": {
+    "description": "Skip an in-route public-station action when station.node_type.lower() == f, the station id is in the route node_sequence, and charge_day_offset == 0; retain depot overlap checking.",
+    "file": "solver/src/setp_solver/check.py",
+    "protected_file_change_required": false
+  },
+  "hashes_before_change": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "886e91108f666c4c4dcb379020b5ec4e055e9a6150fdb42d69bd1ffc9e5ad38c",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "hashes_after_change": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "93139ea143d361d1b4cde7e9e2a34506bf90b95fe718809c1a467c2fd97b7f73",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "targeted_regression": {
+    "required_tests": 7,
+    "passed": 0,
+    "failed": 7,
+    "stop_condition": "7 个测试未全部恢复"
+  },
+  "archived_t10_recheck": {
+    "runs": 18,
+    "checker_violations": 0,
+    "public_station_actions": 0,
+    "service_redline_pass": true
+  },
+  "first_trip_audit": {
+    "runs_with_minus1": 18,
+    "minus1_actions": 36,
+    "minus1_energy_kwh": 940.1574033147,
+    "current_code_profile_date": "2025-02-12",
+    "counterfactual_previous_profile_date": "2025-02-11",
+    "current_code_emissions_kg": 644.4711899761618,
+    "counterfactual_previous_profile_emissions_kg": 548.979730381574,
+    "same_day_minus_previous_day_emissions_kg": 95.49145959458781
+  },
+  "environment": {
+    "python": "3.13.9",
+    "numpy": "2.3.5",
+    "pythonhashseed": "0",
+    "numeric_backend_threads": 1
+  },
+  "artifact_hash_policy": "Exclude ._* AppleDouble files, __pycache__, and .pytest_cache"
+}

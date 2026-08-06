@@ -20,7 +20,7 @@ from .cost import (
 )
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
-from .solution import ChargingAction, Route, Solution
+from .solution import ChargingAction, Route, Solution, physical_vehicle_id
 
 
 @dataclass(frozen=True)
@@ -88,6 +88,7 @@ def calculate_depot_profits(
     rho = _price(prices, "revenue_per_kg") if revenue_per_kg is None else float(revenue_per_kg)
     route_by_vehicle = {route.vehicle_id: route for route in solution.routes}
     data = {_depot: _empty_row(_depot, prior.get(_depot, 0.0)) for _depot in depot_ids}
+    fixed_cost_depot_by_vehicle: dict[tuple[str, str], str] = {}
 
     for route in solution.routes:
         depot_id = route.home_depot_id
@@ -95,7 +96,19 @@ def calculate_depot_profits(
             data[depot_id] = _empty_row(depot_id, prior.get(depot_id, 0.0))
         row = data[depot_id]
         route_energy = _evaluate_route(route, instance, node_lookup, prices)
-        row["cost_fixed"] += _price(prices, "vehicle_fixed_cost")
+        vehicle_key = (
+            route.vehicle_type.lower(),
+            physical_vehicle_id(route.vehicle_id),
+        )
+        fixed_cost_depot = fixed_cost_depot_by_vehicle.get(vehicle_key)
+        if fixed_cost_depot is None:
+            fixed_cost_depot_by_vehicle[vehicle_key] = depot_id
+            row["cost_fixed"] += _price(prices, "vehicle_fixed_cost")
+        elif fixed_cost_depot != depot_id:
+            raise ValueError(
+                "one physical vehicle cannot have multiple home depots: "
+                f"{vehicle_key[1]!r}"
+            )
         row["cost_km"] += (
             route_energy.distance_m
             / 1000.0

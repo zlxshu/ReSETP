@@ -1,0 +1,29 @@
+{
+  "schema": "resetp.t7-eval-chain-carbon-consistency-decision.v1",
+  "task_id": "T7-EVAL-CHAIN-CARBON-CONSISTENCY",
+  "status": "TECHNICAL_FIX_VALIDATED",
+  "formal_search_allowed": false,
+  "paper_claim_allowed": false,
+  "decision": "FIX_VALIDATED",
+  "basis": {
+    "expected_runs": 18,
+    "completed_runs": 18,
+    "full_legal_solutions": 18,
+    "full_violation_count": 0,
+    "search_final_charging_emissions_max_abs_kg": 0.0,
+    "search_final_charging_cost_max_abs_cny": 0.0,
+    "protected_files_unchanged": true,
+    "single_run_wallclock_limit_exceeded": false,
+    "service_redline_passed": true
+  },
+  "answers": {
+    "budget_1000_seed_1": "原来的同路线、同电量条件已消失：O/C 路线 hash 分别为 24fb8fb9457d... 和 f064404eb2f7...，充电量分别为 53.572182 和 87.548679 kWh。充电排放为 O 37.417653、C 57.304565 kg，差值 C-O=+19.886912 kg；但这是换路且换电量后的比较，不再是原 T5 的同路线矛盾。搜索侧与最终评价两侧均各自得到上述同一个充电排放值。",
+    "six_co_pairs": "路线改变 4/6；系统排放下降 6/6；18/18 次完成客户数均 50/50、完成需求量均 13264/13264。",
+    "root_cause": "公共 China81 补全器无条件生成 ev_low_carbon/legacy 分支；该分支在 support/charging.py 中直接按最低碳时段取 start，不看 O/P 的零碳价运营成本目标。O/P 因而被隐藏的碳择时分支污染，造成跨臂比较的假矛盾。",
+    "index_city_reschedule": "未发现槽索引、城市或最终重排不一致。两侧均为节点城市筛选后的 48 个半小时行、内部 0-based 槽；T5 route-pool 路径的最终 physicalize/recheck 不重新优化既有充电 start。",
+    "weight_sign": "C 搜索侧使用 0.07502×充电排放；最终完整评价仍按 unchanged total_cost 计入系统排放碳成本。C 搜索 bundle 将 diesel_ef 置零以限定充电侧项，这是已冻结的作用域，不是本次修复修改。"
+  },
+  "halt": null,
+  "approval_effect": "none",
+  "note": "本包只验证接线修复，不产生论文主张，也不批准正式实验或修改论文正文。"
+}

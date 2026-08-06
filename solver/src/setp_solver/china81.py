@@ -24,6 +24,11 @@ from .instance_loader import (
     VehicleTypeParameters,
     load_profiled_road_matrices,
 )
+from .model_config import (
+    DEPOT_CHARGER_CAPACITY_FINITE_INSTANCE,
+    DEPOT_CHARGER_CAPACITY_UNBOUNDED,
+    ModelConfig,
+)
 from .prices import PriceParameters
 
 
@@ -50,10 +55,19 @@ _RUNTIME_PARAMETER_AUTHORITY_RELATIVE = Path(
     "data/ChinaInstances/"
     "china81_runtime_parameter_authority_v4_20260723"
 )
-_FLEET_AUTHORITY_RELATIVE = Path(
+FLEET_AUTHORITY_V1_RELATIVE = Path(
     "data/ChinaInstances/"
     "china81_finite_fleet_authority_v1_20260723"
 )
+FLEET_AUTHORITY_V2_RELATIVE = Path(
+    "data/ChinaInstances/"
+    "china81_finite_fleet_authority_v2_20260731"
+)
+FLEET_AUTHORITY_V3_RELATIVE = Path(
+    "data/ChinaInstances/"
+    "china81_finite_fleet_authority_v3_20260802"
+)
+_FLEET_AUTHORITY_RELATIVE = FLEET_AUTHORITY_V3_RELATIVE
 
 _DIESEL_PRICE_CNY_PER_L_BY_CITY = {
     "beijing": 7.48,
@@ -149,6 +163,7 @@ class China81Bundle:
     road_matrix_authority: str
     runtime_parameter_authority: str
     fleet_authority: str
+    model_config: Mapping[str, object]
     formal_search_allowed: bool = False
 
 
@@ -161,10 +176,12 @@ def load_china81_bundle(
     road_matrix_authority: str | Path | None = None,
     runtime_parameter_authority: str | Path | None = None,
     fleet_authority: str | Path | None = None,
+    model_config: ModelConfig | None = None,
 ) -> China81Bundle:
     """Join one frozen China81 instance, rejecting missing or mixed inputs."""
 
     root = Path(repo_root).resolve()
+    resolved_model_config = model_config or ModelConfig()
     static_root = _resolve_authority(
         root,
         static_input_authority,
@@ -272,6 +289,9 @@ def load_china81_bundle(
             orders_by_customer,
             fleet_by_depot=fleet_by_depot,
             facility_rows=facility_rows,
+            depot_charger_capacity_mode=(
+                resolved_model_config.depot_charger_capacity_mode
+            ),
         )
         for row in node_rows
     ]
@@ -410,7 +430,23 @@ def load_china81_bundle(
         {
             node.node_id: MappingProxyType(
                 {
-                    "charger_count": int(node.station_chargers or 0),
+                    "charger_count": (
+                        int(fleet_by_depot[node.node_id]["depot_charger_count"])
+                        if node.node_type == "d"
+                        else int(node.station_chargers or 0)
+                    ),
+                    "active_concurrency_limit": (
+                        DEPOT_CHARGER_CAPACITY_UNBOUNDED
+                        if node.node_type == "d"
+                        and resolved_model_config.depot_charger_capacity_mode
+                        == DEPOT_CHARGER_CAPACITY_UNBOUNDED
+                        else int(node.station_chargers or 0)
+                    ),
+                    "capacity_mode": (
+                        resolved_model_config.depot_charger_capacity_mode
+                        if node.node_type == "d"
+                        else "finite_instance"
+                    ),
                     "charge_power_kw": float(node.charge_power_kw),
                     "parameter_class": (
                         fleet_by_depot[node.node_id][
@@ -466,6 +502,7 @@ def load_china81_bundle(
         road_matrix_authority=str(matrix_authority.relative_to(root)),
         runtime_parameter_authority=authority_id,
         fleet_authority=str(fleet_root.relative_to(root)),
+        model_config=MappingProxyType(resolved_model_config.as_metadata()),
     )
 
 
@@ -552,6 +589,7 @@ def _node_from_rows(
     *,
     fleet_by_depot: dict[str, dict[str, str]],
     facility_rows: dict[str, dict[str, str]],
+    depot_charger_capacity_mode: str,
 ) -> Node:
     node_id = row["node_id"]
     node_type = row["node_type"].strip().lower()
@@ -575,7 +613,12 @@ def _node_from_rows(
             ready_time=float(CHINA81_HORIZON_START_SECOND),
             due_time=float(CHINA81_HORIZON_END_SECOND),
             charge_power_kw=float(fleet["depot_charge_power_kw"]),
-            station_chargers=int(fleet["depot_charger_count"]),
+            station_chargers=(
+                int(fleet["depot_charger_count"])
+                if depot_charger_capacity_mode
+                == DEPOT_CHARGER_CAPACITY_FINITE_INSTANCE
+                else None
+            ),
             **common,
         )
     if node_type == "station":

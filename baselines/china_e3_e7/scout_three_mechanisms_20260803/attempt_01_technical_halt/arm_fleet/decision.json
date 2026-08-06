@@ -1,0 +1,14 @@
+{
+  "schema": "resetp.scout3.fleet.decision.v1",
+  "task_id": "SCOUT3",
+  "status": "HALT_TECHNICAL",
+  "formal_result": false,
+  "answer": null,
+  "failure": {
+    "arm": "fleet",
+    "status": "HALT_TECHNICAL",
+    "error": "PermissionError: [Errno 1] Operation not permitted",
+    "traceback": "Traceback (most recent call last):\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_three_mechanisms_20260803_runner.py\", line 952, in run_all\n    function(output, workers, expected)\n    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_three_mechanisms_20260803_runner.py\", line 417, in run_fleet\n    with ProcessPoolExecutor(max_workers=workers) as executor:\n         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/anaconda3/lib/python3.13/concurrent/futures/process.py\", line 651, in __init__\n    _check_system_limits()\n    ~~~~~~~~~~~~~~~~~~~~^^\n  File \"/opt/anaconda3/lib/python3.13/concurrent/futures/process.py\", line 594, in _check_system_limits\n    nsems_max = os.sysconf(\"SC_SEM_NSEMS_MAX\")\nPermissionError: [Errno 1] Operation not permitted\n",
+    "retained_at": "2026-08-03T05:58:42.773012+00:00"
+  }
+}

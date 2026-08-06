@@ -1,0 +1,131 @@
+{
+  "task_id": "W1",
+  "selected_thesis_id": "A",
+  "candidates": [
+    {
+      "id": "C",
+      "statement": "在动态需求下，按电网碳强度择时充电的减排空间会被压缩；混合车队的车型配比是化解这一冲突的杠杆。",
+      "tension": "动态服务及时性压缩低碳充电等待，而车型替换被假定可以恢复减排自由度。",
+      "resolved_in_section": [
+        "5.1 建立静态充电择时空间",
+        "5.2 检验车型配置是否恢复该空间",
+        "5.3 检验动态压缩及车型恢复的交互"
+      ],
+      "key_figure": "沿用 Qiu et al. (2024) PDF pp.13-14 Fig. 5 的双纵轴响应图型：横轴仅用获批动态触发条件，左轴为同配对基准下的碳感知减排空间，右轴为 EV/CV 派遣构成，并按车型配置分面；没有压缩与恢复的交互形状即否定 C。",
+      "required_premises": [
+        {
+          "premise": "静态配送排班存在非零可移动充电窗口",
+          "current_status": "成立",
+          "evidence": "baselines/china_e3_e7/e4_carbon_timing_20260729/report.md:41-45，合法窗口宽度中位数 10.30 h、可移动电量 98.3%。"
+        },
+        {
+          "premise": "动态事件在同订单、同服务量、同碳日历的配对下缩窄窗口",
+          "current_status": "未检验",
+          "evidence": "baselines/china_e3_e7/e7_o2_dispatch_20260801/zero_search_15_streams_20260801/decision.json：formal_result=false、solver_runs=0。"
+        },
+        {
+          "premise": "车型配比是可变化且未被外生上限锁死的决策",
+          "current_status": "现有正式情景不成立",
+          "evidence": "docs/handoff/memory/codex_audit_independent_verification_20260802.md:24-28：E4 的 180/180 个车场—解单元全部贴 EV 上限。"
+        },
+        {
+          "premise": "车型替换能恢复低碳调整空间，并存在动态×车型×碳策略交互",
+          "current_status": "未检验",
+          "evidence": "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/decision.json：成本加碳臂仅 route_path_changed_pairs=2、typed_path_changed_pairs=2；E7 无正式碳感知配对。"
+        }
+      ],
+      "prior_work_check": [
+        {
+          "work": "陈婉茹等（2023）",
+          "page": "PDF p.12（期刊 p.3331）§5.1/表9；PDF pp.13-14（期刊 pp.3332-3333）§5.2/图4",
+          "finding": "已回答静态油电配置的成本—排放权衡及碳价越过临界点后的车型替换；本文不能把一般性的‘车型配比是杠杆’重做成创新。"
+        },
+        {
+          "work": "Qiu et al.（2024, IJPR）",
+          "page": "PDF pp.13-15, Fig. 5-7",
+          "finding": "已回答静态碳税/交易价格对车队构成和排放的响应，并给出低价格或只改配额时决策不动的边界。"
+        },
+        {
+          "work": "Cheng et al.（2022）",
+          "page": "PDF pp.1-2, 5-6",
+          "finding": "已说明到离站窗口决定时变碳充电灵活性，但没有动态客户订单、车辆路径或混合车队，不能证明动态订单必然压缩。"
+        }
+      ],
+      "evidence_producibility": "模型概念上含充电时刻、车型和动态状态，但现有 E4 无动态臂、E7 无正式碳策略配对、E4 车型上限触顶，当前产物不能产生 C 所需三因素交互证据。",
+      "falsification_consequence": "动态不压缩则第一句死亡；车型不能恢复则第二句死亡。剩余只有固定排班 E4 和前人已经完成的静态车队配置，三根柱子重新散开。",
+      "survivability_rank": 3,
+      "kill_reason_if_dead": "两个方向性分句均无正式联合证据；第二句的一般静态结论已被前人回答，且当前 E4 的车型自由度被 EV 上限触顶削弱。"
+    },
+    {
+      "id": "B",
+      "statement": "时变碳强度创造的不是一个固定减排率，而是一种需要在动态执行中保住的调度价值；混合车队的异质运力决定低碳计划在订单扰动后能保留多少。",
+      "tension": "静态计划可以把充电移向低碳时段，但动态订单迫使计划重排；低碳价值可能保留、损失，或转移到车型重分。",
+      "resolved_in_section": [
+        "5.1 定义并建立静态低碳价值",
+        "5.2 识别异质运力对价值保留的作用",
+        "5.3 在相同事件流下比较扰动前后"
+      ],
+      "key_figure": "沿用 Cheng et al. (2022) PDF p.6 Fig. 6 的时间序列布局：上方为碳强度，下方为实际充电负荷/排放响应，按已批准车型配置分面并标出同一事件流中的事件时刻；只用现有日志字段，不新增图型或尺度。",
+      "prior_work_check": [
+        {
+          "work": "Goodson et al.（2013, Operations Research）",
+          "page": "PDF pp.2-3, 14-15",
+          "finding": "已研究固定路线价值与动态重规划质量/计算负担，但不含碳强度和混合车队。"
+        },
+        {
+          "work": "Cheng et al.（2022）",
+          "page": "PDF pp.1-2, 5-6",
+          "finding": "已把充电灵活性解释为碳减排价值来源，但不含配送路径与混合车队。"
+        },
+        {
+          "work": "陈婉茹等（2023）；Qiu et al.（2024）",
+          "page": "陈 PDF pp.12-14；Qiu PDF pp.13-15",
+          "finding": "已回答静态车队异质性对碳政策的响应，未回答动态事件后的低碳价值保留。"
+        }
+      ],
+      "evidence_producibility": "模型可用同一事件流中碳感知相对碳盲的配对排放差定义保留量，并追踪车型和窗口；当前 E7 只有低成本技术比较，formal_result=false，尚不能支持。",
+      "falsification_consequence": "若动态后价值不损失，可改写为韧性结果；若车型配置不影响保留量，混合车队柱子会退化。必须预先固定配对口径，避免把任何方向都解释为‘保留程度’。",
+      "survivability_rank": 2,
+      "kill_reason_if_dead": null
+    },
+    {
+      "id": "A",
+      "statement": "时变电网碳强度能否改变动态配送，不取决于碳曲线本身，而取决于动态事件之后是否同时保留可移动的充电窗口与可替代的油电运力；混合车队提供的是低碳调整自由度，不是减排保证。",
+      "tension": "强烈变化的碳信号不等于可执行的低碳决策：充电窗口锁死或可替代车型耗尽时，路线、车型和充电仍可能不动。",
+      "resolved_in_section": [
+        "5.1 检验碳信号×时间自由度是否激活充电时移",
+        "5.2 检验碳信号×车型自由度是否激活任务/车型重分",
+        "5.3 让动态事件改变可用自由度并识别三者交集"
+      ],
+      "key_figure": "沿用 Qiu et al. (2024) PDF p.13 Fig. 5 的双纵轴响应图型：横轴仅放已批准触发规则/事件条件，左轴为同事件流碳盲基准下的系统排放响应，右轴为 EV/CV 派遣构成；按实际记录的可移动窗口存在/不存在分面，呈现激活与退化边界。",
+      "prior_work_check": [
+        {
+          "work": "Cheng et al.（2022）",
+          "page": "PDF pp.1-2, 5-6",
+          "finding": "回答时间窗口何时允许碳感知充电，但没有动态客户事件或油电混合路由。"
+        },
+        {
+          "work": "陈婉茹等（2023）；Qiu et al.（2024）",
+          "page": "陈 PDF pp.12-14；Qiu PDF pp.13-15",
+          "finding": "回答静态碳政策何时改变油电配置；Qiu PDF p.16 将 dynamic customer demand 明列为 future research。"
+        },
+        {
+          "work": "Goodson et al.（2013, Operations Research）",
+          "page": "PDF pp.2-3, 13-15",
+          "finding": "回答随机需求下动态重规划如何受决策和计算结构制约，但没有时变碳或混合车队。"
+        }
+      ],
+      "evidence_producibility": "现有输出语义已经记录合法充电窗口、路线/车型改变、触发次数和实际改路线次数；欠缺的是正式的同事件流碳感知/碳盲联合配对，而不是观测量不可得。",
+      "strongest_reviewer_objection": "‘没有可行替代就不会改变决策’可能是同义反复。必须独立观测两类自由度、证明算法覆盖它们，并展示不同条件下的激活/退化差异；不能用自由度作事后解释。",
+      "falsification_consequence": "有/无两类自由度时碳响应完全相同则 A 被证伪；若所有单元都不激活，只能形成受限负边界，不能声称识别转换条件。",
+      "survivability_rank": 1,
+      "kill_reason_if_dead": null
+    }
+  ],
+  "decision_evidence": [
+    "baselines/china_e3_e7/e4_carbon_timing_20260729/report.md:8-10,41-45,64-70",
+    "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/decision.json",
+    "docs/handoff/memory/codex_audit_independent_verification_20260802.md:24-28,91-100",
+    "baselines/china_e3_e7/e7_o2_dispatch_20260801/zero_search_15_streams_20260801/decision.json"
+  ]
+}

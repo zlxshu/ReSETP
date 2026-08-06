@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t28_charging_timing_resume_20260806.py", line 1313, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t28_charging_timing_resume_20260806.py", line 1164, in main
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: runtime-recovery task ids do not match unaccounted rows: expected=['T26__CY__COST_CARBON__S2026080201', 'T26__CY__COST_CARBON__S2026080202', 'T26__CY__COST_CARBON__S2026080203', 'T26__CY__COST__S2026080208', 'T26__CY__COST__S2026080209', 'T26__CY__COST__S2026080210'], observed=['T26__PRD__ASAP__S2026080209', 'T26__PRD__ASAP__S2026080210']

@@ -1,0 +1,15 @@
+arm,status,error,traceback,retained_at
+dynamic,HALT_TECHNICAL,PermissionError: [Errno 1] Operation not permitted,"Traceback (most recent call last):
+  File ""/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_three_mechanisms_20260803_runner.py"", line 952, in run_all
+    function(output, workers, expected)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_three_mechanisms_20260803_runner.py"", line 631, in run_dynamic
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File ""/opt/anaconda3/lib/python3.13/concurrent/futures/process.py"", line 651, in __init__
+    _check_system_limits()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File ""/opt/anaconda3/lib/python3.13/concurrent/futures/process.py"", line 594, in _check_system_limits
+    nsems_max = os.sysconf(""SC_SEM_NSEMS_MAX"")
+PermissionError: [Errno 1] Operation not permitted
+",2026-08-03T05:58:42.865705+00:00

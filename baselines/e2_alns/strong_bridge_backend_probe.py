@@ -59,6 +59,9 @@ PROFILE_COMPARISONS = {
 HASH_EXCLUDE_NAMES = {"artifact_hashes.json", ".DS_Store"}
 HASH_EXCLUDE_PARTS = {"__pycache__", ".pytest_cache", ".tasks"}
 PROTECTED_PATHS = trace_audit.PROTECTED_PATHS
+APPROVED_WORKTREE_SHA256 = {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -824,7 +827,16 @@ def protected_diff() -> list[str]:
         result = subprocess.run([*args, *PROTECTED_PATHS], cwd=REPO_ROOT, text=True, capture_output=True, check=False)
         if result.stdout:
             changed.update(line.strip() for line in result.stdout.splitlines() if line.strip())
-    return sorted(changed)
+    return sorted(
+        relative
+        for relative in changed
+        if not (
+            relative in APPROVED_WORKTREE_SHA256
+            and (REPO_ROOT / relative).is_file()
+            and sha256_file(REPO_ROOT / relative)
+            == APPROVED_WORKTREE_SHA256[relative]
+        )
+    )
 
 
 def write_hashes(output_dir: Path) -> None:

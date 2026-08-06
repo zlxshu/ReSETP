@@ -1,0 +1,41 @@
+{
+  "schema": "resetp.w2-fleet-authority-v3.metadata.v1",
+  "task_id": "W2",
+  "status": "W2_FLEET_AUTHORITY_V3_COMPLETE",
+  "completed_at_utc": "2026-08-02T12:27:44Z",
+  "git_head": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "builder": "baselines/china_instances/build_china81_finite_fleet_authority_v3_20260802.py",
+  "builder_sha256": "1b85a829956121c2516906ee212a02283b636c45aea341bcb2477962941a629b",
+  "authority": "data/ChinaInstances/china81_finite_fleet_authority_v3_20260802",
+  "authority_manifest_sha256": "6f409ea92a02198485f066e57e8a06047a3bfc1f7b176f83089180e349ee2929",
+  "authority_artifact_hashes_sha256": "7d6a5bde40e6b814ed4dc2b6bea52387d8b7ceaaddadc179f02928e7cf34e8d0",
+  "authority_metadata_sha256": "31104bcadda1449059480a1e064f88b80cda495713c329d277d2c30d721711c0",
+  "approval_id": "MC-W2-FLEET-AUTHORITY-V3-01",
+  "historical_authorities": {
+    "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723": {
+      "artifact_hashes_sha256": "cad19ac5259dc0693709314148cca84fa2e86d8758e91854eb1adb2e92d48341",
+      "decision_sha256": "62a976cec474f4f37e42ac3eab6dc4349e027acad2189a880c0bc868da72318c",
+      "fleet_caps_sha256": "48fcf934e480504d22981e850e24ce0daa7ff11b2f73d4f806b6396cd9fcd367",
+      "retained": true
+    },
+    "data/ChinaInstances/china81_finite_fleet_authority_v2_20260731": {
+      "artifact_hashes_sha256": "c800d0c7c65cc00a7c9c61439ff4839095ab61767e99e2a81bc94df01f736cb1",
+      "decision_sha256": "488d95b7bf90444f498aa4afbf0308bc95642a144e6aa6a250a0fc54fa5bfbbc",
+      "fleet_caps_sha256": "48fcf934e480504d22981e850e24ce0daa7ff11b2f73d4f806b6396cd9fcd367",
+      "retained": true
+    }
+  },
+  "source_hashes": {
+    "china81.py": "65a1f783dd9b6c7154172bcbdab1fa61a6cf63c5e1ce6635b31dc4ab2f9bc75b",
+    "frozen_baseline_reanchor_20260802.md": "5a5f48eb4c27cce446db8591bdf942a97f3ca407234b25d9dd1fc80d46c79f35",
+    "superseded_results_register_20260802.md": "ff2388f20450608e41418e6ab54d7345f65725df3f5ee39b1608e400640edbee",
+    "fleet_authority_v3_20260802_memory.md": "d93159143807e60a6ade0800cec57984b2722c6042b3b2f15f14f0f15b3e3370"
+  },
+  "route_search_executed": false,
+  "formal_experiment_executed": false,
+  "search_evaluations": 0,
+  "artifact_hash_exclusions": [
+    "artifact_hashes.json",
+    "._*"
+  ]
+}

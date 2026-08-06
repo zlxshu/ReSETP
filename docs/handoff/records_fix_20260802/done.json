@@ -1,0 +1,71 @@
+{
+  "schema": "resetp.z2.done.v1",
+  "task_id": "Z2",
+  "generated_at": "2026-08-02",
+  "status": "Z2_RECORDS_FIX_COMPLETE",
+  "terminal_marker": "Z2B_COMPLETE",
+  "z2b_completed_at": "2026-08-02T17:27:41+0800",
+  "items": {
+    "X2-DF-007": {
+      "status": "COMPLETE",
+      "prior_status": "HALT_REQUIRED_RESOLVED_BY_TARGET_ABSENT",
+      "completed_at": "2026-08-02T17:27:41+0800",
+      "basis": "baselines/china_e3_e7/blocker_fix_20260802/ 已存在；已在模型变更审批登记中追加用户“打开”决议、B1 指针、显式默认开启配置语义、四个指定文件的实算 SHA-256 与原始状态，并如实保留修复包 HALT_FULL_TEST_SUITE_5_FAILED 终态及两项关键回归通过事实。",
+      "resolved_by": {
+        "decision_pointer": "docs/handoff/TODO_施工总清单_20260802.md#B1",
+        "implementation_package": "baselines/china_e3_e7/blocker_fix_20260802/",
+        "implementation_package_status": "HALT_FULL_TEST_SUITE_5_FAILED",
+        "register": "docs/handoff/model_change_approval_register_20260718.md#resolved_by-补全2026-08-02-Z2B",
+        "completion_record": "docs/handoff/records_fix_20260802/x2_df_007_completion.md"
+      }
+    },
+    "X2-DF-008": {
+      "status": "COMPLETE"
+    },
+    "X2-HR-004": {
+      "status": "COMPLETE",
+      "authority_inputs": 572,
+      "additional_live_inputs": 2,
+      "rehash_mismatches": 0
+    },
+    "X2-HR-005": {
+      "status": "COMPLETE",
+      "packages_reviewed": 21,
+      "carries_current_numbers": 4,
+      "superseded": 12,
+      "historical": 5
+    },
+    "X2-HR-006": {
+      "status": "COMPLETE",
+      "numeric_occurrences": 22,
+      "unique_statistics": 9,
+      "tex_modified": false,
+      "e6_panel_decision_filename_fact": "panel_decision.json; top-level decision.json absent and recorded as null"
+    },
+    "X2-RA-007": {
+      "status": "COMPLETE",
+      "reverse_orphans": 48,
+      "archive_groups": 8,
+      "files_moved": 0,
+      "files_deleted": 0
+    }
+  },
+  "constraints_verified": {
+    "paper_main_tex_modified": false,
+    "source_modified": false,
+    "files_deleted": 0,
+    "files_moved": 0,
+    "experiments_run": 0,
+    "appledouble_sidecars_present": 12,
+    "appledouble_entries_in_artifact_hashes": 0
+  },
+  "deliverables": {
+    "report": "docs/handoff/records_fix_20260802/report.md",
+    "changed_files": "docs/handoff/records_fix_20260802/changed_files.json",
+    "artifact_hashes": "docs/handoff/records_fix_20260802/artifact_hashes.json",
+    "input_provenance_manifest": "docs/handoff/input_provenance_manifest_20260802/manifest.json",
+    "paper_number_source_manifest": "docs/handoff/paper_number_source_manifest_20260802.json",
+    "orphan_asset_archive_plan": "docs/handoff/orphan_asset_archive_plan_20260802.json",
+    "formal_package_authority_review": "docs/handoff/records_fix_20260802/formal_package_authority_review.json"
+  }
+}

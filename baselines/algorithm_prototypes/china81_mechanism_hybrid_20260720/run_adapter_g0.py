@@ -33,6 +33,7 @@ from setp_solver.algorithms.resetp_alns.support.construction import (  # noqa: E
     build_initial_solution,
 )
 from setp_solver.china81 import load_china81_bundle  # noqa: E402
+from setp_solver.model_config import legacy_model_config_from_environment  # noqa: E402
 from setp_solver.china81_completion import (  # noqa: E402
     complete_china81_route_skeleton,
     exact_china81_score,
@@ -58,9 +59,10 @@ def main() -> int:
     direct = complete_china81_route_skeleton(common, bundle)
     problem = build_pyvrp_problem(bundle)
     projected = _project_initial_solution(
-        common,
+        direct.solution,
         problem.model.data(),
         problem,
+        bundle,
     )
     pyvrp_roundtrip = _translate_solution(projected, problem)
     pyvrp_completion = complete_china81_route_skeleton(
@@ -79,6 +81,7 @@ def main() -> int:
             require_charging_signal=False,
         ),
         prices=bundle.prices,
+        model_config=legacy_model_config_from_environment(),
         customer_home_depot=dict(bundle.customer_home_depot),
     )
     alns_completion = complete_china81_route_skeleton(
@@ -97,6 +100,7 @@ def main() -> int:
             require_charging_signal=False,
         ),
         prices=bundle.prices,
+        model_config=legacy_model_config_from_environment(),
         customer_home_depot=dict(bundle.customer_home_depot),
     )
     hybrid_completion = complete_china81_route_skeleton(

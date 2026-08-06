@@ -1,0 +1,30 @@
+{
+  "schema": "resetp.z3-charger-fleet-basis-done.v1",
+  "task_id": "Z3",
+  "status": "Z3_CHARGER_FLEET_BASIS_COMPLETE",
+  "scope": "READ_ONLY_EVIDENCE_ZERO_SEARCH_DESIGN_JUDGMENT",
+  "formal_experiment_executed": false,
+  "route_search_executed": false,
+  "search_evaluations": 0,
+  "existing_project_files_modified": false,
+  "deliverables": [
+    "report.md",
+    "literature_charging_setups.json",
+    "multitrip_two_conventions.json",
+    "refeasibility_under_literature_setup.json",
+    "fixed_cost_basis_audit.json",
+    "done.json",
+    "artifact_hashes.json"
+  ],
+  "terminal_findings": {
+    "previous_generalized_multitrip_claim": "RETRACTED",
+    "convention_a_100_percent_under_constructed_2x22kw": "41/81",
+    "convention_a_100_percent_under_literature_unbounded_capacity": "44/81",
+    "convention_b_100_percent_under_literature_unbounded_capacity": "81/81",
+    "paper_convention": "B_KEEP_SINGLE_TRIP_TOTAL_FIXED",
+    "current_F2_basis": "PER_DELIVERY_TRIP",
+    "paper_source_consistency": "CONSISTENT",
+    "matches_user_physical_vehicle_startup_fee_convention": false
+  },
+  "halt": "Z3_CHARGER_FLEET_BASIS_COMPLETE"
+}

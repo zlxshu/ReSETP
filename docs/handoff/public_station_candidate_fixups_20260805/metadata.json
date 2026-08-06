@@ -1,0 +1,145 @@
+{
+  "schema": "resetp.t19-public-station-candidate-fixups.v1",
+  "status": "PASS_T19_REPAIR_DELTA_ACCOUNTING",
+  "halt_status": "HALT_NONE",
+  "paper_claim_allowed": false,
+  "started_at": "2026-08-05T17:22:55+08:00",
+  "ended_at": "2026-08-05T17:40:31+08:00",
+  "repo_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "environment": {
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH": "solver/src:models/src",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "python": "/opt/anaconda3/bin/python3.13"
+  },
+  "accounting_change": {
+    "file": "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py",
+    "removed_direct_scoring_callee": "score_reference",
+    "added_channel_record": "record_repair_delta",
+    "added_route_scoring_callee": "route_model_cost_delta",
+    "complete_candidate_budget_behavior_changed": false
+  },
+  "static_audit": {
+    "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src PYTHONDONTWRITEBYTECODE=1 /opt/anaconda3/bin/python3.13 baselines/e2_alns/audit_alns_budget_g0_20260718.py",
+    "exit_code": 0,
+    "verdict": "PASS_ALNS_BUDGET_G0_STATIC_CLOSURE",
+    "scanned_call_sites": 30,
+    "closure_blocker_call_sites": 0,
+    "unclassified_call_sites": 0,
+    "search_evaluations": 0,
+    "channel_call_sites": {
+      "candidate": 9,
+      "reference": 4,
+      "repair_delta": 6,
+      "reference_or_cache": 7,
+      "route_delta_or_feature": 4
+    },
+    "required_channels_present": {
+      "candidate": true,
+      "reference": true,
+      "repair_delta": true
+    }
+  },
+  "targeted_regression": {
+    "pytest": {
+      "passed": 7,
+      "failed": 0,
+      "seconds": 3.52,
+      "exit_code": 0
+    },
+    "positive_overlap_samples": [
+      {
+        "key": "C_seed2_budget1000",
+        "violation_types": ["CHARGING_TRIP_OVERLAP"],
+        "overlap_seconds": 6563.0712245500035
+      },
+      {
+        "key": "C_seed1_budget100",
+        "violation_types": ["CHARGING_TRIP_OVERLAP"],
+        "overlap_seconds": 6365.9078330282355
+      },
+      {
+        "key": "C_seed3_budget1000",
+        "violation_types": ["CHARGING_TRIP_OVERLAP"],
+        "overlap_seconds": 6239.742124296223
+      }
+    ],
+    "positive_overlap_passed": 3,
+    "t10_legal_checked": 18,
+    "t10_legal_passed": 18
+  },
+  "parallel_minimal_case": {
+    "source_instance": "cn-jjj-50c-01-V2-LOCATIONS",
+    "subinstance_nodes": ["D_beijing", "S_beijing", "C003"],
+    "route": ["D_beijing", "C003", "D_beijing"],
+    "candidate_count": 2,
+    "depot_candidate": {
+      "objective_cny": 245.8269329581829,
+      "distance_m": 80371.46081407,
+      "charging_electricity_cost_cny": 21.678085995586443,
+      "emissions_kgco2e": 3.9985099596052143,
+      "occupancy_cost_cny": 0.0,
+      "time_cost_cny": 0.0,
+      "violations": []
+    },
+    "public_station_candidate": {
+      "objective_cny": 267.38322772138827,
+      "distance_m": 87555.644999438,
+      "charging_electricity_cost_cny": 28.602201671528793,
+      "public_service_fee_cny": 7.593571132806687,
+      "emissions_kgco2e": 8.354838499436376,
+      "occupancy_cost_cny": 9.491963916008359,
+      "time_cost_cny": 0.0,
+      "violations": []
+    },
+    "selected": "depot_fallback",
+    "objective_gap_public_minus_depot_cny": 21.556294763205358
+  },
+  "full_suite": {
+    "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src PYTHONDONTWRITEBYTECODE=1 /opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider solver/tests",
+    "expected": {
+      "passed": 906,
+      "skipped": 1,
+      "failed": 6
+    },
+    "actual": {
+      "passed": 906,
+      "skipped": 1,
+      "failed": 6,
+      "seconds": 413.56,
+      "exit_code": 1
+    },
+    "failure_tests": [
+      "solver/tests/test_e2_80k_robustness_gate.py::test_protected_semantics_and_goeke80_parameters_match_frozen_commit",
+      "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+      "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts",
+      "solver/tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps",
+      "solver/tests/test_paper_evidence_boundaries.py::test_current_e2b_e3_e4_and_e6_identity_matrices_are_exact",
+      "solver/tests/test_strong_bridge_backend_alignment.py::StrongBridgeBackendAlignmentTests::test_decision_gate_reports_backend_only_and_main_local_search_separately"
+    ],
+    "matches_t15_t17b_failure_set": true
+  },
+  "protected_hashes_start": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_end": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "scope_audit": {
+    "source_files_modified_this_task": [
+      "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py"
+    ],
+    "existing_raise_deleted": 0,
+    "existing_assert_deleted": 0,
+    "existing_validation_weakened": 0,
+    "moved_raise_or_assert_branches": [],
+    "unrequested_behavior_changes": [],
+    "audit_allowlist_or_criteria_changed": false,
+    "generated_audit_scratch_retained_in_repo": false
+  },
+  "excluded_names": ["._*", "__pycache__", ".pytest_cache"]
+}

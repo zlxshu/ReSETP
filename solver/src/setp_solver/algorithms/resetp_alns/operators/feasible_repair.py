@@ -9,6 +9,7 @@ from typing import Any
 from setp_solver.check import check_solution
 from setp_solver.cost import _arc_loads, ev_instance_arc_energy_kwh, route_node_schedule
 from setp_solver.instance_loader import Instance, Node
+from setp_solver.model_config import strict_multitrip_enabled
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
 from setp_solver.search.evaluation import BIG_M, EvaluationContext, fairness_context_for_solution, record_repair_delta
@@ -423,7 +424,7 @@ def _new_route_options(solution: Solution, customer_id: str, context: Evaluation
 
 
 def _strict_multitrip_enabled() -> bool:
-    return os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}
+    return strict_multitrip_enabled()
 
 
 def _strict_new_route_is_schedulable(candidate: Solution, context: EvaluationContext) -> bool:

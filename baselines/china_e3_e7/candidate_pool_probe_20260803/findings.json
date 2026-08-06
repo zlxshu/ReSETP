@@ -1,0 +1,268 @@
+{
+  "config_chain": {
+    "Q1": {
+      "evidence": [
+        {
+          "location": "baselines/china_e3_e7/scout_three_mechanisms_20260803_runner.py:447-482",
+          "text": "def _configure_fleet() -> Any:\n    import baselines.china_e3_e7.run_formal_fleet_levels_xb_20260802 as old\n\n    old.INSTANCE_ID = INSTANCE_ID\n    old.MAX_ITERATIONS = ITERATIONS_PER_VIEW\n    old.MAX_NO_IMPROVEMENT = ITERATIONS_PER_VIEW\n    original_authority_rows = old.authority_rows\n    original_allocations = old.allocations_by_level\n    old.authority_rows = lambda instance_id=INSTANCE_ID: original_authority_rows(instance_id)\n    old.allocations_by_level = lambda instance_id=INSTANCE_ID: original_allocations(instance_id)\n\n    class IterationOnlyPatch:\n        def __init__(self, ignored: int) -> None:\n            self.original_builder: Any = None\n\n        def __enter__(self) -> \"IterationOnlyPatch\":\n            self.original_builder = old.route_pool_sp.build_pyvrp_problem\n\n            def builder(bundle: Any, *, route_proxy_mode: str = \"mechanism_ev\", hard_home_depot_lock: bool = False) -> Any:\n                return old.pyvrp_adapter.build_pyvrp_problem(\n                    old._proxy_only_positive_type_caps(bundle),\n                    route_proxy_mode=route_proxy_mode,\n                    hard_home_depot_lock=hard_home_depot_lock,\n                )\n\n            old.route_pool_sp.build_pyvrp_problem = builder\n            return self\n\n        def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:\n            old.route_pool_sp.build_pyvrp_problem = self.original_builder\n\n    old._HgsContractPatch = IterationOnlyPatch\n    old.infer_stop_reason = lambda observed, maximum, ignored: (\n        \"MAX_ITERATIONS\" if int(observed) == int(maximum) else \"UNEXPECTED_EARLY_STOP\"\n    )\n    return old"
+        },
+        {
+          "location": "baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py:76",
+          "text": "ARCHIVE_CANDIDATES_PER_VIEW = 24"
+        },
+        {
+          "location": "baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py:536",
+          "text": "            max_archive_candidates_per_view=ARCHIVE_CANDIDATES_PER_VIEW,"
+        }
+      ],
+      "fact": "fleet 路径的 scout 配置改写实例与迭代量，没有改写归档候选常量；_run_arm 将值为 24 的 ARCHIVE_CANDIDATES_PER_VIEW 显式传给 max_archive_candidates_per_view，没有采用 route_pool_sp 的形参默认值。"
+    },
+    "Q2": {
+      "evidence": [
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py:117-130",
+          "text": "    if isinstance(max_archive_candidates_per_view, Mapping):\n        if set(max_archive_candidates_per_view) != set(modes):\n            raise ValueError(\n                \"archive-candidate mapping must cover exactly the three \"\n                \"registered views\"\n            )\n        archive_limits = {\n            mode: int(max_archive_candidates_per_view[mode])\n            for mode in modes\n        }\n    else:\n        archive_limits = {\n            mode: int(max_archive_candidates_per_view)\n            for mode in modes"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py:208",
+          "text": "            max_archive_candidates=archive_limits[mode],"
+        }
+      ],
+      "fact": "实参是整数 24，不是 Mapping；归一化进入 else 分支，为 cv_only、naive_ev、mechanism_ev 各生成 24，随后每个视角把 archive_limits[mode] 作为 max_archive_candidates 传入。"
+    },
+    "Q3": {
+      "evidence": [
+        {
+          "location": "baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py:75",
+          "text": "EXACT_ELITES_PER_VIEW = 8"
+        },
+        {
+          "location": "baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py:535",
+          "text": "            exact_elites_per_view=EXACT_ELITES_PER_VIEW,"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py:207",
+          "text": "            exact_elite_count=int(exact_elites_per_view),"
+        }
+      ],
+      "fact": "_run_arm 显式传入值为 8 的 EXACT_ELITES_PER_VIEW；route_pool_sp 转为 int 后以 exact_elite_count=8 传入每个视角。"
+    },
+    "Q4": {
+      "evidence": [
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:172",
+          "text": "    max_archive_candidates: int,"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:177",
+          "text": "    collect_historical_population_archive: bool = False,"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:430-443",
+          "text": "    if collect_historical_population_archive:\n        proxy_ranked, quality_archive_count = (\n            _quality_diverse_native_archive(\n                tuple(unique.values()),\n                cost_evaluator,\n                limit=int(max_archive_candidates),\n            )\n        )\n    else:\n        proxy_ranked = sorted(\n            unique.values(),\n            key=cost_evaluator.cost,\n        )[: int(max_archive_candidates)]\n        quality_archive_count = len(proxy_ranked)"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:475-476",
+          "text": "    for native in proxy_ranked:\n        archive_completion_attempts += 1"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:715",
+          "text": "            \"archive_candidate_limit\": int(max_archive_candidates),"
+        }
+      ],
+      "fact": "函数体内该形参在候选选择上用于 _quality_diverse_native_archive 的 limit，或用于普通分支排序后的切片；本路径未启用历史种群归档，走普通分支。切片发生在补全循环前，循环只遍历切片后的 proxy_ranked，因此它限制补全尝试数；另有一处把该值写入 stats。"
+    },
+    "Q5": {
+      "evidence": [
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:411-443",
+          "text": "    result = algorithm.run(\n        stop,\n        collect_stats=True,\n        display=False,\n        display_interval=params.display_interval,\n    )\n    cost_evaluator = penalty_manager.cost_evaluator()\n    historical_population_items = list(\n        getattr(algorithm, \"historical_population\", ())\n    )\n    population_items = [\n        *initial_solutions,\n        *list(population),\n        *historical_population_items,\n    ]\n    population_items.append(result.best)\n    unique: dict[tuple[Any, ...], Any] = {}\n    for native in population_items:\n        unique.setdefault(_native_solution_key(native), native)\n    if collect_historical_population_archive:\n        proxy_ranked, quality_archive_count = (\n            _quality_diverse_native_archive(\n                tuple(unique.values()),\n                cost_evaluator,\n                limit=int(max_archive_candidates),\n            )\n        )\n    else:\n        proxy_ranked = sorted(\n            unique.values(),\n            key=cost_evaluator.cost,\n        )[: int(max_archive_candidates)]\n        quality_archive_count = len(proxy_ranked)"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:475-543",
+          "text": "    for native in proxy_ranked:\n        archive_completion_attempts += 1\n        try:\n            skeleton = _translate_solution(native, problem)\n            annotated_skeleton = annotate_cross_site_services(\n                skeleton,\n                bundle.customer_home_depot,\n            )\n            if annotated_skeleton.cross_site_services:\n                cross_depot_candidate_attempts += 1\n                for service in annotated_skeleton.cross_site_services:\n                    owner = bundle.customer_home_depot[\n                        service.customer_id\n                    ]\n                    direction = (\n                        f\"{owner}->{service.served_by_depot_id}\"\n                    )\n                    cross_depot_direction_counts[direction] = (\n                        cross_depot_direction_counts.get(direction, 0) + 1\n                    )\n            completion = complete_china81_route_skeleton(\n                skeleton,\n                bundle,\n            )\n            if (\n                problem.hard_home_depot_lock\n                and completion.solution.cross_site_services\n            ):\n                hard_lock_filtered_archive_candidates += 1\n                complete_candidate_evaluation_trace.append(\n                    {\n                        \"source\": \"terminal_population_archive\",\n                        \"iteration\": None,\n                        \"complete_objective\": None,\n                        \"status\": \"FILTERED_HARD_HOME_DEPOT_LOCK\",\n                    }\n                )\n                continue\n            if completion.solution.cross_site_services:\n                cross_depot_completed_candidates += 1\n            exact_candidates.append(\n                (\n                    skeleton,\n                    completion,\n                    int(cost_evaluator.cost(native)),\n                )\n            )\n            complete_candidate_evaluation_trace.append(\n                {\n                    \"source\": \"terminal_population_archive\",\n                    \"iteration\": None,\n                    \"complete_objective\": float(\n                        completion.objective\n                    ),\n                    \"status\": \"PASS\",\n                }\n            )\n        except (IndexError, KeyError, TypeError, ValueError) as exc:\n            failures.append(str(exc))\n            complete_candidate_evaluation_trace.append(\n                {\n                    \"source\": \"terminal_population_archive\",\n                    \"iteration\": None,\n                    \"complete_objective\": None,\n                    \"status\": \"INFEASIBLE_OR_ERROR\",\n                    \"exception_type\": type(exc).__name__,\n                    \"exception_message\": str(exc),\n                }\n            )"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:544-594",
+          "text": "    base_exact_candidates = list(exact_candidates)\n    exact_candidates.extend(checkpoint_candidates)\n    common_completion = complete_china81_route_skeleton(\n        common_initial_solution,\n        bundle,\n    )\n    complete_candidate_evaluation_trace.append(\n        {\n            \"source\": \"common_initial_solution\",\n            \"iteration\": None,\n            \"complete_objective\": float(common_completion.objective),\n            \"status\": \"PASS\",\n        }\n    )\n    if (\n        problem.hard_home_depot_lock\n        and common_completion.solution.cross_site_services\n    ):\n        raise ValueError(\n            \"hard home-depot control initial solution contains \"\n            \"cross-site service\"\n        )\n    exact_candidates.append(\n        (\n            common_initial_solution,\n            common_completion,\n            -1,\n        )\n    )\n    base_exact_candidates.append(\n        (\n            common_initial_solution,\n            common_completion,\n            -1,\n        )\n    )\n    base_exact_ranked = sorted(\n        base_exact_candidates,\n        key=lambda item: (\n            item[1].objective,\n            item[2],\n        ),\n    )\n    exact_ranked = sorted(\n        exact_candidates,\n        key=lambda item: (\n            item[1].objective,\n            item[2],\n        ),\n    )\n    selected = exact_ranked[: int(exact_elite_count)]"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:664-667",
+          "text": "    return HgsExactEpoch(\n        elite_skeletons=tuple(item[0] for item in selected),\n        elite_completions=tuple(item[1] for item in selected),\n        proxy_best_completion=proxy_best_completion,"
+        },
+        {
+          "location": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:819-824",
+          "text": "        archive_completions=tuple(\n            item[1] for item in exact_ranked\n        ),\n        base_archive_completions=tuple(\n            item[1] for item in base_exact_ranked\n        ),"
+        },
+        {
+          "location": "baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py:538",
+          "text": "            hard_home_depot_lock=False,"
+        },
+        {
+          "location": "baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py:541",
+          "text": "            exact_checkpoint_interval_iterations=None,"
+        }
+      ],
+      "fact": "从 PyVRP 运行结果和种群组装到两个输出集合的连续主体为 epochal_hgs.py:411-825。丢弃点包括：427-429 按 native key 去重；430-443 按上限截断；499-512 在硬 home-depot 锁开启且出现跨场服务时过滤；532-543 捕获 IndexError、KeyError、TypeError、ValueError 后不加入 exact_candidates；594 对 elite_completions 按 exact_elite_count 截断。421-443 没有单独的 is_feasible() 丢弃语句；本路径 hard_home_depot_lock=False、exact_checkpoint_interval_iterations=None。archive_completions 使用完整的 exact_ranked，未在 819-821 再截断。"
+    }
+  },
+  "per_unit_view": {
+    "100__seed1__cv_only": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(2, 0, 2)": 2,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(3, 0, 3)": 5,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(4, 0, 4)": 16,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(5, 0, 5)": 1
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 111,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    },
+    "100__seed1__mechanism_ev": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)": 7,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(2, 0, 2)": 16,
+        "ValueError: E3_STRICT_MULTITRIP_V2: route CH81-0018 misses C055's time window": 1
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 102,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    },
+    "100__seed1__naive_ev": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)": 23,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chongqing': overage=(1, 0, 1)": 1
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 118,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    },
+    "100__seed2__cv_only": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(2, 0, 2)": 6,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(3, 0, 3)": 11,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(4, 0, 4)": 7
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 123,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    },
+    "100__seed2__mechanism_ev": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)": 4,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(2, 0, 2)": 20
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 110,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    },
+    "100__seed2__naive_ev": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)": 3,
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(2, 0, 2)": 21
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 101,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    },
+    "25000__seed1__cv_only": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)": 24
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 86,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    },
+    "25000__seed1__mechanism_ev": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)": 24
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 92,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    },
+    "25000__seed1__naive_ev": {
+      "archive_completions_count": 1,
+      "completion_attempted": 24,
+      "completion_failed": 24,
+      "completion_failure_reasons": {
+        "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)": 24
+      },
+      "completion_succeeded": 0,
+      "distinct_full_objective_among_succeeded": 0,
+      "elite_completions_count": 1,
+      "max_archive_candidates_effective": 24,
+      "proxy_ranked_count": 107,
+      "status": "PASS",
+      "succeeded_full_objectives_float_hex": [],
+      "unit_failure_text": ""
+    }
+  },
+  "schema": "resetp.poolprobe.findings.v1",
+  "task_id": "SEEDPROBE3",
+  "unobtainable_quantities": []
+}

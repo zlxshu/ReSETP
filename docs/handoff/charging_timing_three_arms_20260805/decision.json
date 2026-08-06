@@ -1,0 +1,27 @@
+{
+  "schema_version": "resetp.t21-charging-timing-decision.v1",
+  "task_id": "T21",
+  "status": "HALT_T21_RUNNER_CONTRACT_UNAVAILABLE_NO_SEARCH",
+  "technical_completion": false,
+  "scientific_result_available": false,
+  "paper_claim_allowed": false,
+  "search_started": false,
+  "expected_run_count": 90,
+  "terminal_run_count": 0,
+  "raw_data_row_count": 0,
+  "improvement_event_count": 0,
+  "slot_distribution_row_count": 0,
+  "solution_witness_count": 0,
+  "adverse_rows_deleted": 0,
+  "seed_substitutions": 0,
+  "setting_changes_after_results": 0,
+  "halt_reasons": [
+    "Existing deterministic HGS requires a forbidden positive global wallclock safety cap.",
+    "Existing HGS search trace cannot supply every objective-improvement event required by T21.",
+    "Existing route-pool MIP path has a fixed configured time limit and lacks isolated actual-time plus extension/early-finish evidence.",
+    "No existing runner represents the frozen 3-instance x 3-policy x 10-seed T21 manifest without code changes."
+  ],
+  "result_judgment": "NONE; no run was started and no outcome was classified as correct or reasonable.",
+  "code_change_policy_observed": true,
+  "created_at_utc": "2026-08-05T10:22:39Z"
+}

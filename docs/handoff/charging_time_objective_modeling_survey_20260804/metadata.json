@@ -1,0 +1,47 @@
+{
+  "schema": "resetp.literature_evidence.v1",
+  "task_id": "T1-CHARGE-OBJ-MODEL",
+  "title": "充电时刻进入目标函数的现成建模取证",
+  "created_at": "2026-08-04T14:54:50+08:00",
+  "task_type": "full_text_literature_evidence",
+  "language": "zh-CN",
+  "scope": {
+    "question": "Whether prior work provides directly transferable formulations in which charging time or time-indexed charging quantity enters an electric-vehicle routing or charging objective and its constraints.",
+    "directions": [
+      "time-of-use electricity price in electric-vehicle routing and charging",
+      "time-varying grid carbon intensity in routing or charging optimization",
+      "partial and nonlinear recharging decisions",
+      "multi-depot or multi-trip vehicle return and next-departure times",
+      "time-dependent environmental or electricity cost per unit of charged energy"
+    ],
+    "included_full_text_papers": 11,
+    "inaccessible_candidates": 4
+  },
+  "execution": {
+    "search_evaluations": 0,
+    "experiments_run": 0,
+    "solver_runs": 0,
+    "tests_run": 0,
+    "code_written": false,
+    "existing_repository_files_modified": false,
+    "new_directory_only": "docs/handoff/charging_time_objective_modeling_survey_20260804/"
+  },
+  "source_policy": {
+    "formula_evidence_requires_paginated_full_text_pdf": true,
+    "abstracts_or_secondary_sources_used_as_formula_evidence": false,
+    "doi_metadata_verified_online": true,
+    "page_numbering": "physical PDF page from the first page of the listed file",
+    "unavailable_full_texts_recorded_in": "inaccessible.json"
+  },
+  "artifacts": [
+    "report.md",
+    "papers.json",
+    "inaccessible.json",
+    "metadata.json",
+    "raw_runs.csv",
+    "decision.json",
+    "artifact_hashes.json",
+    "source_pdfs/Yao_et_al_2023_arXiv2201.02311.pdf"
+  ],
+  "raw_runs_policy": "This was not an experiment; raw_runs.csv contains a header and zero data rows."
+}

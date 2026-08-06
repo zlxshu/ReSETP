@@ -1,0 +1,150 @@
+{
+  "task_id": "R1",
+  "status": "R1_MASTER_LOGIC_COMPLETE",
+  "items": [
+    {
+      "id": "L01",
+      "category": "写了但与新故事冲突",
+      "content": "题名、摘要、引言仍把多车场动态协同和成员结算放在前台。",
+      "evidence": "docs/paper_v2/paper_main.tex:133-149,216-272；HANDOFF.md:5143-5155",
+      "why_mismatch": "已批准主线是时变碳强度、混合车队、动态需求，协同和分账只是模型组件。",
+      "disposition": "删除其主线和创新地位；必要场景定义进模型章"
+    },
+    {
+      "id": "L02",
+      "category": "有产物但服务旧定位",
+      "content": "动态协同混合车队相关文献比较表。",
+      "evidence": "docs/paper_v2/paper_main.tex:279-284；HANDOFF.md:5160-5169",
+      "why_mismatch": "六列差异维度围绕多车场与成员收益，不能支撑新三柱组合定位。",
+      "disposition": "删除现表；若另行重建，只能围绕三根柱子重新取证"
+    },
+    {
+      "id": "L03",
+      "category": "配角过度展开",
+      "content": "Shapley、核、核仁的完整公式和比较口径。",
+      "evidence": "docs/paper_v2/paper_main.tex:614-630；HANDOFF.md:5148-5155",
+      "why_mismatch": "公平分账不再承担主线和正式实验。",
+      "disposition": "进模型章并压缩为引用型组件；不设敏感性、不进结论"
+    },
+    {
+      "id": "L04",
+      "category": "有产物但无处安放",
+      "content": "E3历史客户归属与联合重分结果及36.477%故事。",
+      "evidence": "docs/paper_v2/paper_main.tex:1378-1418；docs/handoff/diagnosis_20260802/d2_tautology/report.md:7-17,87-95",
+      "why_mismatch": "人工映射基准不属于新三柱，且E3/E6主要共享同一运营终态。",
+      "disposition": "从论文删除；仓库审计材料保留，不转入论文附录包装为新发现"
+    },
+    {
+      "id": "L05",
+      "category": "有产物但无处安放",
+      "content": "E6合作收益、15联盟、核仁和Shapley结果。",
+      "evidence": "docs/paper_v2/paper_main.tex:1472-1512；docs/handoff/diagnosis_20260802/d2_tautology/report.md:65-85；HANDOFF.md:5153-5155",
+      "why_mismatch": "33.018%是运营池化结果，不是结算机制效应；公平分账已降为配角。",
+      "disposition": "删除独立实验和结论数字；定义按L03进模型章"
+    },
+    {
+      "id": "L06",
+      "category": "配角过度展开",
+      "content": "非线性充电曲线、站点副本/容量及潜在E5机制实验。",
+      "evidence": "docs/paper_v2/paper_main.tex:416-444,727-748；docs/handoff/diagnosis_20260802/d3_rootcause/report.md:19-25；HANDOFF.md:5148-5155",
+      "why_mismatch": "作者已决定只作仿真组件，旧原车型1040条路线又没有公共站机会。",
+      "disposition": "核心物理关系进模型章并引文献；旧E5结果从论文删除"
+    },
+    {
+      "id": "L07",
+      "category": "写了但无文献和产物支撑",
+      "content": "跨场固定协调费、预测/结算双碳序列、公共站独立占用费。",
+      "evidence": "docs/handoff/model_scope_reduction_review_20260802/report.md:10-18,145-156",
+      "why_mismatch": "三项无同形来源，当前又分别为0、相等或无来源代理，不支撑任何新柱子。",
+      "disposition": "从模型删除；不进附录"
+    },
+    {
+      "id": "L08",
+      "category": "写了但没有现有产物闭合",
+      "content": "实体车多趟被写成综合创新。",
+      "evidence": "docs/paper_v2/paper_main.tex:313-314,560-596,697-700,774-776；docs/handoff/model_scope_reduction_review_20260802/report.md:16-18,212-218",
+      "why_mismatch": "现有入口按路线数占车，当前代表解也未展示同一实体车多趟；多趟不是新三柱之一。",
+      "disposition": "进模型章作为复杂仿真组件，删除独立创新和结果主张；由新版4.1代表解承担语义"
+    },
+    {
+      "id": "L09",
+      "category": "现有产物不足以支撑新版主张",
+      "content": "当前仿真实验最终路径表。",
+      "evidence": "docs/paper_v2/paper_main.tex:1057-1094；docs/handoff/diagnosis_20260802/d1_storyline/report.md:17-25",
+      "why_mismatch": "九趟由九辆车执行，不显示多趟或动态状态，不能作为新版完整模型语义桥。",
+      "disposition": "删除旧表；由4.1新版完整模型代表解替换"
+    },
+    {
+      "id": "L10",
+      "category": "主文过细输入产物",
+      "content": "50客户节点逐行明细及过细输入展品。",
+      "evidence": "docs/paper_v2/paper_main.tex:920-1052；docs/handoff/diagnosis_20260802/d4_instances/report.md:7-19,149-151",
+      "why_mismatch": "China81主要是混合仿真，主文需要生成规则和来源边界，不需要单例节点明细占据4.1。",
+      "disposition": "节点明细进附录；4.1只保留生成规则、车型和关键参数"
+    },
+    {
+      "id": "L11",
+      "category": "有输入图但未支撑机制",
+      "content": "单独的三大城市群典型日电网碳强度曲线。",
+      "evidence": "docs/paper_v2/paper_main.tex:1052；docs/handoff/figure_table_necessity_20260731/report.md:139-143,208-210",
+      "why_mismatch": "只展示输入，未连接实际充电迁移。",
+      "disposition": "并入5.1双面板时间机制图；不单独编号"
+    },
+    {
+      "id": "L12",
+      "category": "现有产物只能支撑局部通道",
+      "content": "E4固定配送排班碳择时表和图。",
+      "evidence": "docs/paper_v2/paper_main.tex:1420-1467；docs/handoff/diagnosis_20260802/d1_storyline/report.md:11-21",
+      "why_mismatch": "能识别纯时序作用，但不能单独证明完整路线—车型—充电模型的题眼级总效应。",
+      "disposition": "进5.1.2作为固定排班时序通道；5.1.1另需完整决策层中心对照"
+    },
+    {
+      "id": "L13",
+      "category": "有产物但主文体量超出母体功能",
+      "content": "公开最好解边界探查独立结果块。",
+      "evidence": "docs/paper_v2/paper_main.tex:1168-1217；docs/handoff/diagnosis_20260802/d1_storyline/report.md:61-78",
+      "why_mismatch": "它形成独立BKS更新题目，超出一般算法有效性验证。",
+      "disposition": "进附录；4.2主文只留明确版本的公开对比、严格消融和收敛"
+    },
+    {
+      "id": "L14",
+      "category": "有产物但主文非最小充分",
+      "content": "E2性能剖面及五臂大块。",
+      "evidence": "docs/paper_v2/paper_main.tex:1276-1369；docs/handoff/diagnosis_20260802/d6_algorithm/report.md:93-107,145-156",
+      "why_mismatch": "性能剖面有审计价值，但当前五臂不等算力且非一因素；目标期刊母体的核心证据是终值/时间、消融和收敛。",
+      "disposition": "性能剖面进附录；4.2主文重建为对比表、严格消融表、收敛图"
+    },
+    {
+      "id": "L15",
+      "category": "写了算法有效性但报告合同不足",
+      "content": "算法表缺逐实例原始Best、实际CPU、硬件、完整停止条件和BKS版本。",
+      "evidence": "docs/handoff/diagnosis_20260802/d6_algorithm/report.md:78-107",
+      "why_mismatch": "当前gap或时间比例不足以解释求解质量与计算投入，也不能闭合算法归因。",
+      "disposition": "留在4.2但替换/补齐；不能用附录替代主文必要信息"
+    },
+    {
+      "id": "L16",
+      "category": "写了模型但无正式结果",
+      "content": "动态需求模型已有，正式触发结果没有，结语仍列为未来。",
+      "evidence": "docs/paper_v2/paper_main.tex:634-650,1552-1553；docs/handoff/model_scope_reduction_review_20260802/report.md:236-255",
+      "why_mismatch": "已批准骨架要求5.3必须产出正式结果，不能继续降为展望。",
+      "disposition": "状态继承与触发定义进模型章；HALT/零搜索工程表从论文删除；5.3用正式产物闭合"
+    },
+    {
+      "id": "L17",
+      "category": "动态范围再次膨胀",
+      "content": "新增、取消、改量等全部动态事件并列进入主实验。",
+      "evidence": "docs/handoff/model_scope_reduction_review_20260802/report.md:164-165,236-242",
+      "why_mismatch": "会把5.3从触发时机再次膨胀成多机制合集。",
+      "disposition": "新增订单与触发时机留模型章和5.3；取消/改量进附录"
+    },
+    {
+      "id": "L18",
+      "category": "结论有产物但无新故事位置",
+      "content": "数值讨论与结语仍领衔E3/E6数字。",
+      "evidence": "docs/paper_v2/paper_main.tex:1514-1553；HANDOFF.md:5143-5162",
+      "why_mismatch": "继续保留会把协同和公平重新提升为主线。",
+      "disposition": "删除E3/E6头条与相关结论；结论只回收三柱和算法支撑"
+    }
+  ]
+}

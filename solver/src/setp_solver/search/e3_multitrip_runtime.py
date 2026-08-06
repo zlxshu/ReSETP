@@ -1,15 +1,15 @@
 """Version-isolated E3 scoring adapter for physical multi-trip vehicles.
 
 The frozen cost/evaluation/check modules remain unchanged.  Under the explicit
-E3 flag, this adapter prepares one canonical physical schedule, carries battery
+model configuration, this adapter prepares one canonical physical schedule, carries battery
 state between trips, and then delegates every unaffected rule to the legacy
 checker and every monetary/carbon term to the canonical evaluator.
 """
 
 from __future__ import annotations
 
-import os
 import json
+import os
 from typing import Any
 
 from ..check import (
@@ -23,6 +23,7 @@ from ..check import (
 )
 from ..cost import evaluate
 from ..instance_loader import Instance
+from ..model_config import strict_multitrip_enabled
 from ..solution import Solution
 from .evaluation import (
     BIG_M,
@@ -46,7 +47,7 @@ from .certificate_execution import (
 
 
 def enabled() -> bool:
-    return os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}
+    return strict_multitrip_enabled()
 
 
 def prepare_solution(solution: Solution, context: EvaluationContext) -> tuple[Solution, MultiTripCertificate | None]:
@@ -56,6 +57,81 @@ def prepare_solution(solution: Solution, context: EvaluationContext) -> tuple[So
         context.score_counts.get("strict_multitrip_schedule_builds", 0)
     ) + 1
     return prepare_multitrip_solution(solution, context.instance, context.prices)
+
+
+def complete_prepared_solution_violations(
+    prepared: Solution,
+    certificate: MultiTripCertificate,
+    instance: Instance,
+    prices: Any,
+    *,
+    fairness_context: Any = None,
+    fairness_enabled: bool = False,
+) -> list[Any]:
+    """Run the full static checker with certified cross-trip state replacement.
+
+    All rules unaffected by trip linkage come from the ordinary static check.
+    Battery is rerun with the certificate's inherited state.  A depot-start
+    violation is replaced only for a T2+ action whose energy, curve, clock and
+    trip gap have already passed ``build_certificate_execution_ledger``.
+    """
+
+    build_certificate_execution_ledger(
+        prepared,
+        certificate,
+        instance,
+        prices,
+    )
+    dynamic_states = _dynamic_states(
+        prepared,
+        certificate,
+        instance,
+        prices,
+    )
+    static_violations = check_solution(
+        prepared,
+        instance,
+        prices,
+        fairness_context=fairness_context,
+        fairness_enabled=fairness_enabled,
+    )
+    inherited_battery_violations = [
+        item
+        for item in check_solution(
+            prepared,
+            instance,
+            prices,
+            fairness_context=fairness_context,
+            fairness_enabled=fairness_enabled,
+            dynamic_context=DynamicCheckContext(
+                vehicle_states=dynamic_states,
+                allow_open_start=True,
+            ),
+        )
+        if item.type == BATTERY
+    ]
+    trips = {trip.route_id: trip for trip in certificate.trips}
+    certified_gap_route_ids = {
+        trip.route_id
+        for trip in certificate.trips
+        if trip.trip_index > 1
+    }
+
+    def certified_gap_start(item: Any) -> bool:
+        trip = trips.get(item.vehicle_id)
+        return bool(
+            item.type == CHARGING_START
+            and item.vehicle_id in certified_gap_route_ids
+            and trip is not None
+            and item.location == trip.home_depot_id
+        )
+
+    unaffected = [
+        item
+        for item in static_violations
+        if item.type != BATTERY and not certified_gap_start(item)
+    ]
+    return [*unaffected, *inherited_battery_violations]
 
 
 def hard_violations(solution: Solution, context: EvaluationContext) -> list[Any]:
@@ -92,11 +168,17 @@ def _hard_violations_prepared(
 ) -> list[Any]:
     prices = _prices_with_carbon_weight(context.prices, context.carbon_weight)
     try:
-        build_certificate_execution_ledger(
+        violations = complete_prepared_solution_violations(
             prepared,
             certificate,
             context.instance,
             prices,
+            fairness_context=fairness_context_for_solution(
+                prepared,
+                context,
+                prices=prices,
+            ),
+            fairness_enabled=context.fairness_enabled,
         )
     except ValueError as exc:
         context.score_counts["strict_execution_certificate_failures"] = int(
@@ -113,33 +195,6 @@ def _hard_violations_prepared(
                 str(exc),
             )
         ]
-    dynamic_states = _dynamic_states(
-        prepared,
-        certificate,
-        context.instance,
-        prices,
-    )
-    violations = check_solution(
-        prepared,
-        context.instance,
-        prices,
-        fairness_context=fairness_context_for_solution(prepared, context, prices=prices),
-        fairness_enabled=context.fairness_enabled,
-        dynamic_context=DynamicCheckContext(vehicle_states=dynamic_states, allow_open_start=True),
-    )
-    # T1 now carries an explicit day -1 marker understood by the shared
-    # checker. T2+ actions are certified between trips, so only those later
-    # actions need the historical post-route rule suppressed here.
-    certified_between_trip_charge_ids = {trip.route_id for trip in certificate.trips if trip.trip_index > 1}
-    violations = [
-        item
-        for item in violations
-        if not (
-            item.type == CHARGING_START
-            and item.vehicle_id in certified_between_trip_charge_ids
-            and "depot charging starts before return" in item.detail
-        )
-    ]
     if context.instance.num_cv is not None and certificate.vehicle_counts["cv"] > int(context.instance.num_cv):
         violations.append(Violation(ROUTE_STRUCTURE, "", CONTRACT_ID, "实体油车数量超过上限"))
     if context.instance.num_ev is not None and certificate.vehicle_counts["ev"] > int(context.instance.num_ev):
@@ -295,7 +350,15 @@ def _dynamic_states(
     for trip in certificate.trips:
         by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
     routes = {route.vehicle_id: route for route in solution.routes}
-    initial_battery = float(getattr(prices, "initial_ev_battery_kwh", 0.0) if not isinstance(prices, dict) else prices.get("initial_ev_battery_kwh", 0.0))
+    initial_battery = float(
+        certificate.initial_battery_kwh
+        if certificate.initial_battery_kwh is not None
+        else (
+            getattr(prices, "initial_ev_battery_kwh", 0.0)
+            if not isinstance(prices, dict)
+            else prices.get("initial_ev_battery_kwh", 0.0)
+        )
+    )
     fallback_capacity = float(
         getattr(prices, "Q_capacity", 0.0)
         if not isinstance(prices, dict)

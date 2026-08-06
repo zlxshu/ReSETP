@@ -1,0 +1,24 @@
+{
+  "schema": "resetp.gr2.done.v1",
+  "task_id": "GR2",
+  "status": "GR2_EXPERIMENT_ARMS_AUDIT_COMPLETE",
+  "packages_audited": 138,
+  "remaining_packages": 0,
+  "verdict_counts": {
+    "多差了东西": 75,
+    "少差了东西": 16,
+    "一致": 34,
+    "不可核验（配置未登记）": 13
+  },
+  "formal_scope_rule": "所有含 metadata.json 且 metadata/decision/report/目录生命周期带正式标记的实验包；对索引边界采用保守并集，含已作废、已封存、HOLD、preregistered 与 formal_result=false 诊断命中。",
+  "experiments_run": 0,
+  "existing_files_modified": 0,
+  "deliverables": [
+    "report.md",
+    "arms_audit.json",
+    "done.json",
+    "artifact_hashes.json"
+  ],
+  "artifact_hash_manifest": "artifact_hashes.json",
+  "terminal_marker": "GR2_EXPERIMENT_ARMS_AUDIT_COMPLETE"
+}

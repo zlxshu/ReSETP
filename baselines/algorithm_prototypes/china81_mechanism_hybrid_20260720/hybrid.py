@@ -15,6 +15,7 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (
     run_winner_kernel_in_memory,
 )
 from setp_solver.china81 import China81Bundle
+from setp_solver.model_config import legacy_model_config_from_environment
 from setp_solver.china81_completion import (
     China81CompletionResult,
     complete_china81_route_skeleton,
@@ -121,6 +122,7 @@ def run_project_alns(
         bundle.time_profile,
         config=config,
         prices=bundle.prices,
+        model_config=legacy_model_config_from_environment(),
         variant_flags=flags,
         customer_home_depot=dict(bundle.customer_home_depot),
     )

@@ -1,0 +1,78 @@
+{
+  "schema": "resetp.t11-intertrip-charging-fix-narrowing-regression.v1",
+  "task_id": "T11-INTERTRIP-CHARGING-FIX-NARROWING",
+  "status": "HALT_REGRESSION_FAILED",
+  "targeted_command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src /opt/anaconda3/bin/python3.13 -m pytest -q solver/tests/test_public_station_multitrip_20260723.py solver/tests/test_refined_carbon_charging.py solver/tests/test_search.py -k 'public_station_route_closes_strict_clock_soc_and_certificate or public_station_route_passes_mandatory_strict_runtime or integrated_route_repair_inserts_station_and_remains_fully_feasible or refined_reset_and_reconstruction_consumes_one_candidate_evaluation or test_h2_initial_solution_contains_deterministic_ev_charging_witness or test_h3_short_alns_has_nonzero_charging_signal or test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges'",
+  "targeted_tests": {
+    "total": 7,
+    "passed": 0,
+    "failed": 7,
+    "deselected": 34,
+    "failures": [
+      {
+        "test": "tests/test_public_station_multitrip_20260723.py::test_public_station_route_closes_strict_clock_soc_and_certificate",
+        "reason": "public F1 action is skipped by the narrowed predicate, but a separate pre-horizon depot action ends at absolute 4.55e-13 s and is reported as overlapping the [0,2395.810388) trip"
+      },
+      {
+        "test": "tests/test_public_station_multitrip_20260723.py::test_public_station_route_passes_mandatory_strict_runtime",
+        "reason": "same boundary CHARGING_TRIP_OVERLAP leaves the strict runtime objective at BIG_M"
+      },
+      {
+        "test": "tests/test_refined_carbon_charging.py::test_integrated_route_repair_inserts_station_and_remains_fully_feasible",
+        "reason": "the F1 public action is skipped, but the D0 depot action [8000,21090.909091) overlaps the route_timing interval [0,10492.783666)"
+      },
+      {
+        "test": "tests/test_refined_carbon_charging.py::test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation",
+        "reason": "the candidate retains the same D0 depot-action overlap and check_solution reports CHARGING_TRIP_OVERLAP"
+      },
+      {
+        "test": "tests/test_search.py::SearchGateTests::test_h2_initial_solution_contains_deterministic_ev_charging_witness",
+        "reason": "construction exits with HALT_H2: no feasible EV route with a nonzero charging action"
+      },
+      {
+        "test": "tests/test_search.py::SearchGateTests::test_h3_short_alns_has_nonzero_charging_signal",
+        "reason": "initial construction exits with HALT_H2: no feasible EV route with a nonzero charging action"
+      },
+      {
+        "test": "tests/test_search.py::SearchGateTests::test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges",
+        "reason": "initial construction exits with HALT_H2: no feasible EV route with a nonzero charging action"
+      }
+    ]
+  },
+  "positive_witnesses": {
+    "C_seed2_budget1000": {"charging_trip_overlap_count": 1, "violation_types": ["CHARGING_TRIP_OVERLAP"]},
+    "C_seed1_budget100": {"charging_trip_overlap_count": 1, "violation_types": ["CHARGING_TRIP_OVERLAP"]},
+    "C_seed3_budget1000": {"charging_trip_overlap_count": 1, "violation_types": ["CHARGING_TRIP_OVERLAP"]},
+    "passed": 3,
+    "required": 3
+  },
+  "t10_archived_solution_recheck": {
+    "runs": 18,
+    "current_checker_violation_count": 0,
+    "public_station_action_count": 0,
+    "service_redline_pass": true,
+    "first_trip_minus1_actions": 36,
+    "first_trip_minus1_energy_kwh": 940.1574033147
+  },
+  "first_trip_profile_audit": {
+    "current_code_profile_date": "2025-02-12",
+    "counterfactual_previous_date_profile": "2025-02-11",
+    "current_code_same_day_emissions_kg": 644.4711899761618,
+    "counterfactual_previous_day_profile_emissions_kg": 548.979730381574,
+    "same_day_minus_previous_day_emissions_kg": 95.49145959458781,
+    "current_code_same_day_cost_cny": 485.6262571494881,
+    "counterfactual_previous_day_profile_cost_cny": 485.6262571494881,
+    "sample_profile_date_observed": "2025-02-12",
+    "sample_profile_rows": [
+      {"half_hour_slot": 12, "actual_gco2_per_kwh": 593.7, "depot_energy_cny_per_kwh": 0.56328575},
+      {"half_hour_slot": 13, "actual_gco2_per_kwh": 584.9, "depot_energy_cny_per_kwh": 0.56328575},
+      {"half_hour_slot": 14, "actual_gco2_per_kwh": 584.9, "depot_energy_cny_per_kwh": 0.56328575}
+    ]
+  },
+  "full_suite": {
+    "status": "NOT_RUN_AFTER_MANDATORY_TARGETED_GATE_FAILURE",
+    "t10_baseline": {"passed": 898, "skipped": 1, "failed": 14},
+    "current_full_suite_counts": null
+  },
+  "script": "regression_verify_narrowing.py"
+}

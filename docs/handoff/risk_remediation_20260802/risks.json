@@ -1,0 +1,418 @@
+{
+  "schema": "resetp.x1-risk-remediation-plan.v1",
+  "task_id": "X1",
+  "status": "X1_RISK_REMEDIATION_PLAN_COMPLETE",
+  "risk_count": 19,
+  "risks": [
+    {
+      "id": "A01",
+      "class": "A",
+      "fact": "paper_main.tex 第928行称车场与客户位置基于真实设施点位构建；原始 facilities.csv 中车场字段 depot_point_semantics=SCENARIO_ROAD_ACCESS_POINT_NOT_OBSERVED_TRUCK_GATE，客户则来自公开 OSM POI 池的固定种子抽样，不是企业客户观测。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:928；data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv:表头及第2行 depot_point_semantics；data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv:表头及第2行 osm_type/osm_id",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "改为“车场采用命名物流设施的构造道路接入点；客户由公开 OSM POI 池按固定种子抽样为假设服务点”，分别说明身份坐标与业务观测边界。",
+          "source_and_page": "facilities.csv: depot_point_semantics 字段；orders.csv: osm_type、osm_id、order_seed 字段；无分页文件"
+        },
+        {
+          "type": "删除",
+          "detail": "删除“真实设施点位”总括句，只在数据说明表保留车场身份、道路接入点和客户抽样三列。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:928；docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json:P07-P09"
+        }
+      ],
+      "recommended": "采用“改措辞”。它不改变算例或结果，能完整保留可复核的设施/POI身份信息，同时消除把公开坐标误读为企业业务观测的审稿风险。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A02",
+      "class": "A",
+      "fact": "paper_main.tex 第929行写“真实道路计算”；原始矩阵 metadata.json 登记 router=OSRM 26.7.3 CH Route API、profiles=[cv,ev]、ordered_pairs=1578948、euclidean_or_symmetry_fallback=false，并说明缓存基于同一冻结 OSRM graph/profile；文件没有车辆轨迹或逐时拥堵观测字段。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:929；data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/metadata.json:1-31",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "改为“基于冻结 OSM 路网快照，使用 OSRM 26.7.3 的 cv/ev 静态 profile 计算有向路由距离与时间”，并明确不是轨迹或拥堵实测。",
+          "source_and_page": "矩阵 metadata.json: router、profiles、ordered_pairs、cache_reuse_semantics 字段；OSRM Project 文档网页无页码，Route service 章节"
+        },
+        {
+          "type": "删除",
+          "detail": "删除“真实”二字，仅保留 OSM 数据与 OSRM 路由计算的可复核技术描述。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:929；矩阵 metadata.json:1-31"
+        }
+      ],
+      "recommended": "采用“改措辞”。保留路网路由的技术含量，又不会把静态 profile 推断成实测交通状态；代价最低，审稿解释最直接。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A03",
+      "class": "A",
+      "fact": "paper_main.tex 第931-934行写需求三段、服务时长8/12/18 min和30 min网格时间窗；原始 orders.csv 实际出现需求139/208/278/347/417 kg五档、服务6/9/12/15/18 min及连续分钟时间窗，metadata.json 登记 sampling=complete empirical rows with replacement、order_rows=5805。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:931-934；data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv:表头及数据行；同目录 metadata.json:1-22",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "改为“需求按容量占比构造为五档；服务时长与连续交付窗从公开外部案例的完整行有放回重采样，三项保留联合关系；均非目标企业订单观测”。",
+          "source_and_page": "orders.csv: demand_kg、service_minutes、time_window_*、三类 classification 字段；metadata.json: sampling、order_rows 字段"
+        },
+        {
+          "type": "删除",
+          "detail": "正文删除已经失效的具体生成规则，只保留“需求为构造代理，服务时长和交付窗为公开案例迁移”，把五档和重采样字段放入数据附表。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:931-934；docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json:P10-P12"
+        }
+      ],
+      "recommended": "采用“改措辞”。当前原始字段足以给出准确规则，无需重生成算例；完整交代联合重采样比删去细节更能降低可复现性审稿风险。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A04",
+      "class": "A",
+      "fact": "paper_main.tex 第936行把混合车队概括为国内在售厢式货车官方数据；当前代码的 CV 是 JAC-WL-K7-...-box，EV 是 FOTON-AUMARK-ES1-EXPRESS-STAKE，后者为快递版栏板；福田官方单页仅支持配置、质量、载重、电池等字段，未给当前 EV 高度、0.85 投影因子或 0.45 风阻的配置级证明。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:936；solver/src/setp_solver/china81.py:638-685；福田官方《欧马可智蓝ES1单页》PDF p.12",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "逐车写成“江淮威铃K7厢式燃油车”和“福田欧马可智蓝ES1快递版栏板电动车”；厂家字段只覆盖质量、载重、电池等，构造/迁移参数另列。",
+          "source_and_page": "JAC 官方网页快照 docs/handoff/china_vehicle_parameter_sources_20260718/raw/jac_wling_k7_official_20260718.txt:1-21；福田官方单页 PDF p.12"
+        },
+        {
+          "type": "删除",
+          "detail": "删除“车型参数取自……官方公开数据”的总括句，由车型表逐字段标注“厂家/文献/情景”。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:936,979-991；solver/src/setp_solver/china81.py:638-685"
+        }
+      ],
+      "recommended": "采用“改措辞”。它保留厂家证据真正支持的字段，又消除车型上装与参数来源被整体抬高的问题；只删总括句反而会损失可追溯信息。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A05",
+      "class": "A",
+      "fact": "paper_main.tex 第938行把 90% 前额定功率、90%-100% 半功率直接写成电动车充电曲线；实现确为 NL90_MILD=(0,0.9,1.0)/(1.0,0.5)，但福田 77.28 kWh 官方页只给 SOC20%-100% 充电1 h，没有分段功率曲线。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:938；solver/src/setp_solver/charging_curve.py:76-82；solver/src/setp_solver/china81.py:915-917；福田官方单页 PDF p.12",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "改为“预设 NL90 分段充电情景：0%-90% 为额定相对功率1，90%-100%为0.5”，不得称为 ES1 实测或车型标定曲线。",
+          "source_and_page": "charging_curve.py:76-82；Montoya et al. (2017), Transportation Research Part B 103:87-110, DOI 10.1016/j.trb.2017.02.004, PDF pp.3-4 仅支持非线性/分段建模，不支持当前精确断点和倍率"
+        },
+        {
+          "type": "补出处",
+          "detail": "仅在取得 ES1 77.28 kWh 对应配置的实测 SOC-功率/时间曲线并能逐段复现 0.9 和0.5时，保留车型曲线说法；当前福田资料不满足。",
+          "source_and_page": "福田官方《欧马可智蓝ES1单页》PDF p.12；Schücking et al. (2017), Transportation Research Part D 51:173-189, DOI 10.1016/j.trd.2016.11.032, author preprint PDF p.14 为 Nissan Leaf 约90%终止案例，不可迁移成 ES1 半功率标定"
+        }
+      ],
+      "recommended": "采用“改措辞”。当前规则可完整回放但没有车型证据；标为预设情景能立即消除虚假标定风险，继续补索车型曲线的成本高且未必能取得。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A06",
+      "class": "A",
+      "fact": "paper_main.tex 第983行列 CV迎风面积4.64、EV迎风面积6.08 m²；当前运行实现对两类车都使用0.85×2.2×2.48=4.6376 m²，且代码注释明确 EV 高度2.480 m是从CV迁移的构造值。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:983；solver/src/setp_solver/china81.py:644,666-673,887",
+      "options": [
+        {
+          "type": "补数据",
+          "detail": "把 EV 表值补正为当前运行值4.64 m²，并在表注给出0.85×2.2×2.48及EV高度迁移边界；不改变任何已运行结果。",
+          "source_and_page": "solver/src/setp_solver/china81.py:644,666-673,887；docs/handoff/diagnosis_20260802/d4_instances/wording_gaps.json:28-30"
+        },
+        {
+          "type": "删除",
+          "detail": "删除车型表的迎风面积行，只在情景参数表列当前统一 A=4.6376 m²及其构造性质。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:983；solver/src/setp_solver/china81.py:644,671,887"
+        }
+      ],
+      "recommended": "采用“补数据”。运行时真值已存在，纠正6.08无需重跑；保留精确实现值比隐藏该物理参数更利于复核。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A07",
+      "class": "A",
+      "fact": "paper_main.tex 第991行把空气阻力、迎风面积投影因子和能耗系数合称“公开情景代理与文献迁移值”；原始来源链显示滚阻/能耗系数有 Goeke/Demir 文献映射，而0.85和0.45只有未映射原件的内部 source_id，EV高度为构造迁移。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:991；solver/src/setp_solver/china81.py:653-657,680-685；docs/handoff/ledger_input_provenance_01_20260728/report.md:69-93",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "把表注拆成四层：厂家规格、Goeke/Demir文献迁移、EV高度构造迁移、0.85/0.45未标定情景假设。",
+          "source_and_page": "Goeke & Schneider (2015), EJOR 245:81-99, DOI 10.1016/j.ejor.2015.01.049, PDF p.11 Table 4；ledger_input_provenance 报告:69-93"
+        },
+        {
+          "type": "删除",
+          "detail": "删除整句来源总括，在每个参数行旁增加来源类别，避免不同证据强度被一句话合并。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:979-991；docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json:P23-P30"
+        }
+      ],
+      "recommended": "采用“改措辞”。逐层归类能保留已有文献贡献，并将两个无源参数准确降级；审稿人可直接看见每个字段的证据强度。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A08",
+      "class": "A",
+      "fact": "paper_main.tex 第994行用“参考现实数据与相关文献”统领后续参数；后续同时包含官方发布价、文献迁移、公开报价代理和未观测的统一情景值，原始台账并非单一来源等级。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:994-1036；docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json:P13-P27",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "改为“以下参数分为官方发布值、文献迁移值和构造情景值”，随后逐组引出并标来源类别。",
+          "source_and_page": "provenance_ledger.json:P13-P27；paper_main.tex:994-1036"
+        },
+        {
+          "type": "删除",
+          "detail": "删除该总括句，直接让各参数段分别说明证据类别。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:994；docs/handoff/diagnosis_20260802/d4_instances/report.md:37-50"
+        }
+      ],
+      "recommended": "采用“改措辞”。三类分组比完全删除引导句更清楚，且不会改变参数或结果。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A09",
+      "class": "A",
+      "fact": "paper_main.tex 第995-996行把九城柴油价都写成2025-02-12各地发改部门公布值；原始来源登记中重庆7.50的 reviewed_source_strength=DERIVED_FROM_OFFICIAL_NDRC_PER_TON_AND_OFFICIAL_LOCAL_ADJACENT_RETAIL_TABLES，不是同日重庆地方零售表直录。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:995-996；baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/diesel_price_2025_02_12_source_register.csv:1-10",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "写成“八城使用官方区域零售表；重庆7.50元/L由国家每吨调价与重庆相邻日期官方零售表推导为情景值”。",
+          "source_and_page": "diesel_price_2025_02_12_source_register.csv:2-10，尤其第10行 reviewed_source_strength、source_file、supporting_source_file"
+        },
+        {
+          "type": "补出处",
+          "detail": "重新检索重庆市2025-02-12有效的0号柴油最高零售价格原表；只有取得同日/有效期直接表并核对7.50后，才能恢复九城统一的“地方公布”说法。",
+          "source_and_page": "候选入口：重庆市发展改革委成品油价格通知归档，需保存命中文号、有效日期、表页；当前登记仅有国家发改委2025-01-16表和重庆2025-02-19相邻表"
+        }
+      ],
+      "recommended": "采用“改措辞”。推导链已经封存且可复核，诚实单列重庆即可；继续搜索一张历史同日表的时间成本高，对数值结论没有增量。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A10",
+      "class": "A",
+      "fact": "paper_main.tex 第1036行直接给公共站60 kW、车场22 kW；原始 facilities.csv 将公共站60 kW/1枪标为 UNIFORM_PREDECLARED_SCENARIO_PROXY，将车场22 kW/2枪标为 UNIFORM_PLANNED_CAPACITY_SCENARIO_PROXY，且 station_observed_boundary 明示 OSM 只支持位置和标签身份。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:1036；data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv:表头及第2-10行",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "改为“所有公共站统一预设60 kW/1枪，所有车场统一预设22 kW/2枪；这些是容量情景，不是命名设备观测”。",
+          "source_and_page": "facilities.csv: depot_power_kw、depot_gun_count、depot_parameter_class、station_power_kw、station_gun_count、station_parameter_class、station_observed_boundary"
+        },
+        {
+          "type": "补出处",
+          "detail": "若要写成现实设备能力，需逐站取得运营商页面/现场铭牌和逐车场规划合同，并按命名设施重新登记；数值发生变化时需重算依赖充电时长的结果。",
+          "source_and_page": "候选来源为 facilities.csv 中 station_identity/station_operator 和 depot_source 指向的九城命名设施；当前文件无功率/枪数观测页"
+        }
+      ],
+      "recommended": "采用“改措辞”。当前研究使用统一容量情景，明示这一点即可保持可复现性；逐站补证成本高且会改变算例定义。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A11",
+      "class": "A",
+      "fact": "paper_main.tex 第1040-1042行写三区分别使用北京、广东、重庆三条核心电网序列；当前运行映射实际是北京→Beijing、天津→Tianjin、石家庄→Hebei、珠三角四城→Guangdong、成都→Sichuan、重庆→Chongqing，共六个 carbon_source_column。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:1040-1042；solver/src/setp_solver/china81.py:70-125；data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv:表头及 carbon_source_column 字段",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "按九城逐项写出六列映射，并说明珠三角四城共享广东列，其余五城采用各自省级/直辖市列。",
+          "source_and_page": "solver/src/setp_solver/china81.py:70-125；运行日历 carbon_source_column 字段"
+        },
+        {
+          "type": "删除",
+          "detail": "删除“三个核心电网”解释，正文只声明逐城绑定见参数表，由表列六个源列。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:1040-1042；china81.py:70-125"
+        }
+      ],
+      "recommended": "采用“改措辞”。运行时映射已经明确，无需重算；逐城说明能防止读者错误复现三条序列。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "A12",
+      "class": "A",
+      "fact": "paper_main.tex 第1545行称“中国81个自有算例”；前文第923行已说明算例由本文构建，但结语中的“自有”没有再次限定为仿真算例，可能被理解为自有企业数据。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:923-927,1545；data/ChinaInstances/china81_order_attributes_gis_v2_20260723/metadata.json: instances=81、sampling 字段",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "改为“本文构建的中国三大城市群81个仿真算例”。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:923-927,1545；订单 metadata.json: instances=81"
+        },
+        {
+          "type": "删除",
+          "detail": "删除“自有”，写成“公开标准算例与China81仿真算例”。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:1545；docs/handoff/diagnosis_20260802/d4_instances/wording_gaps.json:58-60"
+        }
+      ],
+      "recommended": "采用“改措辞”。完整名称同时交代作者构建、地理范围和仿真性质，信息损失最小。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "B01",
+      "class": "B",
+      "fact": "运行日历把 public_service_fee_cny_per_kwh 固定为0.4，并把 service_fee_class 标为 UNIFORM_SCENARIO_PROXY_NOT_MARKET_OBSERVATION；没有九城命名公共站在实验日期统一收取0.40元/kWh的原始价目。",
+      "tex_line_or_path": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv:表头及第2行；docs/paper_v2/paper_main.tex:1029-1030（仅称运营商分时服务费，未交代0.40来源）",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "保留0.40数值，但明确为九城统一的公共充电服务费情景，不写成市场观测；将其解释为处于公开政策/市场案例可见区间内的统一代理。国家文件说明服务费从地方上限逐步转向市场竞争形成，天津居民小区项目给出不高于0.40的特定上限，广东中山和深圳均明确市场调节价，均不能证明九城货运公共站统一0.40。",
+          "source_and_page": "国家发展改革委《发改价格〔2014〕1668号》PDF p.2 第2条；天津《津发改工业〔2023〕56号》HTML无页码，“三、保障措施/3.做好政策保障”；中山《中发改价管〔2021〕178号》HTML无页码，第1-2条；深圳市政府互动答复2025-04-15，HTML无页码"
+        },
+        {
+          "type": "补出处",
+          "detail": "按已冻结实验日期逐一保存九城命名公共站的运营商价目/支付页，分别登记能量费与服务费；只有逐站值都为0.40才可升级为观测，否则须按站重算公共充电成本。",
+          "source_and_page": "候选站点由 facilities.csv 的 station_identity、station_operator、station_source 字段给出；国家发展改革委《发改价格〔2014〕1668号》PDF p.2 第2条要求地方上限/市场形成，不能替代逐站价目"
+        }
+      ],
+      "recommended": "采用“改措辞”。现有权威材料支持0.40作为可理解的政策锚定情景，却否定九城统一观测的说法；透明降级不改数值和封存结果，逐站历史价目搜索则成本高且极易缺页。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "B02",
+      "class": "B",
+      "fact": "当前 CV 和 EV 都使用 frontal_area_m2=0.85×2.2×2.48=4.6376、drag_coefficient=0.45；内部 source_id 没有映射到可核验原件，福田官方77.28 kWh配置页与江淮官方参数页均未给这两个值，且EV高度2.48 m为代码明确的构造迁移。",
+      "tex_line_or_path": "solver/src/setp_solver/china81.py:638-685,885-887；docs/paper_v2/paper_main.tex:983-984,991；福田官方单页 PDF p.12；JAC官方快照:1-21",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "把0.85和0.45分别标为“未按目标配置标定的统一气动情景假设”，不得称厂家数据、实测或文献迁移；同时报告公式和EV高度迁移。现行重型商用车标准采用滑行阻力试验或推荐行驶阻力系数，而不是为该车型提供0.85/Cd=0.45。",
+          "source_and_page": "GB/T 27840-2021 当前状态见全国标准信息公共服务平台；标准征求意见稿 PDF p.II 变更说明、p.2 §5.2、pp.5-6 §6.2.4-6.3；福田官方单页 PDF p.12；Goeke & Schneider (2015) PDF p.11 Table 4 的A=3.912、Cd=0.7是另一文献情景，不是目标车型标定"
+        },
+        {
+          "type": "补出处",
+          "detail": "向厂家或型式试验/滑行试验资料检索两款精确上装配置的道路阻力或CdA；必须分别覆盖K7厢式与ES1快递版栏板，且能从原件页回放0.85和0.45，否则不得补成实测来源。",
+          "source_and_page": "候选规范：GB/T 27840-2021，征求意见稿 PDF p.2 §5.2、pp.5-6 §6.2.4-6.3；候选厂家资料：JAC快照1-21、福田官方单页PDF p.12，当前均缺目标字段"
+        },
+        {
+          "type": "删除",
+          "detail": "删除0.85与0.45的当前主值，改用配置级道路阻力/能耗率数据重建能耗层；这会改变能耗、可行性和成本，必须另行搜索数据并重跑依赖实验。",
+          "source_and_page": "GB/T 27840-2021征求意见稿 PDF p.2 §5.2、pp.5-6 §6.2.4-6.3；GB/T 27840-2011已被2021版全部代替，不能用旧版默认公式冒充当前标定"
+        }
+      ],
+      "recommended": "采用“改措辞”。本轮已覆盖国家标准、厂家文件和同类文献，仍没有能同时支持两款配置与精确数值的原件；诚实保留为统一气动情景能最小代价消除来源失实，而替换物理层将触发大范围重跑。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "B03",
+      "class": "B",
+      "fact": "当前价格参数设 initial_ev_battery_kwh=0.0；仓库没有目标企业车辆班前SOC观测。该值在模型中可解释为车辆在配送中心充电决策前的到达电量，而不是现实车队自然初始SOC。",
+      "tex_line_or_path": "solver/src/setp_solver/china81.py:891-895；docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json:P31；paper_main.tex当前未单列该值",
+      "options": [
+        {
+          "type": "补出处",
+          "detail": "把SOC=0明确写成“配送中心出发前充电决策的模型初态”，引用同类中文物流EV模型中到达配送中心电量为0、离开电量等于在中心充入电量的相同约定；不得写成企业实测。",
+          "source_and_page": "黄志红、黄卫来、郭放（2024）《考虑电池损耗的电动物流汽车充电设施选址与充电策略协同优化研究》，中国管理科学32(6):68-78，DOI 10.16381/j.cnki.issn1003-207x.2021.1636，期刊p.70式(15)-(16)及其解释"
+        },
+        {
+          "type": "改措辞",
+          "detail": "若不采用上述建模约定出处，则标为“零初始能量压力情景”，并与常见“满电离场”EVRP约定明确区分。",
+          "source_and_page": "DIMACS EVRP challenge problem definition网页无页码，首段明确EVs leave depot fully charged；Montoya et al. (2017) PDF p.4；Keskin & Çatay (2016), DOI 10.1016/j.trc.2016.01.013, author PDF p.3"
+        },
+        {
+          "type": "删除",
+          "detail": "删除SOC=0约定并改为满电离场；这会改变车场充电决策、时间与成本，必须重新求解全部依赖结果。",
+          "source_and_page": "Montoya et al. (2017) PDF p.4；DIMACS EVRP challenge problem definition网页无页码"
+        }
+      ],
+      "recommended": "采用“补出处”。目标期刊同类中文论文给出完全同形的配送中心充电前零电量约定，能支撑其作为建模初态；只需把语义限定清楚，不需把它升级为车队观测。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "B04",
+      "class": "B",
+      "fact": "NL90_MILD 的精确规则为SOC断点(0,0.9,1.0)、相对功率(1.0,0.5)；福田官方77.28 kWh快递版单页仅报告SOC20%-100%充电时间1 h，没有SOC-功率曲线。Montoya的分段曲线来自另一电池/充电站数据，Schücking的约90%案例是Nissan Leaf，均不能作为ES1精确标定。",
+      "tex_line_or_path": "solver/src/setp_solver/charging_curve.py:76-82；solver/src/setp_solver/china81.py:915-917；docs/paper_v2/paper_main.tex:938；福田官方单页 PDF p.12",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "保留当前曲线并明确命名为“NL90预设非线性情景”，逐项列断点和相对功率；外部文献只用于说明非线性/分段建模常见，不用于声称ES1标定。",
+          "source_and_page": "Montoya et al. (2017), DOI 10.1016/j.trb.2017.02.004, PDF pp.3-4及Fig.3；Schücking et al. (2017), DOI 10.1016/j.trd.2016.11.032, author preprint PDF p.14；福田官方单页 PDF p.12"
+        },
+        {
+          "type": "补出处",
+          "detail": "取得同一ES1 77.28 kWh配置在明确充电桩功率和温度下的SOC-时间/功率原始曲线，按数据重新拟合分段；若断点或倍率不是0.9/0.5，须改模型参数并重跑E5及所有依赖充电时长的结果。",
+          "source_and_page": "候选厂家入口为福田官方单页PDF p.12所列77.28 kWh配置；当前页只有1 h总时长，缺曲线；Montoya PDF pp.3-4只能作为拟合方法候选"
+        },
+        {
+          "type": "删除",
+          "detail": "删除NL90精确车型曲线主张，正文仅保留线性控制；若连NL90情景结果也删除，应同步删除相关实验叙述，不得用其他车型曲线替代。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:938,1489-1509；charging_curve.py:76-82"
+        }
+      ],
+      "recommended": "采用“改措辞”。检索已证明现有厂家页和同类文献都不能支撑0.9/0.5的车型标定；把它限定为预设情景可保留已完成的情景比较，同时避免跨车型证据迁移。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "C01",
+      "class": "C",
+      "fact": "paper_main.tex 第1111行称“当前逐题最好解(BKS)”；正式包 decision.json 的参考字段为bks，边界探查原始表明确把同一列命名为bks_2013，并列出18个低于该列且certificate=PASS的仓库内候选。因此该列是2013发表参考值，不是已核验的当前共同体BKS。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:1111,1121,1130-1165；baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p1_formal_gate/decision.json:table5[*].bks；baselines/algorithm_prototypes/boundary_probe_20260726/NEW_BKS_TABLE.csv:表头及18行",
+      "options": [
+        {
+          "type": "改措辞",
+          "detail": "把“当前BKS”和表头BKS统一改为“Vidal等(2013)发表参考值”或“Ref.(2013)”，所有误差明确写成相对该固定参考值；PR17B只称达到2013参考值。",
+          "source_and_page": "Vidal et al. (2013), Computers & Operations Research 40:475-489, DOI 10.1016/j.cor.2012.07.018, author PDF p.23 Table 8；NEW_BKS_TABLE.csv: bks_2013字段"
+        },
+        {
+          "type": "补出处",
+          "detail": "检索作者维护页或公开基准注册表的当前逐题值，保存访问日期并逐题核对；只有28题全部匹配后才能保留“当前BKS”，否则需用新分母重算全部误差。仓库内18个PASS候选不能自动升级为共同体BKS。",
+          "source_and_page": "候选入口：Vidal作者/HGS公开基准页或VRP-REP的V13记录；Vidal PDF p.23只给论文当期结果，仓库当前没有外部注册表快照"
+        },
+        {
+          "type": "删除",
+          "detail": "删除“当前”和“最好解”标签，表头只写“2013参考目标”；保留原数值与误差定义。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:1111,1130,1165；NEW_BKS_TABLE.csv: bks_2013字段"
+        }
+      ],
+      "recommended": "采用“改措辞”。固定为2013发表参考值能与现有分母和全部结果一一对应，不需重算；继续称当前BKS会被18个仓库内更低认证候选直接反驳。",
+      "cost_tier": "只改文字"
+    },
+    {
+      "id": "D01",
+      "class": "D",
+      "fact": "公开算例表第1130-1165行只给MV-HGS-SP相对参考值的Best/avg百分比，没有逐实例原始最好目标值；正式 decision.json 的 table5[*].hybrid_best 已保存28题原值，例如PR11A=6672.748、PR17B=4771.155。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:1130-1165；baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p1_formal_gate/decision.json:table5[*].hybrid_best；同目录 raw_runs.csv:hybrid_cost",
+      "options": [
+        {
+          "type": "补数据",
+          "detail": "在正文逐实例表增加“MV-HGS-SP原始Best目标值”列；从decision.json.table5[*].hybrid_best直接取值，并用raw_runs.csv按instance_id取min(hybrid_cost)交叉校验。",
+          "source_and_page": "P1 decision.json: table5[*].hybrid_best；P1 raw_runs.csv: instance_id、hybrid_cost；Vidal 2013 PDF pp.20,23；Lei & Hao 2026 PDF p.39；Schneider et al. 2014 PDF pp.13-16；Goeke & Schneider 2015 PDF p.15；Zhao et al. 2024 PDF p.10"
+        },
+        {
+          "type": "补数据",
+          "detail": "正文维持百分比宽表，另建逐实例补充表列instance、2013参考值、MV原始Best和gap，并在正文表题/注中交叉引用；数据同样由正式包机械抽取。",
+          "source_and_page": "P1 decision.json: table5；P1 raw_runs.csv:hybrid_cost；上述五篇逐实例表的页码同前"
+        },
+        {
+          "type": "删除",
+          "detail": "若版面不允许提供原始目标值，则删除正文逐实例百分比宽表，只保留集合级汇总并把完整逐实例结果作为公开补充材料；不能保留仅有gap而无原值的逐实例表。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:1130-1165；docs/handoff/diagnosis_20260802/d6_algorithm/report.md:97"
+        }
+      ],
+      "recommended": "采用第一条“补数据”。原始值已在正式决策包中，机械抽取即可；放在同一行最符合五篇直接比较文献的惯例，也最便于审稿人复算gap。",
+      "cost_tier": "重算已有数据"
+    },
+    {
+      "id": "D02",
+      "class": "D",
+      "fact": "paper_main.tex 第1108行只给本文算法与母体处理器时间比1.47-2.00，表第1130-1165行没有逐实例或汇总秒数；正式raw_runs.csv有280行，每行保存mother_cpu_seconds与hybrid_cpu_seconds。只读聚合得到母体均值231.943327 s、范围77.132099-240.520478 s，MV均值433.776769 s、范围115.820906-482.222701 s。",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:1106-1109,1130-1165；baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p1_formal_gate/raw_runs.csv:表头及280个数据行",
+      "options": [
+        {
+          "type": "补数据",
+          "detail": "按instance_id对10个种子的mother_cpu_seconds和hybrid_cpu_seconds分别取均值，在逐实例表加入同机母体与MV平均秒数；表注同时定义为实际处理器秒并给全280单元的均值/范围。",
+          "source_and_page": "P1 raw_runs.csv: instance_id、seed、mother_cpu_seconds、hybrid_cpu_seconds；Vidal 2013 PDF pp.20,23；Lei & Hao 2026 PDF p.39；Schneider 2014 PDF pp.13-16；Goeke 2015 PDF p.15；Zhao 2024 PDF pp.9-10"
+        },
+        {
+          "type": "补数据",
+          "detail": "若表宽受限，只在表注/正文补集合级实际秒数：母体均值231.943327 s（77.132099-240.520478），MV均值433.776769 s（115.820906-482.222701），并保留1.47-2.00的逐题均值比范围。",
+          "source_and_page": "P1 raw_runs.csv共280行；docs/handoff/diagnosis_20260802/d6_algorithm/report.md:84-88,98"
+        },
+        {
+          "type": "删除",
+          "detail": "删除1.47-2.00的比值叙述与逐实例算法性能表，避免给出无法与实际秒数联读的计算投入声明；只保留目标质量汇总。",
+          "source_and_page": "docs/paper_v2/paper_main.tex:1108,1165"
+        }
+      ],
+      "recommended": "采用第一条“补数据”。280行原始秒数已经齐全，按实例聚合无需重跑；逐实例时间比单一总均值更透明，审稿风险最低。",
+      "cost_tier": "重算已有数据"
+    }
+  ]
+}

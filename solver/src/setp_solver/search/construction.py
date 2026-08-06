@@ -80,6 +80,23 @@ def build_initial_solution(
                 fleet_limits=active_limits,
                 require_charging_signal=require_charging_signal,
             )
+        elif (
+            fleet_limits is not None
+            and getattr(instance, "num_cv", None) is not None
+            and active_limits.cv < int(instance.num_cv)
+            and active_limits.cv < _count_routes(solution, "cv")
+        ):
+            # An explicitly requested tighter mixed-fleet cap must be resolved
+            # before the certificate is attached; otherwise route retagging
+            # could hide a cross-depot physical-vehicle reuse.
+            solution = introduce_ev_heavy_routes(
+                solution,
+                instance,
+                carbon_profile,
+                prices,
+                fleet_limits=active_limits,
+                require_charging_signal=require_charging_signal,
+            )
         else:
             solution = introduce_ev_routes(
                 solution,

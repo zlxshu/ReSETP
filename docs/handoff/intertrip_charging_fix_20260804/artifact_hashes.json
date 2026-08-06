@@ -1,0 +1,33 @@
+{
+  "algorithm": "sha256",
+  "artifacts": {
+    "completion_trace.csv": "f17c99e43357c7ba90981824c8371df17b6bb8f5ea2b68c850a7bf3f12f34204",
+    "decision.json": "559c0390105d13a182020dfcc5f191114f23ac12ac179443aa1a0f6435a6980e",
+    "done.json": "2425915db2f2d16a862183e64cfa2957dc1d3cc2320b118795eee4afd23ecac7",
+    "finalize_t10.py": "1eb722dd1801c538b2fc38fa7bde9342156a95f910e9578fd21d3ec746e17d81",
+    "metadata.json": "9fd2b1c98ed1cafdd4da975cfa60626d096e77e9d208b0acce64ff17962e17c6",
+    "monitor.json": "f3dbb1ed471eb2a1f698da5613c989d036efbec158e5ad03b8f3b6435169e169",
+    "probe_raw.csv": "a1951ffc78f787732ada201d81389e5f7aee4c5193d6cd981558d54b2b02b959",
+    "raw_runs.csv": "a1951ffc78f787732ada201d81389e5f7aee4c5193d6cd981558d54b2b02b959",
+    "regression_results.json": "1dd4d8d486431bb3c4b7d75b2e215fdcd1ae02887f22bada6b1791c9e49d987c",
+    "regression_verify.py": "ffa83ab2fa21c56d04cf987c6631e19daa2b8e465a8a0c2aa69df00b155d622e",
+    "report.md": "43ef0d8e9d5e4cc7beef5acc698e1a97b01ae0294166388ac06deba91f3b30ff",
+    "runner_state.json": "c2a493e26b54bdd1a749e1c078f5474b1af1f9ff514ae1001b0cbf43c817eae4",
+    "slot_distribution.csv": "f9a87da335b91d08d9ae2f4f90f9f42029e67ea41ac502409bab3516df7bb6a3",
+    "solution_witnesses.json": "f7f284ea0a242c30b060ab82d3a875a0cc1b502bed365354ef6c5feed30a30e9",
+    "t10_runner.py": "1609763feb16343f260e0ffcf6ba11c51be39ac25398afc23bbb317c19776f8c"
+  },
+  "exclusions": [
+    "artifact_hashes.json",
+    "._*",
+    "**/__pycache__/**",
+    "**/.pytest_cache/**",
+    ".experiment.monitor*/**",
+    ".attempt*/**",
+    "*.pyc",
+    "temporary files (*.tmp, *.temp)",
+    "run.log"
+  ],
+  "schema": "resetp.t10-intertrip-charging-fix-artifact-hashes.v1",
+  "task_id": "T10-INTERTRIP-CHARGING-FIX"
+}

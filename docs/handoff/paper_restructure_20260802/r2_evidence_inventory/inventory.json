@@ -1,0 +1,172 @@
+{
+  "4.1 算例与参数": [
+    {
+      "section": "4.1 算例与参数",
+      "data_needed": "China81 输入来源逐项台账",
+      "exists": true,
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json; docs/handoff/diagnosis_20260802/d4_instances/report.md",
+      "verdict": "直接可用",
+      "reason": "provenance_ledger.json 长度为 44；report.md:7 为构造26、公开发布9、文献迁移4、未登记5、观测0，report.md:21-68 为 P01-P44 逐项证据。"
+    },
+    {
+      "section": "4.1 算例与参数",
+      "data_needed": "可直接落入 4.1 的统一算例说明与数值参数表",
+      "exists": false,
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/report.md; docs/handoff/diagnosis_20260802/d4_instances/wording_gaps.json",
+      "verdict": "需重算但不需重新搜索",
+      "reason": "done.json 为 provenance_items=44、wording_gaps=12；report.md:72 指出 China81 需拼接位置、订单、设施、道路、运行参数和车队五套分散权威，report.md:91-117 列出 12 处现稿与运行时错配。"
+    },
+    {
+      "section": "4.1 算例与参数",
+      "data_needed": "公共充电服务费 0.40 元/kWh 的可回放来源",
+      "exists": false,
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/report.md:45; provenance_ledger.json P21",
+      "verdict": "完全没有",
+      "reason": "P21 分类为未登记；现有字段只有 service_fee_class=UNIFORM_SCENARIO_PROXY_NOT_MARKET_OBSERVATION。"
+    },
+    {
+      "section": "4.1 算例与参数",
+      "data_needed": "迎风面积投影因子 0.85 与空气阻力系数 0.45 的可回放来源",
+      "exists": false,
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/report.md:52-53; provenance_ledger.json P28-P29",
+      "verdict": "完全没有",
+      "reason": "P28、P29 均分类为未登记；wording_gaps.json:28-35 还记录正文 6.08 m2 与当前代码 4.6376 m2 冲突。"
+    },
+    {
+      "section": "4.1 算例与参数",
+      "data_needed": "EV 初始 SOC=0 的观测或文献来源",
+      "exists": false,
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json:275-279",
+      "verdict": "完全没有",
+      "reason": "只有 china81.py:893-895 的 initial_ev_battery_kwh=0.0；台账 note 为未找到命名车队班前 SOC 或独立来源合同。"
+    },
+    {
+      "section": "4.1 算例与参数",
+      "data_needed": "NL90 分段充电曲线的车型实测或具页码来源",
+      "exists": false,
+      "path": "docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json:281-288",
+      "verdict": "完全没有",
+      "reason": "规则与 china81.py:20,915-917 及 paper_main.tex:938 一致，但台账分类为未登记，未映射到 ES1 77.28 kWh 实测曲线或具页码文献。"
+    }
+  ],
+  "4.2 算法有效性": [
+    {
+      "section": "4.2 算法有效性",
+      "data_needed": "公开 28 算例的算法质量、重复与停止数据",
+      "exists": true,
+      "path": "baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p1_formal_gate/",
+      "verdict": "直接可用",
+      "reason": "decision.json:3-15 为 28/28、280 单元、264/16/0，hybrid_error_pct=0.9048706160882664；metadata.json:5-26 为种子1-10及全部停止常数；raw_runs.csv 有280行。"
+    },
+    {
+      "section": "4.2 算法有效性",
+      "data_needed": "当前车型下的 China81 五算法同协议比较",
+      "exists": true,
+      "path": "baselines/algorithm_prototypes/china81_vs_opensource_20260727/",
+      "verdict": "必须重跑搜索",
+      "reason": "旧结果为2025行、405配对、354/46/5、平均改善1.919118%；decision.json.protocol_disclosure 与 README.md:20-23 表明 O=NoImprovement(3000)，F/E/M/MV=2026-07-24固定迭代封存且无墙钟。e2_e7_decision_source_execution_audit_20260801.md:52-54 核实旧 EV=140.41kWh/1000kg，当前=77.28kWh/1700kg。"
+    },
+    {
+      "section": "4.2 算法有效性",
+      "data_needed": "当前 MV-HGS-SP 的一因素组件消融表",
+      "exists": false,
+      "path": "baselines/e2_alns/e2b_component_ablation_formal_20260715/",
+      "verdict": "必须重跑搜索",
+      "reason": "现有旧包虽为 E2B_FORMAL_EVIDENCE_READY、9个L-main实例×5种子×4臂、45比较单元和180行，但 report.md:3-9 说明 A/B/C 是旧 ALNS 搜索，D 为复用C路线的0搜索充电择时；不是当前 China81/MV-HGS-SP 一因素消融。"
+    }
+  ],
+  "5.1 时变碳强度": [
+    {
+      "section": "5.1 时变碳强度",
+      "data_needed": "固定路线、车型、充电量下的 ASAP-CARBON 充电择时全量结果",
+      "exists": true,
+      "path": "baselines/china_e3_e7/e4_carbon_timing_20260729/",
+      "verdict": "直接可用",
+      "reason": "decision.json 为 PASS_COMPLETE_ZERO_SEARCH_REPLAY、11340/11340、search_candidate_count=0；report.md:64-70 为22680次复算、两臂违约0，唯一变化为 charge_start_second，forecast_equals_actual_profile=true。"
+    },
+    {
+      "section": "5.1 时变碳强度",
+      "data_needed": "固定路线结果的正文表和机制图数据",
+      "exists": true,
+      "path": "docs/paper_v2/figures_e4_20260731/",
+      "verdict": "直接可用",
+      "reason": "validation_summary.json.checks.metric_values 为充电排放-54.970371998766%、系统排放-9.746262546543%、充电电费+134.879776719245%、完整模型成本+1.845374763870%；report.md:54 为405×28=11340。"
+    },
+    {
+      "section": "5.1 时变碳强度",
+      "data_needed": "路线-车型-充电联合优化的配对结果",
+      "exists": true,
+      "path": "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/",
+      "verdict": "直接可用",
+      "reason": "decision.json 为90行、30配对；COST_PLUS_CARBON 对 COST_ONLY 的系统排放-2.679143%、运营成本+0.0000448%、路线/车型改变2/30，PURE_CARBON 为-13.935353%、+2.486564%、改变19/30。只覆盖三个50c实例的单趟口径。"
+    }
+  ],
+  "5.2 车队电动化配置": [
+    {
+      "section": "5.2 车队电动化配置",
+      "data_needed": "当前 China81 车队容量构造及三个 rho 档",
+      "exists": true,
+      "path": "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv",
+      "verdict": "直接可用",
+      "reason": "fleet_caps.csv:1-8 含 R_d、main_reserve_factor、num_cv、num_ev、sensitivity_json；run_e3e6_gates_01_20260729.py:324-334 定义 num_cv=R_d、num_ev=max(1,ceil((rho-1)R_d))。rho=1.10/1.25/1.50 是储备因子，不是EV占比。"
+    },
+    {
+      "section": "5.2 车队电动化配置",
+      "data_needed": "仓库中任何 EV 组成结果",
+      "exists": true,
+      "path": "baselines/e2_alns/280kwh_fleet_composition_gate_data/; baselines/e2_alns/280kwh_fleet_composition_gate.md",
+      "verdict": "直接可用",
+      "reason": "旧诊断为280kWh、17个非China81实例、3种子、153搜索行/51胜者；conclusion.json:2-16 为全CV 1、全EV 16、EV-heavy 34、balanced 0、HALT_EV_DOMINANT。它按优化后结果分类，不是预设占比档。"
+    },
+    {
+      "section": "5.2 车队电动化配置",
+      "data_needed": "当前 China81 按预设 EV 占比分档的成本、排放、用车与路线结果",
+      "exists": false,
+      "path": "查不到；已核对 baselines/china_e3_e7/、gate1_d2a/fleet_caps.csv、baselines/e2_alns/280kwh_fleet_composition_gate_data/、baselines/e2_alns/battery_spectrum_transition_data/",
+      "verdict": "必须重跑搜索",
+      "reason": "fleet_caps 的三档改变储备因子且始终保留R_d辆CV；280kWh目录按结果占比分组；battery_spectrum 扫描电池80/100/113/141/210/280kWh。没有当前77.28kWh China81 的控制EV占比正式搜索。"
+    },
+    {
+      "section": "5.2 车队电动化配置",
+      "data_needed": "当前正式解中 EV 名额是否实际约束结果",
+      "exists": true,
+      "path": "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/*/decision.json; */solutions/*.json",
+      "verdict": "直接可用",
+      "reason": "按 solutions 的 .solution.routes[].vehicle_type/home_depot_id 对 decision.json.terminal_capacity_basis.*.ev_cap 复点，180/180个解×车场单元相等；e2_e7_decision_source_execution_audit_20260801.md:24 同样登记180/180。"
+    }
+  ],
+  "5.3 动态需求触发": [
+    {
+      "section": "5.3 动态需求触发",
+      "data_needed": "O1 四种重算触发规则的低成本运行数据",
+      "exists": true,
+      "path": "baselines/china_e3_e7/e7_o1_replanning_20260801/probe_three_sizes_seeds1to3_eval8_count_20260801/",
+      "verdict": "直接可用",
+      "reason": "decision.json:2-13 为36单元、34通过、formal_result=false、research_effect_judged=false；metadata.json:6-18,27-34 为3规模、4规则、3种子、stage_evaluations=8且 diagnostic_only_not_formal。"
+    },
+    {
+      "section": "5.3 动态需求触发",
+      "data_needed": "O1 两个失败单元的硬约束机理",
+      "exists": true,
+      "path": "baselines/china_e3_e7/e7_o1_replanning_20260801/failure_diagnosis_20260801/",
+      "verdict": "直接可用",
+      "reason": "decision.json:2-19 为35辆全在、19可用、11未出车，触发晚267.56694秒，higher_budget_can_rescue_current_stage=false；report.md:31-44 给出逐车场最迟离场。"
+    },
+    {
+      "section": "5.3 动态需求触发",
+      "data_needed": "O2 发车等待时机的零搜索体检",
+      "exists": true,
+      "path": "baselines/china_e3_e7/e7_o2_dispatch_20260801/zero_search_15_streams_20260801/",
+      "verdict": "直接可用",
+      "reason": "decision.json:2-13 为15流、300单、search_evaluations=0、solver_runs=0、formal_result=false；decision.json:52-61 为等待0/10/20/30分钟后可达300/298/295/293。"
+    },
+    {
+      "section": "5.3 动态需求触发",
+      "data_needed": "动态触发策略对成本、排放、等待、重算次数的正式配对效果",
+      "exists": false,
+      "path": "baselines/china_e3_e7/e7_o1_replanning_20260801/; baselines/china_e3_e7/e7_o2_dispatch_20260801/",
+      "verdict": "必须重跑搜索",
+      "reason": "O1 formal_result=false 且2/36失败；O2 o2_effect_experiment=false、search_evaluations=0、solver_runs=0。只有事件流、时机和失败诊断，没有正式完整配对搜索。"
+    }
+  ]
+}

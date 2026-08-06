@@ -1,0 +1,83 @@
+{
+  "task_id": "W1",
+  "selected_thesis_id": "A",
+  "verdicts": [
+    {
+      "section": "5.1 时变碳强度",
+      "experiment": "固定同一配送排班，只比较 ASAP 与按时变电网碳强度择时的 CARBON，并同时报告充电侧排放、系统排放、电费、合法窗口和不可移动原因；现有 E4-CARBON-TIMING-01 可承担。",
+      "verdict": "必须自己做",
+      "prior_work_and_page": "Cheng et al. (2022), PDF pp.1-2, 5-6；其研究问题是充电会话灵活性可带来多少碳减排，并以到离站窗口约束调度。仓库本模型结果见 baselines/china_e3_e7/e4_carbon_timing_20260729/report.md:8-10,41-45,64-70。",
+      "why_not_applicable_if_must_do": "Cheng 不含配送路线、客户时间窗形成的充电窗口、混合车队和动态客户事件，不能证明时变碳信号在本文模型的第一类自由度中激活；本文现有 E4 已完成该本模型对照，无需重跑。"
+    },
+    {
+      "section": "5.1 时变碳强度",
+      "experiment": "按现有 28 个电网日和城市群展示碳感知响应的分布、反向日和窗口边界，不另选日期或规模。",
+      "verdict": "必须自己做",
+      "prior_work_and_page": "Cheng et al. (2022), PDF pp.5-6 Fig. 6 以季节/时段展示碳强度与充电响应；仓库现有 E4 的 28 日范围、城市群分解和全分母见 baselines/china_e3_e7/e4_carbon_timing_20260729/report.md:14-23,47-49。",
+      "why_not_applicable_if_must_do": "前人图回答站场充电会话，不给出本文配送排班在九城电网日历中的条件差异；这一项只能使用现有全分母，不能挑有利日期。"
+    },
+    {
+      "section": "5.1 时变碳强度",
+      "experiment": "重复做静态碳价、碳配额或碳交易价格对成本和排放的敏感性。",
+      "verdict": "引用即可",
+      "prior_work_and_page": "陈婉茹等(2023) PDF pp.13-14（期刊 pp.3332-3333）§5.2/表10/图4；Qiu et al.(2024) PDF pp.13-15 Fig.5-7。两者已给出价格/配额对排放、成本和车队构成的响应及临界机制。",
+      "why_not_applicable_if_must_do": ""
+    },
+    {
+      "section": "5.1 时变碳强度",
+      "experiment": "把预测误差、非线性充电、协同或公平分账再加入时变碳敏感性。",
+      "verdict": "不该做",
+      "prior_work_and_page": "用户固定故事将协同、公平分账、非线性充电定为引文模型组件；现有 E4 明确预测碳强度等于结算碳强度，见 baselines/china_e3_e7/e4_carbon_timing_20260729/report.md:70-72。",
+      "why_not_applicable_if_must_do": ""
+    },
+    {
+      "section": "5.2 车队电动化配置",
+      "experiment": "单独扫描油/电车辆数量，重复报告总成本和碳排放随车队配置的曲线。",
+      "verdict": "引用即可",
+      "prior_work_and_page": "陈婉茹等(2023) PDF p.12（期刊 p.3331）§5.1/表9从6/0到0/6给出成本先降后升；Qiu et al.(2024) PDF pp.13-15 Fig.5-7 给出静态碳规制下车队构成响应。",
+      "why_not_applicable_if_must_do": ""
+    },
+    {
+      "section": "5.2 车队电动化配置",
+      "experiment": "在同一时变碳日历和同一配送任务下，检验已批准的车队配置是否改变碳感知相对碳盲基准的排放响应，并记录改变发生在充电、车型还是路线层。",
+      "verdict": "必须自己做",
+      "prior_work_and_page": "陈婉茹等(2023) PDF pp.12-14；Qiu et al.(2024) PDF pp.13-15；二者均为静态碳税/碳交易/配额，不含48时段电网碳强度、配送充电窗口和动态事件。",
+      "why_not_applicable_if_must_do": "前人已证明一般性的静态车队杠杆，却没有检验车队自由度是否改变时变碳信号在本文配送决策中的激活层级；这是中心论点A所需的第二条件。"
+    },
+    {
+      "section": "5.2 车队电动化配置",
+      "experiment": "把广州1辆、深圳2辆的固定EV上限或某一最优解的EV使用数直接当作车队配置敏感性。",
+      "verdict": "不该做",
+      "prior_work_and_page": "docs/handoff/memory/codex_audit_independent_verification_20260802.md:24-28：90份E4正式解在180/180个车场—解单元全部贴EV上限；baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/decision.json：成本加碳臂仅2/30改变车型化路径。",
+      "why_not_applicable_if_must_do": ""
+    },
+    {
+      "section": "5.3 动态需求触发",
+      "experiment": "把逐单立即重排、固定30分钟、500kg或最多30分钟三种规则按平均成本/运行时间排名，选一个正文赢家。",
+      "verdict": "不该做",
+      "prior_work_and_page": "baselines/china_e3_e7/e7_trigger_policies_20260801/qiu_accept_all_three_triggers_50c_seeds1to10_eval8_comparison_20260801/report.md:10-25 明确为8次评价的低成本技术比较，不是正式实验；decision.json 的 formal_result=false、paper_lead_selected=false。Goodson et al.(2013) PDF pp.13-15 已系统研究一般动态方法的质量—计算权衡。",
+      "why_not_applicable_if_must_do": ""
+    },
+    {
+      "section": "5.3 动态需求触发",
+      "experiment": "在同一固定事件流内，对已批准触发条件做碳感知与碳盲配对，同时记录事件后剩余充电窗口、可用油电运力、服务量、路线/车型/充电改变。",
+      "verdict": "必须自己做",
+      "prior_work_and_page": "Goodson et al.(2013) PDF pp.2-3,13-15 研究随机需求动态重规划但无碳/混合车队；Cheng et al.(2022) PDF pp.1-2,5-6 研究时变碳充电但无客户路由；陈婉茹等(2023) PDF pp.12-14 与 Qiu et al.(2024) PDF pp.13-15 研究静态混合车队。当前 O2 仅是零搜索时机诊断，见 baselines/china_e3_e7/e7_o2_dispatch_20260801/zero_search_15_streams_20260801/decision.json：formal_result=false、solver_runs=0。",
+      "why_not_applicable_if_must_do": "没有一篇前人工作同时让动态客户事件改变配送剩余窗口、让油电运力可替代，并用时变电网碳强度评价决策是否激活；该联合配对是中心论点A的直接证据。"
+    },
+    {
+      "section": "5.3 动态需求触发",
+      "experiment": "只报告动态成本、累计排放、完成率和触发次数，不报告事件后两类自由度及碳盲配对。",
+      "verdict": "不该做",
+      "prior_work_and_page": "docs/handoff/memory/user_operating_principles.md:113-119 要求每个实验写清改变因素、保持因素和可否定结果；docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md:47 明确动态碳证据至少要报告EV/CV分工、充电动作/时段碳强度等交互指标。",
+      "why_not_applicable_if_must_do": ""
+    },
+    {
+      "section": "5.3 动态需求触发",
+      "experiment": "把协同、公平分账或非线性充电与动态触发再做全组合敏感性。",
+      "verdict": "不该做",
+      "prior_work_and_page": "用户固定故事已将三者定为模型组件、引文、不做实验；陈雨蝶等(2025) PDF p.22 §4.9 的逐因素控制变量结构正是会造成因素流水账的反例。",
+      "why_not_applicable_if_must_do": ""
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "schema_version": "resetp.gr1.code-only-terms.v1",
+  "task_id": "GR1",
+  "status": "GR1_FORMULA_CODE_AUDIT_COMPLETE",
+  "scope_note": "反向清单覆盖实际进入目标、硬可行性或模型默认边界的项；纯输入校验、异常处理和日志字段不列入。部分项同时解释 equation_map 中的公式不一致。",
+  "term_count": 9,
+  "terms": [
+    {
+      "term_id": "CODE_ONLY_OBJECTIVE_ROUTE_TIME",
+      "name": "路线时间货币成本",
+      "verdict": "代码有而论文无",
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/prices.py",
+      "impl_lines": ["cost.py:194-199", "cost.py:214", "cost.py:1218-1240", "prices.py:147-148"],
+      "key_expression": "cost_time = route_time_seconds/3600 * route_time_cost_per_hour; total_cost includes cost_time",
+      "activation": "默认 0；E5-P1 灵敏度可设 75 CNY/h",
+      "numeric_evidence": {"route_hours": 1.0, "price_per_hour": 75.0, "paper_objective_term": 0.0, "code_objective_term": 75.0, "difference": 75.0},
+      "impact": "启用时改变目标、候选排序和 E5 结论；profit.py 不扣该项，因此目标与车场利润账不闭合。"
+    },
+    {
+      "term_id": "CODE_ONLY_PHYSICS_PROFILED_ROAD",
+      "name": "变速道路剖面与车型专属物理参数积分",
+      "verdict": "代码有而论文无",
+      "impl_file": "solver/src/setp_solver/instance_loader.py; solver/src/setp_solver/cost.py",
+      "impl_lines": ["instance_loader.py:171-210", "cost.py:292-347", "cost.py:895-1009"],
+      "key_expression": "arc_metrics returns distance, duration, sum(v^2 d); energy uses profile vehicle coefficients",
+      "activation": "China81 正式实例 road_profiles 非空时必走",
+      "numeric_evidence": {"paper_fixed_speed_ev_kwh": 0.605257696986, "profiled_code_ev_kwh": 0.378929885699, "difference_kwh": -0.226327811287},
+      "impact": "这是正式 China81 评价物理层，不是边缘诊断项；论文只写给定固定 v 的功率与线性退化式。"
+    },
+    {
+      "term_id": "CODE_ONLY_DEPOT_CAPACITY_UNBOUNDED_DEFAULT",
+      "name": "车场充电并发无上限/客户数回退",
+      "verdict": "代码有而论文无",
+      "impl_file": "solver/src/setp_solver/model_config.py; solver/src/setp_solver/china81.py; solver/src/setp_solver/check.py",
+      "impl_lines": ["model_config.py:26-47", "china81.py:592-636", "check.py:1120-1128"],
+      "key_expression": "depot_charger_capacity_mode='unbounded'; missing depot station_chargers -> max(1, customer_count)",
+      "activation": "当前 200c 正式 metadata 明示 unbounded",
+      "numeric_evidence": {"simultaneous_sessions": 2, "paper_Cs": 1, "paper_excess": 1, "code_fallback_Cs": 2, "code_excess": 0},
+      "impact": "放松论文 eq:station_cap 对车场 d∈D 的容量约束；现有结果仅能证明公共站容量和无上限车场情景。"
+    },
+    {
+      "term_id": "CODE_ONLY_OPTIONAL_PROFIT_FLOOR",
+      "name": "可选个体理性利润下限 Pi_d >= theta Pi_d0",
+      "verdict": "代码有而论文无",
+      "impl_file": "solver/src/setp_solver/check.py",
+      "impl_lines": ["39-40", "53-65", "96-103", "179", "1131-1171"],
+      "key_expression": "required = theta * independent_profit; violation if depot_profit < required",
+      "activation": "默认 FAIRNESS_ENABLED=False；显式开启并传 FairnessContext 才生效",
+      "numeric_evidence": {"Pi0": 100.0, "theta": 1.0, "Pi": 90.0, "paper_numbered_constraint_violation_count": 0, "code_enabled_violation_count": 1, "shortfall": 10.0},
+      "impact": "开启时改变可行域；当前论文编号公式只有 coalition core，不含该 theta 个体利润门。"
+    },
+    {
+      "term_id": "CODE_ONLY_REPEATED_STATION_PROHIBITION",
+      "name": "同一路线重复访问同一公共站时禁止绑定充电会话",
+      "verdict": "代码有而论文无",
+      "impl_file": "solver/src/setp_solver/check.py",
+      "impl_lines": ["313-327"],
+      "key_expression": "if station type f and route.node_sequence.count(station_id) != 1: violation",
+      "activation": "任何重复公共站访问且带充电 action",
+      "numeric_evidence": {"visits_to_same_station": 2, "paper_numbered_violation_count": 0, "code_violation_count": 1, "difference": 1},
+      "impact": "收缩可行域并可能制造充电/等待机制失活；这是缺少 occurrence index 的表示限制，不是论文约束。"
+    },
+    {
+      "term_id": "CODE_ONLY_CARBON_HORIZON_POLICY",
+      "name": "碳时段越界的截断、循环与 previous-hold 规则",
+      "verdict": "代码有而论文无",
+      "impl_file": "solver/src/setp_solver/cost.py",
+      "impl_lines": ["40-45", "73-107", "584-651"],
+      "key_expression": "noncyclic slot index clamps; cyclic uses modulo; profile lookup uses previous hold",
+      "activation": "跨日车场充电使用 cyclic=True；非循环旧路径采用截断/越界拒绝",
+      "numeric_evidence": {"slot_count": 48, "absolute_slot": 49, "cyclic_code_slot": 1, "paper_numbered_mapping": null, "index_shift": -48},
+      "impact": "跨日/越界排放与电费归属由代码策略决定；论文只定义 t∈T，没有给越界延拓规则。"
+    },
+    {
+      "term_id": "CODE_ONLY_CROSS_SITE_ANNOTATION_CONTRACT",
+      "name": "F6 依赖外部 cross_site_services 注释列表",
+      "verdict": "代码有而论文无",
+      "impl_file": "solver/src/setp_solver/cost.py; solver/src/setp_solver/china81_completion.py",
+      "impl_lines": ["cost.py:200", "china81_completion.py:67-87", "china81_completion.py:104-109"],
+      "key_expression": "evaluate counts an auxiliary list instead of deriving ownership mismatch from routes; China81 wrapper rebuilds it",
+      "activation": "裸 evaluate 或任何未先 annotate 的路径",
+      "numeric_evidence": {"cross_site_customers": 1, "unit_cost": 25.0, "paper_cost": 25.0, "unannotated_code_cost": 0.0, "difference": -25.0},
+      "impact": "正式 China81 wrapper 有保护；其他调用路径的正确性依赖未写入论文的前置接口合同。"
+    },
+    {
+      "term_id": "CODE_ONLY_DYNAMIC_COMMITMENT_GUARDS",
+      "name": "动态阶段冻结前缀、在途实体车不可重用与保留充电会话",
+      "verdict": "代码有而论文无",
+      "impl_file": "solver/src/setp_solver/check.py; solver/src/setp_solver/search/dynamic.py",
+      "impl_lines": ["check.py:79-93", "check.py:401-434", "dynamic.py:298-327"],
+      "key_expression": "reserved physical ids cannot appear in new stage; frozen route prefixes must match exactly; started charging actions are reserved",
+      "activation": "传入 DynamicCheckContext 的滚动阶段",
+      "numeric_evidence": {"reserved_vehicle_reused": 1, "paper_numbered_violation_count": 0, "code_violation_count": 1, "difference": 1},
+      "impact": "这些保护与论文 651-661 的文字意图相符，但没有编号数学约束；因此无法逐式复核其确切可行域。"
+    },
+    {
+      "term_id": "CODE_ONLY_SP_HARD_HOME_DEPOT_LOCK",
+      "name": "SP 可选责任车场硬锁",
+      "verdict": "代码有而论文无",
+      "impl_file": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "impl_lines": ["628-646"],
+      "key_expression": "if hard_home_depot_lock: drop every route serving a customer whose owner differs from route home depot",
+      "activation": "hard_home_depot_lock=True 的算法臂/诊断",
+      "numeric_evidence": {"pool_routes_before": 1, "cross_site_route_count": 1, "pool_routes_after": 0, "difference": -1},
+      "impact": "会完全禁用跨场协同；它是实验臂过滤器，不是论文 eq:sp-recombination 的基础约束，不能与完整模型主臂混称。"
+    }
+  ]
+}

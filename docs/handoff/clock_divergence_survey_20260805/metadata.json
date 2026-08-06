@@ -1,0 +1,73 @@
+{
+  "task_id": "T14_CLOCK_DIVERGENCE_SURVEY_20260805",
+  "date": "2026-08-05",
+  "mode": "read_only_clock_survey",
+  "repository_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "environment": {
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH": "solver/src:models/src",
+    "bytecode_disabled": true
+  },
+  "scope": {
+    "quantities": [
+      "single_trip_departure",
+      "single_trip_return",
+      "depot_charging_window",
+      "public_station_charging_window",
+      "intertrip_entity_vehicle_transition",
+      "charge_day_offset"
+    ],
+    "examples_used": [
+      {
+        "id": "E1",
+        "description": "T13 minimal reproduction D0-F2-C3-D0",
+        "bundle": "models/data_bundle/generated_instances/verify_20251113",
+        "battery_kwh": 80.0
+      },
+      {
+        "id": "E2",
+        "description": "archived China81 witness O_seed2_budget1000",
+        "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+        "scenario_date": "2025-02-12",
+        "source": "docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json"
+      }
+    ],
+    "maximum_examples": 2,
+    "out_of_scope": [
+      "cost",
+      "energy",
+      "electricity_price",
+      "carbon_accounting",
+      "algorithm_logic",
+      "test_coverage",
+      "historical_package_audit",
+      "repair_proposals",
+      "follow_up_plan"
+    ]
+  },
+  "execution": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src python3 docs/handoff/clock_divergence_survey_20260805/diagnose_clock_divergence.py",
+    "script": "diagnose_clock_divergence.py",
+    "outputs": ["diagnostic_observations.json", "diagnostic_trace.txt"],
+    "tests_run": false,
+    "solver_batch_run": false,
+    "source_or_test_files_modified": false
+  },
+  "protected_files": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py"
+  ],
+  "protected_sha256_start": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_sha256_end": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "status": "COMPLETE_WITH_SCOPE_LIMIT",
+  "paper_claim_allowed": false
+}

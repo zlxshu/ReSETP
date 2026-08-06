@@ -1,0 +1,58 @@
+{
+  "schema_version": "resetp.gr1.done.v1",
+  "task_id": "GR1",
+  "status": "GR1_FORMULA_CODE_AUDIT_COMPLETE",
+  "completed_at_utc": "2026-08-02T17:28:53Z",
+  "repository_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "scope": "Read-only formula-to-code audit of every numbered equation in docs/paper_v2/paper_main.tex, plus reverse code-only objective/constraint audit.",
+  "execution": {
+    "source_files_modified": false,
+    "paper_modified": false,
+    "solver_modified": false,
+    "handoff_modified": false,
+    "formal_experiment_run": false,
+    "search_run": false,
+    "zero_search_arithmetic_only": true,
+    "saved_solutions_read_only": true
+  },
+  "coverage": {
+    "numbered_equations_in_tex": 37,
+    "equation_map_entries": 37,
+    "covered": 37,
+    "uncovered": [],
+    "duplicate_labels": [],
+    "complete": true
+  },
+  "verdict_counts": {
+    "一致": 21,
+    "不一致": 15,
+    "未实现": 1,
+    "代码有而论文无": 9
+  },
+  "mismatch_numeric_evidence_complete": true,
+  "required_equation_fields_complete": true,
+  "code_only_term_count": 9,
+  "deliverables": [
+    "report.md",
+    "equation_map.json",
+    "code_only_terms.json",
+    "done.json",
+    "artifact_hashes.json"
+  ],
+  "source_snapshot_sha256": {
+    "docs/paper_v2/paper_main.tex": "76425e69ee7e0c0ffe7697dcad72eaf9e6803b95a10ce6ccd383410ffa81096f",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+    "solver/src/setp_solver/profit.py": "54d7ce3a0a27fd35d01a829c575854b9717375e4028795d336bd0f4428b56b44",
+    "solver/src/setp_solver/prices.py": "360491125403bdcaf05cc2ba7cefe067b86831924c4501c3a3532f06b03dcb96",
+    "solver/src/setp_solver/charging_curve.py": "158cc9f9e50645692bfb0ceb218745e3c73d58dd5a6e44282a0bda7f0edfec70",
+    "solver/src/setp_solver/charging_action.py": "d9db6e8158fb576019155915f8797dec95c43a457c361271e35c965ec1696a7b",
+    "solver/src/setp_solver/search/dynamic.py": "f494156dec17bfef67fd3ecd13f0e22cb24f279ce888de120942d87940f0d22c",
+    "solver/src/setp_solver/search/multitrip_schedule.py": "1274da792bdf03d9544f0f3afc74612f06f2d1324e9e75d1bc225e5bb3e94d13",
+    "solver/src/setp_solver/china81_completion.py": "c9535ec068a42218bd2bec8e5fe99f952362cb26a2065bb48e8ee2e0f1d49dc9",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "7b570ba5a793f7ca2c5484779eb8d91b3b7e0d048a8e15311fcd01429acf355c",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/e6_cooperative_game.py": "c6d6f4e18ebf89de12c45e7fdb87e525b68668ca5200a65ee51a4ee37cb3464f",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/run_pilot06_direct_15.py": "ec749c79687068c673c69accdedac91aade605fbd7ae3716e2422c6d52fdbc18"
+  },
+  "terminal_message": "GR1_FORMULA_CODE_AUDIT_COMPLETE"
+}

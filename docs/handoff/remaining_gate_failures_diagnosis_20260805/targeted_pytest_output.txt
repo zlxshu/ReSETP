@@ -1,0 +1,324 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+___ test_integrated_route_repair_inserts_station_and_remains_fully_feasible ____
+
+    def test_integrated_route_repair_inserts_station_and_remains_fully_feasible() -> None:
+        instance = Instance(
+            nodes=[
+                Node("D0", "d", 0.0, 0.0, due_time=20_000.0),
+                Node("C1", "c", 0.0, 0.0, demand=100.0, due_time=20_000.0),
+                Node("F1", "f", 0.0, 0.0, due_time=20_000.0, charge_power_kw=60.0),
+            ],
+            distance_matrix=[
+                [0.0, 100_000.0, 20_000.0],
+                [100_000.0, 0.0, 20_000.0],
+                [20_000.0, 20_000.0, 0.0],
+            ],
+        )
+        profile = _profile(300.0, 250.0, 200.0, 50.0, 100.0, *([150.0] * 13))
+        prices = PriceParameters(B_battery_kwh=80.0)
+        route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
+    
+        repaired, actions = repair_route_charging(
+            route,
+            instance,
+            profile,
+            prices,
+            strategy="integrated",
+        )
+    
+        assert "F1" in repaired.node_sequence
+        assert {action.station_id for action in actions} == {"D0", "F1"}
+>       assert check_solution(Solution(routes=[repaired], charging_actions=actions), instance, prices) == []
+E       assert [Violation(ty...erity='hard')] == []
+E         
+E         Left contains one more item: Violation(type='CHARGING_TRIP_OVERLAP', vehicle_id='EV1', location='EV1', detail="charging interval intersects the same physical vehicle's outside interval: charge=[8000.000000,21090.909091), trip=[0.000000,10492.783666)", severity='hard')
+E         Use -v to get more diff
+
+solver/tests/test_refined_carbon_charging.py:177: AssertionError
+___ test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation ____
+
+    def test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation() -> None:
+        instance = Instance(
+            nodes=[
+                Node("D0", "d", 0.0, 0.0, due_time=20_000.0),
+                Node("C1", "c", 0.0, 0.0, demand=100.0, due_time=20_000.0),
+                Node("F1", "f", 0.0, 0.0, due_time=20_000.0, charge_power_kw=60.0),
+            ],
+            distance_matrix=[
+                [0.0, 100_000.0, 20_000.0],
+                [100_000.0, 0.0, 20_000.0],
+                [20_000.0, 20_000.0, 0.0],
+            ],
+        )
+        profile = _profile(300.0, 250.0, 200.0, 50.0, 100.0, *([150.0] * 13))
+        prices = PriceParameters(B_battery_kwh=80.0)
+        route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
+        legacy_route, legacy_actions = repair_route_charging(route, instance, profile, prices, strategy="legacy")
+        legacy_solution = Solution(routes=[legacy_route], charging_actions=legacy_actions)
+        context = EvaluationContext(instance, profile, prices=prices, budget=EvalBudget(limit=1, target=1))
+        operators = WinnerOperatorSet.create(refined_carbon=True, refined_carbon_weight=1.0)
+    
+        result = apply_winner_action(
+            legacy_solution,
+            WinnerOperatorAction("charging_station_reset_destroy", "integrated_carbon_reconstruction_repair"),
+            context,
+            rng=np.random.default_rng(7),
+            operator_set=operators,
+            current_obj=float(
+                evaluate(
+                    legacy_solution,
+                    instance,
+                    profile,
+                    prices,
+                )["total_cost"]
+            ),
+        )
+    
+        assert result["actual_evals_added"] == 1
+        assert context.budget is not None and context.budget.count == 1
+        assert result["hard_violation_count"] == 0
+>       assert check_solution(result["candidate_solution"], instance, prices) == []
+E       assert [Violation(ty...erity='hard')] == []
+E         
+E         Left contains one more item: Violation(type='CHARGING_TRIP_OVERLAP', vehicle_id='EV1', location='EV1', detail="charging interval intersects the same physical vehicle's outside interval: charge=[9000.000000,22090.909091), trip=[0.000000,10492.783666)", severity='hard')
+E         Use -v to get more diff
+
+solver/tests/test_refined_carbon_charging.py:244: AssertionError
+_ SearchGateTests.test_h2_initial_solution_contains_deterministic_ev_charging_witness _
+
+self = <tests.test_search.SearchGateTests testMethod=test_h2_initial_solution_contains_deterministic_ev_charging_witness>
+
+    def test_h2_initial_solution_contains_deterministic_ev_charging_witness(self) -> None:
+        bundle = load_search_bundle(FIXTURE_DIR)
+        prices = _legacy_battery_prices()
+>       solution = build_initial_solution(bundle.instance, bundle.carbon_profile, prices=prices)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+solver/tests/test_search.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+solver/src/setp_solver/search/construction.py:84: in build_initial_solution
+    solution = introduce_ev_routes(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+solution = Solution(routes=[Route(vehicle_id='CV1', vehicle_type='cv', home_depot_id='D0', node_sequence=['D0', 'C25', 'C19', 'C1...type='cv', home_depot_id='D1', node_sequence=['D1', 'C24', 'C13', 'D1'])], charging_actions=[], cross_site_services=[])
+instance = Instance(nodes=[Node(node_id='D0', node_type='d', x=35585.533256211645, y=-1331.6433825572772, demand=0.0, ready_time=...e_cost_per_meter=None, num_cv=10, num_ev=10, road_profiles=None, vehicle_parameters=None, demand_mass_per_unit_kg=None)
+carbon_profile = [{'actual_gco2_per_kwh': 86.0, 'datetime_utc': '2025-11-13T08:00:00+00:00', 'forecast_gco2_per_kwh': 68.0, 'horizon_se... 'datetime_utc': '2025-11-13T10:30:00+00:00', 'forecast_gco2_per_kwh': 78.0, 'horizon_second_start': 9000.0, ...}, ...]
+prices = PriceParameters(g0=9.81, rho_a=1.2041, c_d=0.7, c_r=0.01, A_frontal=3.912, m_curb=6350.0, m_unit=1.0, Q_capacity=3650....1.0, c_km=0.35, charging_curve_id='L100_control', charging_soc_breakpoints=(0.0, 1.0), charging_relative_powers=(1.0,))
+
+    def introduce_ev_routes(
+        solution: Solution,
+        instance: Instance,
+        carbon_profile: list[dict[str, Any]],
+        prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+        *,
+        fleet_limits: FleetLimits | None = None,
+        require_charging_signal: bool = True,
+    ) -> Solution:
+        """Move one CV-served customer to an EV route with charging repair.
+    
+        v2026-06-11: H2 construction helper for paper_main.tex lines 541, 665,
+        and 673. It treats vehicle type as an algorithm dispatch choice inside
+        the available fleet: remove one customer from a CV route, create a single
+        customer EV route, and call ``repair_route_charging`` to insert any needed
+        station visit/actions. The returned ``Solution`` still uses the frozen
+        ``Solution``/``ChargingAction`` schema.
+        """
+    
+        limits = fleet_limits or FleetLimits()
+        if _count_routes(solution, "ev") >= limits.ev:
+            return solution
+        candidates: list[tuple[float, str, str, Solution]] = []
+        for customer_id in _customer_ids(solution, instance):
+            for depot_id in _depot_ids(instance):
+                ev_id = _next_vehicle_id(solution, "EV")
+                base_route = Route(ev_id, "ev", depot_id, [depot_id, customer_id, depot_id])
+                energy = route_ev_energy_summary(base_route, instance, prices).ev_kwh
+                battery_cap = instance.battery_capacity_kwh(
+                    fallback=_price(prices, "B_battery_kwh"),
+                )
+                if require_charging_signal and energy <= battery_cap + 1e-9:
+                    continue
+                try:
+                    repaired_route, actions = repair_route_charging(base_route, instance, carbon_profile, prices)
+                except ValueError:
+                    continue
+                if require_charging_signal and not actions:
+                    continue
+                candidate = normalize_solution_vehicle_trips(
+                    _replace_customer_with_ev(solution, customer_id, repaired_route, actions),
+                    instance,
+                    max_cv=limits.cv,
+                    max_ev=limits.ev,
+                )
+                violations = check_solution(candidate, instance, prices)
+                if violations:
+                    continue
+                candidates.append((energy, customer_id, depot_id, candidate))
+        if not candidates:
+            if require_charging_signal:
+>               raise ValueError("HALT_H2: no feasible EV route with a nonzero charging action")
+E               ValueError: HALT_H2: no feasible EV route with a nonzero charging action
+
+solver/src/setp_solver/search/construction.py:213: ValueError
+________ SearchGateTests.test_h3_short_alns_has_nonzero_charging_signal ________
+
+self = <tests.test_search.SearchGateTests testMethod=test_h3_short_alns_has_nonzero_charging_signal>
+
+    def test_h3_short_alns_has_nonzero_charging_signal(self) -> None:
+        bundle = load_search_bundle(FIXTURE_DIR)
+        prices = _legacy_battery_prices()
+>       initial = build_initial_solution(bundle.instance, bundle.carbon_profile, prices=prices)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+solver/tests/test_search.py:431: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+solver/src/setp_solver/search/construction.py:84: in build_initial_solution
+    solution = introduce_ev_routes(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+solution = Solution(routes=[Route(vehicle_id='CV1', vehicle_type='cv', home_depot_id='D0', node_sequence=['D0', 'C25', 'C19', 'C1...type='cv', home_depot_id='D1', node_sequence=['D1', 'C24', 'C13', 'D1'])], charging_actions=[], cross_site_services=[])
+instance = Instance(nodes=[Node(node_id='D0', node_type='d', x=35585.533256211645, y=-1331.6433825572772, demand=0.0, ready_time=...e_cost_per_meter=None, num_cv=10, num_ev=10, road_profiles=None, vehicle_parameters=None, demand_mass_per_unit_kg=None)
+carbon_profile = [{'actual_gco2_per_kwh': 86.0, 'datetime_utc': '2025-11-13T08:00:00+00:00', 'forecast_gco2_per_kwh': 68.0, 'horizon_se... 'datetime_utc': '2025-11-13T10:30:00+00:00', 'forecast_gco2_per_kwh': 78.0, 'horizon_second_start': 9000.0, ...}, ...]
+prices = PriceParameters(g0=9.81, rho_a=1.2041, c_d=0.7, c_r=0.01, A_frontal=3.912, m_curb=6350.0, m_unit=1.0, Q_capacity=3650....1.0, c_km=0.35, charging_curve_id='L100_control', charging_soc_breakpoints=(0.0, 1.0), charging_relative_powers=(1.0,))
+
+    def introduce_ev_routes(
+        solution: Solution,
+        instance: Instance,
+        carbon_profile: list[dict[str, Any]],
+        prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+        *,
+        fleet_limits: FleetLimits | None = None,
+        require_charging_signal: bool = True,
+    ) -> Solution:
+        """Move one CV-served customer to an EV route with charging repair.
+    
+        v2026-06-11: H2 construction helper for paper_main.tex lines 541, 665,
+        and 673. It treats vehicle type as an algorithm dispatch choice inside
+        the available fleet: remove one customer from a CV route, create a single
+        customer EV route, and call ``repair_route_charging`` to insert any needed
+        station visit/actions. The returned ``Solution`` still uses the frozen
+        ``Solution``/``ChargingAction`` schema.
+        """
+    
+        limits = fleet_limits or FleetLimits()
+        if _count_routes(solution, "ev") >= limits.ev:
+            return solution
+        candidates: list[tuple[float, str, str, Solution]] = []
+        for customer_id in _customer_ids(solution, instance):
+            for depot_id in _depot_ids(instance):
+                ev_id = _next_vehicle_id(solution, "EV")
+                base_route = Route(ev_id, "ev", depot_id, [depot_id, customer_id, depot_id])
+                energy = route_ev_energy_summary(base_route, instance, prices).ev_kwh
+                battery_cap = instance.battery_capacity_kwh(
+                    fallback=_price(prices, "B_battery_kwh"),
+                )
+                if require_charging_signal and energy <= battery_cap + 1e-9:
+                    continue
+                try:
+                    repaired_route, actions = repair_route_charging(base_route, instance, carbon_profile, prices)
+                except ValueError:
+                    continue
+                if require_charging_signal and not actions:
+                    continue
+                candidate = normalize_solution_vehicle_trips(
+                    _replace_customer_with_ev(solution, customer_id, repaired_route, actions),
+                    instance,
+                    max_cv=limits.cv,
+                    max_ev=limits.ev,
+                )
+                violations = check_solution(candidate, instance, prices)
+                if violations:
+                    continue
+                candidates.append((energy, customer_id, depot_id, candidate))
+        if not candidates:
+            if require_charging_signal:
+>               raise ValueError("HALT_H2: no feasible EV route with a nonzero charging action")
+E               ValueError: HALT_H2: no feasible EV route with a nonzero charging action
+
+solver/src/setp_solver/search/construction.py:213: ValueError
+_ SearchGateTests.test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges _
+
+self = <tests.test_search.SearchGateTests testMethod=test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges>
+
+    def test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges(self) -> None:
+        bundle = load_search_bundle(FIXTURE_DIR)
+>       solution = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            fleet_limits=FleetLimits(cv=3, ev=8, source="test"),
+        )
+
+solver/tests/test_search.py:291: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+solver/src/setp_solver/search/construction.py:84: in build_initial_solution
+    solution = introduce_ev_routes(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+solution = Solution(routes=[Route(vehicle_id='CV1', vehicle_type='cv', home_depot_id='D0', node_sequence=['D0', 'C25', 'C19', 'C1...type='cv', home_depot_id='D1', node_sequence=['D1', 'C24', 'C13', 'D1'])], charging_actions=[], cross_site_services=[])
+instance = Instance(nodes=[Node(node_id='D0', node_type='d', x=35585.533256211645, y=-1331.6433825572772, demand=0.0, ready_time=...e_cost_per_meter=None, num_cv=10, num_ev=10, road_profiles=None, vehicle_parameters=None, demand_mass_per_unit_kg=None)
+carbon_profile = [{'actual_gco2_per_kwh': 86.0, 'datetime_utc': '2025-11-13T08:00:00+00:00', 'forecast_gco2_per_kwh': 68.0, 'horizon_se... 'datetime_utc': '2025-11-13T10:30:00+00:00', 'forecast_gco2_per_kwh': 78.0, 'horizon_second_start': 9000.0, ...}, ...]
+prices = PriceParameters(g0=9.81, rho_a=1.2041, c_d=0.7, c_r=0.01, A_frontal=3.912, m_curb=6350.0, m_unit=1.0, Q_capacity=3650....1.0, c_km=0.35, charging_curve_id='L100_control', charging_soc_breakpoints=(0.0, 1.0), charging_relative_powers=(1.0,))
+
+    def introduce_ev_routes(
+        solution: Solution,
+        instance: Instance,
+        carbon_profile: list[dict[str, Any]],
+        prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+        *,
+        fleet_limits: FleetLimits | None = None,
+        require_charging_signal: bool = True,
+    ) -> Solution:
+        """Move one CV-served customer to an EV route with charging repair.
+    
+        v2026-06-11: H2 construction helper for paper_main.tex lines 541, 665,
+        and 673. It treats vehicle type as an algorithm dispatch choice inside
+        the available fleet: remove one customer from a CV route, create a single
+        customer EV route, and call ``repair_route_charging`` to insert any needed
+        station visit/actions. The returned ``Solution`` still uses the frozen
+        ``Solution``/``ChargingAction`` schema.
+        """
+    
+        limits = fleet_limits or FleetLimits()
+        if _count_routes(solution, "ev") >= limits.ev:
+            return solution
+        candidates: list[tuple[float, str, str, Solution]] = []
+        for customer_id in _customer_ids(solution, instance):
+            for depot_id in _depot_ids(instance):
+                ev_id = _next_vehicle_id(solution, "EV")
+                base_route = Route(ev_id, "ev", depot_id, [depot_id, customer_id, depot_id])
+                energy = route_ev_energy_summary(base_route, instance, prices).ev_kwh
+                battery_cap = instance.battery_capacity_kwh(
+                    fallback=_price(prices, "B_battery_kwh"),
+                )
+                if require_charging_signal and energy <= battery_cap + 1e-9:
+                    continue
+                try:
+                    repaired_route, actions = repair_route_charging(base_route, instance, carbon_profile, prices)
+                except ValueError:
+                    continue
+                if require_charging_signal and not actions:
+                    continue
+                candidate = normalize_solution_vehicle_trips(
+                    _replace_customer_with_ev(solution, customer_id, repaired_route, actions),
+                    instance,
+                    max_cv=limits.cv,
+                    max_ev=limits.ev,
+                )
+                violations = check_solution(candidate, instance, prices)
+                if violations:
+                    continue
+                candidates.append((energy, customer_id, depot_id, candidate))
+        if not candidates:
+            if require_charging_signal:
+>               raise ValueError("HALT_H2: no feasible EV route with a nonzero charging action")
+E               ValueError: HALT_H2: no feasible EV route with a nonzero charging action
+
+solver/src/setp_solver/search/construction.py:213: ValueError
+=========================== short test summary info ============================
+FAILED solver/tests/test_refined_carbon_charging.py::test_integrated_route_repair_inserts_station_and_remains_fully_feasible
+FAILED solver/tests/test_refined_carbon_charging.py::test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation
+FAILED solver/tests/test_search.py::SearchGateTests::test_h2_initial_solution_contains_deterministic_ev_charging_witness
+FAILED solver/tests/test_search.py::SearchGateTests::test_h3_short_alns_has_nonzero_charging_signal
+FAILED solver/tests/test_search.py::SearchGateTests::test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges
+5 failed in 0.57s

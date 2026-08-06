@@ -1,0 +1,72 @@
+[
+  {
+    "evidence_path_and_field": "baselines/china_e3_e7/formal_algorithm_20260802/decision.json#/scientific_claim_assessment/group_4_2_stable_feasibility_supported and group_4_2_cost_advantage_supported",
+    "supported_but_unreported_claim": "当前合同下五种算法80/80终局支持稳定可行，但不支持MV-HGS-SP成本优势。",
+    "paper_gap": "正文仍使用旧China81优势叙事，没有回收当前正式批的“可行但无成本优势”结论。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  },
+  {
+    "evidence_path_and_field": "baselines/china_e3_e7/formal_algorithm_20260802/table_4_2_five_algorithms.csv#Best_cny,Avg_cny,feasible_runs,terminal_runs",
+    "supported_but_unreported_claim": "PyVRP-HGS、HGS-F、HGS-E、HGS-M和MV-HGS-SP的Best与Avg均为3621.569907766804，且各10/10可行。",
+    "paper_gap": "表7—表10仍展示旧合同的分层优势，未报告当前五臂完全打平。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  },
+  {
+    "evidence_path_and_field": "baselines/china_e3_e7/formal_ablation_200c_20260803/decision.json#/scientific_verdict,/scientific_claim_assessment,/discriminability_self_check",
+    "supported_but_unreported_claim": "当前合同China81最大规模消融为NO_MEASURABLE_DIFFERENCE_AT_CHINA81_MAX_SCALE，三臂10种子目标与解结构一致。",
+    "paper_gap": "算法章与摘要仍声称视角互补和路线池提升，未回收消融的否定结果。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  },
+  {
+    "evidence_path_and_field": "baselines/china_e3_e7/formal_fleet_levels_20260802/decision.json#/claim_assessment,/five_row_summary",
+    "supported_but_unreported_claim": "0%、25%、50%电动化水平下碳感知与盲法路线、车型、充电时刻及排放差均为零；预注册主张不获支持。",
+    "paper_gap": "正文没有报告当前合同下的零决策响应与三个触发的证伪条件。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  },
+  {
+    "evidence_path_and_field": "baselines/china_e3_e7/formal_fleet_levels_20260802/decision.json#/five_row_summary/3,/five_row_summary/4",
+    "supported_but_unreported_claim": "75%和100%层各10/10为INFEASIBLE_OR_NOT_FOUND，直接故障为广州CV物理上限超额，不能升级为全局不可行。",
+    "paper_gap": "正文未报告这一高电动化层的有限诊断边界。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  },
+  {
+    "evidence_path_and_field": "baselines/china_e3_e7/carbon_timing_rescore_20260802/decision.json#/status,/current_contract_support; summary.json#/validation",
+    "supported_but_unreported_claim": "固定排班和联合优化保存解虽保留方向，但13,832/22,680固定排班解行及90/90联合解行不满足当前合同，正式结论状态为HALT_XD_CURRENT_CONTRACT_REQUIRES_SEARCH。",
+    "paper_gap": "正文继续把9.746%、2.679%等写成正式结果，没有回收当前合同HALT。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  },
+  {
+    "evidence_path_and_field": "baselines/china_e3_e7/carbon_timing_rescore_20260802/summary.json#/fixed_route_comparison/new_system_emissions_change_pct",
+    "supported_but_unreported_claim": "旧保存排班的纯充电择时系统排放变化为-9.74626254654305%。",
+    "paper_gap": "该数值在实验正文第1456行出现，但结语只回收联合优化-2.679%，未回收最能直接检验引言第189行充电择时命题的9.746%。不过该数值受当前合同HALT约束，不能直接补入结语，须重跑后再决定。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": true
+  },
+  {
+    "evidence_path_and_field": "solver/src/setp_solver/cost.py#evaluate.cost_fix; solver/src/setp_solver/profit.py#calculate_depot_profits.unique_vehicle_keys; solver/src/setp_solver/model_config.py#strict_multitrip,depot_charger_capacity_mode",
+    "supported_but_unreported_claim": "当前合同为每物理车辆固定成本170元、多趟默认开启、车场充电并发无上限。",
+    "paper_gap": "论文公式与参数段仍写每趟170元、车场有限并发，未回收现行合同。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  },
+  {
+    "evidence_path_and_field": "docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json#unregistered source records",
+    "supported_but_unreported_claim": "EV初始电量、NL90充电曲线、0.85迎风面积投影因子和0.45阻力系数至少四项没有可回放来源，只能作为构造场景参数。",
+    "paper_gap": "正文用“官方公开数据”“现实数据与相关文献”作整体覆盖，没有逐项披露这四个无来源参数。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  },
+  {
+    "evidence_path_and_field": "docs/handoff/representative_instance_selection_20260803/selected_instance.json#/selected_instance_id",
+    "supported_but_unreported_claim": "新登记的代表性/判别性选择结果是cn-cy-100c-01-V2-LOCATIONS。",
+    "paper_gap": "正文仍称以旧五特征中位规则选出珠三角50客户双车场算例。",
+    "verdict": "证据存在但论文未回收",
+    "depends_on_old_contract": false
+  }
+]

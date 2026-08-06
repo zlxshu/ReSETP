@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "name": "xd-attempt4-archive-suffix-recovery-20260803",
+  "objective": "Reuse verified interrupted prefixes and regenerate only the missing XD archive and validation-ledger suffixes",
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP",
+  "poll_seconds": 30,
+  "stale_seconds": 1800,
+  "max_runtime_seconds": 7200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "recover_carbon_timing_rescore_archives_20260803.py"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 0.1,
+  "low_cpu_consecutive_checks": 8,
+  "max_rss_mb": 10000,
+  "min_system_free_memory_mb": 512,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [
+    "baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_progress.json"
+  ],
+  "result_files": [
+    "baselines/china_e3_e7/carbon_timing_rescore_20260802/solutions.jsonl.gz",
+    "baselines/china_e3_e7/carbon_timing_rescore_20260802/validation_ledger.jsonl",
+    "baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_verification.json"
+  ],
+  "completion_files": [
+    "baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_done.json"
+  ],
+  "checkpoint_paths": [
+    "baselines/china_e3_e7/carbon_timing_rescore_20260802/.archive_recovery"
+  ],
+  "protected_files": [
+    {
+      "path": "baselines/china_e3_e7/carbon_timing_rescore_20260802/pre_registration.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "baselines/china_e3_e7/carbon_timing_rescore_20260802/raw_runs.csv",
+      "kind": "core_data"
+    },
+    {
+      "path": "baselines/china_e3_e7/carbon_timing_rescore_20260802/decision.json",
+      "kind": "research_question"
+    },
+    {
+      "path": "baselines/china_e3_e7/run_carbon_timing_rescore_20260802.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "docs/paper_v2/paper_main.tex",
+      "kind": "paper_conclusion"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [
+    {
+      "path": "baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_progress.json",
+      "min_size": 256
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

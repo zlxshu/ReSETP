@@ -1,0 +1,407 @@
+{
+  "freeze_rule": "This instance id, the four thresholds, the size domain, and the tie-break must not change after any new experiment is observed. All later runs on this instance must be reported.",
+  "matrix_path": "docs/handoff/representative_instance_selection_20260803/discriminating_power_matrix.json",
+  "matrix_sha256": "125296a3af412b87c4b0bdfde4dd3dc4493af33d142948579744d458aa8d7927",
+  "near_candidates_failing_exactly_one_threshold": [
+    {
+      "customer_count": 100,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-jjj-100c-03-V2-LOCATIONS",
+      "observed_value": 2,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 100,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-prd-100c-01-V2-LOCATIONS",
+      "observed_value": 0,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 100,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-prd-100c-03-V2-LOCATIONS",
+      "observed_value": 1,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 75,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-cy-75c-01-V2-LOCATIONS",
+      "observed_value": 0,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 75,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-cy-75c-02-V2-LOCATIONS",
+      "observed_value": 0,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 75,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-cy-75c-03-V2-LOCATIONS",
+      "observed_value": 2,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 75,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-jjj-75c-02-V2-LOCATIONS",
+      "observed_value": 2,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 75,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+      "observed_value": 0,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 75,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-prd-75c-02-V2-LOCATIONS",
+      "observed_value": 0,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    },
+    {
+      "customer_count": 75,
+      "failed_dimension": "algorithm_component",
+      "instance_id": "cn-prd-75c-03-V2-LOCATIONS",
+      "observed_value": 0,
+      "rejection_reason": "failed_exactly_one_frozen_threshold",
+      "required_threshold": 3
+    }
+  ],
+  "qualified_candidates": [
+    {
+      "algorithm_improve_seed_count": 5,
+      "carbon_unique_opportunity_actions": 25,
+      "customer_count": 100,
+      "dynamic_due_slack_p10_seconds": 5968.645686763429,
+      "dynamic_new_orders_per_stream": 20,
+      "fleet_dispatched_l1_diameter": 27,
+      "instance_id": "cn-cy-100c-01-V2-LOCATIONS",
+      "rejection_reason": null,
+      "selected": true
+    },
+    {
+      "algorithm_improve_seed_count": 3,
+      "carbon_unique_opportunity_actions": 25,
+      "customer_count": 100,
+      "dynamic_due_slack_p10_seconds": 6588.292447883183,
+      "dynamic_new_orders_per_stream": 20,
+      "fleet_dispatched_l1_diameter": 27,
+      "instance_id": "cn-cy-100c-02-V2-LOCATIONS",
+      "rejection_reason": "same_maximum_customer_count_but_later_in_frozen_lexicographic_tiebreak",
+      "selected": false
+    },
+    {
+      "algorithm_improve_seed_count": 3,
+      "carbon_unique_opportunity_actions": 25,
+      "customer_count": 100,
+      "dynamic_due_slack_p10_seconds": 6655.820663032633,
+      "dynamic_new_orders_per_stream": 20,
+      "fleet_dispatched_l1_diameter": 24,
+      "instance_id": "cn-cy-100c-03-V2-LOCATIONS",
+      "rejection_reason": "same_maximum_customer_count_but_later_in_frozen_lexicographic_tiebreak",
+      "selected": false
+    },
+    {
+      "algorithm_improve_seed_count": 5,
+      "carbon_unique_opportunity_actions": 27,
+      "customer_count": 100,
+      "dynamic_due_slack_p10_seconds": 5545.152957575451,
+      "dynamic_new_orders_per_stream": 20,
+      "fleet_dispatched_l1_diameter": 24,
+      "instance_id": "cn-jjj-100c-01-V2-LOCATIONS",
+      "rejection_reason": "same_maximum_customer_count_but_later_in_frozen_lexicographic_tiebreak",
+      "selected": false
+    },
+    {
+      "algorithm_improve_seed_count": 5,
+      "carbon_unique_opportunity_actions": 30,
+      "customer_count": 100,
+      "dynamic_due_slack_p10_seconds": 6139.257975243606,
+      "dynamic_new_orders_per_stream": 20,
+      "fleet_dispatched_l1_diameter": 29,
+      "instance_id": "cn-jjj-100c-02-V2-LOCATIONS",
+      "rejection_reason": "same_maximum_customer_count_but_later_in_frozen_lexicographic_tiebreak",
+      "selected": false
+    },
+    {
+      "algorithm_improve_seed_count": 3,
+      "carbon_unique_opportunity_actions": 28,
+      "customer_count": 100,
+      "dynamic_due_slack_p10_seconds": 6467.931297226508,
+      "dynamic_new_orders_per_stream": 20,
+      "fleet_dispatched_l1_diameter": 26,
+      "instance_id": "cn-prd-100c-02-V2-LOCATIONS",
+      "rejection_reason": "same_maximum_customer_count_but_later_in_frozen_lexicographic_tiebreak",
+      "selected": false
+    },
+    {
+      "algorithm_improve_seed_count": 3,
+      "carbon_unique_opportunity_actions": 20,
+      "customer_count": 75,
+      "dynamic_due_slack_p10_seconds": 5927.8499312457325,
+      "dynamic_new_orders_per_stream": 15,
+      "fleet_dispatched_l1_diameter": 17,
+      "instance_id": "cn-jjj-75c-03-V2-LOCATIONS",
+      "rejection_reason": "smaller_customer_count",
+      "selected": false
+    }
+  ],
+  "schema": "resetp.selected-representative-instance.v1",
+  "selected_at": "2026-08-03T01:10:38+08:00",
+  "selected_instance_id": "cn-cy-100c-01-V2-LOCATIONS",
+  "selected_values": {
+    "algorithm_component": {
+      "by_seed": [
+        {
+          "m_cost_cny": 5176.793270565394,
+          "m_minus_mv_cny": 1.5858728010061895,
+          "m_to_mv_improvement_pct": 0.030634269481519885,
+          "mv_cost_cny": 5175.207397764388,
+          "outcome": "improve",
+          "seed": 1
+        },
+        {
+          "m_cost_cny": 5180.764540254748,
+          "m_minus_mv_cny": 6.056974124854605,
+          "m_to_mv_improvement_pct": 0.11691274671511655,
+          "mv_cost_cny": 5174.707566129893,
+          "outcome": "improve",
+          "seed": 2
+        },
+        {
+          "m_cost_cny": 5173.898398604519,
+          "m_minus_mv_cny": 0.0008652220030853641,
+          "m_to_mv_improvement_pct": 1.6722825545216118e-05,
+          "mv_cost_cny": 5173.897533382516,
+          "outcome": "improve",
+          "seed": 3
+        },
+        {
+          "m_cost_cny": 5177.534147483097,
+          "m_minus_mv_cny": 3.235437550770257,
+          "m_to_mv_improvement_pct": 0.062489931666468455,
+          "mv_cost_cny": 5174.298709932326,
+          "outcome": "improve",
+          "seed": 4
+        },
+        {
+          "m_cost_cny": 5177.781058117841,
+          "m_minus_mv_cny": 3.4823481855146383,
+          "m_to_mv_improvement_pct": 0.06725560904231234,
+          "mv_cost_cny": 5174.298709932326,
+          "outcome": "improve",
+          "seed": 5
+        }
+      ],
+      "m_to_mv_improve_seed_count": 5,
+      "mean_m_minus_mv_cny": 2.872299576829755,
+      "median_positive_m_minus_mv_cny": 3.235437550770257,
+      "metric_value": 5,
+      "passes_threshold": true,
+      "regress_seed_count": 0,
+      "source_path": "baselines/algorithm_prototypes/china81_vs_opensource_20260727/raw_runs.json",
+      "source_row_key": "instance_id=cn-cy-100c-01-V2-LOCATIONS; seed=1..5; arm in {M,MV}",
+      "threshold": 3,
+      "tie_seed_count": 0
+    },
+    "carbon_timing": {
+      "action_day_row_count": 700,
+      "candidate_start_count": {
+        "max": 51,
+        "median": 43.0,
+        "min": 37,
+        "p10": 37.4,
+        "q1": 41.0,
+        "q3": 47.0
+      },
+      "metric_value": 25,
+      "opportunity_action_day_count": 696,
+      "opportunity_action_day_rate": 0.9942857142857143,
+      "passes_threshold": true,
+      "source_path": "baselines/china_e3_e7/e4_carbon_timing_20260729/action_timing_audit.csv",
+      "source_row_key": "instance_id=cn-cy-100c-01-V2-LOCATIONS; seed=1..5; grid_date=2025-02-01..2025-02-28",
+      "threshold": 15,
+      "unique_carbon_opportunity_action_count": 25,
+      "unique_charging_action_count": 25,
+      "window_span_seconds": {
+        "max": 44559.97045025174,
+        "median": 37274.959484364364,
+        "min": 32072.2128660583,
+        "p10": 32377.862585704155,
+        "q1": 35716.38985674525,
+        "q3": 40382.06189343796
+      }
+    },
+    "dynamic_demand": {
+      "due_slack_seconds": {
+        "max": 39182.31458290034,
+        "median": 15956.273195837359,
+        "min": 2749.2532084509876,
+        "p10": 5968.645686763429,
+        "q1": 9551.463519103148,
+        "q3": 22589.01118766854
+      },
+      "dynamic_demand_kg": {
+        "max": 417.0,
+        "median": 278.0,
+        "min": 139.0,
+        "p10": 139.0,
+        "q1": 139.0,
+        "q3": 347.0
+      },
+      "event_count_by_stream_seed": {
+        "1": 20,
+        "2": 20,
+        "3": 20,
+        "4": 20,
+        "5": 20
+      },
+      "input_source_path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instances/cn-cy-100c-01-V2-LOCATIONS/nodes.csv",
+      "metric_values": {
+        "due_slack_p10_seconds": 5968.645686763429,
+        "new_order_count_per_stream": 20
+      },
+      "new_order_count_per_stream": 20,
+      "passes_threshold": true,
+      "ready_lead_seconds": {
+        "max": 36260.50226290034,
+        "median": 12767.356627268386,
+        "min": 532.1120525494844,
+        "p10": 2988.2080489166533,
+        "q1": 6831.342475277797,
+        "q3": 20232.026740995287
+      },
+      "source_path": "baselines/china_e3_e7/e7_h0_g2_foundation_20260801/stream.py",
+      "source_row_key": "instance_id=cn-cy-100c-01-V2-LOCATIONS; stream_seed=1..5; DYNAMIC_ORDER_SHARE=0.20",
+      "stream_count": 5,
+      "stream_sha256_by_seed": {
+        "1": "70c8379b6d6cfa7540160b8420d13029a8c4df6334dc73ec4cbfafbf86cc2dd5",
+        "2": "19d2426e4dd88aa329d71112fcc375c82e787ecc5a58441894bb8d3e373367d6",
+        "3": "5126d667d5fab563f7c91d9719ef0856f221e469a571bc1159d1040f448024ea",
+        "4": "0038c9020fe6ff4ebf0b561bfd57a7567b2a85754ddfdb7b416b3023a8731176",
+        "5": "bb9092967eb75e020f8938a631679cab5d0bcc207169a85e32285e5ba4006e30"
+      },
+      "thresholds": {
+        "due_slack_p10_seconds": 5206.138268734958,
+        "new_order_count_per_stream": 10
+      },
+      "total_event_rows": 100
+    },
+    "fleet_electrification": {
+      "available_composition_l1_diameter": 32,
+      "dispatched_composition_l1_diameter": 27,
+      "levels": [
+        {
+          "available_cv": 16,
+          "available_ev": 0,
+          "dispatched_cv": 12,
+          "dispatched_ev": 0,
+          "status": "CERTIFIED",
+          "target_ev_percent": 0,
+          "total_fleet_cap": 16
+        },
+        {
+          "available_cv": 12,
+          "available_ev": 4,
+          "dispatched_cv": 12,
+          "dispatched_ev": 0,
+          "status": "CERTIFIED",
+          "target_ev_percent": 25,
+          "total_fleet_cap": 16
+        },
+        {
+          "available_cv": 8,
+          "available_ev": 8,
+          "dispatched_cv": 8,
+          "dispatched_ev": 7,
+          "status": "CERTIFIED",
+          "target_ev_percent": 50,
+          "total_fleet_cap": 16
+        },
+        {
+          "available_cv": 4,
+          "available_ev": 12,
+          "dispatched_cv": 3,
+          "dispatched_ev": 12,
+          "status": "CERTIFIED",
+          "target_ev_percent": 75,
+          "total_fleet_cap": 16
+        },
+        {
+          "available_cv": 0,
+          "available_ev": 16,
+          "dispatched_cv": 0,
+          "dispatched_ev": 15,
+          "status": "CERTIFIED",
+          "target_ev_percent": 100,
+          "total_fleet_cap": 16
+        }
+      ],
+      "metric_value": 27,
+      "passes_threshold": true,
+      "source_path": "baselines/china_e3_e7/fleet_authority_v3_20260802/raw_runs.csv",
+      "source_row_key": "instance_id=cn-cy-100c-01-V2-LOCATIONS; target_ev_percent in {0,25,50,75,100}",
+      "threshold": 14
+    },
+    "structural_neutral_metrics": {
+      "charging_station_count": 2,
+      "customer_count": 100,
+      "customer_demand_kg": {
+        "max": 417.0,
+        "median": 278.0,
+        "min": 139.0,
+        "p10": 139.0,
+        "q1": 208.0,
+        "q3": 347.0
+      },
+      "customer_time_window_width_seconds": {
+        "max": 3575.663400000005,
+        "median": 2861.029889999998,
+        "min": 1830.5920800000022,
+        "p10": 2040.4983779999995,
+        "q1": 2283.2376750000003,
+        "q3": 3176.078969999995
+      },
+      "depot_count": 2,
+      "nodes_source_path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instances/cn-cy-100c-01-V2-LOCATIONS/nodes.csv",
+      "orders_source_path": "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv",
+      "road_matrix_source_path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-cy-100c-01-V2-LOCATIONS",
+      "road_network_directed_service_distance_m": {
+        "median": 33577.8449764455,
+        "p90": 309986.34464547073
+      },
+      "road_network_directed_service_span_m": 341961.836200562,
+      "total_demand_kg": 27293.0
+    }
+  },
+  "selection_rule_path": "docs/handoff/representative_instance_selection_20260803/selection_rule.json",
+  "selection_rule_sha256": "020f270ea8308388c106ec24ea76173ae3c4b6528de1b29c0ec96f0e29c26293",
+  "selection_trace": {
+    "formal_result_direction_used": false,
+    "maximum_qualified_customer_count": 100,
+    "population_count": 81,
+    "qualified_candidate_count": 7,
+    "representative_size_domain": "51-149 customers",
+    "tie_break": "lexicographically smallest full instance_id",
+    "weighted_score_used": false
+  },
+  "status": "FROZEN_SELECTED_INSTANCE",
+  "task_id": "SEL"
+}

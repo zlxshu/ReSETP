@@ -1,0 +1,118 @@
+{
+  "command": [
+    "env",
+    "PYTHONHASHSEED=0",
+    "PYTHONPATH=solver/src:models/src",
+    "/opt/anaconda3/bin/python3.13",
+    "baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py",
+    "--mode",
+    "full",
+    "--output",
+    "docs/handoff/charging_timing_three_arms_run_20260805",
+    "--workers",
+    "6",
+    "--cv-only-iterations",
+    "6000",
+    "--naive-ev-iterations",
+    "6000",
+    "--mechanism-ev-iterations",
+    "8000"
+  ],
+  "events_emitted": [],
+  "last_event_state": "ANOMALY",
+  "log_initial_sizes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/.t24-charging-timing-90-units.monitor/experiment.stdout.log": 0
+  },
+  "low_cpu_checks": 0,
+  "mode": "start",
+  "monitor_config_sha256": "ebf48cf69ee53dd4297afebfa2fe4208919f8d0fac53fb207e294d2f0b0d132e",
+  "paused": false,
+  "pgid": 51403,
+  "pid": 51403,
+  "protected_hashes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+      "age_seconds": 3452.1886529922485,
+      "exists": true,
+      "kind": "algorithm_search",
+      "mtime": 1785927397.44,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "sha256": "b99c9f31146e3e1447bb23fb1413403fe97aeedc49db6e9e21374e061f4310da",
+      "size": 39029
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+      "age_seconds": 2954.5691089630127,
+      "exists": true,
+      "kind": "algorithm_search",
+      "mtime": 1785927895.06,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "sha256": "b8dad634ad0e931d18d1d4bced0f51cde3927e640a312436ece2835a4342b4c0",
+      "size": 31620
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py": {
+      "age_seconds": 157.22989678382874,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1785930692.4,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py",
+      "sha256": "bad2d541515166924931b42a6d1540be39ecf416afde41108b9425808ac3ee60",
+      "size": 70775
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_alns/audit_alns_budget_g0_20260718.py": {
+      "age_seconds": 1593568.839576006,
+      "exists": true,
+      "kind": "auditor",
+      "mtime": 1784337280.79,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_alns/audit_alns_budget_g0_20260718.py",
+      "sha256": "c7322d3704d90b9f658fef7dd1644686434dfd482fd093588466c25c53f68a99",
+      "size": 6208
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/charge_timing.py": {
+      "age_seconds": 14581.207664728165,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1785916268.42,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/charge_timing.py",
+      "sha256": "c199307557494320b87bd897e0ac5d68788a12c1788349e8b5052d46124fcc42",
+      "size": 6220
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 70690.66651296616,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1785860158.96,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+      "size": 48650
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py": {
+      "age_seconds": 12680.168026924133,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1785918169.46,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py",
+      "sha256": "cb0bb62eeba2ad6ebc92d39ecf36a2aa2592b11f1f6a02abd53b2cdcc34bffe9",
+      "size": 29732
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 261182.13576889038,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1785669667.49,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "size": 46269
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 1926704.327287197,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "started_at": "2026-08-05T11:54:09+00:00",
+  "started_at_epoch": 1785930849.6251469,
+  "stdout_path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/.t24-charging-timing-90-units.monitor/experiment.stdout.log"
+}

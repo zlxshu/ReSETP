@@ -1,0 +1,28 @@
+{
+  "task_id": "RT-PRO",
+  "algorithm": "sha256",
+  "scope": "final deliverables except this self-referential manifest",
+  "exclusions": [
+    "artifact_hashes.json",
+    "._*",
+    "__pycache__",
+    ".pytest_cache"
+  ],
+  "artifacts": [
+    {
+      "path": "docs/handoff/constraint_roundtable_20260803/pro/report.md",
+      "bytes": 33304,
+      "sha256": "4b65c126df11d752c4a0f2c45168b1c6b2a478176554a8376b96531359d6087e"
+    },
+    {
+      "path": "docs/handoff/constraint_roundtable_20260803/pro/positions.json",
+      "bytes": 36858,
+      "sha256": "edd204ddba07661826462bbb94f36418f31912b056b38fcf5d4b0b944d311ed1"
+    },
+    {
+      "path": "docs/handoff/constraint_roundtable_20260803/pro/done.json",
+      "bytes": 1044,
+      "sha256": "3f5866f9fc62e02987f610b6a64377985eb2fd1728f9ac56c4bc583cb3862959"
+    }
+  ]
+}

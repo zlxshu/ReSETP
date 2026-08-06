@@ -1,0 +1,183 @@
+{
+  "task_id": "T2-INSTANCE-SOURCE",
+  "as_of": "2026-08-04",
+  "status": "CURRENT_SOURCE_ASSESSED_WITH_CLAIM_BOUNDARY",
+  "search_evaluations": 0,
+  "article": {
+    "title": "A collaborative freight delivery problem with time windows under a crowdsourcing environment",
+    "authors": ["Jing Zhang"],
+    "journal": "PLOS ONE",
+    "year": 2025,
+    "doi": "10.1371/journal.pone.0318432",
+    "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0318432",
+    "pdf_pages": 21,
+    "license": "CC BY",
+    "journal_scope_fact": "PLOS ONE states that it evaluates scientific validity, methodology and ethics rather than perceived significance.",
+    "case_source": {
+      "enterprise": "anonymous Z enterprise",
+      "country_region": "central China",
+      "business": "less-than-truckload city logistics; enterprise also operates line-haul and cold-chain services and uses a crowdsourced freight platform",
+      "spatial_scope": "one distribution district",
+      "time_scope": "10 consecutive peak days; exact calendar dates and peak-day sampling rule not disclosed",
+      "page_evidence": [
+        {"claim": "enterprise, central China, business and one-district ten-peak-day case", "pdf_page": 18},
+        {"claim": "authors say patterns resemble daily order arrivals and vehicle shifts in the case area", "pdf_page": 18},
+        {"claim": "hard time windows and platform-owned vehicles are future research; current model uses penalty framing", "pdf_page": 19},
+        {"claim": "case parameters including 7.2 m3 and 0.1 h/m3", "pdf_page": 17}
+      ]
+    },
+    "collection_method_disclosure": {
+      "api_or_system_export": "not disclosed",
+      "manual_entry_or_survey": "not disclosed",
+      "cleaning": "not disclosed",
+      "missing_data_handling": "not disclosed",
+      "quality_control": "not disclosed",
+      "exact_city": "not disclosed",
+      "exact_dates": "not disclosed"
+    },
+    "representativeness": {
+      "author_statement": "The case is described as reflecting realistic daily order-arrival and vehicle-shift patterns in the selected area.",
+      "national_or_multi_city_sampling_argument": false,
+      "boundary": "single anonymous enterprise and district; no basis for national representativeness"
+    },
+    "page_by_page_read_log": [
+      {"page": 1, "data_relevance": "title, abstract and license; no collection protocol"},
+      {"page": 2, "data_relevance": "general O2O context; not collection protocol"},
+      {"page": 3, "data_relevance": "general possible order/platform fields; not case provenance"},
+      {"page": 4, "data_relevance": "literature review"},
+      {"page": 5, "data_relevance": "problem order-field definition"},
+      {"page": 6, "data_relevance": "online strategy"},
+      {"page": 7, "data_relevance": "model definition"},
+      {"page": 8, "data_relevance": "model"},
+      {"page": 9, "data_relevance": "parameter definitions; loading time related to volume"},
+      {"page": 10, "data_relevance": "constraints"},
+      {"page": 11, "data_relevance": "constraints"},
+      {"page": 12, "data_relevance": "model"},
+      {"page": 13, "data_relevance": "model"},
+      {"page": 14, "data_relevance": "model"},
+      {"page": 15, "data_relevance": "algorithm"},
+      {"page": 16, "data_relevance": "algorithm"},
+      {"page": 17, "data_relevance": "numerical and case parameters"},
+      {"page": 18, "data_relevance": "enterprise, region, business, district, ten peak days and representativeness statement"},
+      {"page": 19, "data_relevance": "case result and limitations including hard time windows as future work"},
+      {"page": 20, "data_relevance": "references"},
+      {"page": 21, "data_relevance": "references"}
+    ]
+  },
+  "figshare": {
+    "title": "Plos ONE Supplementary documents",
+    "doi": "10.6084/m9.figshare.28113608.v1",
+    "url": "https://figshare.com/articles/dataset/Plos_ONE_Supplementary_documents/28113608",
+    "version": 1,
+    "published_utc": "2024-12-31T13:27:52Z",
+    "modified_utc": "2024-12-31T13:27:53Z",
+    "license": "CC BY 4.0",
+    "description": "Dataset during the peak period (for 10 days) and Figures in the manuscript",
+    "api_file_count": 23,
+    "api_files": [
+      "Data Description.xlsx",
+      "Day 1.xlsx",
+      "Day 2.xlsx",
+      "Day 3.xlsx",
+      "Day 4.xlsx",
+      "Day 5.xlsx",
+      "Day 6.xlsx",
+      "Day 7.xlsx",
+      "Day 8.xlsx",
+      "Day 9.xlsx",
+      "Day 10.xlsx",
+      "Fig 1. The Dynamism of the Online Strategy.pdf",
+      "Fig 2. An Example of the CFDRP.pdf",
+      "Fig 3. The Process of IPGA.pdf",
+      "Fig 4. Chromosome Representation at First Stage.pdf",
+      "Fig 5. Crossover Operation of PDDV.pdf",
+      "Fig 6. Crossover Operation of PDSV.pdf",
+      "Fig 7. Crossover Operation of EUV.pdf",
+      "Fig 8. Crossover Operation of IPDV.pdf",
+      "Fig 9. Mutation Operation.pdf",
+      "Fig 10. The Process of SA.pdf",
+      "Fig 11. Computational Enhancements with IPGA.png",
+      "Fig 11. Computational Enhancements with IPGA.py"
+    ],
+    "local_repository_directory": "data/ChinaInstances/open_sources_20260717/figshare_28113608/",
+    "local_data_files": ["Data Description.xlsx", "Day 1.xlsx", "Day 2.xlsx", "Day 3.xlsx", "Day 4.xlsx", "Day 5.xlsx", "Day 6.xlsx", "Day 7.xlsx", "Day 8.xlsx", "Day 9.xlsx", "Day 10.xlsx"],
+    "orders_per_day": [79, 159, 82, 167, 77, 163, 76, 168, 82, 169],
+    "orders_total": 1222,
+    "order_fields": ["Order number", "Call-in time", "customer x", "customer y", "merchant x", "merchant y", "pickup early", "pickup late", "delivery early", "delivery late", "distance", "time consuming", "volume m3", "loading/unloading time h"],
+    "vehicle_fields": ["vehicle number", "update epoch", "vehicle x", "vehicle y"],
+    "data_description_exists": true,
+    "description_document_quality": {
+      "contains": ["planning slots", "time origin", "pickup/delivery handling-window lengths", "ten-day statement", "case parameters"],
+      "does_not_contain": ["full codebook", "coordinate reference system", "city", "calendar dates", "enterprise identity", "collection interface", "cleaning", "missing-data policy", "quality-control protocol", "version change log"]
+    }
+  },
+  "field_provenance": [
+    {"field": "order_id_and_call_in_time", "classification": "released_source_field", "observed_claim_allowed": "as released; acquisition instrument not disclosed"},
+    {"field": "customer_and_merchant_planar_coordinates", "classification": "released_source_field", "observed_claim_allowed": "as released; city and CRS not disclosed"},
+    {"field": "pickup_and_delivery_time_window_endpoints", "classification": "released_source_field", "observed_claim_allowed": "yes for source values; original article does not impose current hard-window semantics"},
+    {"field": "volume_m3", "classification": "released_source_field", "observed_claim_allowed": "yes; five discrete levels"},
+    {"field": "vehicle_id_update_time_and_planar_location", "classification": "released_source_field", "observed_claim_allowed": "as released; not current nine-city fleet"},
+    {"field": "source_vehicle_capacity_7_2_m3", "classification": "published_case_parameter", "observed_claim_allowed": "no per-vehicle field-measurement claim"},
+    {"field": "loading_unloading_rate_0_1_hour_per_m3", "classification": "published_case_parameter", "observed_claim_allowed": "no per-stop measurement claim"},
+    {"field": "demand_kg", "classification": "project_constructed_capacity_share_proxy", "formula": "round(source_volume_m3 / 7.2 * 1000)", "observed_claim_allowed": "no measured-weight claim"},
+    {"field": "service_time_minutes", "classification": "project_derivation_from_case_parameter", "formula": "source_volume_m3 * 0.1 * 60", "observed_claim_allowed": "no measured-stop-duration claim"},
+    {"field": "joint_resampled_delivery_window", "classification": "project_joint_empirical_resampling_with_replacement", "observed_claim_allowed": "source-distribution-based construction only"},
+    {"field": "nine_city_customer_coordinates", "classification": "project_GIS_OSM_location_chain_not_Zhang_coordinates", "observed_claim_allowed": "not nine-city observed customers"},
+    {"field": "hard_time_window_semantics", "classification": "project_model_semantics", "observed_claim_allowed": "not validated as hard by Zhang article"}
+  ],
+  "project_transformations": {
+    "demand_proxy": {
+      "formula": "round(volume_m3 / 7.2_m3 * 1000_kg)",
+      "mapping": {"1.0": 139, "1.5": 208, "2.0": 278, "2.5": 347, "3.0": 417},
+      "approval_evidence": ["docs/handoff/model_change_approval_register_20260718.md:181-197", "docs/handoff/china_order_attribute_contract_v2_20260718.md:21-25"],
+      "meaning": "capacity-share proxy; not physical density"
+    },
+    "service_time": {
+      "formula": "source_volume_m3 * 0.1_hour_per_m3 * 60",
+      "values_minutes": [6, 9, 12, 15, 18],
+      "approval_evidence": ["docs/handoff/model_change_approval_register_20260718.md:197", "docs/handoff/china_order_attribute_contract_v2_20260718.md:27-29"],
+      "meaning": "published-case-rule derivation; not observed stop duration"
+    },
+    "resampling": {
+      "method": "frozen-seed joint empirical-row resampling with replacement",
+      "joint_fields": ["delivery window start", "delivery window width", "volume-mapped demand", "service duration"],
+      "source_rows": 1222,
+      "independent_field_resampling_allowed": false,
+      "evidence": ["docs/handoff/china_order_attribute_contract_v2_20260718.md:31", "data/ChinaInstances/china_order_attribute_contract_v2_20260718.json:57-96"]
+    }
+  },
+  "generated_orders_assessment": {
+    "path": "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv",
+    "instances": 81,
+    "rows": 5805,
+    "customer_sizes": [10, 15, 20, 25, 50, 75, 100, 150, 200],
+    "summary": {
+      "demand_kg": {"min": 139, "p05": 139, "p25": 208, "median": 278, "mean": 268.604651, "p75": 347, "p95": 417, "max": 417, "std": 97.258303},
+      "time_window_start_minute_after_midnight": {"min": 667.784219, "p05": 701.110132, "p25": 758.375425, "median": 813.661531, "mean": 839.404926, "p75": 930.635851, "p95": 1023.627111, "max": 1072.101186, "std": 101.629934},
+      "time_window_start_clock": {"min": "11:07:47", "p05": "11:41:06", "p25": "12:38:23", "median": "13:33:40", "mean": "13:59:24", "p75": "15:30:38", "p95": "17:03:38", "max": "17:52:06"},
+      "time_window_width_minutes": {"min": 30.015509, "p05": 31.491693, "p25": 38.280896, "median": 45.833296, "mean": 45.316069, "p75": 52.358796, "p95": 58.406011, "max": 59.974984, "std": 8.443429},
+      "service_minutes": {"min": 6, "p05": 6, "p25": 9, "median": 12, "mean": 11.603101, "p75": 15, "p95": 18, "max": 18, "std": 4.198995}
+    },
+    "discrete_counts": [
+      {"volume_m3": 1.0, "demand_kg": 139, "service_minutes": 6, "count": 1334, "share": 0.229802},
+      {"volume_m3": 1.5, "demand_kg": 208, "service_minutes": 9, "count": 1166, "share": 0.200861},
+      {"volume_m3": 2.0, "demand_kg": 278, "service_minutes": 12, "count": 1191, "share": 0.205168},
+      {"volume_m3": 2.5, "demand_kg": 347, "service_minutes": 15, "count": 1162, "share": 0.200172},
+      {"volume_m3": 3.0, "demand_kg": 417, "service_minutes": 18, "count": 952, "share": 0.163997}
+    ],
+    "source_row_reuse": {"unique_source_rows_used": 1211, "source_pool_rows": 1222, "max_reuse_count": 12},
+    "full_output": "docs/handoff/instance_data_source_survey_20260804/descriptive_stats.csv"
+  },
+  "claim_boundary": {
+    "supported": "Nine-city customer locations combined with order attributes constructed by frozen joint empirical resampling from an anonymous central-China enterprise sample and approved proxy transformations.",
+    "unsupported": ["observed orders from all nine cities", "observed kilogram demand", "observed stop service duration", "hard time windows validated by the Zhang source model", "nationally representative Chinese urban-delivery distribution"],
+    "effect_of_transformation": "The transformations do not invalidate licensed reuse, but they weaken any unqualified real-Chinese-orders claim because kilogram demand, service duration, nine-city locations and hard-window semantics are not all original observations."
+  },
+  "repository_evidence": [
+    "docs/handoff/china_order_attribute_contract_v2_20260718.md:11-31",
+    "data/ChinaInstances/china_order_attribute_contract_v2_20260718.json:46-96",
+    "data/ChinaInstances/china_order_attribute_calibration_v2_20260718/report.md:7-19",
+    "docs/handoff/model_change_approval_register_20260718.md:181-197",
+    "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv"
+  ]
+}

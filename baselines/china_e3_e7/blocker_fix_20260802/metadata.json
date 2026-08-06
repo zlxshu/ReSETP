@@ -1,0 +1,169 @@
+{
+  "schema_version": "resetp-z1-blocker-fix.v1",
+  "task_id": "Z1",
+  "created_at_utc": "2026-08-02T09:07:57Z",
+  "formal_result": false,
+  "formal_experiment_executed": false,
+  "route_search_executed": false,
+  "repository_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "git_commit_before": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "git_commit_after": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "worktree_dirty_before": true,
+  "preexisting_changes_preserved": true,
+  "ledgers_read_before_edit": {
+    "docs/handoff/legacy_sweep_20260802/legacy_ledger.json": "78c73657c65eff0b47b7a69da0b6ea0ae7d6fafac13fbb9a3d9acf8972d56b01",
+    "docs/handoff/legacy_sweep_round2_20260802/legacy_ledger_round2.json": "e678744c042d7237a0410b4f7fa9dc1fe4dd6a6187d92091561a4d460586d7e6"
+  },
+  "model_configuration": {
+    "schema_version": "setp-model-config.v1",
+    "mainline_default": {
+      "strict_multitrip": true
+    },
+    "mainline_entry": "setp_solver.algorithms.resetp_alns.kernel.winner.run_winner_kernel_in_memory",
+    "mainline_fail_closed_fields": [
+      "model_config",
+      "prices"
+    ],
+    "legacy_environment_compatibility": {
+      "variable": "SETP_E3_STRICT_MULTITRIP",
+      "missing_value": "0",
+      "zero_maps_to": false,
+      "one_maps_to": true
+    },
+    "replay_off": {
+      "schema_version": "setp-model-config.v1",
+      "strict_multitrip": false
+    },
+    "replay_on": {
+      "schema_version": "setp-model-config.v1",
+      "strict_multitrip": true
+    }
+  },
+  "source_hashes_before_after": {
+    "solver/src/setp_solver/model_config.py": {
+      "before_sha256": null,
+      "after_sha256": "534f5aa3f06a4b5da8c755a3c0e42d9103930f4969e617ed26d3ec1597bc8fe6"
+    },
+    "solver/src/setp_solver/charging_action.py": {
+      "before_sha256": null,
+      "after_sha256": "d9db6e8158fb576019155915f8797dec95c43a457c361271e35c965ec1696a7b"
+    },
+    "solver/src/setp_solver/search/e3_multitrip_runtime.py": {
+      "before_sha256": "227e54a7ce225699c31254843b243cc07204464265aad19aa59707e787f92c22",
+      "after_sha256": "8a221addc26807a9a54603999cd5f47d276351bc03907b364c9e0f7886e360e3"
+    },
+    "solver/src/setp_solver/algorithms/resetp_alns/operators/feasible_repair.py": {
+      "before_sha256": "bd3e35dcb69a08e1b811c3476037e63e3505b4b4d4af23ec63786b5d8d968e41",
+      "after_sha256": "4a4f0a0311931ec0f135e7b44de2e46504589cabc95bc013f5bfe4071133c0d3"
+    },
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": {
+      "before_sha256": "796895f18c776a02914e8e8a0be123982a3133f0d841c77d2a2956d59fcdc5be",
+      "after_sha256": "cef18686157dffedbc846270c15d0cac405efd82f077f9023b5e5d28e4532241"
+    },
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py": {
+      "before_sha256": "2fa75a41ae13dba7910b8326d5f789575c062bac0751cc161c31e932221be3ff",
+      "after_sha256": "782a9a9f8deaa6030c3e799e26fc23f368cd6600b35998a186b27a505a568f4c"
+    },
+    "solver/src/setp_solver/search/charging.py": {
+      "before_sha256": "c1cf2efe7c201287b23a46bc6a945e8e4d394b19c66dbed87c555c7a7d738f9b",
+      "after_sha256": "bbfe2ff33936b850257aac32888817121acb15d2e0e380ed397abfc210b1d971"
+    },
+    "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py": {
+      "before_sha256": "09eb2bc4bc9dff70c36f4a3e91b099cfbfb72c9d088ea9f71a9ccc3885bfb0da",
+      "after_sha256": "9fe3b5289024be98eab3ce8cf4718af824af57a538ef27e05c794233d038e6ca"
+    },
+    "solver/src/setp_solver/prices.py": {
+      "before_sha256": "360491125403bdcaf05cc2ba7cefe067b86831924c4501c3a3532f06b03dcb96",
+      "after_sha256": "360491125403bdcaf05cc2ba7cefe067b86831924c4501c3a3532f06b03dcb96"
+    },
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/hybrid.py": {
+      "before_sha256": "5710c3bb562cd02c0827a1f276346b169ba3ffa19adbcd60e696256dd54ad70d",
+      "after_sha256": "d7ef621159fb7232f87d6943b94c69f74fa4b2ae7a07104ef5cea9f882697e21"
+    },
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/run_adapter_g0.py": {
+      "before_sha256": "b49cad9cab495eb92a1084467e458b183bd22ecbdd8d8e596b3e5b071f42d0b7",
+      "after_sha256": "0629fcc2b538b18a9dfe597bb0ade628bb58d50212b70013951a22f1437e68b2"
+    },
+    "solver/tests/test_china81_in_memory_winner_20260720.py": {
+      "before_sha256": "075a7a08e729ff6e02845c7512818cf504d76a0a5e93e7e8ae990f72da7d9ac1",
+      "after_sha256": "96311654abffb239dc84e769ebadfe0b587f78e9a3e663d79a041cb8e5863a4b"
+    },
+    "solver/tests/test_carbon_gate.py": {
+      "before_sha256": "968a51851a745e2a7cbccba01f387887cee2e0e1390defa16000519631f2fc9b",
+      "after_sha256": "dad739eccd58d8fcf1026eeed0dfa2b57d1c0363d0af3c87eecbd4ae483ffeac"
+    },
+    "solver/tests/test_charging_action_dependency.py": {
+      "before_sha256": null,
+      "after_sha256": "6d6eeb583957edcc521f87fb6d845e41a322cc7c67fbfdb7e9764fe8510c8183"
+    },
+    "solver/tests/test_carbon_slot_call_contract.py": {
+      "before_sha256": null,
+      "after_sha256": "ab51eff7bdb2f30308e3aa13994b3855a1c2fe13f7bd0e75b9780737cb05bc2c"
+    },
+    "baselines/china_e3_e7/run_blocker_fix_z1_20260802.py": {
+      "before_sha256": null,
+      "after_sha256": "4532ffe6566c05561a1f3839f62c4b52c65a49b5d8293f003184a51ee6aed627"
+    },
+    "docs/handoff/carbon_slot_explicit_parameter_risk_20260802.md": {
+      "before_sha256": null,
+      "after_sha256": "6c87bfe2cd08d28061a89d0ef4f0e17bc5b565ec37f9ca10413605912a0c9d61"
+    }
+  },
+  "protected_files": {
+    "solver/src/setp_solver/cost.py": {
+      "before_sha256": "7f59a47a3aab9b582b17e29d7e9dc13f16f892fc7b5ae7b54eec84412aa77333",
+      "after_sha256": "7f59a47a3aab9b582b17e29d7e9dc13f16f892fc7b5ae7b54eec84412aa77333",
+      "git_diff_quiet_exit_code": 0
+    },
+    "solver/src/setp_solver/check.py": {
+      "before_sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+      "after_sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+      "git_diff_quiet_exit_code": 0
+    },
+    "solver/src/setp_solver/search/evaluation.py": {
+      "before_sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "after_sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "git_diff_quiet_exit_code": 0
+    }
+  },
+  "authoritative_test_run": {
+    "command": "PYTHONPATH=solver/src:models/src:.:/opt/anaconda3/lib/python3.13/site-packages:build/python_envs/pyvrp-hgs-0.12.2/lib/python3.13/site-packages PYTHONHASHSEED=0 /opt/anaconda3/bin/python3.13 -m pytest solver/tests -q",
+    "python": "3.13.9",
+    "numpy": "2.3.5",
+    "pyvrp": "0.12.2",
+    "passed": 901,
+    "skipped": 1,
+    "failed": 5,
+    "elapsed_seconds": 300.79
+  },
+  "targeted_test_run": {
+    "passed": 37,
+    "skipped": 0,
+    "failed": 0,
+    "elapsed_seconds": 33.76
+  },
+  "replay": {
+    "sampling": "deterministic evenly spaced indices over sorted record ids, including both population endpoints",
+    "E4_population": 90,
+    "E4_selected": 30,
+    "E4_instances": 3,
+    "E4_variants": 3,
+    "E6_population": 900,
+    "E6_selected": 30,
+    "E6_instances": 6,
+    "E6_variants": 15,
+    "multitrip_off_bitwise_pass": 60,
+    "multitrip_off_bitwise_fail": 0,
+    "comparison_component_count_per_solution": 13,
+    "multitrip_on_certificate_pass": 60,
+    "multitrip_on_certificate_fail": 0,
+    "raw_runs_sha256": "ebbb575ce29c4ba878e7ea75aa09cdf9d0b7ba385cac244a74903e9a316d682b",
+    "replay_details_sha256": "e1b453a6edfe4e5191f77990d717e866dd845f6c9683ff78a45b75200a2a50bc"
+  },
+  "code_audit": {
+    "files_scanned": 143,
+    "critical": 0,
+    "high": 4,
+    "disposition": "four false positives: non-SQL ValueError messages containing the words charging insert; no SQL execution exists in either file"
+  }
+}

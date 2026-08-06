@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "name": "scout-d-depot-ownership-20260803",
+  "objective": "Complete SCOUT-D nearest-depot 10-seed paired probe while retaining the random-label technical HALT",
+  "workdir": ".",
+  "poll_seconds": 30,
+  "stale_seconds": 3600,
+  "max_runtime_seconds": 43200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_scout_d.py",
+    "run",
+    "--workers",
+    "4"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug",
+    "2000",
+    "150"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 24000,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "progress_files": [
+    "raw_runs.csv",
+    "status.json"
+  ],
+  "result_files": [
+    "raw_runs.csv",
+    "decision.json",
+    "report.md"
+  ],
+  "completion_files": [
+    "done.json"
+  ],
+  "checkpoint_paths": [
+    "baseline_nearest/units"
+  ],
+  "protected_files": [
+    {
+      "path": "run_scout_d.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "metadata.json",
+      "kind": "primary_config"
+    },
+    {
+      "path": "monitor.json",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "model"
+    },
+    {
+      "path": "../e3_scattered_ownership_20260801/source_p_sequences.csv",
+      "kind": "core_data"
+    },
+    {
+      "path": "../../../data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/manifest.json",
+      "kind": "core_data"
+    }
+  ],
+  "csv_rules": [
+    {
+      "path": "raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 30,
+      "required_fields": [
+        "baseline_type",
+        "instance_id",
+        "seed",
+        "arm",
+        "status",
+        "violation_count",
+        "solution_sha256"
+      ],
+      "violation_field": "violation_count",
+      "max_violation_total": 0,
+      "duplicate_key_fields": [
+        "baseline_type",
+        "seed",
+        "arm"
+      ],
+      "max_duplicate_fraction": 0
+    }
+  ],
+  "milestones": [
+    {
+      "path": "baseline_nearest/raw_runs.csv",
+      "min_size": 4096
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

@@ -1,0 +1,1101 @@
+diff --git a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py
+--- a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py
++++ b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py
+@@ -14,8 +14,10 @@
+ from __future__ import annotations
+ 
+ from dataclasses import dataclass
++import hashlib
+ from importlib.metadata import version
+ import inspect
++import json
+ import math
+ from time import perf_counter
+ from typing import Any
+@@ -24,6 +26,7 @@
+ from pyvrp import Model
+ from pyvrp import Route as PyVRPRoute
+ from pyvrp import Solution as PyVRPSolution
++from pyvrp import Trip as PyVRPTrip
+ from pyvrp.stop import MaxRuntime
+ 
+ from setp_solver.china81 import China81Bundle
+@@ -37,13 +40,23 @@
+     ev_instance_arc_energy_kwh,
+     time_profile_rows_for_node,
+ )
+-from setp_solver.solution import Route, Solution
++from setp_solver.search.multitrip_schedule import (
++    build_multitrip_certificate,
++)
++from setp_solver.solution import (
++    Route,
++    Solution,
++    route_trip_vehicle_id,
++)
+ 
+ 
+ COST_SCALE = 1_000
+ ROUTE_PROXY_MODES = frozenset(
+     {"cv_only", "naive_ev", "mechanism_ev"}
+ )
++PROXY_FOUND_COMPLETION_FAILED = "代理找到但完成失败"
++SEARCH_NOT_FOUND = "搜索未找到"
++BUSINESS_HARD_INFEASIBLE = "业务硬不可行"
+ 
+ 
+ @dataclass(frozen=True)
+@@ -258,7 +271,13 @@
+             )
+         physical_cv_cap = int(depot_caps["num_cv"])
+         physical_ev_cap = int(depot_caps["num_ev"])
+-        if physical_cv_cap < 1 or physical_ev_cap < 1:
++        physical_total_cap = int(depot_caps["total_fleet_cap"])
++        if (
++            physical_cv_cap < 0
++            or physical_ev_cap < 0
++            or physical_total_cap < 1
++            or physical_cv_cap + physical_ev_cap != physical_total_cap
++        ):
+             raise ValueError(
+                 f"China81 finite fleet has invalid caps at "
+                 f"{depot.node_id!r}"
+@@ -266,51 +285,64 @@
+         strict_multitrip = bool(
+             bundle.model_config.get("strict_multitrip", False)
+         )
+-        # PyVRP generates routes (dispatches), whereas the registered fleet
+-        # caps and fixed cost apply to physical vehicles that may perform
+-        # multiple trips.  In strict multi-trip mode the proxy therefore must
+-        # not cap route count by physical vehicles or charge a fixed cost per
+-        # route.  The shared completion/checker later packs trips onto the
+-        # finite fleet and applies the authoritative physical-vehicle cost.
+-        cv_available = len(customers) if strict_multitrip else physical_cv_cap
+-        ev_available = len(customers) if strict_multitrip else physical_ev_cap
++        # In strict multi-trip mode one PyVRP route is one physical vehicle,
++        # and its Trip objects are that vehicle's depot-to-depot dispatches.
++        # Thus num_available is the registered physical cap rather than an
++        # unbounded dispatch count.  The all-CV reference legitimately uses
++        # the registered total cap, matching the shared complete evaluator.
++        cv_available = (
++            physical_total_cap
++            if normalized_mode == "cv_only"
++            else physical_cv_cap
++        )
++        ev_available = physical_ev_cap
+         proxy_fixed_cost = (
+             0
+             if strict_multitrip
+             else round(float(bundle.prices.vehicle_fixed_cost) * COST_SCALE)
+         )
+-        model.add_vehicle_type(
+-            num_available=cv_available,
+-            capacity=(
+-                [
+-                    round(cv_vehicle.payload_capacity_kg),
+-                    *[
+-                        len(customers)
+-                        if item.node_id == depot.node_id
+-                        else 0
+-                        for item in depots
+-                    ],
+-                ]
+-                if hard_home_depot_lock
+-                else round(cv_vehicle.payload_capacity_kg)
+-            ),
+-            start_depot=location_object[depot.node_id],
+-            end_depot=location_object[depot.node_id],
+-            fixed_cost=proxy_fixed_cost,
+-            tw_early=round(depot.ready_time),
+-            tw_late=round(depot.due_time),
+-            unit_distance_cost=1,
+-            unit_duration_cost=unit_duration_cost,
+-            profile=cv_road_profiles[depot.node_id],
+-            name=f"CV@{depot.node_id}",
++        reload_kwargs = (
++            {
++                "reload_depots": [location_object[depot.node_id]],
++                "max_reloads": max(0, len(customers) - 1),
++            }
++            if strict_multitrip
++            else {}
+         )
+-        cv_vehicle_type_by_depot[depot.node_id] = vehicle_type_index
+-        vehicle_type_by_depot_and_route_type[
+-            (depot.node_id, "cv")
+-        ] = vehicle_type_index
+-        route_type_by_vehicle_type[vehicle_type_index] = "cv"
+-        vehicle_type_index += 1
+-        if include_ev:
++        if cv_available > 0:
++            model.add_vehicle_type(
++                num_available=cv_available,
++                capacity=(
++                    [
++                        round(cv_vehicle.payload_capacity_kg),
++                        *[
++                            len(customers)
++                            if item.node_id == depot.node_id
++                            else 0
++                            for item in depots
++                        ],
++                    ]
++                    if hard_home_depot_lock
++                    else round(cv_vehicle.payload_capacity_kg)
++                ),
++                start_depot=location_object[depot.node_id],
++                end_depot=location_object[depot.node_id],
++                fixed_cost=proxy_fixed_cost,
++                tw_early=round(depot.ready_time),
++                tw_late=round(depot.due_time),
++                unit_distance_cost=1,
++                unit_duration_cost=unit_duration_cost,
++                profile=cv_road_profiles[depot.node_id],
++                name=f"CV@{depot.node_id}",
++                **reload_kwargs,
++            )
++            cv_vehicle_type_by_depot[depot.node_id] = vehicle_type_index
++            vehicle_type_by_depot_and_route_type[
++                (depot.node_id, "cv")
++            ] = vehicle_type_index
++            route_type_by_vehicle_type[vehicle_type_index] = "cv"
++            vehicle_type_index += 1
++        if include_ev and ev_available > 0:
+             model.add_vehicle_type(
+                 num_available=ev_available,
+                 capacity=(
+@@ -335,6 +367,7 @@
+                 unit_duration_cost=unit_duration_cost,
+                 profile=ev_road_profiles[depot.node_id],
+                 name=f"EV@{depot.node_id}",
++                **reload_kwargs,
+             )
+             vehicle_type_by_depot_and_route_type[
+                 (depot.node_id, "ev")
+@@ -381,10 +414,15 @@
+         route_proxy_mode=route_proxy_mode,
+     )
+     data = problem.model.data()
+-    initial = _project_initial_solution(
++    initial_completion = complete_china81_route_skeleton(
+         initial_skeleton,
++        bundle,
++    )
++    initial = _project_initial_solution(
++        initial_completion.solution,
+         data,
+         problem,
++        bundle,
+     )
+     solve_kwargs: dict[str, Any] = {
+         "seed": int(seed),
+@@ -399,12 +437,12 @@
+         MaxRuntime(float(runtime_seconds)),
+         **solve_kwargs,
+     )
+-    initial_completion = complete_china81_route_skeleton(
+-        initial_skeleton,
+-        bundle,
+-    )
++    initial_candidate_id = _skeleton_candidate_id(initial_skeleton)
+     searched_skeleton = _translate_solution(result.best, problem)
++    searched_candidate_id = _native_candidate_id(result.best)
+     searched_completion_failure: str | None = None
++    searched_completion_exception_type: str | None = None
++    searched_completion_failure_category: str | None = None
+     try:
+         searched_completion = complete_china81_route_skeleton(
+             searched_skeleton,
+@@ -412,6 +450,10 @@
+         )
+     except (IndexError, KeyError, RuntimeError, TypeError, ValueError) as exc:
+         searched_completion_failure = str(exc)
++        searched_completion_exception_type = type(exc).__name__
++        searched_completion_failure_category = (
++            _completion_failure_category(str(exc))
++        )
+         searched_completion = None
+     if (
+         searched_completion is not None
+@@ -487,6 +529,12 @@
+             "searched_complete_model_failure": (
+                 searched_completion_failure
+             ),
++            "searched_complete_model_exception_type": (
++                searched_completion_exception_type
++            ),
++            "searched_complete_model_failure_category": (
++                searched_completion_failure_category
++            ),
+             "searched_exact_objective": (
+                 None
+                 if searched_completion is None
+@@ -495,6 +543,47 @@
+             "initial_exact_objective": float(
+                 initial_completion.objective
+             ),
++            "complete_candidate_evaluation_attempts": 2,
++            "complete_candidate_evaluation_trace": [
++                {
++                    "candidate_id": initial_candidate_id,
++                    "source": "common_initial_solution",
++                    "iteration": None,
++                    "completion_succeeded": True,
++                    "complete_objective": float(
++                        initial_completion.objective
++                    ),
++                    "status": "PASS",
++                    "exception_type": None,
++                    "exception_message": None,
++                    "failure_category": None,
++                },
++                {
++                    "candidate_id": searched_candidate_id,
++                    "source": "pyvrp_search_best",
++                    "iteration": None,
++                    "completion_succeeded": (
++                        searched_completion is not None
++                    ),
++                    "complete_objective": (
++                        None
++                        if searched_completion is None
++                        else float(searched_completion.objective)
++                    ),
++                    "status": (
++                        "PASS"
++                        if searched_completion is not None
++                        else "INFEASIBLE_OR_ERROR"
++                    ),
++                    "exception_type": (
++                        searched_completion_exception_type
++                    ),
++                    "exception_message": searched_completion_failure,
++                    "failure_category": (
++                        searched_completion_failure_category
++                    ),
++                },
++            ],
+             "selected_source": selected_source,
+             "shared_completion_schema": completion.activity[
+                 "schema_version"
+@@ -601,7 +690,9 @@
+         tuple[Solution, China81CompletionResult, int]
+     ] = []
+     failures: list[str] = []
++    complete_candidate_evaluation_trace: list[dict[str, Any]] = []
+     for native in proxy_ranked:
++        candidate_id = _native_candidate_id(native)
+         try:
+             skeleton = _translate_solution(native, problem)
+             completion = complete_china81_route_skeleton(
+@@ -615,11 +706,52 @@
+                     int(cost_evaluator.cost(native)),
+                 )
+             )
++            complete_candidate_evaluation_trace.append(
++                {
++                    "candidate_id": candidate_id,
++                    "source": "terminal_population_archive",
++                    "iteration": None,
++                    "completion_succeeded": True,
++                    "complete_objective": float(completion.objective),
++                    "status": "PASS",
++                    "exception_type": None,
++                    "exception_message": None,
++                    "failure_category": None,
++                }
++            )
+         except (IndexError, KeyError, TypeError, ValueError) as exc:
+             failures.append(str(exc))
++            complete_candidate_evaluation_trace.append(
++                {
++                    "candidate_id": candidate_id,
++                    "source": "terminal_population_archive",
++                    "iteration": None,
++                    "completion_succeeded": False,
++                    "complete_objective": None,
++                    "status": "INFEASIBLE_OR_ERROR",
++                    "exception_type": type(exc).__name__,
++                    "exception_message": str(exc),
++                    "failure_category": _completion_failure_category(
++                        str(exc)
++                    ),
++                }
++            )
+     initial_completion = complete_china81_route_skeleton(
+         initial_skeleton,
+         bundle,
++    )
++    complete_candidate_evaluation_trace.append(
++        {
++            "candidate_id": _skeleton_candidate_id(initial_skeleton),
++            "source": "common_initial_solution",
++            "iteration": None,
++            "completion_succeeded": True,
++            "complete_objective": float(initial_completion.objective),
++            "status": "PASS",
++            "exception_type": None,
++            "exception_message": None,
++            "failure_category": None,
++        }
+     )
+     if exact_candidates:
+         archive_skeleton, archive_completion, archive_proxy = min(
+@@ -635,6 +767,19 @@
+         proxy_best_skeleton,
+         bundle,
+     )
++    complete_candidate_evaluation_trace.append(
++        {
++            "candidate_id": _native_candidate_id(result.best),
++            "source": "proxy_best_solution",
++            "iteration": int(result.num_iterations),
++            "completion_succeeded": True,
++            "complete_objective": float(proxy_best_completion.objective),
++            "status": "PASS",
++            "exception_type": None,
++            "exception_message": None,
++            "failure_category": None,
++        }
++    )
+     if archive_completion.objective < initial_completion.objective - 1.0e-9:
+         selected_source = "exact_population_archive"
+         skeleton = archive_skeleton
+@@ -684,6 +829,12 @@
+             "archive_candidate_limit": int(max_archive_candidates),
+             "archive_candidates_completed": len(exact_candidates),
+             "archive_completion_failures": failures,
++            "complete_candidate_evaluation_attempts": len(
++                complete_candidate_evaluation_trace
++            ),
++            "complete_candidate_evaluation_trace": (
++                complete_candidate_evaluation_trace
++            ),
+             "proxy_best_proxy_objective": int(result.cost()),
+             "proxy_best_exact_objective": float(
+                 proxy_best_completion.objective
+@@ -708,13 +859,58 @@
+         sorted(
+             (
+                 int(route.vehicle_type()),
+-                tuple(int(client) for client in route),
++                tuple(
++                    (
++                        int(trip.start_depot()),
++                        int(trip.end_depot()),
++                        tuple(int(client) for client in trip.visits()),
++                    )
++                    for trip in route.trips()
++                ),
+             )
+             for route in solution.routes()
+         )
+     )
+ 
+ 
++def _native_candidate_id(solution: Any) -> str:
++    payload = json.dumps(
++        _native_solution_key(solution),
++        separators=(",", ":"),
++    ).encode("utf-8")
++    return hashlib.sha256(payload).hexdigest()
++
++
++def _skeleton_candidate_id(solution: Solution) -> str:
++    key = tuple(
++        sorted(
++            (
++                route.vehicle_type.lower(),
++                route.home_depot_id,
++                tuple(route.node_sequence),
++            )
++            for route in solution.routes
++        )
++    )
++    payload = json.dumps(key, separators=(",", ":")).encode("utf-8")
++    return hashlib.sha256(payload).hexdigest()
++
++
++def _completion_failure_category(exception_message: str) -> str:
++    """Map one raw exception message through an exact, deterministic rule."""
++
++    message = str(exception_message)
++    if not message:
++        raise RuntimeError(
++            "candidate completion exception has an empty message"
++        )
++    if message.startswith("SEARCH_NOT_FOUND:"):
++        return SEARCH_NOT_FOUND
++    if message.startswith("BUSINESS_HARD_INFEASIBLE:"):
++        return BUSINESS_HARD_INFEASIBLE
++    return PROXY_FOUND_COMPLETION_FAILED
++
++
+ def _proxy_arc_cost(
+     bundle: China81Bundle,
+     left: str,
+@@ -807,36 +1003,91 @@
+     initial_skeleton: Solution,
+     data: Any,
+     problem: China81PyVRPProblem,
++    bundle: China81Bundle,
+ ) -> PyVRPSolution:
+-    routes: list[PyVRPRoute] = []
++    normalized_routes: list[Route] = []
+     for route in initial_skeleton.routes:
+         route_type = str(route.vehicle_type).strip().lower()
+         if problem.route_proxy_mode == "cv_only":
+             route_type = "cv"
+-        vehicle_type = (
+-            problem.vehicle_type_by_depot_and_route_type.get(
+-                (route.home_depot_id, route_type)
++        normalized_routes.append(
++            Route(
++                vehicle_id=route.vehicle_id,
++                vehicle_type=route_type,
++                home_depot_id=route.home_depot_id,
++                node_sequence=list(route.node_sequence),
+             )
+         )
++
++    route_by_id = {route.vehicle_id: route for route in normalized_routes}
++    if len(route_by_id) != len(normalized_routes):
++        raise ValueError("PyVRP warm-start route ids must be unique")
++    certificate = build_multitrip_certificate(
++        normalized_routes,
++        bundle.instance,
++        bundle.prices,
++        charging_actions=(
++            []
++            if problem.route_proxy_mode == "cv_only"
++            else list(initial_skeleton.charging_actions)
++        ),
++    )
++    trips_by_physical_vehicle: dict[str, list[Any]] = {}
++    for trip in certificate.trips:
++        trips_by_physical_vehicle.setdefault(
++            trip.physical_vehicle_id,
++            [],
++        ).append(trip)
++
++    routes: list[PyVRPRoute] = []
++    for physical_vehicle_id in sorted(trips_by_physical_vehicle):
++        chain = sorted(
++            trips_by_physical_vehicle[physical_vehicle_id],
++            key=lambda item: item.trip_index,
++        )
++        source_routes = [route_by_id[item.route_id] for item in chain]
++        identities = {
++            (route.home_depot_id, route.vehicle_type)
++            for route in source_routes
++        }
++        if len(identities) != 1:
++            raise ValueError(
++                "PyVRP warm-start physical vehicle changes depot or type"
++            )
++        home_depot_id, route_type = next(iter(identities))
++        vehicle_type = problem.vehicle_type_by_depot_and_route_type.get(
++            (home_depot_id, route_type)
++        )
+         if vehicle_type is None:
+             raise ValueError(
+-                "no PyVRP vehicle type for warm-start route "
+-                f"{route.vehicle_id!r}: depot={route.home_depot_id!r}, "
++                "no PyVRP vehicle type for warm-start physical vehicle "
++                f"{physical_vehicle_id!r}: depot={home_depot_id!r}, "
+                 f"route_type={route_type!r}, "
+                 f"proxy_mode={problem.route_proxy_mode!r}"
+             )
+-        visits = [
+-            problem.location_by_node_id[node_id]
+-            for node_id in route.node_sequence
+-            if node_id in problem.location_by_node_id
+-            and node_id != route.home_depot_id
+-        ]
+-        if not visits:
++        depot_location = problem.location_by_node_id[home_depot_id]
++        pyvrp_trips: list[PyVRPTrip] = []
++        for route in source_routes:
++            visits = [
++                problem.location_by_node_id[node_id]
++                for node_id in route.node_sequence[1:-1]
++            ]
++            if visits:
++                pyvrp_trips.append(
++                    PyVRPTrip(
++                        data,
++                        visits,
++                        vehicle_type,
++                        start_depot=depot_location,
++                        end_depot=depot_location,
++                    )
++                )
++        if not pyvrp_trips:
+             continue
+         routes.append(
+             PyVRPRoute(
+                 data,
+-                visits,
++                pyvrp_trips,
+                 vehicle_type,
+             )
+         )
+@@ -849,25 +1100,38 @@
+ ) -> Solution:
+     routes: list[Route] = []
+     for route_index, pyvrp_route in enumerate(solution.routes()):
+-        home_depot_id = problem.node_id_by_location[
+-            int(pyvrp_route.start_depot())
++        base_vehicle_id = f"PYVRP-{route_index + 1:04d}"
++        route_type = problem.route_type_by_vehicle_type[
++            int(pyvrp_route.vehicle_type())
+         ]
+-        customers = [
+-            problem.node_id_by_location[int(location)]
+-            for location in pyvrp_route.visits()
+-        ]
+-        routes.append(
+-            Route(
+-                vehicle_id=f"PYVRP-{route_index + 1:04d}",
+-                vehicle_type=problem.route_type_by_vehicle_type[
+-                    int(pyvrp_route.vehicle_type())
+-                ],
+-                home_depot_id=home_depot_id,
+-                node_sequence=[
+-                    home_depot_id,
+-                    *customers,
+-                    home_depot_id,
+-                ],
++        for trip_index, pyvrp_trip in enumerate(
++            pyvrp_route.trips(),
++            start=1,
++        ):
++            if pyvrp_trip.start_depot() != pyvrp_trip.end_depot():
++                raise ValueError(
++                    "China81 PyVRP trip must return to its home depot"
++                )
++            home_depot_id = problem.node_id_by_location[
++                int(pyvrp_trip.start_depot())
++            ]
++            customers = [
++                problem.node_id_by_location[int(location)]
++                for location in pyvrp_trip.visits()
++            ]
++            routes.append(
++                Route(
++                    vehicle_id=route_trip_vehicle_id(
++                        base_vehicle_id,
++                        trip_index,
++                    ),
++                    vehicle_type=route_type,
++                    home_depot_id=home_depot_id,
++                    node_sequence=[
++                        home_depot_id,
++                        *customers,
++                        home_depot_id,
++                    ],
++                )
+             )
+-        )
+     return Solution(routes=routes)
+diff --git a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py
+--- a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py
++++ b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py
+@@ -25,8 +25,11 @@
+ from pyvrp.stop import MaxIterations, MaxRuntime, MultipleCriteria, NoImprovement
+ from pyvrp_adapter import (
+     China81PyVRPProblem,
++    _completion_failure_category,
++    _native_candidate_id,
+     _native_solution_key,
+     _project_initial_solution,
++    _skeleton_candidate_id,
+     _translate_solution,
+     build_pyvrp_problem,
+ )
+@@ -252,7 +255,7 @@
+     penalty_manager = PenaltyManager.init_from(data, params.penalty)
+     population = Population(broken_pairs_distance, params.population)
+     warm_native = [
+-        _project_initial_solution(item, data, problem)
++        _project_initial_solution(item, data, problem, bundle)
+         for item in warm_elites
+     ]
+     warm_input_route_type_counts = [
+@@ -274,6 +277,7 @@
+                         int(route.vehicle_type())
+                     ]
+                     for route in native.routes()
++                    for _ in route.trips()
+                 ).items()
+             )
+         )
+@@ -330,6 +334,7 @@
+     ) -> None:
+         nonlocal hard_lock_filtered_checkpoint_candidates
+         observed_at = perf_counter() - started
++        candidate_id = _native_candidate_id(native)
+         try:
+             skeleton = _translate_solution(native, problem)
+             completion = complete_china81_route_skeleton(
+@@ -343,11 +348,16 @@
+                 hard_lock_filtered_checkpoint_candidates += 1
+                 checkpoint_observations.append(
+                     {
++                        "candidate_id": candidate_id,
+                         "iteration": int(iteration),
+                         "elapsed_seconds": float(observed_at),
+                         "proxy_cost": int(proxy_cost),
++                        "completion_succeeded": True,
+                         "complete_objective": None,
+                         "status": "FILTERED_HARD_HOME_DEPOT_LOCK",
++                        "exception_type": None,
++                        "exception_message": None,
++                        "failure_category": None,
+                     }
+                 )
+                 return
+@@ -356,26 +366,36 @@
+             )
+             checkpoint_observations.append(
+                 {
++                    "candidate_id": candidate_id,
+                     "iteration": int(iteration),
+                     "elapsed_seconds": float(observed_at),
+                     "proxy_cost": int(proxy_cost),
++                    "completion_succeeded": True,
+                     "complete_objective": float(
+                         completion.objective
+                     ),
+                     "status": "PASS",
++                    "exception_type": None,
++                    "exception_message": None,
++                    "failure_category": None,
+                 }
+             )
+         except (IndexError, KeyError, TypeError, ValueError) as exc:
+             checkpoint_failures.append(str(exc))
+             checkpoint_observations.append(
+                 {
++                    "candidate_id": candidate_id,
+                     "iteration": int(iteration),
+                     "elapsed_seconds": float(observed_at),
+                     "proxy_cost": int(proxy_cost),
++                    "completion_succeeded": False,
+                     "complete_objective": None,
+                     "status": "INFEASIBLE_OR_ERROR",
+                     "exception_type": type(exc).__name__,
+                     "exception_message": str(exc),
++                    "failure_category": _completion_failure_category(
++                        str(exc)
++                    ),
+                 }
+             )
+ 
+@@ -449,20 +469,17 @@
+     ] = []
+     complete_candidate_evaluation_trace: list[dict[str, Any]] = [
+         {
++            "candidate_id": observation["candidate_id"],
+             "source": "hgs_iteration_checkpoint",
+             "iteration": int(observation["iteration"]),
++            "completion_succeeded": observation[
++                "completion_succeeded"
++            ],
+             "complete_objective": observation["complete_objective"],
+             "status": observation["status"],
+-            **(
+-                {
+-                    "exception_type": observation["exception_type"],
+-                    "exception_message": observation[
+-                        "exception_message"
+-                    ],
+-                }
+-                if "exception_type" in observation
+-                else {}
+-            ),
++            "exception_type": observation["exception_type"],
++            "exception_message": observation["exception_message"],
++            "failure_category": observation["failure_category"],
+         }
+         for observation in checkpoint_observations
+     ]
+@@ -474,6 +491,7 @@
+     cross_depot_direction_counts: dict[str, int] = {}
+     for native in proxy_ranked:
+         archive_completion_attempts += 1
++        candidate_id = _native_candidate_id(native)
+         try:
+             skeleton = _translate_solution(native, problem)
+             annotated_skeleton = annotate_cross_site_services(
+@@ -503,10 +521,15 @@
+                 hard_lock_filtered_archive_candidates += 1
+                 complete_candidate_evaluation_trace.append(
+                     {
++                        "candidate_id": candidate_id,
+                         "source": "terminal_population_archive",
+                         "iteration": None,
++                        "completion_succeeded": True,
+                         "complete_objective": None,
+                         "status": "FILTERED_HARD_HOME_DEPOT_LOCK",
++                        "exception_type": None,
++                        "exception_message": None,
++                        "failure_category": None,
+                     }
+                 )
+                 continue
+@@ -521,24 +544,34 @@
+             )
+             complete_candidate_evaluation_trace.append(
+                 {
++                    "candidate_id": candidate_id,
+                     "source": "terminal_population_archive",
+                     "iteration": None,
++                    "completion_succeeded": True,
+                     "complete_objective": float(
+                         completion.objective
+                     ),
+                     "status": "PASS",
++                    "exception_type": None,
++                    "exception_message": None,
++                    "failure_category": None,
+                 }
+             )
+         except (IndexError, KeyError, TypeError, ValueError) as exc:
+             failures.append(str(exc))
+             complete_candidate_evaluation_trace.append(
+                 {
++                    "candidate_id": candidate_id,
+                     "source": "terminal_population_archive",
+                     "iteration": None,
++                    "completion_succeeded": False,
+                     "complete_objective": None,
+                     "status": "INFEASIBLE_OR_ERROR",
+                     "exception_type": type(exc).__name__,
+                     "exception_message": str(exc),
++                    "failure_category": _completion_failure_category(
++                        str(exc)
++                    ),
+                 }
+             )
+     base_exact_candidates = list(exact_candidates)
+@@ -549,10 +582,17 @@
+     )
+     complete_candidate_evaluation_trace.append(
+         {
++            "candidate_id": _skeleton_candidate_id(
++                common_initial_solution
++            ),
+             "source": "common_initial_solution",
+             "iteration": None,
++            "completion_succeeded": True,
+             "complete_objective": float(common_completion.objective),
+             "status": "PASS",
++            "exception_type": None,
++            "exception_message": None,
++            "failure_category": None,
+         }
+     )
+     if (
+@@ -593,8 +633,10 @@
+     )
+     selected = exact_ranked[: int(exact_elite_count)]
+     proxy_best_completion_failure: str | None = None
++    proxy_best_completion_failure_category: str | None = None
+     proxy_best_completion_attempts = 1
+     hard_lock_filtered_proxy_best_candidates = 0
++    proxy_best_candidate_id = _native_candidate_id(result.best)
+     try:
+         proxy_best_completion = complete_china81_route_skeleton(
+             _translate_solution(result.best, problem),
+@@ -610,10 +652,15 @@
+             )
+             complete_candidate_evaluation_trace.append(
+                 {
++                    "candidate_id": proxy_best_candidate_id,
+                     "source": "proxy_best_solution",
+                     "iteration": int(result.num_iterations),
++                    "completion_succeeded": True,
+                     "complete_objective": None,
+                     "status": "FILTERED_HARD_HOME_DEPOT_LOCK",
++                    "exception_type": None,
++                    "exception_message": None,
++                    "failure_category": None,
+                 }
+             )
+             proxy_best_completion = min(
+@@ -623,24 +670,37 @@
+         else:
+             complete_candidate_evaluation_trace.append(
+                 {
++                    "candidate_id": proxy_best_candidate_id,
+                     "source": "proxy_best_solution",
+                     "iteration": int(result.num_iterations),
++                    "completion_succeeded": True,
+                     "complete_objective": float(
+                         proxy_best_completion.objective
+                     ),
+                     "status": "PASS",
++                    "exception_type": None,
++                    "exception_message": None,
++                    "failure_category": None,
+                 }
+             )
+     except (IndexError, KeyError, TypeError, ValueError) as exc:
+         proxy_best_completion_failure = str(exc)
++        proxy_best_completion_failure_category = (
++            _completion_failure_category(str(exc))
++        )
+         complete_candidate_evaluation_trace.append(
+             {
++                "candidate_id": proxy_best_candidate_id,
+                 "source": "proxy_best_solution",
+                 "iteration": int(result.num_iterations),
++                "completion_succeeded": False,
+                 "complete_objective": None,
+                 "status": "INFEASIBLE_OR_ERROR",
+                 "exception_type": type(exc).__name__,
+                 "exception_message": str(exc),
++                "failure_category": (
++                    proxy_best_completion_failure_category
++                ),
+             }
+         )
+         proxy_best_completion = min(
+@@ -661,6 +721,15 @@
+             "complete-candidate trace does not match the frozen "
+             "evaluation-attempt counter"
+         )
++    completion_failure_category_counts = dict(
++        sorted(
++            Counter(
++                item["failure_category"]
++                for item in complete_candidate_evaluation_trace
++                if item["failure_category"] is not None
++            ).items()
++        )
++    )
+     return HgsExactEpoch(
+         elite_skeletons=tuple(item[0] for item in selected),
+         elite_completions=tuple(item[1] for item in selected),
+@@ -776,6 +845,12 @@
+             "proxy_best_completion_failure": (
+                 proxy_best_completion_failure
+             ),
++            "proxy_best_completion_failure_category": (
++                proxy_best_completion_failure_category
++            ),
++            "completion_failure_category_counts": (
++                completion_failure_category_counts
++            ),
+             "complete_candidate_evaluation_attempts": (
+                 complete_candidate_evaluation_attempts
+             ),
+diff --git a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py
+--- a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py
++++ b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py
+@@ -13,7 +13,7 @@
+ 
+ import numpy as np
+ from epochal_hgs import HgsExactEpoch, _run_exact_epoch
+-from pyvrp_adapter import build_pyvrp_problem
++from pyvrp_adapter import _skeleton_candidate_id, build_pyvrp_problem
+ from setp_solver.china81 import China81Bundle
+ from setp_solver.china81_completion import (
+     China81CompletionResult,
+@@ -359,10 +359,17 @@
+             {
+                 "evaluation_index": len(evaluation_trace) + 1,
+                 "view": "route_pool",
++                "candidate_id": _skeleton_candidate_id(
++                    completion.solution
++                ),
+                 "source": source,
+                 "iteration": None,
++                "completion_succeeded": True,
+                 "complete_objective": float(completion.objective),
+                 "status": "PASS",
++                "exception_type": None,
++                "exception_message": None,
++                "failure_category": None,
+             }
+         )
+     if len(evaluation_trace) != total_complete_attempts:
+diff --git a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/run_adapter_g0.py b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/run_adapter_g0.py
+--- a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/run_adapter_g0.py
++++ b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/run_adapter_g0.py
+@@ -59,9 +59,10 @@
+     direct = complete_china81_route_skeleton(common, bundle)
+     problem = build_pyvrp_problem(bundle)
+     projected = _project_initial_solution(
+-        common,
++        direct.solution,
+         problem.model.data(),
+         problem,
++        bundle,
+     )
+     pyvrp_roundtrip = _translate_solution(projected, problem)
+     pyvrp_completion = complete_china81_route_skeleton(
+diff --git a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_pyvrp_adapter.py b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_pyvrp_adapter.py
+--- a/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_pyvrp_adapter.py
++++ b/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/test_pyvrp_adapter.py
+@@ -7,6 +7,10 @@
+ 
+ from epochal_hgs import _run_exact_epoch
+ from pyvrp_adapter import (
++    BUSINESS_HARD_INFEASIBLE,
++    PROXY_FOUND_COMPLETION_FAILED,
++    SEARCH_NOT_FOUND,
++    _completion_failure_category,
+     _project_initial_solution,
+     _translate_solution,
+     build_pyvrp_problem,
+@@ -40,8 +44,17 @@
+     bundle, initial = _fixture()
+     problem = build_pyvrp_problem(bundle)
+     data = problem.model.data()
++    projection_source = pyvrp_adapter.complete_china81_route_skeleton(
++        initial,
++        bundle,
++    ).solution
+ 
+-    projected = _project_initial_solution(initial, data, problem)
++    projected = _project_initial_solution(
++        projection_source,
++        data,
++        problem,
++        bundle,
++    )
+     assert isinstance(projected, PyVRPSolution)
+     restored = _translate_solution(projected, problem)
+ 
+@@ -80,10 +93,10 @@
+         mixed,
+         problem.model.data(),
+         problem,
++        bundle,
+     )
+     restored = _translate_solution(projected, problem)
+ 
+-    assert restored.routes[0].vehicle_type == "ev"
+     assert sum(
+         route.vehicle_type == "ev" for route in restored.routes
+     ) == 1
+@@ -108,6 +121,7 @@
+         mixed,
+         problem.model.data(),
+         problem,
++        bundle,
+     )
+     restored = _translate_solution(projected, problem)
+ 
+@@ -143,6 +157,16 @@
+     assert epoch.stats["archive_diversity_selected_count"] == 4
+     assert epoch.stats["archive_completion_attempts"] == 8
+     assert epoch.stats["complete_candidate_evaluation_attempts"] == 20
++    required_trace_fields = {
++        "candidate_id",
++        "completion_succeeded",
++        "exception_type",
++        "exception_message",
++        "failure_category",
++    }
++    for row in epoch.stats["complete_candidate_evaluation_trace"]:
++        assert required_trace_fields <= row.keys()
++        assert len(row["candidate_id"]) == 64
+ 
+ 
+ def test_pyvrp_result_passes_shared_full_completion() -> None:
+@@ -203,6 +227,14 @@
+     assert "forced complete-model rejection" in (
+         run.stats["searched_complete_model_failure"]
+     )
++    trace = run.stats["complete_candidate_evaluation_trace"]
++    assert len(trace) == run.stats["complete_candidate_evaluation_attempts"]
++    failed = trace[-1]
++    assert len(failed["candidate_id"]) == 64
++    assert failed["completion_succeeded"] is False
++    assert failed["exception_type"] == "ValueError"
++    assert failed["exception_message"] == "forced complete-model rejection"
++    assert failed["failure_category"] == PROXY_FOUND_COMPLETION_FAILED
+ 
+ 
+ def test_hard_home_depot_lock_is_encoded_in_capacity_dimensions() -> None:
+@@ -238,3 +270,76 @@
+         for depot_id, index in depot_index.items():
+             capacity = vehicle_type.capacity[1 + index]
+             assert (capacity > 0) == (depot_id == home_depot)
++
++
++def test_strict_multitrip_proxy_encodes_registered_physical_caps() -> None:
++    bundle = load_china81_bundle(
++        ROOT,
++        "cn-prd-50c-01-V2-LOCATIONS",
++    )
++    mixed = build_pyvrp_problem(
++        bundle,
++        route_proxy_mode="mechanism_ev",
++    ).model.data()
++    mixed_types = {item.name: item for item in mixed.vehicle_types()}
++
++    assert set(mixed_types) == {
++        "CV@D_guangzhou",
++        "EV@D_guangzhou",
++        "CV@D_shenzhen",
++        "EV@D_shenzhen",
++    }
++    for depot_id in ("D_guangzhou", "D_shenzhen"):
++        assert mixed_types[f"CV@{depot_id}"].num_available == 3
++        assert mixed_types[f"EV@{depot_id}"].num_available == 1
++        for vehicle_type in ("CV", "EV"):
++            item = mixed_types[f"{vehicle_type}@{depot_id}"]
++            assert item.reload_depots == [item.start_depot]
++            assert item.max_reloads == 49
++
++    cv_only = build_pyvrp_problem(
++        bundle,
++        route_proxy_mode="cv_only",
++    ).model.data()
++    cv_types = {item.name: item for item in cv_only.vehicle_types()}
++    assert set(cv_types) == {
++        "CV@D_guangzhou",
++        "CV@D_shenzhen",
++    }
++    assert all(item.num_available == 4 for item in cv_types.values())
++
++
++def test_multitrip_projection_and_translation_preserve_trip_boundaries() -> None:
++    bundle, initial = _fixture()
++    completion = pyvrp_adapter.complete_china81_route_skeleton(
++        initial,
++        bundle,
++    )
++    problem = build_pyvrp_problem(bundle)
++    projected = _project_initial_solution(
++        completion.solution,
++        problem.model.data(),
++        problem,
++        bundle,
++    )
++    restored = _translate_solution(projected, problem)
++
++    assert projected.num_trips() == len(completion.solution.routes)
++    assert len(restored.routes) == projected.num_trips()
++    assert len({route.vehicle_id for route in restored.routes}) == len(
++        restored.routes
++    )
++    assert all("#T" in route.vehicle_id for route in restored.routes)
++
++
++def test_completion_failure_classification_is_message_deterministic() -> None:
++    assert _completion_failure_category(
++        "China81 route skeleton cannot satisfy the registered physical "
++        "fleet caps"
++    ) == PROXY_FOUND_COMPLETION_FAILED
++    assert _completion_failure_category(
++        "SEARCH_NOT_FOUND:no candidate"
++    ) == SEARCH_NOT_FOUND
++    assert _completion_failure_category(
++        "BUSINESS_HARD_INFEASIBLE:capacity contradiction"
++    ) == BUSINESS_HARD_INFEASIBLE
+

@@ -18,9 +18,13 @@ from dataclasses import dataclass
 import math
 from typing import Iterable
 
+from setp_solver.charge_timing import (
+    DEFAULT_CHARGE_TIMING_POLICY,
+    select_charge_timing_start,
+    validate_charge_timing_policy,
+)
 from setp_solver.cost import (
     CARBON_SLOT_SECONDS,
-    best_charging_action_start,
     carbon_profile_row_for_slot,
     charging_action_electricity_cost,
     charging_action_emissions_kg,
@@ -250,22 +254,28 @@ def score_charge_option(
     prices: PriceParameters,
     *,
     carbon_weight: float = 1.0,
+    charge_timing_policy: str | None = None,
 ) -> ScoredChargeOption:
     """Score station and timing with the same monetary units as the model."""
 
+    effective_timing_policy = (
+        "asap"
+        if charge_timing_policy is None and float(carbon_weight) <= 1e-12
+        else DEFAULT_CHARGE_TIMING_POLICY
+        if charge_timing_policy is None
+        else charge_timing_policy
+    )
+    validate_charge_timing_policy(effective_timing_policy)
     if option.has_curve_metadata:
         template = option.action_at(option.earliest_start_second)
-        start = (
-            float(option.earliest_start_second)
-            if float(carbon_weight) <= 1e-12
-            else best_charging_action_start(
-                template,
-                earliest_start_second=option.earliest_start_second,
-                latest_start_second=option.latest_start_second,
-                instance=instance,
-                carbon_profile=carbon_profile,
-                prices=prices,
-            )
+        start = select_charge_timing_start(
+            template,
+            earliest_start_second=option.earliest_start_second,
+            latest_start_second=option.latest_start_second,
+            instance=instance,
+            carbon_profile=carbon_profile,
+            prices=prices,
+            charge_timing_policy=effective_timing_policy,
         )
         timing = ChargeTimingChoice(
             start_second=start,
@@ -277,8 +287,16 @@ def score_charge_option(
             ),
             candidates_evaluated=-1,
         )
-    elif float(carbon_weight) <= 1e-12:
-        start = float(option.earliest_start_second)
+    else:
+        start = select_charge_timing_start(
+            option.action_at(option.earliest_start_second),
+            earliest_start_second=option.earliest_start_second,
+            latest_start_second=option.latest_start_second,
+            instance=instance,
+            carbon_profile=carbon_profile,
+            prices=prices,
+            charge_timing_policy=effective_timing_policy,
+        )
         timing = ChargeTimingChoice(
             start_second=start,
             carbon_kg=integrated_charge_carbon_kg(
@@ -289,17 +307,7 @@ def score_charge_option(
                 carbon_profile,
                 station_id=option.station_id,
             ),
-            candidates_evaluated=1,
-        )
-    else:
-        timing = select_integrated_carbon_start(
-            option.earliest_start_second,
-            option.latest_start_second,
-            option.occupancy_seconds,
-            option.energy_kwh,
-            instance,
-            carbon_profile,
-            station_id=option.station_id,
+            candidates_evaluated=-1,
         )
     is_depot = option.node_type.lower() == "d"
     electricity_cost = charging_action_electricity_cost(
@@ -346,6 +354,7 @@ def select_charge_option(
     prices: PriceParameters,
     *,
     carbon_weight: float = 1.0,
+    charge_timing_policy: str | None = None,
 ) -> ScoredChargeOption:
     """Choose a station and time by complete incremental model cost."""
 
@@ -356,6 +365,7 @@ def select_charge_option(
             carbon_profile,
             prices,
             carbon_weight=carbon_weight,
+            charge_timing_policy=charge_timing_policy,
         )
         for option in options
     ]

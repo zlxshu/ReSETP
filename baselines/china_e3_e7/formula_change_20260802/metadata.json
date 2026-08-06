@@ -1,0 +1,140 @@
+{
+  "schema_version": "resetp.w1-formula-change.metadata.v1",
+  "task_id": "W1",
+  "change_id": "MC-W1-F2-DEPOT-CONCURRENCY-01",
+  "status": "W1_FORMULA_CHANGE_COMPLETE",
+  "created_at_utc": "2026-08-02T11:35:52Z",
+  "created_at_local": "2026-08-02T19:35:52+08:00",
+  "repository_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "git_commit_before": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "git_commit_after": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "worktree_dirty_before": true,
+  "preexisting_changes_preserved": true,
+  "formal_experiment_executed": false,
+  "route_search_executed": false,
+  "search_evaluations": 0,
+  "existing_experiment_results_overwritten": false,
+  "assertions_relaxed": false,
+  "approval": {
+    "date": "2026-08-02",
+    "verbatim": "①②③按建议、④更新。注意改公式的纪律。以前的数据和设计几乎全部作废，以最新的为准。",
+    "register_path": "docs/handoff/model_change_approval_register_20260718.md",
+    "register_was_first_repository_write": true,
+    "register_before_sha256": "9539a8ffcde622e49ab7b392963163ef64e915fcc71ffb1d709942db30790a8c",
+    "register_after_sha256": "eaaef2d59fb1b803c31a97f6841e7396c510b03cab6c9de659e5cd599d91498a"
+  },
+  "model_contract": {
+    "vehicle_fixed_cost_cny": 170.0,
+    "before": "one fixed charge per delivery route/trip",
+    "after": "one fixed charge per distinct physical vehicle and vehicle type",
+    "depot_charging_before": "finite instance capacity; two 22 kW chargers per depot in China81",
+    "depot_charging_after_default": "unbounded concurrency",
+    "depot_charging_legacy_option": "finite_instance",
+    "public_station_semantics_changed": false,
+    "fleet_total_contract_changed_in_w1": false
+  },
+  "source_hashes_before_after": {
+    "solver/src/setp_solver/cost.py": {
+      "before_sha256": "7f59a47a3aab9b582b17e29d7e9dc13f16f892fc7b5ae7b54eec84412aa77333",
+      "after_sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d"
+    },
+    "solver/src/setp_solver/profit.py": {
+      "before_sha256": "216c4f16f2e26f1c2840fa272adbf1e3ccb056c3de9403dd15b71fa5edfef1dc",
+      "after_sha256": "54d7ce3a0a27fd35d01a829c575854b9717375e4028795d336bd0f4428b56b44"
+    },
+    "solver/src/setp_solver/china81.py": {
+      "before_sha256": "c70133cf59e33f6331a1fafb95188430615472974c2a1e3d2e838f822a09e79e",
+      "after_sha256": "a3b87b0680983fc79952c96cbed8e6f4a5ceb5effcbcc11d9e3df435103eae2e"
+    },
+    "solver/src/setp_solver/model_config.py": {
+      "before_sha256": "534f5aa3f06a4b5da8c755a3c0e42d9103930f4969e617ed26d3ec1597bc8fe6",
+      "after_sha256": "acb32a0f5c709bbba4a6b4fa26877bb2db00829fa2925906a12527236d57b681"
+    },
+    "solver/src/setp_solver/check.py": {
+      "before_sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+      "after_sha256": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b"
+    },
+    "solver/src/setp_solver/search/evaluation.py": {
+      "before_sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "after_sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+    },
+    "solver/src/setp_solver/search/dynamic_multitrip_schedule.py": {
+      "before_sha256": "2897a1700e8591bbd93f57152d0cd2277dcd33f7d79fcdfd1ca165065385c8b7",
+      "after_sha256": "2897a1700e8591bbd93f57152d0cd2277dcd33f7d79fcdfd1ca165065385c8b7"
+    },
+    "solver/tests/test_cost.py": {
+      "before_sha256": "b1304b8bfccc3c98eaf9e33441a8ddf750775ff8bbb0281a4384ec125661c829",
+      "after_sha256": "c3c3e7878725937f1225ad8141776be43c83d28b83a407866151df09e06a3d02"
+    },
+    "solver/tests/test_profit.py": {
+      "before_sha256": "65ec29bc661be1e73923ccb079ac496eeb0506bde2d223d0cda345b6e5d3bf2d",
+      "after_sha256": "bdca08ffc85179b48d547159a5ec7de8c4dd098cf224ee16e010cfdfc907d479"
+    },
+    "solver/tests/test_china81_bundle_20260720.py": {
+      "before_sha256": "56ac7fd59f4e56569155fdb0a63293f2f090c008156bccf6782e30845c3df6b1",
+      "after_sha256": "e4e10ab9775bcf6d1993c2b0172b546e225e9c279285f32b5590f1158e4edab4"
+    },
+    "baselines/china_e3_e7/run_formula_change_w1_20260802.py": {
+      "before_sha256": null,
+      "after_sha256": "e092e3fdff9a5ffe5d794400a124faa198606e4040d6f88ff31b18fd9ec7164d"
+    },
+    "docs/paper_v2/paper_main.tex": {
+      "before_sha256": "76425e69ee7e0c0ffe7697dcad72eaf9e6803b95a10ce6ccd383410ffa81096f",
+      "after_sha256": "76425e69ee7e0c0ffe7697dcad72eaf9e6803b95a10ce6ccd383410ffa81096f"
+    }
+  },
+  "evidence_sources": {
+    "docs/handoff/billing_and_charging_basis_20260802/fixed_cost_billing_literature.json": "d62ac004490289afa4758b2890ebb2abbfaa3381a336fc29b975c5ceaa89d42b",
+    "docs/handoff/billing_and_charging_basis_20260802/charging_infrastructure_classified.json": "1ea91baee1180efbc24833bd4fdebe9b11f57e355ab5daec2165f70d513d8607",
+    "docs/handoff/billing_and_charging_basis_20260802/cross_effect_zero_search.json": "0b927719e922bf71a79edccecec45bae09dc26d47ca977a190e304c1a44c3214",
+    "docs/handoff/fleet_sizing_derivation_20260802/levels_design.json": "baa54acddb5576a124718ad34f2275dffb145197a8c0c0406185b9d75fe35725",
+    "docs/handoff/fleet_sizing_derivation_20260802/fleet_sizing.json": "6745ff6314de9d9b36b01340510e3d5df9acebeb000b6f6aab3b3d42aec67cd9"
+  },
+  "regressions": {
+    "single_trip_fixed_cost": {
+      "status": "PASS",
+      "E4": "30/30 binary64 equal",
+      "E6": "30/30 binary64 equal"
+    },
+    "multitrip_predictable_fixed_cost": {
+      "status": "PASS",
+      "passed": 20,
+      "total": 20,
+      "formula": "new=old-(routes-physical_vehicles)*170"
+    },
+    "full_arithmetic_anchor": {
+      "status": "PASS",
+      "routes": 1040,
+      "physical_vehicles": 693,
+      "old_fixed_cost_cny": 176800.0,
+      "new_fixed_cost_cny": 117810.0,
+      "reduction_cny": 58990.0,
+      "reduction_percent_exact": 33.3653846154,
+      "reduction_percent_reported": 33.4
+    },
+    "charging_zero_search": {
+      "status": "PASS",
+      "before_by_ev_share_0_25_50_75_100": [81, 81, 81, 81, 75],
+      "after_by_ev_share_0_25_50_75_100": [81, 81, 81, 81, 81],
+      "rows_replayed": 405,
+      "newly_certified": 6
+    },
+    "focused_tests": {
+      "status": "PASS",
+      "passed": 32,
+      "failed": 0
+    },
+    "full_existing_test_suite": {
+      "status": "FAIL_CLASSIFIED_NO_TRUE_W1_REGRESSION",
+      "passed": 901,
+      "skipped": 1,
+      "failed": 7,
+      "duration_seconds": 299.18,
+      "baseline_before_w1": {
+        "passed": 901,
+        "skipped": 1,
+        "failed": 5
+      }
+    }
+  }
+}

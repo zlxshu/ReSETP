@@ -1,0 +1,59 @@
+{
+  "schema": "resetp.z4-cross-effect-zero-search.v1",
+  "task_id": "Z4",
+  "status": "Z4_CROSS_EFFECT_ZERO_SEARCH_COMPLETE",
+  "method": "ARITHMETIC_ONLY_NO_SOLVER_NO_ROUTE_SEARCH",
+  "search_evaluations": 0,
+  "convention": {
+    "name": "B_KEEP_SINGLE_TRIP_TOTAL_FIXED_AND_OPTIMIZE_USED_PHYSICAL_VEHICLES",
+    "source": "docs/handoff/charger_and_fleet_basis_20260802/multitrip_two_conventions.json:55-69",
+    "available_fleet_cap_held_fixed": 1042,
+    "delivery_trips_held_fixed": 1040,
+    "single_trip_physical_vehicles_used": 1040,
+    "multitrip_physical_vehicles_used": 693,
+    "physical_vehicle_reduction": 347
+  },
+  "current_per_trip_billing": {
+    "unit_cost_cny_per_trip": 170.0,
+    "source": "docs/paper_v2/paper_main.tex:1033-1036; solver/src/setp_solver/china81.py:905-909; solver/src/setp_solver/cost.py:168",
+    "before_cny": 176800.0,
+    "after_cny": 176800.0,
+    "calculation": "1040 trips * 170 CNY/trip = 176800 CNY under both 1040 and 693 physical vehicles",
+    "savings_cny": 0.0,
+    "savings_percent": 0.0
+  },
+  "counterfactual_per_used_physical_vehicle_billing": {
+    "unit_cost_cny_per_used_physical_vehicle": 170.0,
+    "before_cny": 176800.0,
+    "before_calculation": "1040 used physical vehicles * 170 CNY = 176800 CNY",
+    "after_cny": 117810.0,
+    "after_calculation": "693 used physical vehicles * 170 CNY = 117810 CNY",
+    "savings_cny": 58990.0,
+    "savings_calculation": "176800 - 117810 = 58990 CNY",
+    "savings_percent": 33.365385,
+    "savings_percent_exact_expression": "58990 / 176800 * 100 = 347 / 1040 * 100 = 33.36538461538461%"
+  },
+  "charging_interaction": {
+    "literature_active_charging_B_percent": 71.428571,
+    "literature_active_charging_C_percent": 28.571429,
+    "resetp_current_depot_setup": "2 chargers * 22 kW per depot; finite concurrency",
+    "resetp_position": "偏紧",
+    "zero_search_boundary": "This record changes no charging schedule and recomputes no route. The fixed-cost saving is an accounting consequence of the already recorded 1040-to-693 physical-vehicle witness; any energy, time, queue or total-cost effect would require a separately approved run."
+  },
+  "economic_answer": {
+    "multitrip_becomes_real_fixed_cost_saving_mechanism": true,
+    "reason": "When the fixed charge is attached once to each used physical vehicle, reusing a vehicle across compatible trips removes 347 charged vehicle activations and therefore saves 58990 CNY in the fixed-cost ledger. Under the present per-trip formula it removes no charged unit and saves zero fixed cost.",
+    "consistent_with_user_stated_reality": true,
+    "consistency_statement": "It matches the stated reality that one physical vehicle reused for a second same-day trip should not incur the vehicle-day rental/depreciation proxy a second time."
+  },
+  "evidence_lines": [
+    "docs/paper_v2/paper_main.tex:475-480",
+    "docs/paper_v2/paper_main.tex:1033-1036",
+    "solver/src/setp_solver/cost.py:164-168",
+    "solver/src/setp_solver/profit.py:92-99",
+    "solver/src/setp_solver/china81.py:905-909",
+    "docs/handoff/china_cost_proxy_evidence_20260718.md:24-31",
+    "docs/handoff/china_cost_proxy_evidence_20260718.md:35-51",
+    "docs/handoff/charger_and_fleet_basis_20260802/multitrip_two_conventions.json:55-80"
+  ]
+}

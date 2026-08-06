@@ -1,0 +1,37 @@
+{
+  "configured_iterations_by_view": {
+    "cv_only": 60,
+    "mechanism_ev": 60,
+    "naive_ev": 60
+  },
+  "configured_iterations_total": 180,
+  "created_at_utc": "2026-08-05T11:48:23Z",
+  "failed_unit_count": 0,
+  "global_hgs_wallclock_seconds": null,
+  "improvement_row_count": 30,
+  "mip_audit_row_count": 3,
+  "mip_backend_capability": {
+    "extension_count": 0,
+    "incumbent_callback_available": false,
+    "resumable_handle_available": false,
+    "scipy_milp_signature": "(c, *, integrality=None, bounds=None, constraints=None, options=None)"
+  },
+  "mode": "smoke",
+  "paper_claim_allowed": false,
+  "protected_file_sha256_after": {
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_file_sha256_before": {
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_files_unchanged": true,
+  "run_count": 3,
+  "schema_version": "resetp.t24-charging-timing-runner.v1",
+  "slot_row_count": 288,
+  "status": "PASS_T24_SMOKE",
+  "successful_unit_count": 3
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": "resetp.t22-instrumentation-decision.v1",
+  "task_id": "T22",
+  "status": "T22_INSTRUMENTATION_BUILD_COMPLETE",
+  "FACT": {
+    "instrumentation_and_wiring_complete": true,
+    "formal_batch_started": false,
+    "smoke_search_run_count": 1,
+    "smoke_acceptance_passed": true,
+    "solver_regression": "906 passed / 1 skipped / 6 failed",
+    "solver_regression_matches_existing_six": true,
+    "protected_files_unchanged": true,
+    "mip_extension_supported_by_current_backend": false
+  },
+  "INFERENCE": "The smoke validates the instrumentation path only and provides no scientific arm-comparison result.",
+  "DECISION": "paper_claim_allowed=false",
+  "HALT": null
+}

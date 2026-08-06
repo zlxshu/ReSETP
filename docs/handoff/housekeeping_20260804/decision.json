@@ -1,0 +1,32 @@
+{
+  "task_id": "T6-HOUSEKEEPING",
+  "as_of": "2026-08-04",
+  "search_evaluations": 0,
+  "FACT": {
+    "test_result": "909 passed / 3 failed / 1 skipped",
+    "test_environment_available": true,
+    "all_three_failures_registered_in_repository": true,
+    "candidate_source_count": 17,
+    "archived_candidates": ["C01", "C02", "C11", "C15", "C17"],
+    "excluded_candidates": ["C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C12", "C13", "C14", "C16"],
+    "download_failures": [],
+    "archived_raw_file_count": 52,
+    "data_chinainstances_modified": false
+  },
+  "INFERENCE": {
+    "test_failure_attribution": "三个失败的测试导入链和被测函数均未触及 T4 修改的五个文件，因此在本次静态导入链核查边界内判定与 T4 无关。",
+    "license_selection": "C01/C02/C11/C15/C17 满足明确 CC BY 4.0、直接文件和体积条件；其余候选至少有一个硬性排除条件。"
+  },
+  "DECISION": {
+    "test_failures": "保留失败原状，不修复、不改测试、不改源码；按已登记历史失败记录。",
+    "inventory": "仅封存 C01、C02、C11、C15、C17；原始文件名保持不变；每个目录写 SOURCE.md。",
+    "usage_boundary": "库存未使用，不属于正式实验输入，不进入算例生成链路；后续使用必须另行取得用户批准。"
+  },
+  "HALT": {
+    "test_environment": false,
+    "download_endpoint_failure": false,
+    "license_or_redistribution_uncertainty_for_included": false,
+    "active_halt": false
+  }
+}
+

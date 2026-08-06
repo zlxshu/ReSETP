@@ -1,0 +1,64 @@
+{
+  "schema": "resetp.z3-fixed-cost-basis-audit.v1",
+  "task_id": "Z3",
+  "status": "Z3_CHARGER_FLEET_BASIS_COMPLETE",
+  "field": "F2 / vehicle_fixed_cost",
+  "paper_evidence": {
+    "file": "docs/paper_v2/paper_main.tex",
+    "lines": [475, 476, 478, 479],
+    "text_basis": "line 476: 固定成本与派遣的配送趟数成正比",
+    "formula": "F2 = c_fix * sum_{k,p} n_kp z_kp",
+    "billing_unit": "DELIVERY_TRIP"
+  },
+  "source_evidence": {
+    "primary_cost": {
+      "file": "solver/src/setp_solver/cost.py",
+      "lines": [164, 165, 168],
+      "physical_vehicle_metrics": "lines 164-165 deduplicate physical_vehicle_id only for n_veh_cv and n_veh_ev metrics",
+      "charged_expression": "line 168: cost_fix = len(solution.routes) * vehicle_fixed_cost",
+      "billing_unit": "ROUTE_OR_DELIVERY_TRIP"
+    },
+    "depot_profit_allocation": {
+      "file": "solver/src/setp_solver/profit.py",
+      "lines": [92, 98],
+      "charged_expression": "for route in solution.routes, add vehicle_fixed_cost once to that route home depot",
+      "billing_unit": "ROUTE_OR_DELIVERY_TRIP"
+    },
+    "parameter_value": {
+      "file": "solver/src/setp_solver/china81.py",
+      "lines": [884, 909],
+      "field": "vehicle_fixed_cost",
+      "value": 170.0,
+      "unit": "CNY_PER_TRIP"
+    },
+    "generic_parameter_comment": {
+      "file": "solver/src/setp_solver/prices.py",
+      "line": 68,
+      "value": 80.0,
+      "unit_comment": "GBP_PER_SHIFT_OR_TRIP"
+    }
+  },
+  "consistency": {
+    "paper_vs_cost_py": "CONSISTENT",
+    "paper_vs_profit_py": "CONSISTENT",
+    "actual_basis": "PER_DELIVERY_TRIP_NOT_PER_PHYSICAL_VEHICLE",
+    "physical_vehicle_id_affects_F2": false
+  },
+  "zero_search_calculation": {
+    "fixed_delivery_trips": 1040,
+    "single_trip_physical_vehicles": 1040,
+    "multitrip_physical_vehicles": 693,
+    "current_F2_single_trip_cny": 176800.0,
+    "current_F2_multitrip_cny": 176800.0,
+    "current_F2_saving_cny": 0.0,
+    "counterfactual_per_physical_vehicle_multitrip_cny": 117810.0,
+    "counterfactual_saving_cny": 58990.0,
+    "counterfactual_saving_percent": 33.365385
+  },
+  "judgment": {
+    "does_multitrip_save_F2_in_current_model": false,
+    "does_current_model_match_user_described_one_startup_fee_per_physical_vehicle": false,
+    "root_cause": "当前 F2 把折旧、维修、保险、工资叙述为配送趟固定费，并由代码按 route 数收费；因此实体车复用不会减少 F2。这是‘多趟为何没有降固定费’的直接模型根因。",
+    "required_scientific_correction_before_claiming_multitrip_cost_saving": "必须先由用户决定是否把 F2 改成按实体车/班日启用计费并同步修改论文公式、成本核算和利润归属；本 Z3 只审计，不修改。"
+  }
+}

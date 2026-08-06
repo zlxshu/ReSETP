@@ -1,0 +1,116 @@
+{
+  "task_id": "D3",
+  "status": "D3_ROOTCAUSE_REVIEW_COMPLETE",
+  "e5_cause": "顶层设计",
+  "e7_cause": "顶层设计",
+  "claim_R_verdict": "部分成立",
+  "claim_R_verdict_reason": "E5和E7的根因分类及事前未做机制显形检查成立；但15个候选中0个可用不等于文献证明该系数在世界上不存在，且指定的e3-lever-is-fleet-pooling.md不存在、相邻证据还证伪了项目中池化必为真实杠杆的说法。",
+  "third_occurrence": false,
+  "common_failure_action": "在冻结研究主张与情景前，没有把文献给出的机制必要条件逐项映射到候选算例，并用零搜索检查这些必要条件的可行集合是否非空。",
+  "e5_findings": {
+    "route_count": 1040,
+    "route_energy_kwh_min": 9.094221001679287,
+    "route_energy_kwh_max": 66.29088100604332,
+    "route_energy_share_of_77_28kwh_min_pct": 11.767884318943176,
+    "route_energy_share_of_77_28kwh_max_pct": 85.78012552541837,
+    "routes_over_85_pct": 1,
+    "just_enough_public_stops": 0,
+    "max_coverage_stop_saving_routes": 0,
+    "wang_74_8kwh_95km_routes_over_range": 425,
+    "wang_74_8kwh_95km_route_count": 1040,
+    "wang_74_8kwh_95km_share": 0.40865384615384615,
+    "source_paths": [
+      "baselines/china_e3_e7/e5_enroute_nonlinear_20260801/b2_opportunity_audit_20260801/raw_runs.csv",
+      "baselines/china_e3_e7/e5_enroute_nonlinear_20260801/b2_opportunity_audit_20260801/decision.json",
+      "baselines/china_e3_e7/e5_enroute_nonlinear_20260801/b2_low_cost_diagnostic_20260801/raw_runs.csv",
+      "baselines/china_e3_e7/e5_enroute_nonlinear_20260801/b2_wang95_range_opportunity_20260801/decision.json"
+    ],
+    "literature_sources": [
+      "Wang et al. (2026), Computers & Operations Research, PDF pp. 24, 26-27",
+      "Montoya et al. (2017), PDF pp. 2-3, 17-18"
+    ]
+  },
+  "e7_findings": {
+    "o1_cell_count": 36,
+    "o1_passed_cell_count": 34,
+    "o1_failed_cell_count": 2,
+    "failed_instance": "cn-prd-150c-01-V2-LOCATIONS",
+    "failed_seed": 3,
+    "failed_stage": 18,
+    "failed_customer": "C135",
+    "trigger_second": 57600.0,
+    "best_latest_departure_second": 57332.433059999996,
+    "seconds_late": 267.56694000000425,
+    "failure_classification": "HARD_CONSTRAINT_INFEASIBLE_AT_TRIGGER",
+    "higher_budget_can_rescue": false,
+    "waiting_loss_candidate_count": 15,
+    "waiting_loss_usable_count": 0,
+    "coefficient_foreseeability": "在冻结人民币经济发车研究问题前，通过核心来源的单位、语义和标定审计即可发现没有可直接移植的系数；15/15不可用不构成全球不存在证明。",
+    "source_paths": [
+      "baselines/china_e3_e7/e7_o1_replanning_20260801/probe_three_sizes_seeds1to3_eval8_count_20260801/decision.json",
+      "baselines/china_e3_e7/e7_o1_replanning_20260801/failure_diagnosis_20260801/decision.json",
+      "baselines/china_e3_e7/e7_o2_dispatch_20260801/zero_search_15_streams_20260801/decision.json",
+      "docs/handoff/waiting_loss_evidence_20260802/candidates.json",
+      "docs/handoff/waiting_loss_evidence_20260802/done.json"
+    ],
+    "literature_sources": [
+      "Ninikas & Minis (2020), p. 14",
+      "邱莹莹 (2024), p. 24 equation (3-2) and p. 47 parameters",
+      "倪冠群等 (2025), pp. 3875-3876",
+      "Gautam & Geunes (2024), pp. 97, 99, 101-102"
+    ]
+  },
+  "third_occurrence_evidence": {
+    "valid_same_pattern_record": "docs/handoff/memory/mechanism_condition_absent_20260731.md",
+    "requested_second_record": "docs/handoff/memory/e3-lever-is-fleet-pooling.md",
+    "requested_second_record_exists": false,
+    "closest_existing_record": "docs/handoff/mechanism_lever_rethink_20260731/report.md",
+    "pooling_probe_source": "baselines/china_e3_e7/e3_pooling_probe_20260731/probe_results.json",
+    "pooling_vs_joint_seed_effects_pct": [-0.038, 0.0, -0.036]
+  },
+  "pre_check_proposal": {
+    "exists": true,
+    "type": "低成本零搜索机制暴露检查",
+    "e5": {
+      "check_quantity": "逐路线route_energy_kwh/battery_capacity_kwh，并检查实际充电区间是否与所选文献曲线的非线性段相交；文献车型敏感性直接检查ev_road_distance_km是否超过95 km。",
+      "thresholds": [
+        {
+          "value": "1.0 battery equivalent",
+          "source": "选定车辆的物理能量守恒边界，不是经验阈值"
+        },
+        {
+          "value": "95 km and 74.8 kWh",
+          "source": "Wang et al. (2026), PDF pp. 24, 26-27"
+        },
+        {
+          "value": "approximately 80% nonlinear region onset",
+          "source": "Montoya et al. (2017), PDF pp. 2-3; observed mid-route charge distribution pp. 17-18"
+        }
+      ],
+      "existing_prototype": "b2_opportunity_audit_20260801的1040路线复算及b2_wang95_range_opportunity_20260801"
+    },
+    "e7": {
+      "check_quantity": "逐订单计算所有允许车场-车型中的最大latest_departure，再检查max(latest_departure)-(arrival_time+candidate_wait)是否非负；人民币经济规则另做系数单位、语义和标定来源门。",
+      "thresholds": [
+        {
+          "value": "0 seconds feasibility slack",
+          "source": "模型硬时间窗的可达性定义，不是效果阈值"
+        },
+        {
+          "value": "10% and 20% accumulated orders",
+          "source": "Ninikas & Minis (2020), p. 14"
+        },
+        {
+          "value": "at most 30 minutes",
+          "source": "邱莹莹 (2024), p. 24 equation (3-2), p. 47 parameterization"
+        },
+        {
+          "value": "waiting coefficient must match RMB, order-time scale, and arrival-to-dispatch semantics",
+          "source": "倪冠群等 (2025), pp. 3875-3876; Gautam & Geunes (2024), pp. 97, 99, 101-102; docs/handoff/waiting_loss_evidence_20260802/report.md"
+        }
+      ],
+      "existing_prototype": "zero_search_15_streams_20260801的15流300单时机诊断"
+    },
+    "existing_zero_search_screens_are_prototypes": true
+  }
+}

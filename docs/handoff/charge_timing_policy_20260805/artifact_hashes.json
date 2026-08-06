@@ -1,0 +1,40 @@
+{
+  "schema": "resetp.t17-artifact-hashes.v1",
+  "algorithm": "sha256",
+  "excluded_patterns": [
+    "._*",
+    "__pycache__",
+    ".pytest_cache"
+  ],
+  "files": {
+    "docs/handoff/charge_timing_policy_20260805/report.md": "ff6d9ac06703b13eebf20f0c1e17a4aa9117f613274d705cda387040ba5bb7ab",
+    "docs/handoff/charge_timing_policy_20260805/metadata.json": "c368d28584cd2c69cd009bbd1f8732d3e59fb6ab243d9b5fe199580ae8bc0614",
+    "docs/handoff/charge_timing_policy_20260805/decision.json": "652ffdd1593c0762447190fd943b923dbec21caee7f16d7df6fc62b36b7ceb86",
+    "solver/src/setp_solver/charge_timing.py": "c199307557494320b87bd897e0ac5d68788a12c1788349e8b5052d46124fcc42",
+    "solver/src/setp_solver/search/multitrip_schedule.py": "a5cb816e649e6b4e0b6e49dbfc1d089dbde19b85d0456c833fed38f27f7f16f6",
+    "solver/src/setp_solver/search/charging.py": "92bde1657d6efabd5e102820dad8c132217d5864fd805118119f0ac09b365669",
+    "solver/src/setp_solver/algorithms/resetp_alns/support/carbon_charging.py": "9e5eae86a76da13c8324ea9253a2ca0eae95c11955fdd657efc73515bb70f12e",
+    "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py": "51e1aa603cbc7471ddec522a76567ce8f777c815ac722721d94581fb92d0aef7",
+    "solver/src/setp_solver/china81_completion.py": "9fcb0e56bbb8a32863e02ec1ae48cc10a2b25eb6dadf38501abb7c338e237aa5",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_files": {
+    "solver/src/setp_solver/cost.py": {
+      "before": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "after": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "changed": false
+    },
+    "solver/src/setp_solver/check.py": {
+      "before": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+      "after": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+      "changed": false
+    },
+    "solver/src/setp_solver/search/evaluation.py": {
+      "before": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "after": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "changed": false
+    }
+  }
+}

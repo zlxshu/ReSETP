@@ -43,7 +43,11 @@ class CarbonGateTests(unittest.TestCase):
         self.assertEqual(CARBON_ORIGIN_UTC.isoformat(), "2025-11-13T08:00:00+00:00")
         samples = [0.0, 1799.0, 1800.0, 1801.0, 30600.0, 32399.0, 32400.0, 37400.0]
         for t_second in samples:
-            self.assertEqual(carbon_slot_index(t_second), _ref_slot(t_second), msg=f"t={t_second}")
+            self.assertEqual(
+                carbon_slot_index(t_second, n_slots=CARBON_N_SLOTS),
+                _ref_slot(t_second),
+                msg=f"t={t_second}",
+            )
 
     # v2026-06-11: B1 gamma round-trip gate against a real generated carbon_profile.csv, not a mock.
     def test_real_fixture_gamma_round_trip_matches_profile(self) -> None:

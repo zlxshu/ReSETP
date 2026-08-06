@@ -1,0 +1,13 @@
+{
+  "schema": "resetp.t12-intertrip-charging-fix-tolerance-decision.v1",
+  "task_id": "T12-INTERTRIP-CHARGING-FIX-TOLERANCE",
+  "status": "HALT_REGRESSION_FAILED",
+  "decision": "technical_validation_incomplete",
+  "paper_claim_allowed": false,
+  "reason": "The two public-station tests recovered, but two refined-charging tests and three search tests still fail; per the stop condition no full suite was run.",
+  "witness_validation": {
+    "positive_witnesses": "3/3 still CHARGING_TRIP_OVERLAP",
+    "t10_witnesses": "18/18 legal",
+    "t9_witnesses": "20/20 legal"
+  }
+}

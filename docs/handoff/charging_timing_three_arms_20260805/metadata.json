@@ -1,0 +1,104 @@
+{
+  "schema_version": "resetp.t21-charging-timing-metadata.v1",
+  "task_id": "T21",
+  "status": "HALT_T21_RUNNER_CONTRACT_UNAVAILABLE_NO_SEARCH",
+  "created_at_utc": "2026-08-05T10:22:39Z",
+  "repository_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "git": {
+    "commit": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+    "branch": "codex/reporting-pipeline",
+    "worktree_was_already_dirty": true,
+    "preflight_status_porcelain_sha256": "1afdbf4a461df47863be9ddee2f34fc58dd000c9857664848a5ddc98474c286c"
+  },
+  "environment": {
+    "logical_cpu_count": 8,
+    "python_executable": "/opt/anaconda3/bin/python3.13",
+    "python": "3.13.9",
+    "numpy": "2.3.5",
+    "scipy": "1.16.3",
+    "pyvrp": "0.12.2",
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "required_PYTHONHASHSEED": "0",
+    "required_PYTHONPATH": "solver/src:models/src",
+    "experiment_process_count": 0
+  },
+  "preregistration_path": "docs/handoff/charging_timing_three_arms_20260805/preregistration.json",
+  "preregistration_written_before_results": true,
+  "paper_claim_allowed": false,
+  "expected_run_count": 90,
+  "actual_run_count": 0,
+  "search_started": false,
+  "solver_tests_run": false,
+  "code_changed_by_t21": false,
+  "appledouble_incident": {
+    "status": "HASH_CONTAMINATED_APPLEDOUBLE",
+    "detected_sidecar_count": 9,
+    "sidecars_contained_experiment_data": false,
+    "excluded_from_artifact_manifest": true,
+    "cleaned_before_final_validation": true
+  },
+  "protected_file_sha256_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_file_sha256_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_files_unchanged": true,
+  "blocked_contracts": [
+    {
+      "id": "HGS_GLOBAL_WALLCLOCK_REQUIRED",
+      "fact": "The existing deterministic HGS path rejects a missing or non-positive wallclock safety cap and always appends that wallclock criterion.",
+      "evidence": [
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:198",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:214",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py:162"
+      ],
+      "conflict": "T21 allows no HGS wallclock; only the route-pool MIP may use wallclock."
+    },
+    {
+      "id": "EVERY_IMPROVEMENT_TRACE_NOT_RECORDED",
+      "fact": "The custom HGS loop observes current_best and new_best each iteration but persists only the every-100-iteration checkpoint callback; it does not append an improvement event containing iteration, before and after objectives.",
+      "evidence": [
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:960",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:973",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py:977"
+      ],
+      "conflict": "T21 requires every improvement event in improvement_trace.csv."
+    },
+    {
+      "id": "ROUTE_POOL_MIP_DYNAMIC_TIME_AND_ACTUAL_TIME_NOT_AVAILABLE",
+      "fact": "The route-pool layer sends one fixed time_limit value to scipy.optimize.milp and records the configured limit, but no isolated actual MIP elapsed time, incumbent-improvement history, extension count or early-finish decision.",
+      "evidence": [
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py:697",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py:705",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py:750"
+      ],
+      "conflict": "T21 requires a 10-second starting value that can be extended or ended early and requires actual time and extension status per run."
+    },
+    {
+      "id": "NO_EXISTING_T21_RUNNER",
+      "fact": "The final 2026-08-02 runner is hard-coded to one PRD instance, eight algorithm/ablation arms, four workers, 150 no-improvement iterations and a 7200-second HGS wallclock safety cap; it does not expose the T21 three-instance by three-charge-policy manifest.",
+      "evidence": [
+        "baselines/china_e3_e7/formal_algorithm_20260802/run_xa_formal.py:87",
+        "baselines/china_e3_e7/formal_algorithm_20260802/run_xa_formal.py:100",
+        "baselines/china_e3_e7/formal_algorithm_20260802/run_xa_formal.py:102",
+        "baselines/china_e3_e7/formal_algorithm_20260802/run_xa_formal.py:104",
+        "baselines/china_e3_e7/formal_algorithm_20260802/run_xa_formal.py:106",
+        "baselines/china_e3_e7/formal_algorithm_20260802/run_xa_formal.py:128"
+      ],
+      "conflict": "Invoking this runner would execute the wrong experiment and violate the frozen T21 comparison."
+    }
+  ],
+  "required_code_or_runner_changes_not_performed": [
+    "Provide an experiment runner whose immutable manifest is exactly 3 instances x 3 charge_timing_policy arms x 10 registered seeds and whose only arm-level change is charge_timing_policy.",
+    "Provide an HGS execution path that can omit the global wallclock criterion without weakening unrelated raise/assert/check branches.",
+    "Persist every proxy-objective improvement event with view, iteration, objective_before, objective_after and improvement magnitude.",
+    "Provide route-pool MIP timing instrumentation and the registered extend/early-finish behavior, including isolated actual elapsed seconds and extension status.",
+    "Materialize the complete T21 raw metric, slot-distribution, signature and solution-witness contracts from the unchanged evaluator and checker."
+  ],
+  "boundary": "These are requirements needed to make the registered experiment executable and auditable; T21 did not implement or approve any of them."
+}

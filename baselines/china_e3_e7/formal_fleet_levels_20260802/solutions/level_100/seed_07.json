@@ -1,0 +1,2225 @@
+{
+  "arm_failures": {
+    "COST_ONLY": {
+      "failure_reason": "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_guangzhou': overage=(3, 0, 0)",
+      "status": "INFEASIBLE_OR_NOT_FOUND",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py\", line 803, in run_unit\n    arms[arm] = _run_arm(\n                ~~~~~~~~^\n        int(level),\n        ^^^^^^^^^^^\n    ...<3 lines>...\n        max_no_improvement=int(max_no_improvement),\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py\", line 530, in _run_arm\n    run = route_pool_sp.run_hgs_route_pool_recombination(\n        bundle,\n    ...<10 lines>...\n        preserve_base_pool_recombination=False,\n    )\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py\", line 196, in run_hgs_route_pool_recombination\n    view_epochs[mode] = _run_exact_epoch(\n                        ~~~~~~~~~~~~~~~~^\n        bundle,\n        ^^^^^^^\n    ...<20 lines>...\n        ],\n        ^^\n    )\n    ^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py\", line 546, in _run_exact_epoch\n    common_completion = complete_china81_route_skeleton(\n        common_initial_solution,\n        bundle,\n    )\n  File \"/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py\", line 481, in complete_china81_route_skeleton\n    raise ValueError(\n    ...<3 lines>...\n    )\nValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_guangzhou': overage=(3, 0, 0)\n"
+    },
+    "COST_PLUS_CARBON": {
+      "failure_reason": "ValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_guangzhou': overage=(3, 0, 0)",
+      "status": "INFEASIBLE_OR_NOT_FOUND",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py\", line 803, in run_unit\n    arms[arm] = _run_arm(\n                ~~~~~~~~^\n        int(level),\n        ^^^^^^^^^^^\n    ...<3 lines>...\n        max_no_improvement=int(max_no_improvement),\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py\", line 530, in _run_arm\n    run = route_pool_sp.run_hgs_route_pool_recombination(\n        bundle,\n    ...<10 lines>...\n        preserve_base_pool_recombination=False,\n    )\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py\", line 196, in run_hgs_route_pool_recombination\n    view_epochs[mode] = _run_exact_epoch(\n                        ~~~~~~~~~~~~~~~~^\n        bundle,\n        ^^^^^^^\n    ...<20 lines>...\n        ],\n        ^^\n    )\n    ^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py\", line 546, in _run_exact_epoch\n    common_completion = complete_china81_route_skeleton(\n        common_initial_solution,\n        bundle,\n    )\n  File \"/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py\", line 481, in complete_china81_route_skeleton\n    raise ValueError(\n    ...<3 lines>...\n    )\nValueError: China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_guangzhou': overage=(3, 0, 0)\n"
+    }
+  },
+  "arms": {},
+  "available_by_depot": {
+    "D_guangzhou": {
+      "num_cv": 0,
+      "num_ev": 6,
+      "total_fleet_cap": 6
+    },
+    "D_shenzhen": {
+      "num_cv": 0,
+      "num_ev": 7,
+      "total_fleet_cap": 7
+    }
+  },
+  "complete_solution_available": false,
+  "failure_evidence_sha256": "e7d7b28244a80cae6ed5db381d3f3b33cbcbce409116480799023f3fbfea7d90",
+  "fleet_level_percent": 100,
+  "instance_id": "cn-prd-100c-01-V2-LOCATIONS",
+  "registered_infeasibility_witness_by_failed_arm": {
+    "COST_ONLY": {
+      "registered_initial_exact_breakdown": {
+        "E_cv_direct": 0.0,
+        "E_ev_indirect": 0.0,
+        "E_total": 0.0,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 0.0,
+        "cost_elec": 0.0,
+        "cost_fix": 1700.0,
+        "cost_fuel": 0.0,
+        "cost_km": 931.7729421606764,
+        "cost_occ": 0.0,
+        "cost_time": 0.0,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 0.0,
+        "distance_cv": 0.0,
+        "distance_ev": 1390705.883821905,
+        "distance_total": 1390705.883821905,
+        "electricity_kwh": 0.0,
+        "ev_drive_kwh": 421.13446767058826,
+        "fuel_liters": 0.0,
+        "n_veh_cv": 0.0,
+        "n_veh_ev": 10.0,
+        "route_time_hours": 23.470416666666665,
+        "station_charging_kwh": 0.0,
+        "total_cost": 2631.7729421606764
+      },
+      "registered_initial_exact_objective": 2631.7729421606764,
+      "registered_initial_exact_violations": [
+        {
+          "detail": "battery after arc is -13.517939 kWh < 0",
+          "location": "D_guangzhou->C032",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -15.680990 kWh < 0",
+          "location": "C032->C030",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -18.357979 kWh < 0",
+          "location": "C030->C045",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -20.054872 kWh < 0",
+          "location": "C045->C041",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -20.523414 kWh < 0",
+          "location": "C041->C019",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -24.579195 kWh < 0",
+          "location": "C019->C044",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -27.010017 kWh < 0",
+          "location": "C044->C010",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -29.242967 kWh < 0",
+          "location": "C010->C025",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -40.573947 kWh < 0",
+          "location": "C025->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -10.929896 kWh < 0",
+          "location": "D_guangzhou->C023",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -11.673836 kWh < 0",
+          "location": "C023->C017",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -13.052778 kWh < 0",
+          "location": "C017->C009",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -14.483492 kWh < 0",
+          "location": "C009->C026",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -15.517412 kWh < 0",
+          "location": "C026->C035",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -16.342615 kWh < 0",
+          "location": "C035->C002",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -26.466298 kWh < 0",
+          "location": "C002->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -12.543678 kWh < 0",
+          "location": "D_guangzhou->C004",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -14.328767 kWh < 0",
+          "location": "C004->C038",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -15.791229 kWh < 0",
+          "location": "C038->C016",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -19.899100 kWh < 0",
+          "location": "C016->C015",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -20.863926 kWh < 0",
+          "location": "C015->C046",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -22.082753 kWh < 0",
+          "location": "C046->C024",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -22.694775 kWh < 0",
+          "location": "C024->C042",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -32.888728 kWh < 0",
+          "location": "C042->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -11.440570 kWh < 0",
+          "location": "D_guangzhou->C022",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -13.896032 kWh < 0",
+          "location": "C022->C013",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -14.960932 kWh < 0",
+          "location": "C013->C018",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -16.720693 kWh < 0",
+          "location": "C018->C033",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -18.190167 kWh < 0",
+          "location": "C033->C037",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -19.963803 kWh < 0",
+          "location": "C037->C011",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -23.702350 kWh < 0",
+          "location": "C011->C003",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -33.148766 kWh < 0",
+          "location": "C003->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -11.702282 kWh < 0",
+          "location": "D_guangzhou->C021",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -12.602890 kWh < 0",
+          "location": "C021->C034",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -13.422713 kWh < 0",
+          "location": "C034->C040",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -14.945356 kWh < 0",
+          "location": "C040->C027",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -17.453371 kWh < 0",
+          "location": "C027->C007",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -21.513716 kWh < 0",
+          "location": "C007->C006",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -30.860589 kWh < 0",
+          "location": "C006->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -12.091882 kWh < 0",
+          "location": "D_guangzhou->C039",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -13.314184 kWh < 0",
+          "location": "C039->C005",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -16.035760 kWh < 0",
+          "location": "C005->C031",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -18.962597 kWh < 0",
+          "location": "C031->C029",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -22.015990 kWh < 0",
+          "location": "C029->C012",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -23.773991 kWh < 0",
+          "location": "C012->C001",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -24.798352 kWh < 0",
+          "location": "C001->C014",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -26.045927 kWh < 0",
+          "location": "C014->C028",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -27.363096 kWh < 0",
+          "location": "C028->C043",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -38.327400 kWh < 0",
+          "location": "C043->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -12.679880 kWh < 0",
+          "location": "D_guangzhou->C008",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T2"
+        },
+        {
+          "detail": "battery after arc is -13.485884 kWh < 0",
+          "location": "C008->C020",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T2"
+        },
+        {
+          "detail": "battery after arc is -15.969349 kWh < 0",
+          "location": "C020->C036",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T2"
+        },
+        {
+          "detail": "battery after arc is -26.146300 kWh < 0",
+          "location": "C036->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T2"
+        },
+        {
+          "detail": "battery after arc is -7.375207 kWh < 0",
+          "location": "D_shenzhen->C075",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -8.366758 kWh < 0",
+          "location": "C075->C085",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -8.972373 kWh < 0",
+          "location": "C085->C056",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -11.143637 kWh < 0",
+          "location": "C056->C064",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -13.462887 kWh < 0",
+          "location": "C064->C079",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -14.395852 kWh < 0",
+          "location": "C079->C059",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -15.883140 kWh < 0",
+          "location": "C059->C093",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -22.439359 kWh < 0",
+          "location": "C093->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -9.364152 kWh < 0",
+          "location": "D_shenzhen->C078",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -10.888337 kWh < 0",
+          "location": "C078->C063",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -13.113321 kWh < 0",
+          "location": "C063->C076",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -15.049502 kWh < 0",
+          "location": "C076->C074",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -15.205649 kWh < 0",
+          "location": "C074->C081",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -15.810126 kWh < 0",
+          "location": "C081->C098",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -22.076357 kWh < 0",
+          "location": "C098->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -6.753833 kWh < 0",
+          "location": "D_shenzhen->C084",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -7.753350 kWh < 0",
+          "location": "C084->C051",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -9.417829 kWh < 0",
+          "location": "C051->C055",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -9.912072 kWh < 0",
+          "location": "C055->C067",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -11.235199 kWh < 0",
+          "location": "C067->C072",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -12.721824 kWh < 0",
+          "location": "C072->C077",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -20.188703 kWh < 0",
+          "location": "C077->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -7.858028 kWh < 0",
+          "location": "D_shenzhen->C066",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -9.140703 kWh < 0",
+          "location": "C066->C073",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -9.436069 kWh < 0",
+          "location": "C073->C062",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -9.633437 kWh < 0",
+          "location": "C062->C097",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -10.538602 kWh < 0",
+          "location": "C097->C087",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -16.256787 kWh < 0",
+          "location": "C087->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -6.723042 kWh < 0",
+          "location": "D_shenzhen->C071",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -9.644020 kWh < 0",
+          "location": "C071->C082",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -10.949393 kWh < 0",
+          "location": "C082->C089",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -11.887432 kWh < 0",
+          "location": "C089->C049",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -12.305059 kWh < 0",
+          "location": "C049->C065",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -14.332153 kWh < 0",
+          "location": "C065->C057",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -16.370857 kWh < 0",
+          "location": "C057->C096",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -17.748467 kWh < 0",
+          "location": "C096->C050",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -26.094355 kWh < 0",
+          "location": "C050->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -8.865863 kWh < 0",
+          "location": "D_shenzhen->C086",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -9.231522 kWh < 0",
+          "location": "C086->C060",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -10.116385 kWh < 0",
+          "location": "C060->C058",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -12.199720 kWh < 0",
+          "location": "C058->C048",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -12.915063 kWh < 0",
+          "location": "C048->C100",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -13.073977 kWh < 0",
+          "location": "C100->C053",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -13.248169 kWh < 0",
+          "location": "C053->C070",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -21.284011 kWh < 0",
+          "location": "C070->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -8.852981 kWh < 0",
+          "location": "D_shenzhen->C054",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -10.846275 kWh < 0",
+          "location": "C054->C069",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -11.427943 kWh < 0",
+          "location": "C069->C068",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -12.725326 kWh < 0",
+          "location": "C068->C052",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -13.155072 kWh < 0",
+          "location": "C052->C099",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -16.282629 kWh < 0",
+          "location": "C099->C090",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -19.265956 kWh < 0",
+          "location": "C090->C094",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -27.326379 kWh < 0",
+          "location": "C094->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -9.891095 kWh < 0",
+          "location": "D_shenzhen->C092",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -10.830245 kWh < 0",
+          "location": "C092->C095",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -12.019223 kWh < 0",
+          "location": "C095->C091",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -13.119317 kWh < 0",
+          "location": "C091->C061",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -14.276138 kWh < 0",
+          "location": "C061->C047",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -14.764799 kWh < 0",
+          "location": "C047->C083",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -21.482006 kWh < 0",
+          "location": "C083->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -7.002673 kWh < 0",
+          "location": "D_shenzhen->C080",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T2"
+        },
+        {
+          "detail": "battery after arc is -8.242819 kWh < 0",
+          "location": "C080->C088",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T2"
+        },
+        {
+          "detail": "battery after arc is -15.574481 kWh < 0",
+          "location": "C088->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T2"
+        }
+      ],
+      "registered_initial_solution": {
+        "charging_actions": [],
+        "cross_site_services": [],
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C032",
+              "C030",
+              "C045",
+              "C041",
+              "C019",
+              "C044",
+              "C010",
+              "C025",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0001",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C017",
+              "C009",
+              "C026",
+              "C035",
+              "C002",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0002",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C004",
+              "C038",
+              "C016",
+              "C015",
+              "C046",
+              "C024",
+              "C042",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C013",
+              "C018",
+              "C033",
+              "C037",
+              "C011",
+              "C003",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C021",
+              "C034",
+              "C040",
+              "C027",
+              "C007",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0005",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C039",
+              "C005",
+              "C031",
+              "C029",
+              "C012",
+              "C001",
+              "C014",
+              "C028",
+              "C043",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0006",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C008",
+              "C020",
+              "C036",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0007",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C075",
+              "C085",
+              "C056",
+              "C064",
+              "C079",
+              "C059",
+              "C093",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C078",
+              "C063",
+              "C076",
+              "C074",
+              "C081",
+              "C098",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0009",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C084",
+              "C051",
+              "C055",
+              "C067",
+              "C072",
+              "C077",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0010",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C066",
+              "C073",
+              "C062",
+              "C097",
+              "C087",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0011",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C071",
+              "C082",
+              "C089",
+              "C049",
+              "C065",
+              "C057",
+              "C096",
+              "C050",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0012",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C086",
+              "C060",
+              "C058",
+              "C048",
+              "C100",
+              "C053",
+              "C070",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0013",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C054",
+              "C069",
+              "C068",
+              "C052",
+              "C099",
+              "C090",
+              "C094",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0014",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C092",
+              "C095",
+              "C091",
+              "C061",
+              "C047",
+              "C083",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0015",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C080",
+              "C088",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0016",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "registered_initial_solution_sha256": "edefc09bf2f814dc4f956acdb7a625f4531207e27b028fe8ec7a5467a236b5ac"
+    },
+    "COST_PLUS_CARBON": {
+      "registered_initial_exact_breakdown": {
+        "E_cv_direct": 0.0,
+        "E_ev_indirect": 0.0,
+        "E_total": 0.0,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 0.0,
+        "cost_elec": 0.0,
+        "cost_fix": 1700.0,
+        "cost_fuel": 0.0,
+        "cost_km": 931.7729421606764,
+        "cost_occ": 0.0,
+        "cost_time": 0.0,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 0.0,
+        "distance_cv": 0.0,
+        "distance_ev": 1390705.883821905,
+        "distance_total": 1390705.883821905,
+        "electricity_kwh": 0.0,
+        "ev_drive_kwh": 421.13446767058826,
+        "fuel_liters": 0.0,
+        "n_veh_cv": 0.0,
+        "n_veh_ev": 10.0,
+        "route_time_hours": 23.470416666666665,
+        "station_charging_kwh": 0.0,
+        "total_cost": 2631.7729421606764
+      },
+      "registered_initial_exact_objective": 2631.7729421606764,
+      "registered_initial_exact_violations": [
+        {
+          "detail": "battery after arc is -13.517939 kWh < 0",
+          "location": "D_guangzhou->C032",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -15.680990 kWh < 0",
+          "location": "C032->C030",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -18.357979 kWh < 0",
+          "location": "C030->C045",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -20.054872 kWh < 0",
+          "location": "C045->C041",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -20.523414 kWh < 0",
+          "location": "C041->C019",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -24.579195 kWh < 0",
+          "location": "C019->C044",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -27.010017 kWh < 0",
+          "location": "C044->C010",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -29.242967 kWh < 0",
+          "location": "C010->C025",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -40.573947 kWh < 0",
+          "location": "C025->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T1"
+        },
+        {
+          "detail": "battery after arc is -10.929896 kWh < 0",
+          "location": "D_guangzhou->C023",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -11.673836 kWh < 0",
+          "location": "C023->C017",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -13.052778 kWh < 0",
+          "location": "C017->C009",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -14.483492 kWh < 0",
+          "location": "C009->C026",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -15.517412 kWh < 0",
+          "location": "C026->C035",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -16.342615 kWh < 0",
+          "location": "C035->C002",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -26.466298 kWh < 0",
+          "location": "C002->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T1"
+        },
+        {
+          "detail": "battery after arc is -12.543678 kWh < 0",
+          "location": "D_guangzhou->C004",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -14.328767 kWh < 0",
+          "location": "C004->C038",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -15.791229 kWh < 0",
+          "location": "C038->C016",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -19.899100 kWh < 0",
+          "location": "C016->C015",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -20.863926 kWh < 0",
+          "location": "C015->C046",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -22.082753 kWh < 0",
+          "location": "C046->C024",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -22.694775 kWh < 0",
+          "location": "C024->C042",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -32.888728 kWh < 0",
+          "location": "C042->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T1"
+        },
+        {
+          "detail": "battery after arc is -11.440570 kWh < 0",
+          "location": "D_guangzhou->C022",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -13.896032 kWh < 0",
+          "location": "C022->C013",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -14.960932 kWh < 0",
+          "location": "C013->C018",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -16.720693 kWh < 0",
+          "location": "C018->C033",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -18.190167 kWh < 0",
+          "location": "C033->C037",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -19.963803 kWh < 0",
+          "location": "C037->C011",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -23.702350 kWh < 0",
+          "location": "C011->C003",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -33.148766 kWh < 0",
+          "location": "C003->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_4#T1"
+        },
+        {
+          "detail": "battery after arc is -11.702282 kWh < 0",
+          "location": "D_guangzhou->C021",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -12.602890 kWh < 0",
+          "location": "C021->C034",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -13.422713 kWh < 0",
+          "location": "C034->C040",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -14.945356 kWh < 0",
+          "location": "C040->C027",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -17.453371 kWh < 0",
+          "location": "C027->C007",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -21.513716 kWh < 0",
+          "location": "C007->C006",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -30.860589 kWh < 0",
+          "location": "C006->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_2#T2"
+        },
+        {
+          "detail": "battery after arc is -12.091882 kWh < 0",
+          "location": "D_guangzhou->C039",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -13.314184 kWh < 0",
+          "location": "C039->C005",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -16.035760 kWh < 0",
+          "location": "C005->C031",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -18.962597 kWh < 0",
+          "location": "C031->C029",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -22.015990 kWh < 0",
+          "location": "C029->C012",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -23.773991 kWh < 0",
+          "location": "C012->C001",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -24.798352 kWh < 0",
+          "location": "C001->C014",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -26.045927 kWh < 0",
+          "location": "C014->C028",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -27.363096 kWh < 0",
+          "location": "C028->C043",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -38.327400 kWh < 0",
+          "location": "C043->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_1#T2"
+        },
+        {
+          "detail": "battery after arc is -12.679880 kWh < 0",
+          "location": "D_guangzhou->C008",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T2"
+        },
+        {
+          "detail": "battery after arc is -13.485884 kWh < 0",
+          "location": "C008->C020",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T2"
+        },
+        {
+          "detail": "battery after arc is -15.969349 kWh < 0",
+          "location": "C020->C036",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T2"
+        },
+        {
+          "detail": "battery after arc is -26.146300 kWh < 0",
+          "location": "C036->D_guangzhou",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_guangzhou_3#T2"
+        },
+        {
+          "detail": "battery after arc is -7.375207 kWh < 0",
+          "location": "D_shenzhen->C075",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -8.366758 kWh < 0",
+          "location": "C075->C085",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -8.972373 kWh < 0",
+          "location": "C085->C056",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -11.143637 kWh < 0",
+          "location": "C056->C064",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -13.462887 kWh < 0",
+          "location": "C064->C079",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -14.395852 kWh < 0",
+          "location": "C079->C059",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -15.883140 kWh < 0",
+          "location": "C059->C093",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -22.439359 kWh < 0",
+          "location": "C093->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T1"
+        },
+        {
+          "detail": "battery after arc is -9.364152 kWh < 0",
+          "location": "D_shenzhen->C078",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -10.888337 kWh < 0",
+          "location": "C078->C063",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -13.113321 kWh < 0",
+          "location": "C063->C076",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -15.049502 kWh < 0",
+          "location": "C076->C074",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -15.205649 kWh < 0",
+          "location": "C074->C081",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -15.810126 kWh < 0",
+          "location": "C081->C098",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -22.076357 kWh < 0",
+          "location": "C098->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T1"
+        },
+        {
+          "detail": "battery after arc is -6.753833 kWh < 0",
+          "location": "D_shenzhen->C084",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -7.753350 kWh < 0",
+          "location": "C084->C051",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -9.417829 kWh < 0",
+          "location": "C051->C055",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -9.912072 kWh < 0",
+          "location": "C055->C067",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -11.235199 kWh < 0",
+          "location": "C067->C072",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -12.721824 kWh < 0",
+          "location": "C072->C077",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -20.188703 kWh < 0",
+          "location": "C077->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T1"
+        },
+        {
+          "detail": "battery after arc is -7.858028 kWh < 0",
+          "location": "D_shenzhen->C066",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -9.140703 kWh < 0",
+          "location": "C066->C073",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -9.436069 kWh < 0",
+          "location": "C073->C062",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -9.633437 kWh < 0",
+          "location": "C062->C097",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -10.538602 kWh < 0",
+          "location": "C097->C087",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -16.256787 kWh < 0",
+          "location": "C087->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_6#T1"
+        },
+        {
+          "detail": "battery after arc is -6.723042 kWh < 0",
+          "location": "D_shenzhen->C071",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -9.644020 kWh < 0",
+          "location": "C071->C082",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -10.949393 kWh < 0",
+          "location": "C082->C089",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -11.887432 kWh < 0",
+          "location": "C089->C049",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -12.305059 kWh < 0",
+          "location": "C049->C065",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -14.332153 kWh < 0",
+          "location": "C065->C057",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -16.370857 kWh < 0",
+          "location": "C057->C096",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -17.748467 kWh < 0",
+          "location": "C096->C050",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -26.094355 kWh < 0",
+          "location": "C050->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_5#T1"
+        },
+        {
+          "detail": "battery after arc is -8.865863 kWh < 0",
+          "location": "D_shenzhen->C086",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -9.231522 kWh < 0",
+          "location": "C086->C060",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -10.116385 kWh < 0",
+          "location": "C060->C058",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -12.199720 kWh < 0",
+          "location": "C058->C048",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -12.915063 kWh < 0",
+          "location": "C048->C100",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -13.073977 kWh < 0",
+          "location": "C100->C053",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -13.248169 kWh < 0",
+          "location": "C053->C070",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -21.284011 kWh < 0",
+          "location": "C070->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_4#T1"
+        },
+        {
+          "detail": "battery after arc is -8.852981 kWh < 0",
+          "location": "D_shenzhen->C054",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -10.846275 kWh < 0",
+          "location": "C054->C069",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -11.427943 kWh < 0",
+          "location": "C069->C068",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -12.725326 kWh < 0",
+          "location": "C068->C052",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -13.155072 kWh < 0",
+          "location": "C052->C099",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -16.282629 kWh < 0",
+          "location": "C099->C090",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -19.265956 kWh < 0",
+          "location": "C090->C094",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -27.326379 kWh < 0",
+          "location": "C094->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_1#T2"
+        },
+        {
+          "detail": "battery after arc is -9.891095 kWh < 0",
+          "location": "D_shenzhen->C092",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -10.830245 kWh < 0",
+          "location": "C092->C095",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -12.019223 kWh < 0",
+          "location": "C095->C091",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -13.119317 kWh < 0",
+          "location": "C091->C061",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -14.276138 kWh < 0",
+          "location": "C061->C047",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -14.764799 kWh < 0",
+          "location": "C047->C083",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -21.482006 kWh < 0",
+          "location": "C083->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_2#T2"
+        },
+        {
+          "detail": "battery after arc is -7.002673 kWh < 0",
+          "location": "D_shenzhen->C080",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T2"
+        },
+        {
+          "detail": "battery after arc is -8.242819 kWh < 0",
+          "location": "C080->C088",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T2"
+        },
+        {
+          "detail": "battery after arc is -15.574481 kWh < 0",
+          "location": "C088->D_shenzhen",
+          "severity": "hard",
+          "type": "BATTERY",
+          "vehicle_id": "EV_D_shenzhen_3#T2"
+        }
+      ],
+      "registered_initial_solution": {
+        "charging_actions": [],
+        "cross_site_services": [],
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C032",
+              "C030",
+              "C045",
+              "C041",
+              "C019",
+              "C044",
+              "C010",
+              "C025",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0001",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C017",
+              "C009",
+              "C026",
+              "C035",
+              "C002",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0002",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C004",
+              "C038",
+              "C016",
+              "C015",
+              "C046",
+              "C024",
+              "C042",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C013",
+              "C018",
+              "C033",
+              "C037",
+              "C011",
+              "C003",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C021",
+              "C034",
+              "C040",
+              "C027",
+              "C007",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0005",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C039",
+              "C005",
+              "C031",
+              "C029",
+              "C012",
+              "C001",
+              "C014",
+              "C028",
+              "C043",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0006",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C008",
+              "C020",
+              "C036",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "XB-INIT-100-0007",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C075",
+              "C085",
+              "C056",
+              "C064",
+              "C079",
+              "C059",
+              "C093",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C078",
+              "C063",
+              "C076",
+              "C074",
+              "C081",
+              "C098",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0009",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C084",
+              "C051",
+              "C055",
+              "C067",
+              "C072",
+              "C077",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0010",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C066",
+              "C073",
+              "C062",
+              "C097",
+              "C087",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0011",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C071",
+              "C082",
+              "C089",
+              "C049",
+              "C065",
+              "C057",
+              "C096",
+              "C050",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0012",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C086",
+              "C060",
+              "C058",
+              "C048",
+              "C100",
+              "C053",
+              "C070",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0013",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C054",
+              "C069",
+              "C068",
+              "C052",
+              "C099",
+              "C090",
+              "C094",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0014",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C092",
+              "C095",
+              "C091",
+              "C061",
+              "C047",
+              "C083",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0015",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C080",
+              "C088",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "XB-INIT-100-0016",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "registered_initial_solution_sha256": "edefc09bf2f814dc4f956acdb7a625f4531207e27b028fe8ec7a5467a236b5ac"
+    }
+  },
+  "seed": 7,
+  "solution_kind": "REGISTERED_INITIAL_SOLUTION_INFEASIBILITY_WITNESS",
+  "status": "INFEASIBLE_OR_NOT_FOUND",
+  "unit_id": "level_100__seed_07"
+}

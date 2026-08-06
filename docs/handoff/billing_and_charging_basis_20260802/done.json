@@ -1,0 +1,51 @@
+{
+  "schema": "resetp.z4-done.v1",
+  "task_id": "Z4",
+  "status": "Z4_BILLING_AND_CHARGING_COMPLETE",
+  "completed_at": "2026-08-02",
+  "scope": "READ_ONLY_EVIDENCE_AND_ZERO_SEARCH_ARITHMETIC",
+  "deliverables": [
+    "report.md",
+    "fixed_cost_billing_literature.json",
+    "charging_infrastructure_classified.json",
+    "cross_effect_zero_search.json",
+    "done.json",
+    "artifact_hashes.json"
+  ],
+  "gates": {
+    "fixed_cost_papers_at_least_8": true,
+    "fixed_cost_paper_count": 9,
+    "explicit_entity_multitrip_papers_at_least_3": true,
+    "explicit_entity_multitrip_paper_count": 3,
+    "ev_charging_papers_at_least_8": true,
+    "ev_charging_paper_count": 8,
+    "class_A_excluded_from_concurrency_ratio": true,
+    "charging_class_counts": {
+      "A": 1,
+      "B": 5,
+      "C": 2
+    },
+    "active_charging_ratio_denominator": 7,
+    "fixed_cost_original_formulas_and_pages_present": true,
+    "charging_classification_pages_and_constraints_present": true,
+    "depot_side_setup_present_for_each_charging_paper": true,
+    "cross_effect_zero_search_complete": true,
+    "search_evaluations": 0,
+    "solver_invoked": false,
+    "formal_experiment_run": false,
+    "existing_repository_files_modified": false,
+    "only_requested_output_directory_written": true,
+    "appledouble_excluded_from_hashes": true
+  },
+  "key_results": {
+    "multitrip_fixed_cost_mainstream_unit": "EACH_USED_PHYSICAL_VEHICLE_OR_NOT_MODELED_IF_FLEET_EXOGENOUS",
+    "resetp_current_per_trip_self_consistent_with_entity_multitrip": false,
+    "active_charging_B_percent": 71.428571,
+    "active_charging_C_percent": 28.571429,
+    "resetp_2x22kw_relative_position": "偏紧",
+    "per_vehicle_fixed_cost_before_cny": 176800.0,
+    "per_vehicle_fixed_cost_after_cny": 117810.0,
+    "per_vehicle_fixed_cost_savings_cny": 58990.0,
+    "per_vehicle_fixed_cost_savings_percent": 33.365385
+  }
+}

@@ -1,0 +1,335 @@
+{
+  "task_id": "D1",
+  "review_role": "adversarial_storyline_reviewer",
+  "claim_S_verdict": "部分成立",
+  "verdict_summary": "充电时刻命题只有E4固定排班补充检验直接识别，动态订单、多趟和滚动继承没有正式机制结果，因此论文的题名、摘要和综合模型范围大于现有证据范围；但引言原文明确提出三类研究不足，并非只有碳择时一条。当前摘要没有36.477%或33.018%数字。E3与E6共用同类四车场结构和相同规模面板，却使用固定历史归属与四家单干成本之和两个不同反事实，E6还检验分配与子联盟稳定性，不能认定为同一效应报告两次，也不足以证明论文是三篇互不相关论文的拼接。",
+  "evidence_checks": [
+    {
+      "id": "intro_charging_time_claim",
+      "judgment": "成立",
+      "line_or_page": [
+        "paper_main.tex:188-190",
+        "paper_main.tex:1420-1458"
+      ],
+      "finding": "只有E4固定405个配送排班、在28个电网日上只移动充电开始时刻的补充检验，与同路线、同电量、只改充电时刻的命题同构。E4主实验同时改变路线、车型、充电站和充电时刻，不能单独识别纯择时效应。"
+    },
+    {
+      "id": "intro_has_only_one_gap",
+      "judgment": "不成立",
+      "line_or_page": [
+        "paper_main.tex:241-256"
+      ],
+      "finding": "引言明确并列动态状态继承、充电结构与择时效应分离、联盟收益参与稳定性衔接三项不足，并把综合缺口写成结算参与与滚动状态继承的联合刻画不足。"
+    },
+    {
+      "id": "innovation_1_support",
+      "judgment": "部分支撑",
+      "line_or_page": [
+        "paper_main.tex:261-264",
+        "paper_main.tex:1090-1094",
+        "paper_main.tex:1219-1233",
+        "paper_main.tex:1420-1458",
+        "paper_main.tex:1472-1512",
+        "paper_main.tex:1552-1553"
+      ],
+      "finding": "完整模型复算、E4和E6支撑若干静态组成机制；最终解各趟由不同实体车执行，没有多趟展示，动态订单处理节奏仍列为未来正式机制实验。"
+    },
+    {
+      "id": "innovation_2_support",
+      "judgment": "充分支撑",
+      "line_or_page": [
+        "paper_main.tex:265-267",
+        "paper_main.tex:1420-1458"
+      ],
+      "finding": "E4同时提供联合路线、车型、充电优化的排放成本权衡和固定排班纯择时边际检验。"
+    },
+    {
+      "id": "innovation_3_support",
+      "judgment": "有支撑但有边界",
+      "line_or_page": [
+        "paper_main.tex:268-270",
+        "paper_main.tex:1097-1233",
+        "paper_main.tex:1299-1372"
+      ],
+      "finding": "公开算例、BKS边界探查和本文模型实验支撑算法创新；等迭代对照置信区间跨零且Wilcoxon p=0.289，只支持与母体同一水平。"
+    },
+    {
+      "id": "innovation_4_support",
+      "judgment": "充分支撑",
+      "line_or_page": [
+        "paper_main.tex:271-272",
+        "paper_main.tex:1378-1458",
+        "paper_main.tex:1472-1512"
+      ],
+      "finding": "算法比较、E3、E4和E6与创新四登记的求解质量、协同空间、排放成本权衡、联盟参与条件逐项对应。"
+    },
+    {
+      "id": "e3_e6_same_structure",
+      "judgment": "成立",
+      "line_or_page": [
+        "paper_main.tex:1386-1387",
+        "paper_main.tex:1481-1485",
+        "paper_main.tex:1521-1525"
+      ],
+      "finding": "正文明确承认两者来自同类四车场协同结构，且均使用珠三角150和200客户各三个算例、种子1至10，不可作为两次独立系统节省相加。"
+    },
+    {
+      "id": "e3_e6_same_effect_twice",
+      "judgment": "不成立",
+      "line_or_page": [
+        "paper_main.tex:1380-1385",
+        "paper_main.tex:1474-1504",
+        "paper_main.tex:1521-1525"
+      ],
+      "finding": "E3基准仍全局统筹路线和共享充电，只固定历史归属；E6基准是四家单独经营成本之和，并进一步检验核仁、Shapley和子联盟稳定性。反事实和结果变量均不同。"
+    },
+    {
+      "id": "conclusion_headlines",
+      "judgment": "分别对应三类引言问题",
+      "line_or_page": [
+        "paper_main.tex:225-227",
+        "paper_main.tex:188-190",
+        "paper_main.tex:213-214",
+        "paper_main.tex:220-224",
+        "paper_main.tex:250-251",
+        "paper_main.tex:1545-1550"
+      ],
+      "finding": "36.477%对应历史责任边界与协同空间；2.679%及0.000045%对应路线车型充电联合优化的排放成本权衡；33.018%及核仁稳定性对应从单干到合作、成员参与和子联盟稳定。动态和多趟没有对应结语结果。"
+    },
+    {
+      "id": "abstract_headline_numbers",
+      "judgment": "S的事实前提不成立",
+      "line_or_page": [
+        "paper_main.tex:137-146"
+      ],
+      "finding": "当前中文摘要没有任何百分比，更没有以36.477%和33.018%领衔；摘要只列E3、E4、E6三组机制实验。"
+    },
+    {
+      "id": "abstract_scope_mismatch",
+      "judgment": "成立",
+      "line_or_page": [
+        "paper_main.tex:139-145",
+        "paper_main.tex:1094",
+        "paper_main.tex:1552-1553"
+      ],
+      "finding": "摘要声称动态需求、多趟和滚动状态继承，但活动正式机制实验不检验这些因素；最终解不展示多趟，动态订单节奏留作未来研究。"
+    }
+  ],
+  "mismatch_list": [
+    {
+      "mismatch": "创新一和摘要中的动态订单、滚动状态继承没有正式机制实验支撑",
+      "line_or_page": [
+        "paper_main.tex:139-145",
+        "paper_main.tex:237-251",
+        "paper_main.tex:261-264",
+        "paper_main.tex:1552-1553"
+      ]
+    },
+    {
+      "mismatch": "创新一中的实体车多趟没有被最终解或正式实验展示",
+      "line_or_page": [
+        "paper_main.tex:141",
+        "paper_main.tex:261-264",
+        "paper_main.tex:1090-1094"
+      ]
+    },
+    {
+      "mismatch": "引言最可识别的纯充电择时命题只由E4补充检验直接识别，结语却只回收E4联合优化的2.679%而未回收纯择时的9.746%系统减排",
+      "line_or_page": [
+        "paper_main.tex:188-190",
+        "paper_main.tex:1454-1456",
+        "paper_main.tex:1548"
+      ]
+    },
+    {
+      "mismatch": "E3和E6不是同一效应，但共享同类结构并分别成为结语头条，造成同一协同主题的叙事重叠",
+      "line_or_page": [
+        "paper_main.tex:1386-1387",
+        "paper_main.tex:1481-1485",
+        "paper_main.tex:1521-1525",
+        "paper_main.tex:1547-1550"
+      ]
+    },
+    {
+      "mismatch": "公开最好解边界探查形成独立BKS更新结果块，超出一般算法有效性验证的叙事范围",
+      "line_or_page": [
+        "paper_main.tex:1097-1121",
+        "paper_main.tex:1168-1217"
+      ]
+    }
+  ],
+  "journal_comparison": {
+    "counting_rule": "按文章自身小节或作者明确划分的独立经验问题计数；同一算例上的复述不重复计数，并同时说明主实验组与独立分析轴。",
+    "current_paper": {
+      "pages": 24,
+      "experiment_groups": 6,
+      "groups": [
+        "公开标准算例",
+        "公开最好解边界探查",
+        "本文模型算法实验",
+        "E3历史客户归属与联合重分",
+        "E4路线车型充电联合优化及固定排班补充检验",
+        "E6合作收益与联盟分配"
+      ],
+      "line_or_page": [
+        "compiled paper PDF:1-24",
+        "paper_main.tex:1097-1233",
+        "paper_main.tex:1378-1531"
+      ]
+    },
+    "papers": [
+      {
+        "citation": "李得成、陈彦如、张宗成，2021，《基于分支定价算法的电动车与燃油车混合车辆路径问题研究》，《系统工程理论与实践》41(4):995-1009",
+        "section_titles": [
+          "1 引言",
+          "2 E-VRPTWMF问题描述及模型建立",
+          "3 基于Dantzig-Wolfe原理的模型重构",
+          "4 算法设计",
+          "5 数值实验及分析",
+          "6 结论"
+        ],
+        "experiment_groups": "5个分析块：小规模、大规模、车型配比、载重、电池容量与充电率联合敏感性",
+        "line_or_page": "pp.996-1008"
+      },
+      {
+        "citation": "饶卫振、苗晓河、朱庆华、姜力文，2022，《考虑企业服务质量差异的协作配送问题及成本分摊方法研究》，《系统工程理论与实践》42(10):2721-2739",
+        "section_titles": [
+          "1 引言",
+          "2 协作联盟企业服务质量评价体系",
+          "3 MOCVRPTWC模型构建",
+          "4 基于Shapley值法的协作配送成本分摊调整思路",
+          "5 数据实验与结果分析",
+          "6 结束语"
+        ],
+        "experiment_groups": "作者明确划分3部分：算法准确性、15个子联盟成本与分摊调整、影响因素对比",
+        "line_or_page": "pp.2722-2737，实验三分法见p.2730"
+      },
+      {
+        "citation": "陈婉茹、徐光明、张得志、曹健，2023，《碳交易机制下多中心混合车队配送路径和速度优化研究》，《系统工程理论与实践》43(11):3320-3335",
+        "section_titles": [
+          "1 引言",
+          "2 问题与模型",
+          "3 算法设计",
+          "4 实验设计与分析",
+          "5 敏感性分析",
+          "6 总结与展望"
+        ],
+        "experiment_groups": "5个经验块：基准、仿真、车队动力配置、碳交易机制、速度优化",
+        "line_or_page": "pp.3321-3334，实验与敏感性见pp.3328-3333"
+      },
+      {
+        "citation": "姜广田、纪皎月、董佳伟，2024，《绿色物流配送下的多车型动态车辆路径优化》，《系统工程理论与实践》44(7):2362-2380",
+        "section_titles": [
+          "1 引言",
+          "2 问题描述与模型建立",
+          "3 算法设计及实现",
+          "4 实验仿真及结果分析",
+          "5 实验结果分析",
+          "6 结论"
+        ],
+        "experiment_groups": "2个明确主实验：21店和60店；另有调整策略、算法两项跨实验分析，共4个经验轴",
+        "line_or_page": "pp.2363-2378，主实验见pp.2372-2376，分析见pp.2377-2378"
+      }
+    ],
+    "size_verdict": "偏大，处于同类文章上沿；24页与6个独立结果块超过4篇稳定卷期对照的15至19页及2至5个主要经验块，但不是单凭体量即可判定拼接。",
+    "line_or_page": [
+      "current compiled paper PDF:1-24",
+      "李得成等2021:pp.995-1009",
+      "饶卫振等2022:pp.2721-2739",
+      "陈婉茹等2023:pp.3320-3335",
+      "姜广田等2024:pp.2362-2380"
+    ],
+    "excess_blocks": [
+      {
+        "block": "公开最好解边界探查作为独立BKS更新主题",
+        "line_or_page": "paper_main.tex:1168-1217"
+      },
+      {
+        "block": "动态、多趟、滚动继承的未兑现模型范围",
+        "line_or_page": "paper_main.tex:139-145, 261-264, 1094, 1552-1553"
+      },
+      {
+        "block": "E3与E6在系统节省头条层面的叙事重叠；E6分配稳定性证据本身不重复",
+        "line_or_page": "paper_main.tex:1386-1387, 1481-1512, 1521-1525, 1547-1550"
+      }
+    ]
+  },
+  "mainline_candidates": [
+    {
+      "candidate": "历史责任边界解除后，协同价值如何产生并被稳定分配",
+      "can_unify": [
+        "E3历史客户归属与联合重分",
+        "E6合作收益与联盟分配",
+        "算法实验作为求解可信度支撑"
+      ],
+      "side_or_delete": {
+        "side": [
+          "E4作为环境绩效配角"
+        ],
+        "cannot_be_core_without_results": [
+          "动态订单",
+          "实体车多趟",
+          "滚动状态继承"
+        ]
+      },
+      "distance_from_current_intro": "中等；紧贴客户责任边界、系统收益不等于成员收益、成员参与和子联盟稳定，但远离题名与摘要领衔的时变碳强度和动态需求。",
+      "line_or_page": [
+        "paper_main.tex:216-227",
+        "paper_main.tex:250-251",
+        "paper_main.tex:1378-1418",
+        "paper_main.tex:1472-1531"
+      ]
+    },
+    {
+      "candidate": "在配送结构可变与固定两种条件下，充电碳感知决策能减少多少排放、付出多少成本",
+      "can_unify": [
+        "E4路线车型充电联合优化",
+        "E4固定配送排班纯择时补充检验",
+        "算法实验作为求解可信度支撑"
+      ],
+      "side_or_delete": {
+        "side": [
+          "E3作为多车场协同背景",
+          "E6作为协同治理背景"
+        ],
+        "cannot_be_core_without_results": [
+          "动态订单",
+          "实体车多趟"
+        ]
+      },
+      "distance_from_current_intro": "最近；逐字对应同路线同电量只改充电时刻，以及结构效应与择时效应分离，但只能统领一组正式机制实验。",
+      "line_or_page": [
+        "paper_main.tex:188-190",
+        "paper_main.tex:213-214",
+        "paper_main.tex:247-249",
+        "paper_main.tex:265-267",
+        "paper_main.tex:1420-1458"
+      ]
+    },
+    {
+      "candidate": "多视角混合遗传搜索与路线池重组在标准问题和完整模型上的求解边界",
+      "can_unify": [
+        "公开标准算例",
+        "公开最好解边界探查",
+        "本文模型算法实验"
+      ],
+      "side_or_delete": {
+        "side": [
+          "E3",
+          "E4",
+          "E6作为应用案例"
+        ],
+        "evidence_boundary": [
+          "等迭代对照与母体处于同一水平，Wilcoxon p=0.289"
+        ]
+      },
+      "distance_from_current_intro": "最远；算法只在创新三出现，引言三类研究不足均是运营机制问题。",
+      "line_or_page": [
+        "paper_main.tex:245-270",
+        "paper_main.tex:1097-1233",
+        "paper_main.tex:1299-1372"
+      ]
+    }
+  ],
+  "formal_result": false
+}

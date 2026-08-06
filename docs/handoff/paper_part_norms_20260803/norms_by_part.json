@@ -1,0 +1,1077 @@
+{
+  "task_id": "NORM",
+  "scope": {
+    "chinese_papers": 5,
+    "foreign_papers": 10,
+    "accessible_full_texts": 15,
+    "measurement_rule": "只按题设六部分摘录与计数；约束组按作者的成组说明句计，若作者另设显式组标题则同时保留；单因素分析按有编号的小节计，不把同一小节内的多个水平重复计节。",
+    "page_note": "英文校样或作者版没有期刊页码时，使用PDF正文页；Vidal使用CIRRELT作者版印刷页。"
+  },
+  "papers": [
+    {
+      "id": "chen2025",
+      "language": "zh",
+      "paper": "陈雨蝶等（2025）《双碳背景下复杂冷链物流模型及求解算法》",
+      "source": "本地全文；并复用journal_fullness_calibration_20260803与journal_story_survey_20260803的已测结果",
+      "problem_definition": {
+        "name": "考虑同时送取货和时变路网的绿色多隔间冷链物流模型",
+        "acronym": "MCTDGVRPSPD",
+        "qualifiers": ["冷链", "绿色/低碳", "多中心", "同时送取货", "时变路网", "多隔间", "多产品", "时间窗"],
+        "qualifier_count": 8,
+        "quote": "本文建立了考虑同时送取货和时变路网的绿色多隔间冷链物流模型（…MCTDGVRPSPD）",
+        "location": "§1 p.3"
+      },
+      "introduction": {
+        "paragraph_count": 8,
+        "location": "§1 pp.2-3",
+        "last_paragraph_numbered_contributions": true,
+        "contribution_count": 4,
+        "first_contribution_quote": "同时考虑冷链、时间窗、低碳、多中心、同时送取货、时变路网、多隔间、多产品等诸多因素建立复杂冷链物流模型",
+        "first_contribution_location": "§1 p.3",
+        "research_gap_paragraph": true,
+        "gap_count": 2,
+        "gap_location": "§1 p.3"
+      },
+      "model": {
+        "subsection_count": 10,
+        "subsection_titles": ["2.1 问题描述", "2.2 目标函数", "2.2.1 碳排放成本 F1", "2.2.2 固定成本 F2", "2.2.3 油耗成本 F3", "2.2.4 制冷成本 F4", "2.2.5 损坏成本 F5", "2.2.6 惩罚成本 F6", "2.3 时变速度函数", "2.4 模型建立"],
+        "location": "第2章 pp.4-7",
+        "objective_item_count": 6,
+        "objective_items": ["碳排放成本", "固定成本", "油耗成本", "制冷成本", "损坏成本", "惩罚成本"],
+        "constraint_group_count": 10,
+        "constraint_group_location": "§2.4 pp.6-7，公式(15)-(25)的逐句说明",
+        "classic_reduction": true,
+        "reduction_quote": "设置配送中心数为1则适用于单中心VRP，设置隔间数为1则适用于单隔间VRP，设置取货量为0则适用于仅送货VRP",
+        "reduction_location": "§1 p.3"
+      },
+      "algorithm": {
+        "subsection_count": 2,
+        "subsection_location": "第3章 pp.7-10",
+        "flowchart": true,
+        "flowchart_location": "§3.1图1 p.8",
+        "step_style": "编号步骤",
+        "step_location": "§3.2步骤1-8 pp.8-10",
+        "parameter_table": false,
+        "parameter_evidence": "§4.1.1正文及表3给时变速度参数，但无算法参数汇总表，pp.10-11"
+      },
+      "experiments": {
+        "subsection_count": 13,
+        "subsection_titles": ["4.1 实验设计和最终解分析", "4.1.1 实验设计", "4.1.2 最终解分析", "4.2 算法有效性分析", "4.2.1 CVRP标准算例实验", "4.2.2 MCTDGVRPSPD模型实验", "4.3 碳交易机制分析", "4.4 不同决策目标对比分析", "4.5 不同配送模式对比分析", "4.6 不同速度函数对比分析", "4.7 独立送取货和同时送取货对比分析", "4.8 使用单隔间和多隔间车辆对比分析", "4.9 数值实验分析讨论"],
+        "location": "第4章 pp.10-21",
+        "algorithm_effectiveness_section_count": 2,
+        "algorithm_effectiveness_sections": ["4.2.1", "4.2.2"],
+        "single_factor_section_count": 6,
+        "single_factor_sections": ["4.3", "4.4", "4.5", "4.6", "4.7", "4.8"],
+        "final_solution_detail": true,
+        "final_solution_location": "§4.1.2 pp.11-12",
+        "concentrated_discussion": true,
+        "discussion_location": "§4.9 p.21",
+        "mechanism_count": 8,
+        "mechanisms": ["冷链", "时间窗", "低碳与碳交易", "多中心联合配送", "同时送取货", "时变路网", "多隔间", "多产品"],
+        "mechanism_location": "§1 p.3；第2章 pp.4-7"
+      },
+      "conclusion": {
+        "paragraph_count": 2,
+        "location": "§5 p.21",
+        "management_insights": true,
+        "categories": ["企业", "政府"],
+        "quote": "政府应完善碳交易机制，在合理区间内采取高价格高配额策略",
+        "quote_location": "§4.9 p.21"
+      }
+    },
+    {
+      "id": "jiang2024",
+      "language": "zh",
+      "paper": "姜广田等（2024）《绿色物流配送下的多车型动态车辆路径优化》",
+      "source": "本地全文；并复用既有两套中文校准结果",
+      "problem_definition": {
+        "name": "绿色物流配送下的多车型动态车辆路径优化",
+        "acronym": "MVDVROGLD",
+        "qualifiers": ["绿色物流", "多车型", "动态"],
+        "qualifier_count": 3,
+        "quote": "本文研究的绿色物流配送下的多车型动态车辆路径优化（…MVDVROGLD）与传统VRP不同",
+        "location": "§2.1 p.2364"
+      },
+      "introduction": {
+        "paragraph_count": 10,
+        "location": "§1 pp.2363-2364",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 0,
+        "first_contribution_quote": null,
+        "first_contribution_location": null,
+        "research_gap_paragraph": true,
+        "gap_count": 3,
+        "gap_location": "§1 p.2364"
+      },
+      "model": {
+        "subsection_count": 7,
+        "subsection_titles": ["2.1 问题描述", "2.2 参数及变量定义", "2.3 速度函数", "2.4 油耗函数", "2.5 数学模型", "2.5.1 预优化阶段模型", "2.5.2 动态调整策略与模型"],
+        "location": "第2章 pp.2364-2369",
+        "objective_item_count": 3,
+        "objective_items": ["车辆派遣成本", "油耗成本", "碳排放成本"],
+        "constraint_group_count": null,
+        "constraint_group_location": "数不清：§2.5.1与§2.5.2分别给预优化和动态调整两套约束，作者未给跨两模型的统一分组；§2.5.1的逐句解释为10组，pp.2367-2368",
+        "classic_reduction": false,
+        "reduction_quote": null,
+        "reduction_location": "第2章未见"
+      },
+      "algorithm": {
+        "subsection_count": 6,
+        "subsection_location": "第3章 pp.2369-2372：3.1、3.1.1-3.1.4、3.2",
+        "flowchart": true,
+        "flowchart_location": "图3 p.2372",
+        "step_style": "流程图加叙述式",
+        "step_location": "§3.1-3.2 pp.2369-2372",
+        "parameter_table": false,
+        "parameter_evidence": "表1是模型符号表；第3章无算法参数汇总表"
+      },
+      "experiments": {
+        "subsection_count": 4,
+        "subsection_titles": ["4.1 实验1:21个店铺", "4.2 实验2:60个店铺", "5.1 调整策略分析", "5.2 算法分析"],
+        "location": "第4-5章 pp.2372-2378",
+        "algorithm_effectiveness_section_count": 1,
+        "algorithm_effectiveness_sections": ["5.2"],
+        "single_factor_section_count": 1,
+        "single_factor_sections": ["5.1"],
+        "final_solution_detail": true,
+        "final_solution_location": "§4.1与§4.2的车辆路线表，pp.2372-2377",
+        "concentrated_discussion": true,
+        "discussion_location": "第5章 pp.2377-2378",
+        "mechanism_count": 8,
+        "mechanisms": ["多车型", "动态需求", "时变道路", "道路坡度", "载重与速度相关碳排放", "临时退货", "道路中断", "预优化与动态调整"],
+        "mechanism_location": "§1 p.2364；§2 pp.2364-2369"
+      },
+      "conclusion": {
+        "paragraph_count": 2,
+        "location": "§6 pp.2378-2379",
+        "management_insights": true,
+        "categories": ["其他：物流运营"],
+        "quote": "合理选择配送路径可以降低物流成本，提高资源利用率，减少碳排放",
+        "quote_location": "§6 p.2378"
+      }
+    },
+    {
+      "id": "chen2023",
+      "language": "zh",
+      "paper": "陈婉茹等（2023）《碳交易机制下多中心混合车队配送路径和速度优化研究》",
+      "source": "本地全文；并复用既有两套中文校准结果",
+      "problem_definition": {
+        "name": "碳交易机制下多中心混合车队配送路径和速度联合优化问题",
+        "acronym": null,
+        "qualifiers": ["碳交易机制", "多中心", "混合车队", "路径-速度联合优化"],
+        "qualifier_count": 4,
+        "quote": "进一步提出碳交易机制下由传统燃油车和电动车构成的混合车队的配送路径-速度联合优化问题",
+        "location": "§1 p.3321"
+      },
+      "introduction": {
+        "paragraph_count": 6,
+        "location": "§1 pp.3321-3322",
+        "last_paragraph_numbered_contributions": true,
+        "contribution_count": 3,
+        "first_contribution_quote": "构建决策混合车队路径方案与行驶速度的混合整数规划模型",
+        "first_contribution_location": "§1 p.3322",
+        "research_gap_paragraph": true,
+        "gap_count": 3,
+        "gap_location": "§1 p.3322"
+      },
+      "model": {
+        "subsection_count": 6,
+        "subsection_titles": ["2.1 问题描述和假设", "2.2 符号说明", "2.3 车辆能耗模型", "2.4 数学模型", "2.4.1 优化目标", "2.4.2 模型约束"],
+        "location": "第2章 pp.3322-3325",
+        "objective_item_count": 3,
+        "objective_items": ["固定成本", "能耗成本", "碳交易成本"],
+        "constraint_group_count": 16,
+        "constraint_group_location": "§2.4.2 pp.3324-3325，式(6)-(26)的逐句说明",
+        "classic_reduction": false,
+        "reduction_quote": null,
+        "reduction_location": "第2章未见"
+      },
+      "algorithm": {
+        "subsection_count": 9,
+        "subsection_location": "§3.1-3.9 pp.3325-3328",
+        "flowchart": true,
+        "flowchart_location": "图1 p.3326",
+        "step_style": "流程图加叙述式",
+        "step_location": "第3章 pp.3325-3328",
+        "parameter_table": false,
+        "parameter_evidence": "表3为抖动邻域结构，表7为模型参数；无算法参数汇总表"
+      },
+      "experiments": {
+        "subsection_count": 9,
+        "subsection_titles": ["4.1 基准测试算例实验", "4.2 仿真算例实验", "4.2.1 算例及参数说明", "4.2.2 算例求解结果", "5.1 车队动力配置", "5.2 碳交易机制", "5.2.1 碳交易机制对配送方案的影响", "5.2.2 碳交易机制对派遣车辆的影响", "5.3 速度优化"],
+        "location": "第4-5章 pp.3328-3333",
+        "algorithm_effectiveness_section_count": 1,
+        "algorithm_effectiveness_sections": ["4.1；4.2.2内另有未独立成节的算法改进策略表8"],
+        "single_factor_section_count": 4,
+        "single_factor_sections": ["5.1", "5.2.1", "5.2.2", "5.3"],
+        "final_solution_detail": true,
+        "final_solution_location": "§4.2.2表8及路径结果，pp.3330-3331",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立讨论节",
+        "mechanism_count": 6,
+        "mechanisms": ["限额碳交易", "多中心", "燃油车与电动车混合车队", "时间窗", "连续车速", "距离、载重与速度相关实际能耗"],
+        "mechanism_location": "§1 pp.3321-3322；第2章"
+      },
+      "conclusion": {
+        "paragraph_count": 5,
+        "location": "§6 pp.3333-3334",
+        "management_insights": true,
+        "categories": ["企业", "政府"],
+        "quote": "政府实行限额碳交易政策只能初步推进新能源车辆在物流配送中的使用",
+        "quote_location": "§6 p.3333"
+      }
+    },
+    {
+      "id": "li2021",
+      "language": "zh",
+      "paper": "李得成等（2021）《基于分支定价算法的电动车与燃油车混合车辆路径问题研究》",
+      "source": "全文OCR及既有两套中文校准结果",
+      "problem_definition": {
+        "name": "带时间窗的电动车与燃油车混合车队配送问题",
+        "acronym": "E-VRPTWMF",
+        "qualifiers": ["电动车与燃油车混合", "时间窗", "混合车队"],
+        "qualifier_count": 3,
+        "quote": "带时间窗的电动车与燃油车混合车队配送问题（…E-VRPTWMF）是EVRP与HVRP结合的一个扩展",
+        "location": "§1 p.996"
+      },
+      "introduction": {
+        "paragraph_count": 6,
+        "location": "§1 pp.996-997（OCR保留段首）",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 0,
+        "first_contribution_quote": null,
+        "first_contribution_location": null,
+        "research_gap_paragraph": true,
+        "gap_count": 3,
+        "gap_location": "§1 pp.996-997"
+      },
+      "model": {
+        "subsection_count": 5,
+        "subsection_titles": ["2.1 问题描述", "2.2 模型参数及变量", "2.3 数学模型", "3.1 主问题模型", "3.2 子问题模型"],
+        "location": "第2-3章 pp.997-999",
+        "objective_item_count": 2,
+        "objective_items": ["电动车运输成本", "燃油车运输成本"],
+        "constraint_group_count": 14,
+        "constraint_group_location": "§2.3 pp.997-998，式(2)-(15)逐句说明",
+        "classic_reduction": false,
+        "reduction_quote": null,
+        "reduction_location": "第2-3章未见"
+      },
+      "algorithm": {
+        "subsection_count": 9,
+        "subsection_location": "§4.1、4.2、4.2.1-4.2.2、4.3、4.3.1-4.3.3、4.4，pp.999-1003",
+        "flowchart": true,
+        "flowchart_location": "图1 p.1000",
+        "step_style": "流程图加编号Step",
+        "step_location": "§4.2-4.3 pp.1000-1002",
+        "parameter_table": false,
+        "parameter_evidence": "算法参数在§5正文给出，无汇总参数表，pp.1003-1005"
+      },
+      "experiments": {
+        "subsection_count": 6,
+        "subsection_titles": ["5.1 较小规模算例求解", "5.2 较大规模算例求解", "5.3 灵敏度分析", "5.3.1 电动车/燃油车可用数量", "5.3.2 电动车/燃油车最大载重", "5.3.3 电池容量与充电率"],
+        "location": "第5章 pp.1003-1008",
+        "algorithm_effectiveness_section_count": 2,
+        "algorithm_effectiveness_sections": ["5.1", "5.2"],
+        "single_factor_section_count": 3,
+        "single_factor_sections": ["5.3.1", "5.3.2", "5.3.3"],
+        "final_solution_detail": false,
+        "final_solution_location": "无独立最终解拆解节",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立讨论节",
+        "mechanism_count": 7,
+        "mechanisms": ["电动车与燃油车混合车队", "时间窗", "充电站", "重复访问充电站", "车型数量与载重", "电池容量", "充电率"],
+        "mechanism_location": "§2 pp.997-998；§5.1 pp.1003-1004"
+      },
+      "conclusion": {
+        "paragraph_count": 2,
+        "location": "§6 p.1008",
+        "management_insights": true,
+        "categories": ["企业"],
+        "quote": "当企业配置的电动车容量较小时应优先选择快充模式",
+        "quote_location": "§6 p.1008"
+      }
+    },
+    {
+      "id": "rao2019",
+      "language": "zh",
+      "paper": "饶卫振等（2019）《一种求解协作配送成本分摊问题核仁解的近似迭代算法》",
+      "source": "全文OCR及既有两套中文校准结果",
+      "problem_definition": {
+        "name": "协作配送成本分摊问题/协作车辆路径问题",
+        "acronym": "MOCVRP（第3章模型）",
+        "qualifiers": ["协作配送", "成本分摊", "核仁解"],
+        "qualifier_count": 3,
+        "quote": "协作配送问题是典型的组合优化合作博弈问题，也可称为协作车辆路径问题",
+        "location": "摘要 p.1517"
+      },
+      "introduction": {
+        "paragraph_count": 10,
+        "location": "§1 pp.1518-1519（OCR保留段首）",
+        "last_paragraph_numbered_contributions": true,
+        "contribution_count": 2,
+        "first_contribution_quote": "构建考虑货物在配送中心调配的协作配送模型",
+        "first_contribution_location": "§1 p.1519",
+        "research_gap_paragraph": true,
+        "gap_count": 2,
+        "gap_location": "§1 pp.1518-1519"
+      },
+      "model": {
+        "subsection_count": 3,
+        "subsection_titles": ["2.1 协作配送", "2.2 协作配送的成本分摊", "3 协作配送问题建模"],
+        "location": "第2-3章 pp.1519-1522",
+        "objective_item_count": 1,
+        "objective_items": ["协作配送总成本"],
+        "constraint_group_count": 7,
+        "constraint_group_location": "第3章 pp.1521-1522，式(2)-(15)的成组说明",
+        "classic_reduction": false,
+        "reduction_quote": null,
+        "reduction_location": "第3章未见"
+      },
+      "algorithm": {
+        "subsection_count": 5,
+        "subsection_location": "§5.1-5.5 pp.1524-1528",
+        "flowchart": true,
+        "flowchart_location": "图4 p.1526",
+        "step_style": "流程图加编号Step",
+        "step_location": "§5.3 pp.1525-1527",
+        "parameter_table": false,
+        "parameter_evidence": "§5.5讨论参数，但无算法参数汇总表"
+      },
+      "experiments": {
+        "subsection_count": 3,
+        "subsection_titles": ["6.1 AIA求解协作配送问题核仁解", "6.2 AIA求解策略的有效性", "6.3 AIA与传统方法的比较"],
+        "location": "第6章 pp.1528-1533",
+        "algorithm_effectiveness_section_count": 2,
+        "algorithm_effectiveness_sections": ["6.2", "6.3"],
+        "single_factor_section_count": 0,
+        "single_factor_sections": [],
+        "final_solution_detail": true,
+        "final_solution_location": "§6.1表2 pp.1528-1530",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立讨论节",
+        "mechanism_count": 5,
+        "mechanisms": ["协作车辆路径", "合作博弈成本分摊", "核仁解", "预内核解", "凸博弈"],
+        "mechanism_location": "摘要及§1 pp.1517-1519；§3-5 pp.1520-1528"
+      },
+      "conclusion": {
+        "paragraph_count": 3,
+        "location": "§7 p.1533",
+        "management_insights": false,
+        "categories": [],
+        "quote": null,
+        "quote_location": "未见管理启示原句"
+      }
+    },
+    {
+      "id": "vidal2013",
+      "language": "en",
+      "paper": "Vidal et al. (2013), A Hybrid Genetic Algorithm with Adaptive Diversity Management for a Large Class of Vehicle Routing Problems with Time Windows",
+      "source": "CIRRELT-2011-61作者机构版全文（34 PDF页；正文印刷页1-24）",
+      "problem_definition": {
+        "name": "generalized Periodic Vehicle Routing Problem with Time Windows",
+        "acronym": "PVRPTW（并覆盖MDVRPTW、SDVRPTW）",
+        "qualifiers": ["periodic", "time windows"],
+        "qualifier_count": 2,
+        "quote": "The VRPTW aims to construct up to m vehicle routes, to visit each customer vertex once within its time window, while minimizing the total distance.",
+        "location": "§2 CIRRELT印刷p.2"
+      },
+      "introduction": {
+        "paragraph_count": 4,
+        "location": "§1 CIRRELT印刷pp.1-2",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 4,
+        "first_contribution_quote": "a generalization of the concept of HGSADC to a large class of VRPTW variants",
+        "first_contribution_location": "§1 CIRRELT印刷pp.1-2（倒数第2段）",
+        "research_gap_paragraph": true,
+        "gap_count": 2,
+        "gap_location": "§1 CIRRELT印刷p.1"
+      },
+      "model": {
+        "subsection_count": 0,
+        "subsection_titles": [],
+        "location": "§2 CIRRELT印刷pp.2-4",
+        "objective_item_count": 1,
+        "objective_items": ["total distance over all periods"],
+        "constraint_group_count": 3,
+        "constraint_group_location": "§2明确写Three main groups，CIRRELT印刷p.3",
+        "classic_reduction": true,
+        "reduction_quote": "The MDVRPTW … constitute[s] a special case of the generalized PVRPTW.",
+        "reduction_location": "§2 CIRRELT印刷p.3"
+      },
+      "algorithm": {
+        "subsection_count": 10,
+        "subsection_location": "§4.1-4.7，含§4.5.1-4.5.3，CIRRELT印刷pp.8-15",
+        "flowchart": false,
+        "flowchart_location": "无流程图；Algorithm 1为伪代码，印刷p.7",
+        "step_style": "编号伪代码加叙述",
+        "step_location": "Algorithm 1，CIRRELT印刷p.7",
+        "parameter_table": false,
+        "parameter_evidence": "§5.1正文列参数；Table 1是参数组合表现而非参数汇总表，印刷pp.16-17"
+      },
+      "experiments": {
+        "subsection_count": 3,
+        "subsection_titles": ["5.1 Parameter calibration", "5.2 Comparison of performances", "5.3 Sensitivity analysis on method components"],
+        "location": "§5 CIRRELT印刷pp.15-23",
+        "algorithm_effectiveness_section_count": 1,
+        "algorithm_effectiveness_sections": ["5.2"],
+        "single_factor_section_count": 1,
+        "single_factor_sections": ["5.3（同一小节逐项移除3个组件）"],
+        "final_solution_detail": false,
+        "final_solution_location": "无独立最终解拆解节",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立Discussion节",
+        "mechanism_count": 5,
+        "mechanisms": ["time windows", "route duration", "period assignment", "multiple depots", "vehicle-site dependency"],
+        "mechanism_location": "§2 CIRRELT印刷pp.2-4"
+      },
+      "conclusion": {
+        "paragraph_count": 3,
+        "location": "§6 CIRRELT印刷p.24",
+        "management_insights": false,
+        "categories": [],
+        "quote": null,
+        "quote_location": "未见"
+      }
+    },
+    {
+      "id": "zhao2024",
+      "language": "en",
+      "paper": "Zhao et al. (2024), A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-dependent vehicle routing problem",
+      "source": "EJOR 317 (2024) 921-935本地全文",
+      "problem_definition": {
+        "name": "multi-trip time-dependent vehicle routing problem",
+        "acronym": "MT-TD-VRP",
+        "qualifiers": ["multi-trip", "time-dependent"],
+        "qualifier_count": 2,
+        "quote": "The MT-TD-VRP is defined over a directed graph G = (V, A).",
+        "location": "§3 p.922"
+      },
+      "introduction": {
+        "paragraph_count": 6,
+        "location": "§1 pp.921-922",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 0,
+        "first_contribution_quote": null,
+        "first_contribution_location": null,
+        "research_gap_paragraph": false,
+        "gap_count": 2,
+        "gap_location": "§1 pp.921-922，两处非列表式不足陈述"
+      },
+      "model": {
+        "subsection_count": 2,
+        "subsection_titles": ["3.1 Time-dependent travel time model and function", "3.2 Mathematical formulation"],
+        "location": "§3 pp.922-924",
+        "objective_item_count": 2,
+        "objective_items": ["total trip duration", "fixed cost of used vehicles"],
+        "constraint_group_count": 4,
+        "constraint_group_location": "§3.2 pp.923-924，正文依次解释(2)-(6)、(7)-(11)、(12)-(13)、(14)-(18)",
+        "classic_reduction": true,
+        "reduction_quote": "the MTVRP … is a special case of the studied MT-TD-VRP",
+        "reduction_location": "§7.4 p.931（不在模型章）"
+      },
+      "algorithm": {
+        "subsection_count": 10,
+        "subsection_location": "§4-6的7个直接子节及§4.2.1-4.2.3，pp.924-929",
+        "flowchart": false,
+        "flowchart_location": "无流程图",
+        "step_style": "编号伪代码加叙述",
+        "step_location": "Algorithms 1-4，pp.925-929",
+        "parameter_table": true,
+        "parameter_evidence": "Table 2 p.930"
+      },
+      "experiments": {
+        "subsection_count": 8,
+        "subsection_titles": ["7.1 Effectiveness of the MQO technique", "7.2 Parameter tuning", "7.3 Results on CVRP", "7.4 Comparison on MTVRP instances", "7.5 Case study: Singapore food and beverage company data", "7.5.1 Comparison of initialization methods using different clustering algorithms", "7.5.2 Performance on sub-sampled small cases instances compared with Gurobi", "7.5.3 Effect of changing parameters in constraints on MT-TD-VRP"],
+        "location": "§7 pp.929-934",
+        "algorithm_effectiveness_section_count": 4,
+        "algorithm_effectiveness_sections": ["7.1", "7.3", "7.4", "7.5.2"],
+        "single_factor_section_count": 2,
+        "single_factor_sections": ["7.5.1", "7.5.3"],
+        "final_solution_detail": false,
+        "final_solution_location": "详细排程置于附录/代码链接，正文无独立小节",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立Discussion节",
+        "mechanism_count": 2,
+        "mechanisms": ["multi-trip", "time-dependent travel time"],
+        "mechanism_location": "§1与§3 pp.921-923"
+      },
+      "conclusion": {
+        "paragraph_count": 2,
+        "location": "§8 p.934",
+        "management_insights": false,
+        "categories": [],
+        "quote": null,
+        "quote_location": "未见"
+      }
+    },
+    {
+      "id": "schneider2014",
+      "language": "en",
+      "paper": "Schneider et al. (2014), The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations",
+      "source": "Transportation Science Articles in Advance全文（正文页1-21）",
+      "problem_definition": {
+        "name": "electric vehicle routing problem with time windows and recharging stations",
+        "acronym": "E-VRPTW",
+        "qualifiers": ["electric vehicle", "time windows", "recharging stations"],
+        "qualifier_count": 3,
+        "quote": "In this paper, we introduce the electric vehicle routing problem with time windows and recharging stations (E-VRPTW).",
+        "location": "§1 p.2"
+      },
+      "introduction": {
+        "paragraph_count": 9,
+        "location": "§1 pp.1-3",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 0,
+        "first_contribution_quote": null,
+        "first_contribution_location": null,
+        "research_gap_paragraph": false,
+        "gap_count": 0,
+        "gap_location": "§1未见独立研究不足段"
+      },
+      "model": {
+        "subsection_count": 0,
+        "subsection_titles": [],
+        "location": "§3 pp.4-6",
+        "objective_item_count": 2,
+        "objective_items": ["number of vehicles", "total distance（层级目标）"],
+        "constraint_group_count": 5,
+        "constraint_group_location": "§3 pp.5-6，路线/流、时间、载重、电量、变量域",
+        "classic_reduction": true,
+        "reduction_quote": "The classical VRPTW represents a special case of E-VRPTW adequate for scenarios in which no recharges are necessary.",
+        "reduction_location": "§5.3.3 p.18"
+      },
+      "algorithm": {
+        "subsection_count": 4,
+        "subsection_location": "§4.1-4.4 pp.6-10",
+        "flowchart": false,
+        "flowchart_location": "Figure 1是伪代码overview，不是流程图，p.7",
+        "step_style": "伪代码加叙述",
+        "step_location": "Figure 1与§4，pp.7-10",
+        "parameter_table": true,
+        "parameter_evidence": "Table 4 p.11"
+      },
+      "experiments": {
+        "subsection_count": 9,
+        "subsection_titles": ["5.1 Experimental Environment and Parameter Setting", "5.2 Experiments on E-VRPTW Instances", "5.2.1 Generation of E-VRPTW Benchmark Instances", "5.2.2 Performance of VNS/TS on Small E-VRPTW Instances", "5.2.3 Analyzing the Effect of the VNS/TS Components", "5.3 Performance on Benchmark Instances of Related Problems", "5.3.1 Multidepot VRP with Interdepot Routes", "5.3.2 Green VRP", "5.3.3 VRP with Time Windows"],
+        "location": "§5 pp.10-19",
+        "algorithm_effectiveness_section_count": 4,
+        "algorithm_effectiveness_sections": ["5.2.2", "5.3.1", "5.3.2", "5.3.3"],
+        "single_factor_section_count": 1,
+        "single_factor_sections": ["5.2.3"],
+        "final_solution_detail": false,
+        "final_solution_location": "无独立最终解拆解节",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立Discussion节",
+        "mechanism_count": 4,
+        "mechanisms": ["limited battery", "en-route recharging", "time windows", "vehicle capacity"],
+        "mechanism_location": "§1 p.2；§3 pp.4-6"
+      },
+      "conclusion": {
+        "paragraph_count": 4,
+        "location": "§6 p.19",
+        "management_insights": true,
+        "categories": ["企业", "其他：运输市场/绿色物流"],
+        "quote": "our method seems able to successfully assist routing and recharging decisions for ECVs employed in real-world delivery operations",
+        "quote_location": "§6 p.19"
+      }
+    },
+    {
+      "id": "goeke2015",
+      "language": "en",
+      "paper": "Goeke and Schneider (2015), Routing a mixed fleet of electric and conventional vehicles",
+      "source": "作者校样全文PDF正文页1-19；期刊卷页81-99",
+      "problem_definition": {
+        "name": "Electric VRP with Time Windows and Mixed Fleet",
+        "acronym": "E-VRPTWMF",
+        "qualifiers": ["electric", "time windows", "mixed fleet"],
+        "qualifier_count": 3,
+        "quote": "We propose the Electric VRP with Time Windows and Mixed Fleet (E-VRPTWMF) to determine optimal routes … for a given mixed fleet of ECVs and ICCVs.",
+        "location": "§1 PDF正文p.2"
+      },
+      "introduction": {
+        "paragraph_count": 7,
+        "location": "§1 PDF正文pp.1-2",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 2,
+        "first_contribution_quote": "Mixed fleet. We consider a mixed fleet composed of electric and conventional vehicles.",
+        "first_contribution_location": "§1 PDF正文p.2（非编号并列项）",
+        "research_gap_paragraph": true,
+        "gap_count": 2,
+        "gap_location": "§1 PDF正文pp.1-2"
+      },
+      "model": {
+        "subsection_count": 0,
+        "subsection_titles": [],
+        "location": "§4 PDF正文pp.4-6",
+        "objective_item_count": 3,
+        "objective_items": ["distance objective:1项", "cost objective:2项", "battery-replacement objective:3项"],
+        "constraint_group_count": 12,
+        "constraint_group_location": "§4 PDF正文pp.5-6，约束(7)-(21)的逐句说明",
+        "classic_reduction": true,
+        "reduction_quote": "VRPTW and E-VRPTW, which are both special cases of the E-VRPTWMF",
+        "reduction_location": "§6.4 PDF正文p.15"
+      },
+      "algorithm": {
+        "subsection_count": 8,
+        "subsection_location": "§5.1-5.4及§5.4.1-5.4.4，PDF正文pp.6-9",
+        "flowchart": true,
+        "flowchart_location": "Figure 2 PDF正文p.6",
+        "step_style": "流程图加叙述",
+        "step_location": "§5 PDF正文pp.6-9",
+        "parameter_table": true,
+        "parameter_evidence": "Table 3 PDF正文p.10"
+      },
+      "experiments": {
+        "subsection_count": 9,
+        "subsection_titles": ["6.1 Experimental environment and parameter setting", "6.2 Generation of E-VRPTWMF instances", "6.3 Experiments on E-VRPTWMF instances", "6.3.1 Influence of surrogate cost function", "6.3.2 Effect of considering distribution of load on solution quality", "6.3.3 Assessment of different objective functions and cost contribution", "6.4 Performance on benchmark instances of related problems", "6.4.1 Performance on VRPTW", "6.4.2 Performance on E-VRPTW"],
+        "location": "§6 PDF正文pp.9-16",
+        "algorithm_effectiveness_section_count": 3,
+        "algorithm_effectiveness_sections": ["6.3.1", "6.4.1", "6.4.2"],
+        "single_factor_section_count": 3,
+        "single_factor_sections": ["6.3.1", "6.3.2", "6.3.3"],
+        "final_solution_detail": false,
+        "final_solution_location": "无独立最终解拆解节",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立Discussion节",
+        "mechanism_count": 5,
+        "mechanisms": ["mixed ECV/ICCV fleet", "load/gradient/speed energy", "time windows", "capacity", "en-route recharging"],
+        "mechanism_location": "§1 PDF正文pp.1-2；§4 pp.4-6"
+      },
+      "conclusion": {
+        "paragraph_count": 3,
+        "location": "§7 PDF正文pp.16-17",
+        "management_insights": false,
+        "categories": [],
+        "quote": null,
+        "quote_location": "未见"
+      }
+    },
+    {
+      "id": "montoya2017",
+      "language": "en",
+      "paper": "Montoya et al. (2017), The electric vehicle routing problem with nonlinear charging function",
+      "source": "作者校样全文PDF正文页1-24；期刊卷页87-110",
+      "problem_definition": {
+        "name": "electric vehicle routing problem with nonlinear charging functions",
+        "acronym": "E-VRP-NL",
+        "qualifiers": ["electric vehicle", "nonlinear charging"],
+        "qualifier_count": 2,
+        "quote": "The E-VRP-NL is defined on a directed and complete graph G=(V,A).",
+        "location": "§2.1 PDF正文p.4"
+      },
+      "introduction": {
+        "paragraph_count": 11,
+        "location": "§1 PDF正文pp.1-4",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 5,
+        "first_contribution_quote": "First, we introduce the electric vehicle routing problem with nonlinear charging functions (E-VRP-NL).",
+        "first_contribution_location": "§1 PDF正文p.3（倒数第2段）",
+        "research_gap_paragraph": true,
+        "gap_count": 4,
+        "gap_location": "§1 PDF正文pp.2-3"
+      },
+      "model": {
+        "subsection_count": 4,
+        "subsection_titles": ["2.1 Problem description", "2.2 Modeling of battery charging functions", "2.3 Illustrative example", "2.4 MILP formulation"],
+        "location": "§2 PDF正文pp.4-8",
+        "objective_item_count": 2,
+        "objective_items": ["travel time", "charging time"],
+        "constraint_group_count": 15,
+        "constraint_group_location": "§2.4 PDF正文p.7，约束(2)-(38)的逐句说明",
+        "classic_reduction": true,
+        "reduction_quote": "CVRP is a special case of our E-VRP-NL",
+        "reduction_location": "§3 PDF正文p.8"
+      },
+      "algorithm": {
+        "subsection_count": 6,
+        "subsection_location": "§3.1-3.6 PDF正文pp.8-13",
+        "flowchart": false,
+        "flowchart_location": "无总体流程图",
+        "step_style": "叙述式；附录Algorithm 1为编号伪代码",
+        "step_location": "§3及附录",
+        "parameter_table": true,
+        "parameter_evidence": "Table 2 PDF正文p.15"
+      },
+      "experiments": {
+        "subsection_count": 7,
+        "subsection_titles": ["4.1 Test instances for E-VRP-NL", "4.2 Benefits of better approximating charging function", "4.3 Results of ILS+HC", "4.3.1 Experimental environment", "4.3.2 Parameter settings", "4.3.3 Performance of hybrid metaheuristic", "4.3.4 Characteristics of good E-VRP-NL solutions"],
+        "location": "§4 PDF正文pp.13-18",
+        "algorithm_effectiveness_section_count": 1,
+        "algorithm_effectiveness_sections": ["4.3.3"],
+        "single_factor_section_count": 1,
+        "single_factor_sections": ["4.2"],
+        "final_solution_detail": false,
+        "final_solution_location": "§4.3.4是全部BKS路线的汇总特征，不是单个最终解拆解",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立Discussion节",
+        "mechanism_count": 5,
+        "mechanisms": ["partial charging", "nonlinear piecewise charging", "multiple charging technologies", "repeated station visits", "battery capacity"],
+        "mechanism_location": "§2.1-2.3 PDF正文pp.4-5"
+      },
+      "conclusion": {
+        "paragraph_count": 2,
+        "location": "§5 PDF正文p.18",
+        "management_insights": false,
+        "categories": [],
+        "quote": null,
+        "quote_location": "未见"
+      }
+    },
+    {
+      "id": "froger2022",
+      "language": "en",
+      "paper": "Froger et al. (2022), The electric vehicle routing problem with capacitated charging stations",
+      "source": "Transportation Science 56(2) 460-482作者版全文（PDF正文页1-27及附录）",
+      "problem_definition": {
+        "name": "E-VRP-NL with capacitated charging stations",
+        "acronym": "E-VRP-NL-C",
+        "qualifiers": ["electric vehicle", "nonlinear charging", "capacitated charging stations"],
+        "qualifier_count": 3,
+        "quote": "In this paper we introduce the E-VRP-NL with capacitated CSs (E-VRP-NL-C).",
+        "location": "§1 PDF正文p.3"
+      },
+      "introduction": {
+        "paragraph_count": 13,
+        "location": "§1 PDF正文pp.1-5",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 2,
+        "first_contribution_quote": "First, we propose a mixed integer linear programming (MILP) formulation for the E-VRP-NL-C.",
+        "first_contribution_location": "§1 PDF正文p.4（倒数第2段）",
+        "research_gap_paragraph": true,
+        "gap_count": 2,
+        "gap_location": "§1 PDF正文pp.2-4"
+      },
+      "model": {
+        "subsection_count": 0,
+        "subsection_titles": [],
+        "location": "§3 PDF正文pp.6-10",
+        "objective_item_count": 3,
+        "objective_items": ["driving time", "charging time", "waiting time"],
+        "constraint_group_count": 20,
+        "constraint_group_location": "§3 PDF正文pp.8-9，约束(2)-(42)的逐句说明",
+        "classic_reduction": false,
+        "reduction_quote": null,
+        "reduction_location": "模型章未见退化原句"
+      },
+      "algorithm": {
+        "subsection_count": 7,
+        "subsection_location": "§4.1-4.2及§4.1.1-4.1.2、§4.2.1-4.2.3，PDF正文pp.10-20",
+        "flowchart": false,
+        "flowchart_location": "无流程图",
+        "step_style": "编号伪代码加叙述",
+        "step_location": "Algorithms 1-9，PDF正文pp.10-20及附录",
+        "parameter_table": true,
+        "parameter_evidence": "Table 4 PDF正文p.22"
+      },
+      "experiments": {
+        "subsection_count": 3,
+        "subsection_titles": ["5.1 Results for the E-VRP-NL-C formulation", "5.2 Results for the E-VRP-NL", "5.3 Results for the E-VRP-NL-C"],
+        "location": "§5 PDF正文pp.20-26",
+        "algorithm_effectiveness_section_count": 3,
+        "algorithm_effectiveness_sections": ["5.1", "5.2", "5.3"],
+        "single_factor_section_count": 1,
+        "single_factor_sections": ["5.3（同一节内分别比较充电器数与子问题版本）"],
+        "final_solution_detail": false,
+        "final_solution_location": "Table 8为多解特征汇总，无单个最终解拆解节",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立Discussion节",
+        "mechanism_count": 5,
+        "mechanisms": ["piecewise-linear charging", "partial charging", "multiple charging technologies", "multiple CS stops", "finite charger capacity"],
+        "mechanism_location": "§2 PDF正文pp.5-6；§6 p.26"
+      },
+      "conclusion": {
+        "paragraph_count": 2,
+        "location": "§6 PDF正文p.26",
+        "management_insights": false,
+        "categories": [],
+        "quote": null,
+        "quote_location": "未见"
+      }
+    },
+    {
+      "id": "hiermann2016",
+      "language": "en",
+      "paper": "Hiermann et al. (2016), The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations",
+      "source": "EJOR 252 (2016) 995-1018本地全文",
+      "problem_definition": {
+        "name": "Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations",
+        "acronym": "E-FSMFTW",
+        "qualifiers": ["electric", "fleet size and mix", "time windows", "recharging stations"],
+        "qualifier_count": 4,
+        "quote": "The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations (E-FSMFTW) consists of finding admissible tours for vehicles of different types…",
+        "location": "§2 p.997"
+      },
+      "introduction": {
+        "paragraph_count": 21,
+        "location": "§1含§1.1-1.3，pp.995-997",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 3,
+        "first_contribution_quote": "We combine the streams of research on the EVRPTW and the FSMFTW and introduce a new vehicle routing problem",
+        "first_contribution_location": "§1.2 p.997（3个非编号贡献段）",
+        "research_gap_paragraph": false,
+        "gap_count": 0,
+        "gap_location": "§1未见独立研究不足段"
+      },
+      "model": {
+        "subsection_count": 2,
+        "subsection_titles": ["2.1 Mixed integer programming model", "2.2 Set partitioning formulation"],
+        "location": "§2 pp.997-999",
+        "objective_item_count": 2,
+        "objective_items": ["vehicle acquisition cost", "traveling cost"],
+        "constraint_group_count": 7,
+        "constraint_group_location": "§2.1 pp.997-998：visit、station、flow、time、load、energy、domain；§2.2另有3组",
+        "classic_reduction": true,
+        "reduction_quote": "It combines and subsumes the well known Fleet Size Mix Vehicle Routing Problem with Time Windows … and … E-VRPTW.",
+        "reduction_location": "§1 p.995；模型章未另给退化原句"
+      },
+      "algorithm": {
+        "subsection_count": 18,
+        "subsection_location": "精确算法§3共5个标题；启发式§4共13个标题，pp.999-1005",
+        "flowchart": false,
+        "flowchart_location": "无总体流程图",
+        "step_style": "编号伪代码加叙述",
+        "step_location": "Algorithms 1-2，pp.1003-1004",
+        "parameter_table": true,
+        "parameter_evidence": "Table 1 p.1004"
+      },
+      "experiments": {
+        "subsection_count": 4,
+        "subsection_titles": ["5.1 E-FSMFTW benchmark instances", "5.2 Results on small E-FSMFTW instances", "5.3 Results on larger E-FSMFTW instances", "5.4 Sensitivity analysis of the E-FSMFTW instances"],
+        "location": "§5 pp.1004-1011",
+        "algorithm_effectiveness_section_count": 2,
+        "algorithm_effectiveness_sections": ["5.2", "5.3"],
+        "single_factor_section_count": 1,
+        "single_factor_sections": ["5.4（同一节分析fleet mix与energy constraint）"],
+        "final_solution_detail": false,
+        "final_solution_location": "附录给实例明细，正文无独立最终解拆解节",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立Discussion节",
+        "mechanism_count": 4,
+        "mechanisms": ["fleet size/mix acquisition", "battery/range", "en-route full recharging", "time windows"],
+        "mechanism_location": "§1 p.995；§2 pp.997-998"
+      },
+      "conclusion": {
+        "paragraph_count": 4,
+        "location": "§6 pp.1010-1011",
+        "management_insights": false,
+        "categories": [],
+        "quote": null,
+        "quote_location": "未见"
+      }
+    },
+    {
+      "id": "zhen2020",
+      "language": "en",
+      "paper": "Zhen et al. (2020), Multi-depot multi-trip vehicle routing problem with time windows and release dates",
+      "source": "Transportation Research Part E 135 (2020) 101866本地全文（PDF页1-21）",
+      "problem_definition": {
+        "name": "multi-depot multi-trip vehicle routing problem with time windows and release dates",
+        "acronym": "Multi-D&T VRPTW-R",
+        "qualifiers": ["multi-depot", "multi-trip", "time windows", "release dates"],
+        "qualifier_count": 4,
+        "quote": "In this paper, we define the above problem as a multi-depot multi-trip vehicle routing problem with time windows and release dates (Multi-D&T VRPTW-R).",
+        "location": "§1 PDF p.2"
+      },
+      "introduction": {
+        "paragraph_count": 4,
+        "location": "§1 PDF pp.1-2",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 0,
+        "first_contribution_quote": null,
+        "first_contribution_location": null,
+        "research_gap_paragraph": false,
+        "gap_count": 0,
+        "gap_location": "§1未见；§2末另有1条无文献不足，不计入引言"
+      },
+      "model": {
+        "subsection_count": 4,
+        "subsection_titles": ["3.1 Problem description", "3.2 Model formulation", "3.2.1 Notations", "3.2.2 Mathematical model"],
+        "location": "§3 PDF pp.3-5",
+        "objective_item_count": 3,
+        "objective_items": ["customer-to-customer travel", "depot-to-first-customer travel", "last-customer-to-depot travel"],
+        "constraint_group_count": 15,
+        "constraint_group_location": "§3.2.2 PDF p.5，约束(2)-(20)的逐句说明",
+        "classic_reduction": false,
+        "reduction_quote": null,
+        "reduction_location": "模型章未见"
+      },
+      "algorithm": {
+        "subsection_count": 13,
+        "subsection_location": "§4.1-4.2及下级§4.1.1-4.1.6、§4.2.1-4.2.5，PDF pp.5-11",
+        "flowchart": false,
+        "flowchart_location": "无流程图；Figures 3-7为表示/算子示意",
+        "step_style": "叙述式加项目列表",
+        "step_location": "§4 PDF pp.5-11",
+        "parameter_table": false,
+        "parameter_evidence": "§5.1正文给参数；Table 1是求解比较，PDF p.11"
+      },
+      "experiments": {
+        "subsection_count": 3,
+        "subsection_titles": ["5.1 Parameters setting", "5.2 Performance of the HPSO and the HGA", "5.3 Experiments on algorithm settings"],
+        "location": "§5 PDF pp.11-15",
+        "algorithm_effectiveness_section_count": 1,
+        "algorithm_effectiveness_sections": ["5.2"],
+        "single_factor_section_count": 1,
+        "single_factor_sections": ["5.3（同一节做VND与加速模块消融）"],
+        "final_solution_detail": false,
+        "final_solution_location": "无独立最终解拆解节",
+        "concentrated_discussion": false,
+        "discussion_location": "无独立Discussion节",
+        "mechanism_count": 4,
+        "mechanisms": ["multiple depots", "multiple trips", "time windows", "release dates"],
+        "mechanism_location": "§1 PDF pp.1-2；§3.1 pp.3-4"
+      },
+      "conclusion": {
+        "paragraph_count": 2,
+        "location": "§6 PDF pp.15-16",
+        "management_insights": false,
+        "categories": [],
+        "quote": null,
+        "quote_location": "§5.2有企业观察，但结论无管理启示"
+      }
+    },
+    {
+      "id": "wang2023",
+      "language": "en",
+      "paper": "Wang et al. (2023), Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations",
+      "source": "Expert Systems With Applications 219 (2023) 119654本地全文（PDF页1-29）",
+      "problem_definition": {
+        "name": "collaborative multidepot electric vehicle routing problem with time windows and shared charging stations",
+        "acronym": "CMEVRPTW-SCS",
+        "qualifiers": ["collaborative", "multidepot", "electric vehicle", "time windows", "shared charging stations"],
+        "qualifier_count": 5,
+        "quote": "The collaborative multidepot EV routing problem with time windows and shared charging stations (CMEVRPTW-SCS) is proposed and solved in this study.",
+        "location": "§1 PDF p.2"
+      },
+      "introduction": {
+        "paragraph_count": 4,
+        "location": "§1 PDF pp.1-2",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 0,
+        "first_contribution_quote": null,
+        "first_contribution_location": null,
+        "research_gap_paragraph": false,
+        "gap_count": 0,
+        "gap_location": "§1未见；§2.4末另列4条limitations，不计入引言"
+      },
+      "model": {
+        "subsection_count": 2,
+        "subsection_titles": ["4.1 Assumptions and definitions", "4.2 Model formulation"],
+        "location": "§4 PDF pp.5-8",
+        "objective_item_count": 5,
+        "objective_items": ["electric delivery cost", "facility operating cost", "earliness/delay penalty", "centralized transportation cost", "charging cost（另有EV数量目标）"],
+        "constraint_group_count": 18,
+        "constraint_group_location": "§4.2 PDF pp.7-8，约束(14)-(35)逐句解释17组，加binary decision 1组；显式标题为3大组",
+        "classic_reduction": false,
+        "reduction_quote": null,
+        "reduction_location": "模型章未见"
+      },
+      "algorithm": {
+        "subsection_count": 10,
+        "subsection_location": "§5.1-5.3及§5.2.1-5.2.5、§5.3.1-5.3.2，PDF pp.8-16",
+        "flowchart": true,
+        "flowchart_location": "Figure 2 PDF p.9",
+        "step_style": "流程图加编号Algorithms 1-3",
+        "step_location": "§5 PDF pp.9-14",
+        "parameter_table": true,
+        "parameter_evidence": "Parameters used in the four algorithms，PDF p.16；case parameter settings p.18"
+      },
+      "experiments": {
+        "subsection_count": 10,
+        "subsection_titles": ["6.1 Algorithm comparison", "6.2 Data description", "6.3 Optimization results", "6.3.1 Clustering results", "6.3.2 Vehicle routing optimization with shared charging stations", "6.3.3 Profit allocation results", "6.4 Analysis and discussion", "6.4.1 Comparison of various collaboration mechanisms", "6.4.2 Comparison of various alliances with or without shared CSs", "6.5 Management insights"],
+        "location": "§6 PDF pp.17-27",
+        "algorithm_effectiveness_section_count": 1,
+        "algorithm_effectiveness_sections": ["6.1"],
+        "single_factor_section_count": 2,
+        "single_factor_sections": ["6.4.1", "6.4.2"],
+        "final_solution_detail": true,
+        "final_solution_location": "§6.3.2-6.3.3，PDF pp.19-22",
+        "concentrated_discussion": true,
+        "discussion_location": "§6.4 PDF pp.23-25",
+        "mechanism_count": 5,
+        "mechanisms": ["collaboration", "customer-service sharing", "CS sharing", "centralized inter-depot transport", "Shapley profit allocation"],
+        "mechanism_location": "§1-3 PDF pp.1-5"
+      },
+      "conclusion": {
+        "paragraph_count": 4,
+        "location": "§7 PDF pp.27-28",
+        "management_insights": true,
+        "categories": ["企业", "政府", "其他：系统/方法"],
+        "quote": "the collaborative mechanism and the CS sharing strategy should be encouraged to construct sustainable and economic logistics networks",
+        "quote_location": "§7 PDF p.27；另有§6.5三条管理启示"
+      }
+    },
+    {
+      "id": "wang2026",
+      "language": "en",
+      "paper": "Wang et al. (2026), The logistics vehicle charging station location selection and routing problem with partial recharging and shared fleets",
+      "source": "Transportation Research Part E 209 (2026) 104723本地全文（PDF页1-39）",
+      "problem_definition": {
+        "name": "vehicle charging station location selection and routing problem with partial recharging and shared fleets",
+        "acronym": null,
+        "qualifiers": ["charging station location selection", "routing", "partial recharging", "shared fleets"],
+        "qualifier_count": 4,
+        "quote": "The study focuses on the vehicle charging station location selection and routing problem with partial recharging and shared fleets.",
+        "location": "§1 PDF p.2"
+      },
+      "introduction": {
+        "paragraph_count": 6,
+        "location": "§1 PDF pp.1-2",
+        "last_paragraph_numbered_contributions": false,
+        "contribution_count": 0,
+        "first_contribution_quote": null,
+        "first_contribution_location": null,
+        "research_gap_paragraph": false,
+        "gap_count": 0,
+        "gap_location": "§1未见；§2.4末另列4条challenges，不计入引言"
+      },
+      "model": {
+        "subsection_count": 10,
+        "subsection_titles": ["4.1 Model related definitions", "4.2 Mathematical model", "4.2.1 Electric vehicle charging model", "4.2.2 Energy consumption calculation method", "4.2.3 Objective function model", "4.2.4 Model constraints", "4.2.4.1 Constraints on electric vehicle route optimization", "4.2.4.2 Time constraints for electric vehicle", "4.2.4.3 Electricity quantity constraints for electric vehicle", "4.2.4.4 Binary decision"],
+        "location": "§4 PDF pp.6-12",
+        "objective_item_count": 4,
+        "objective_items": ["fixed/rental costs", "recharging costs", "electricity consumption costs", "additional operating costs（另有NEV目标）"],
+        "constraint_group_count": 24,
+        "constraint_group_location": "§4.2.4 PDF pp.9-12，四个显式约束子节内逐句说明共24组",
+        "classic_reduction": false,
+        "reduction_quote": null,
+        "reduction_location": "模型章未见"
+      },
+      "algorithm": {
+        "subsection_count": 8,
+        "subsection_location": "§5.1-5.3及§5.2.1-5.2.3、§5.3.1-5.3.2，PDF pp.12-20",
+        "flowchart": true,
+        "flowchart_location": "Figure 3 PDF p.12",
+        "step_style": "流程图加编号Algorithms 1-2",
+        "step_location": "§5 PDF pp.12-17",
+        "parameter_table": true,
+        "parameter_evidence": "Table 7 PDF p.20；Table 12 PDF p.25"
+      },
+      "experiments": {
+        "subsection_count": 9,
+        "subsection_titles": ["6.1 Data description", "6.2 Parameter stability and sensitivity analysis", "6.3 Clustering results", "6.4 Optimization results", "6.5 Analysis and discussion", "6.5.1 Comparison of optimization results under different recharging levels", "6.5.2 Comparison of optimization results under different resource sharing models", "6.5.3 Comparison of different collaboration modes", "6.6 Management insights"],
+        "location": "§6 PDF pp.20-31；算法有效性另在§5.3 pp.18-20",
+        "algorithm_effectiveness_section_count": 1,
+        "algorithm_effectiveness_sections": ["5.3（算法章末）"],
+        "single_factor_section_count": 4,
+        "single_factor_sections": ["6.2", "6.5.1", "6.5.2", "6.5.3"],
+        "final_solution_detail": true,
+        "final_solution_location": "§6.4表15与图14，PDF pp.22-30",
+        "concentrated_discussion": true,
+        "discussion_location": "§6.5 PDF pp.24-28",
+        "mechanism_count": 6,
+        "mechanisms": ["partial recharging", "nonlinear load-dependent energy", "CS selection/insertion", "vehicle sharing", "charging-resource sharing", "mixed open-closed routes"],
+        "mechanism_location": "§3-4 PDF pp.5-12"
+      },
+      "conclusion": {
+        "paragraph_count": 3,
+        "location": "§7 PDF pp.31-34",
+        "management_insights": true,
+        "categories": ["企业", "政府", "其他：多主体/智能技术"],
+        "quote": "Governments can promote collaboration by planning shared charging infrastructure to improve utilization",
+        "quote_location": "§6.6 PDF p.31（管理启示单独成节；§7本身无管理条目）"
+      }
+    }
+  ]
+}

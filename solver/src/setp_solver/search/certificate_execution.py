@@ -437,7 +437,11 @@ def _validate_charging_ledger(
     by_vehicle: dict[str, list[ScheduledTrip]] = {}
     for trip in certificate.trips:
         by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
-    initial_battery = _price(prices, "initial_ev_battery_kwh")
+    initial_battery = (
+        _price(prices, "initial_ev_battery_kwh")
+        if certificate.initial_battery_kwh is None
+        else float(certificate.initial_battery_kwh)
+    )
     for chain in by_vehicle.values():
         ordered = sorted(chain, key=lambda item: item.trip_index)
         for index, trip in enumerate(ordered):

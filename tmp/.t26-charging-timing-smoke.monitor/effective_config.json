@@ -1,0 +1,99 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/unit_states"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_monitor.json",
+  "csv_rules": [
+    {
+      "duplicate_key_fields": [
+        "task_id"
+      ],
+      "feasible_field": "terminal_status",
+      "max_duplicate_fraction": 0,
+      "max_violation_total": 0,
+      "min_feasible_rate": 1,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 7200,
+      "required_fields": [
+        "task_id",
+        "terminal_status",
+        "hgs_iterations_total",
+        "stop_trigger_reason",
+        "violation_count"
+      ],
+      "truthy": [
+        "SMOKE_PASS_ZERO_VIOLATIONS"
+      ],
+      "violation_field": "violation_count"
+    }
+  ],
+  "forbidden_command_substrings": [
+    "--mode full",
+    "--workers 6"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 12000,
+  "max_runtime_seconds": 10800,
+  "milestones": [],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "t26-charging-timing-smoke",
+  "objective": "Run the one-instance one-arm one-seed T26 smoke with uncapped HGS and a 600-second no-improvement stop",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/run_progress.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv"
+  ],
+  "protected_files": [
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py"
+    }
+  ],
+  "required_command_substrings": [
+    "run_t21_charging_timing_three_arms_20260805.py",
+    "--mode",
+    "smoke",
+    "--workers",
+    "1"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/smoke_checks.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 5400,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

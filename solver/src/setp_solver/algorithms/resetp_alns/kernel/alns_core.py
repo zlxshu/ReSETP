@@ -21,6 +21,7 @@ import numpy as np
 
 from setp_solver.check import check_solution
 from setp_solver.instance_loader import Instance
+from setp_solver.model_config import strict_multitrip_enabled
 from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.solution import Route, Solution
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
@@ -125,6 +126,7 @@ class AlnsRunResult:
     repair_delta_count: int = 0
     operator_counts: dict[str, Any] = field(default_factory=dict)
     history: list[dict[str, Any]] = field(default_factory=list)
+    model_config: dict[str, Any] = field(default_factory=dict)
 
 
 def run_alns_wouda(
@@ -516,7 +518,7 @@ def _adaptive_remove_count(
 
 
 def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any]:
-    if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+    if strict_multitrip_enabled():
         from setp_solver.search.e3_multitrip_runtime import hard_violations
 
         with timed_section(context, "hard_check"):
@@ -536,7 +538,7 @@ def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any
             fairness_context=fairness_context_for_solution(solution, context),
             fairness_enabled=context.fairness_enabled,
         )
-        if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+        if strict_multitrip_enabled():
             from setp_solver.search.multitrip_schedule import strict_multitrip_violations
 
             strict_violations = strict_multitrip_violations(solution.routes, context.instance, context.prices)

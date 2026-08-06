@@ -1,0 +1,3201 @@
+{
+  "unit_id": "level_050__seed_07",
+  "instance_id": "cn-cy-100c-01-V2-LOCATIONS",
+  "fleet_level_percent": 50,
+  "seed": 7,
+  "available_by_depot": {
+    "D_chengdu": {
+      "num_cv": 3,
+      "num_ev": 4,
+      "total_fleet_cap": 7
+    },
+    "D_chongqing": {
+      "num_cv": 5,
+      "num_ev": 4,
+      "total_fleet_cap": 9
+    }
+  },
+  "arms": {
+    "COST_ONLY": {
+      "arm": "COST_ONLY",
+      "objective": 4178.230353186307,
+      "breakdown": {
+        "total_cost": 4178.230353186307,
+        "cost_fix": 2040.0,
+        "cost_km": 1253.5027891151587,
+        "cost_fuel": 668.5971337681067,
+        "cost_elec": 216.130430303042,
+        "cost_occ": 0.0,
+        "cost_time": 0.0,
+        "cost_transship": 0.0,
+        "cost_carbon": 0.0,
+        "E_total": 305.2507174786151,
+        "E_cv_direct": 241.3242095691444,
+        "E_ev_indirect": 63.9265079094707,
+        "n_veh_cv": 5.0,
+        "n_veh_ev": 7.0,
+        "distance_total": 1758910.545079953,
+        "distance_cv": 682115.671923548,
+        "distance_ev": 1076794.873156405,
+        "fuel_liters": 89.22054611484329,
+        "electricity_kwh": 335.3728421982436,
+        "route_time_hours": 27.32886111111111,
+        "depot_charging_kwh": 335.3728421982436,
+        "station_charging_kwh": 0.0,
+        "carbon_quota_kg": 0.0,
+        "ev_drive_kwh": 335.3728421982436
+      },
+      "solution": {
+        "routes": [
+          {
+            "vehicle_id": "EV_D_chengdu_3#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C040",
+              "C022",
+              "C024",
+              "C020",
+              "C028",
+              "C034",
+              "C027",
+              "C026",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chengdu_1#T2",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C032",
+              "C002",
+              "C010",
+              "C025",
+              "C014",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C001",
+              "C018",
+              "C042",
+              "C011",
+              "C007",
+              "C016",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C013",
+              "C039",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chengdu_1#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C030",
+              "C023",
+              "C003",
+              "C038",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chengdu_2#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C029",
+              "C006",
+              "C041",
+              "C033",
+              "C031",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C037",
+              "C017",
+              "C021",
+              "C019",
+              "C004",
+              "C035",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C015",
+              "C005",
+              "C012",
+              "C009",
+              "C008",
+              "C036",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_2#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C044",
+              "C085",
+              "C093",
+              "C055",
+              "C075",
+              "C081",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_3#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C076",
+              "C074",
+              "C045",
+              "C082",
+              "C083",
+              "C089",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_3#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C065",
+              "C087",
+              "C062",
+              "C092",
+              "C088",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_4#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C053",
+              "C077",
+              "C069",
+              "C054",
+              "C079",
+              "C098",
+              "C056",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_1#T2",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C070",
+              "C046",
+              "C043",
+              "C073",
+              "C086",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C084",
+              "C052",
+              "C059",
+              "C096",
+              "C063",
+              "C050",
+              "C066",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_2#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C057",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_1#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C061",
+              "C048",
+              "C080",
+              "C067",
+              "C064",
+              "C099",
+              "C095",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C047",
+              "C091",
+              "C078",
+              "C068",
+              "C094",
+              "C071",
+              "C049",
+              "C060",
+              "C100",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_2#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C051",
+              "C072",
+              "C090",
+              "C058",
+              "C097",
+              "D_chongqing"
+            ]
+          }
+        ],
+        "charging_actions": [
+          {
+            "vehicle_id": "EV_D_chengdu_3#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 24.32017295216999,
+            "occupancy_minutes": 66.32774441500906,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 24.32017295216999,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 24.53432905466891,
+            "occupancy_minutes": 66.91180651273338,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 24.53432905466891,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_2#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 47.2921541190862,
+            "occupancy_minutes": 128.97860214296236,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 47.2921541190862,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 39.668474536369985,
+            "occupancy_minutes": 108.18674873555452,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 39.668474536369985,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_3#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 40.29296664511171,
+            "occupancy_minutes": 109.88990903212286,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 40.29296664511171,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_4#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 36.85284090414532,
+            "occupancy_minutes": 100.50774792039631,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 36.85284090414532,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T2",
+            "station_id": "D_chongqing",
+            "energy_kwh": 37.74006614561763,
+            "occupancy_minutes": 102.92745312441174,
+            "charge_start_second": 47824.3528125353,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 37.74006614561763,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 20.551893492289917,
+            "occupancy_minutes": 56.050618615336134,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 20.551893492289917,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T2",
+            "station_id": "D_chengdu",
+            "energy_kwh": 22.321811960457286,
+            "occupancy_minutes": 60.87766898306533,
+            "charge_start_second": 36000.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 22.321811960457286,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_2#T2",
+            "station_id": "D_chongqing",
+            "energy_kwh": 24.596122550413256,
+            "occupancy_minutes": 67.08033422839978,
+            "charge_start_second": 49975.17994629601,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 24.596122550413256,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T2",
+            "station_id": "D_chengdu",
+            "energy_kwh": 17.202009837913366,
+            "occupancy_minutes": 46.91457228521827,
+            "charge_start_second": 36000.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 17.202009837913366,
+            "charging_curve_id": "NL90_mild"
+          }
+        ],
+        "cross_site_services": []
+      },
+      "solution_sha256": "1baa88313f6bf82366e1666711c3f97fb514c3682515d614418b368f85f64d0f",
+      "completion_activity": {
+        "schema_version": "resetp.china81-shared-completion.v1",
+        "baseline_all_cv_cost": 5127.963087283631,
+        "finite_fleet_reference_cost": 4703.285198085731,
+        "final_cost": 4178.230353186307,
+        "strict_improvement": true,
+        "improvement": 525.0548448994241,
+        "route_count": 18,
+        "ev_route_count": 11,
+        "charging_action_count": 11,
+        "cross_site_service_count": 0,
+        "mechanism_experts_queried": [
+          "vehicle_type_and_nonlinear_charging",
+          "time_varying_electricity_and_carbon",
+          "multi_depot_responsibility_accounting"
+        ],
+        "variant_count": 54,
+        "charge_amount_strategies": [
+          "just_enough"
+        ],
+        "charge_amount_strategy_generation": {
+          "just_enough": {
+            "generated": 54,
+            "failed": 0
+          }
+        },
+        "charge_amount_strategy_acceptance": {
+          "just_enough": 11
+        },
+        "variant_attempts": 39,
+        "variant_generation_failures": [],
+        "mandatory_fleet_assignment_count": 4,
+        "mandatory_fleet_assignments": [
+          {
+            "depot_id": "D_chengdu",
+            "route_index": 0,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 5127.963087283631,
+            "after_cost": 5046.029389152069,
+            "cost_change": -81.93369813156187,
+            "charging_action_count": 1,
+            "physical_fleet_overage_before": [
+              2,
+              0,
+              0
+            ],
+            "physical_fleet_overage_after": [
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "depot_id": "D_chengdu",
+            "route_index": 7,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 5046.029389152069,
+            "after_cost": 4966.777804028263,
+            "cost_change": -79.25158512380585,
+            "charging_action_count": 1,
+            "physical_fleet_overage_before": [
+              1,
+              0,
+              0
+            ],
+            "physical_fleet_overage_after": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "depot_id": "D_chongqing",
+            "route_index": 8,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4966.777804028263,
+            "after_cost": 4827.182163913621,
+            "cost_change": -139.59564011464226,
+            "charging_action_count": 1,
+            "physical_fleet_overage_before": [
+              2,
+              0,
+              0
+            ],
+            "physical_fleet_overage_after": [
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "depot_id": "D_chongqing",
+            "route_index": 16,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4827.182163913621,
+            "after_cost": 4703.285198085731,
+            "cost_change": -123.89696582788929,
+            "charging_action_count": 1,
+            "physical_fleet_overage_before": [
+              1,
+              0,
+              0
+            ],
+            "physical_fleet_overage_after": [
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "rejected_infeasible": 19,
+        "rejected_non_improving": 9,
+        "accepted_variants": [
+          {
+            "route_index": 9,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4703.285198085731,
+            "after_cost": 4588.120085729924,
+            "improvement": 115.16511235580765,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 11,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4588.120085729924,
+            "after_cost": 4473.942892302072,
+            "improvement": 114.17719342785131,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 13,
+            "label": "ev_integrated",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4473.942892302072,
+            "after_cost": 4391.508932142012,
+            "improvement": 82.43396016006045,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 6,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4391.508932142012,
+            "after_cost": 4323.934113295441,
+            "improvement": 67.57481884657045,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 2,
+            "label": "ev_integrated",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4323.934113295441,
+            "after_cost": 4268.255878056491,
+            "improvement": 55.67823523895004,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 14,
+            "label": "ev_integrated",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4268.255878056491,
+            "after_cost": 4218.383605509239,
+            "improvement": 49.87227254725258,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 3,
+            "label": "ev_integrated",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4218.383605509239,
+            "after_cost": 4178.230353186307,
+            "improvement": 40.15325232293162,
+            "charging_action_count": 1
+          }
+        ],
+        "baseline_breakdown": {
+          "total_cost": 5127.963087283631,
+          "cost_fix": 2040.0,
+          "cost_km": 1371.9502251623635,
+          "cost_fuel": 1716.012862121267,
+          "cost_elec": 0,
+          "cost_occ": 0.0,
+          "cost_time": 0.0,
+          "cost_transship": 0.0,
+          "cost_carbon": 0.0,
+          "E_total": 619.409944928491,
+          "E_cv_direct": 619.409944928491,
+          "E_ev_indirect": 0.0,
+          "n_veh_cv": 12,
+          "n_veh_ev": 0,
+          "distance_total": 1758910.545079953,
+          "distance_cv": 1758910.545079953,
+          "distance_ev": 0,
+          "fuel_liters": 229.003520426535,
+          "electricity_kwh": 0,
+          "route_time_hours": 27.32886111111111,
+          "depot_charging_kwh": 0,
+          "station_charging_kwh": 0,
+          "carbon_quota_kg": 0.0,
+          "ev_drive_kwh": 0
+        },
+        "final_breakdown": {
+          "total_cost": 4178.230353186307,
+          "cost_fix": 2040.0,
+          "cost_km": 1253.5027891151587,
+          "cost_fuel": 668.5971337681067,
+          "cost_elec": 216.130430303042,
+          "cost_occ": 0.0,
+          "cost_time": 0.0,
+          "cost_transship": 0.0,
+          "cost_carbon": 0.0,
+          "E_total": 305.2507174786151,
+          "E_cv_direct": 241.3242095691444,
+          "E_ev_indirect": 63.9265079094707,
+          "n_veh_cv": 5,
+          "n_veh_ev": 7,
+          "distance_total": 1758910.545079953,
+          "distance_cv": 682115.671923548,
+          "distance_ev": 1076794.873156405,
+          "fuel_liters": 89.22054611484329,
+          "electricity_kwh": 335.3728421982436,
+          "route_time_hours": 27.32886111111111,
+          "depot_charging_kwh": 335.3728421982436,
+          "station_charging_kwh": 0,
+          "carbon_quota_kg": 0.0,
+          "ev_drive_kwh": 335.3728421982436
+        }
+      },
+      "search_stats": {
+        "algorithm": "MV-HGS-SP",
+        "algorithm_name_en": "Multi-View Hybrid Genetic Search with Time-Limited MIP Route-Pool Recombination",
+        "algorithm_name_zh": "多视角混合遗传搜索—限时MIP路线池重组算法",
+        "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an audited time-limited MIP layer recombines routes across views",
+        "seed": 7,
+        "hgs_seconds_per_view": null,
+        "max_hgs_iterations_per_view": {
+          "cv_only": 25000,
+          "naive_ev": 25000,
+          "mechanism_ev": 25000
+        },
+        "max_no_improvement_iterations_per_view": {
+          "cv_only": null,
+          "naive_ev": null,
+          "mechanism_ev": null
+        },
+        "wallclock_safety_seconds_per_view": 86400.0,
+        "wallclock_safety_triggered": false,
+        "primary_budget_unit": "complete_candidate_evaluation_attempt",
+        "complete_candidate_evaluation_attempts": 80,
+        "complete_candidate_budget_expected": 80,
+        "complete_candidate_budget_exactly_consumed": true,
+        "complete_candidate_evaluation_trace": [
+          {
+            "evaluation_index": 1,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 2,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 3,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 4,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 5,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 6,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 7,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 8,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 9,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 10,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 11,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 12,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 13,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 14,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 15,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 16,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 17,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 18,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 19,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 20,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 21,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 22,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 23,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 24,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 25,
+            "view": "cv_only",
+            "source": "common_initial_solution",
+            "iteration": null,
+            "complete_objective": 4178.230353186307,
+            "status": "PASS"
+          },
+          {
+            "evaluation_index": 26,
+            "view": "cv_only",
+            "source": "proxy_best_solution",
+            "iteration": 25000,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 27,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 28,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 29,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 30,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 31,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 32,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 33,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 34,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 35,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 36,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 37,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 38,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 39,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 40,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 41,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 42,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 43,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 44,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 45,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 46,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 47,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 48,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 49,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 50,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 51,
+            "view": "naive_ev",
+            "source": "common_initial_solution",
+            "iteration": null,
+            "complete_objective": 4178.230353186307,
+            "status": "PASS"
+          },
+          {
+            "evaluation_index": 52,
+            "view": "naive_ev",
+            "source": "proxy_best_solution",
+            "iteration": 25000,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 53,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 54,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 55,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 56,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 57,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 58,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 59,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 60,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 61,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 62,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 63,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 64,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 65,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 66,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 67,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 68,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 69,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 70,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 71,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 72,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 73,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 74,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 75,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 76,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 77,
+            "view": "mechanism_ev",
+            "source": "common_initial_solution",
+            "iteration": null,
+            "complete_objective": 4178.230353186307,
+            "status": "PASS"
+          },
+          {
+            "evaluation_index": 78,
+            "view": "mechanism_ev",
+            "source": "proxy_best_solution",
+            "iteration": 25000,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 79,
+            "view": "route_pool",
+            "source": "route_pool_candidate_or_parent",
+            "iteration": null,
+            "complete_objective": 4178.230353186307,
+            "status": "PASS"
+          },
+          {
+            "evaluation_index": 80,
+            "view": "route_pool",
+            "source": "final_independent_certificate",
+            "iteration": null,
+            "complete_objective": 4178.230353186307,
+            "status": "PASS"
+          }
+        ],
+        "last_strict_improvement_evaluation": 25,
+        "last_strict_improvement_fraction": 0.3125,
+        "view_count": 3,
+        "exact_elites_per_view": 8,
+        "archive_candidates_per_view": {
+          "cv_only": 24,
+          "naive_ev": 24,
+          "mechanism_ev": 24
+        },
+        "exact_checkpoint_interval_iterations": {
+          "cv_only": null,
+          "naive_ev": null,
+          "mechanism_ev": null
+        },
+        "exact_checkpoint_attempts_by_view": {
+          "cv_only": 0,
+          "naive_ev": 0,
+          "mechanism_ev": 0
+        },
+        "preserve_base_pool_recombination": false,
+        "base_route_pool_mip": null,
+        "parent_solution_count": 3,
+        "route_pool_candidate_solution_count": 3,
+        "route_pool_size": 18,
+        "best_parent_objective": 4178.230353186307,
+        "selected_source": "best_exact_hgs_parent",
+        "final_objective": 4178.230353186307,
+        "strict_recombination_improvement": false,
+        "improvement_over_best_parent": 0.0,
+        "route_pool_mip": {
+          "solver": "scipy.optimize.milp/HiGHS",
+          "component": "time-limited MIP route-pool recombination",
+          "formulation": "customer exact cover surrogate",
+          "fleet_semantics": "route-count caps omitted because strict multi-trip assigns physical vehicles only in the shared complete evaluator",
+          "objective_semantics": "sum of route proxy costs; final authority is the shared complete evaluator",
+          "success": true,
+          "status": 0,
+          "status_class": "OPTIMAL",
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+          "incumbent_available": true,
+          "objective": 5198.230353186307,
+          "dual_bound": 5198.230353186307,
+          "mip_gap": 0.0,
+          "mip_node_count": 0,
+          "time_limit_seconds": 5.0,
+          "optimality_proven": true,
+          "incumbent_vector_integral": true,
+          "incumbent_cover_exact": true,
+          "selected_route_count": 18,
+          "independent_violation_count": 0,
+          "independent_complete_candidate_evaluation_attempts": 1,
+          "independent_exact_objective": 4178.230353186307,
+          "objective_closes_under_complete_model": false,
+          "objective_is_search_surrogate": true,
+          "recombined_exact_objective": 4178.230353186307
+        },
+        "set_partitioning": {
+          "solver": "scipy.optimize.milp/HiGHS",
+          "component": "time-limited MIP route-pool recombination",
+          "formulation": "customer exact cover surrogate",
+          "fleet_semantics": "route-count caps omitted because strict multi-trip assigns physical vehicles only in the shared complete evaluator",
+          "objective_semantics": "sum of route proxy costs; final authority is the shared complete evaluator",
+          "success": true,
+          "status": 0,
+          "status_class": "OPTIMAL",
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+          "incumbent_available": true,
+          "objective": 5198.230353186307,
+          "dual_bound": 5198.230353186307,
+          "mip_gap": 0.0,
+          "mip_node_count": 0,
+          "time_limit_seconds": 5.0,
+          "optimality_proven": true,
+          "incumbent_vector_integral": true,
+          "incumbent_cover_exact": true,
+          "selected_route_count": 18,
+          "independent_violation_count": 0,
+          "independent_complete_candidate_evaluation_attempts": 1,
+          "independent_exact_objective": 4178.230353186307,
+          "objective_closes_under_complete_model": false,
+          "objective_is_search_surrogate": true,
+          "recombined_exact_objective": 4178.230353186307,
+          "legacy_key_name_only": true
+        },
+        "hard_home_depot_lock": false,
+        "measured_elapsed_seconds": 330.5002996670082
+      },
+      "hgs_iterations_by_view": {
+        "cv_only": 25000,
+        "naive_ev": 25000,
+        "mechanism_ev": 25000
+      },
+      "stop_reasons_by_view": {
+        "cv_only": "MAX_ITERATIONS",
+        "naive_ev": "MAX_ITERATIONS",
+        "mechanism_ev": "MAX_ITERATIONS"
+      },
+      "elapsed_seconds": 330.50832249992527,
+      "used_cv": 5,
+      "used_ev": 7,
+      "used_total": 12,
+      "route_count": 18,
+      "unserved_customer_count": 0,
+      "duplicate_service_count": 0
+    },
+    "COST_PLUS_CARBON": {
+      "arm": "COST_PLUS_CARBON",
+      "objective": 4201.130262011553,
+      "breakdown": {
+        "total_cost": 4201.130262011553,
+        "cost_fix": 2040.0,
+        "cost_km": 1253.5027891151587,
+        "cost_fuel": 668.5971337681067,
+        "cost_elec": 216.130430303042,
+        "cost_occ": 0.0,
+        "cost_time": 0.0,
+        "cost_transship": 0.0,
+        "cost_carbon": 22.899908825245706,
+        "E_total": 305.2507174786151,
+        "E_cv_direct": 241.3242095691444,
+        "E_ev_indirect": 63.9265079094707,
+        "n_veh_cv": 5.0,
+        "n_veh_ev": 7.0,
+        "distance_total": 1758910.545079953,
+        "distance_cv": 682115.671923548,
+        "distance_ev": 1076794.873156405,
+        "fuel_liters": 89.22054611484329,
+        "electricity_kwh": 335.3728421982436,
+        "route_time_hours": 27.32886111111111,
+        "depot_charging_kwh": 335.3728421982436,
+        "station_charging_kwh": 0.0,
+        "carbon_quota_kg": 0.0,
+        "ev_drive_kwh": 335.3728421982436
+      },
+      "solution": {
+        "routes": [
+          {
+            "vehicle_id": "EV_D_chengdu_3#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C040",
+              "C022",
+              "C024",
+              "C020",
+              "C028",
+              "C034",
+              "C027",
+              "C026",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chengdu_1#T2",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C032",
+              "C002",
+              "C010",
+              "C025",
+              "C014",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C001",
+              "C018",
+              "C042",
+              "C011",
+              "C007",
+              "C016",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C013",
+              "C039",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chengdu_1#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C030",
+              "C023",
+              "C003",
+              "C038",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chengdu_2#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C029",
+              "C006",
+              "C041",
+              "C033",
+              "C031",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C037",
+              "C017",
+              "C021",
+              "C019",
+              "C004",
+              "C035",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C015",
+              "C005",
+              "C012",
+              "C009",
+              "C008",
+              "C036",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_2#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C044",
+              "C085",
+              "C093",
+              "C055",
+              "C075",
+              "C081",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_3#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C076",
+              "C074",
+              "C045",
+              "C082",
+              "C083",
+              "C089",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_3#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C065",
+              "C087",
+              "C062",
+              "C092",
+              "C088",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_4#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C053",
+              "C077",
+              "C069",
+              "C054",
+              "C079",
+              "C098",
+              "C056",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_1#T2",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C070",
+              "C046",
+              "C043",
+              "C073",
+              "C086",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C084",
+              "C052",
+              "C059",
+              "C096",
+              "C063",
+              "C050",
+              "C066",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_2#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C057",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_1#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C061",
+              "C048",
+              "C080",
+              "C067",
+              "C064",
+              "C099",
+              "C095",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C047",
+              "C091",
+              "C078",
+              "C068",
+              "C094",
+              "C071",
+              "C049",
+              "C060",
+              "C100",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_2#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C051",
+              "C072",
+              "C090",
+              "C058",
+              "C097",
+              "D_chongqing"
+            ]
+          }
+        ],
+        "charging_actions": [
+          {
+            "vehicle_id": "EV_D_chengdu_3#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 24.32017295216999,
+            "occupancy_minutes": 66.32774441500906,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 24.32017295216999,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 24.53432905466891,
+            "occupancy_minutes": 66.91180651273338,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 24.53432905466891,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_2#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 47.2921541190862,
+            "occupancy_minutes": 128.97860214296236,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 47.2921541190862,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 39.668474536369985,
+            "occupancy_minutes": 108.18674873555452,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 39.668474536369985,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_3#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 40.29296664511171,
+            "occupancy_minutes": 109.88990903212286,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 40.29296664511171,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_4#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 36.85284090414532,
+            "occupancy_minutes": 100.50774792039631,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 36.85284090414532,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T2",
+            "station_id": "D_chongqing",
+            "energy_kwh": 37.74006614561763,
+            "occupancy_minutes": 102.92745312441174,
+            "charge_start_second": 47824.3528125353,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 37.74006614561763,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 20.551893492289917,
+            "occupancy_minutes": 56.050618615336134,
+            "charge_start_second": 0.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 20.551893492289917,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T2",
+            "station_id": "D_chengdu",
+            "energy_kwh": 22.321811960457286,
+            "occupancy_minutes": 60.87766898306533,
+            "charge_start_second": 36000.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 22.321811960457286,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_2#T2",
+            "station_id": "D_chongqing",
+            "energy_kwh": 24.596122550413256,
+            "occupancy_minutes": 67.08033422839978,
+            "charge_start_second": 49975.17994629601,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 24.596122550413256,
+            "charging_curve_id": "NL90_mild"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T2",
+            "station_id": "D_chengdu",
+            "energy_kwh": 17.202009837913366,
+            "occupancy_minutes": 46.91457228521827,
+            "charge_start_second": 36000.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 17.202009837913366,
+            "charging_curve_id": "NL90_mild"
+          }
+        ],
+        "cross_site_services": []
+      },
+      "solution_sha256": "1baa88313f6bf82366e1666711c3f97fb514c3682515d614418b368f85f64d0f",
+      "completion_activity": {
+        "schema_version": "resetp.china81-shared-completion.v1",
+        "baseline_all_cv_cost": 5174.431221352166,
+        "finite_fleet_reference_cost": 4740.303641771699,
+        "final_cost": 4201.130262011553,
+        "strict_improvement": true,
+        "improvement": 539.1733797601464,
+        "route_count": 18,
+        "ev_route_count": 11,
+        "charging_action_count": 11,
+        "cross_site_service_count": 0,
+        "mechanism_experts_queried": [
+          "vehicle_type_and_nonlinear_charging",
+          "time_varying_electricity_and_carbon",
+          "multi_depot_responsibility_accounting"
+        ],
+        "variant_count": 54,
+        "charge_amount_strategies": [
+          "just_enough"
+        ],
+        "charge_amount_strategy_generation": {
+          "just_enough": {
+            "generated": 54,
+            "failed": 0
+          }
+        },
+        "charge_amount_strategy_acceptance": {
+          "just_enough": 11
+        },
+        "variant_attempts": 39,
+        "variant_generation_failures": [],
+        "mandatory_fleet_assignment_count": 4,
+        "mandatory_fleet_assignments": [
+          {
+            "depot_id": "D_chengdu",
+            "route_index": 0,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 5174.431221352166,
+            "after_cost": 5090.339633498283,
+            "cost_change": -84.09158785388354,
+            "charging_action_count": 1,
+            "physical_fleet_overage_before": [
+              2,
+              0,
+              0
+            ],
+            "physical_fleet_overage_after": [
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "depot_id": "D_chengdu",
+            "route_index": 7,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 5090.339633498283,
+            "after_cost": 5008.995130008335,
+            "cost_change": -81.34450348994778,
+            "charging_action_count": 1,
+            "physical_fleet_overage_before": [
+              1,
+              0,
+              0
+            ],
+            "physical_fleet_overage_after": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "depot_id": "D_chongqing",
+            "route_index": 8,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 5008.995130008335,
+            "after_cost": 4866.658427619944,
+            "cost_change": -142.33670238839113,
+            "charging_action_count": 1,
+            "physical_fleet_overage_before": [
+              2,
+              0,
+              0
+            ],
+            "physical_fleet_overage_after": [
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "depot_id": "D_chongqing",
+            "route_index": 16,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4866.658427619944,
+            "after_cost": 4740.303641771699,
+            "cost_change": -126.35478584824432,
+            "charging_action_count": 1,
+            "physical_fleet_overage_before": [
+              1,
+              0,
+              0
+            ],
+            "physical_fleet_overage_after": [
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "rejected_infeasible": 19,
+        "rejected_non_improving": 9,
+        "accepted_variants": [
+          {
+            "route_index": 9,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4740.303641771699,
+            "after_cost": 4622.889258903194,
+            "improvement": 117.41438286850553,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 11,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4622.889258903194,
+            "after_cost": 4506.447672401046,
+            "improvement": 116.44158650214831,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 13,
+            "label": "ev_integrated",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4506.447672401046,
+            "after_cost": 4421.322829355619,
+            "improvement": 85.12484304542613,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 6,
+            "label": "ev_immediate",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4421.322829355619,
+            "after_cost": 4351.969797228776,
+            "improvement": 69.35303212684357,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 2,
+            "label": "ev_integrated",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4351.969797228776,
+            "after_cost": 4294.284486774111,
+            "improvement": 57.68531045466443,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 14,
+            "label": "ev_integrated",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4294.284486774111,
+            "after_cost": 4242.757507799484,
+            "improvement": 51.52697897462713,
+            "charging_action_count": 1
+          },
+          {
+            "route_index": 3,
+            "label": "ev_integrated",
+            "charge_amount_strategy": "just_enough",
+            "before_cost": 4242.757507799484,
+            "after_cost": 4201.130262011553,
+            "improvement": 41.627245787931315,
+            "charging_action_count": 1
+          }
+        ],
+        "baseline_breakdown": {
+          "total_cost": 5174.431221352166,
+          "cost_fix": 2040.0,
+          "cost_km": 1371.9502251623635,
+          "cost_fuel": 1716.012862121267,
+          "cost_elec": 0,
+          "cost_occ": 0.0,
+          "cost_time": 0.0,
+          "cost_transship": 0.0,
+          "cost_carbon": 46.46813406853539,
+          "E_total": 619.409944928491,
+          "E_cv_direct": 619.409944928491,
+          "E_ev_indirect": 0.0,
+          "n_veh_cv": 12,
+          "n_veh_ev": 0,
+          "distance_total": 1758910.545079953,
+          "distance_cv": 1758910.545079953,
+          "distance_ev": 0,
+          "fuel_liters": 229.003520426535,
+          "electricity_kwh": 0,
+          "route_time_hours": 27.32886111111111,
+          "depot_charging_kwh": 0,
+          "station_charging_kwh": 0,
+          "carbon_quota_kg": 0.0,
+          "ev_drive_kwh": 0
+        },
+        "final_breakdown": {
+          "total_cost": 4201.130262011553,
+          "cost_fix": 2040.0,
+          "cost_km": 1253.5027891151587,
+          "cost_fuel": 668.5971337681067,
+          "cost_elec": 216.130430303042,
+          "cost_occ": 0.0,
+          "cost_time": 0.0,
+          "cost_transship": 0.0,
+          "cost_carbon": 22.899908825245706,
+          "E_total": 305.2507174786151,
+          "E_cv_direct": 241.3242095691444,
+          "E_ev_indirect": 63.9265079094707,
+          "n_veh_cv": 5,
+          "n_veh_ev": 7,
+          "distance_total": 1758910.545079953,
+          "distance_cv": 682115.671923548,
+          "distance_ev": 1076794.873156405,
+          "fuel_liters": 89.22054611484329,
+          "electricity_kwh": 335.3728421982436,
+          "route_time_hours": 27.32886111111111,
+          "depot_charging_kwh": 335.3728421982436,
+          "station_charging_kwh": 0,
+          "carbon_quota_kg": 0.0,
+          "ev_drive_kwh": 335.3728421982436
+        }
+      },
+      "search_stats": {
+        "algorithm": "MV-HGS-SP",
+        "algorithm_name_en": "Multi-View Hybrid Genetic Search with Time-Limited MIP Route-Pool Recombination",
+        "algorithm_name_zh": "多视角混合遗传搜索—限时MIP路线池重组算法",
+        "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an audited time-limited MIP layer recombines routes across views",
+        "seed": 7,
+        "hgs_seconds_per_view": null,
+        "max_hgs_iterations_per_view": {
+          "cv_only": 25000,
+          "naive_ev": 25000,
+          "mechanism_ev": 25000
+        },
+        "max_no_improvement_iterations_per_view": {
+          "cv_only": null,
+          "naive_ev": null,
+          "mechanism_ev": null
+        },
+        "wallclock_safety_seconds_per_view": 86400.0,
+        "wallclock_safety_triggered": false,
+        "primary_budget_unit": "complete_candidate_evaluation_attempt",
+        "complete_candidate_evaluation_attempts": 80,
+        "complete_candidate_budget_expected": 80,
+        "complete_candidate_budget_exactly_consumed": true,
+        "complete_candidate_evaluation_trace": [
+          {
+            "evaluation_index": 1,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 2,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 3,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 4,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 5,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 6,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 7,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 8,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 9,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 10,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 11,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 12,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 13,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 14,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 15,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 16,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 17,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 18,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 19,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 20,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 21,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 22,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 23,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 24,
+            "view": "cv_only",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 25,
+            "view": "cv_only",
+            "source": "common_initial_solution",
+            "iteration": null,
+            "complete_objective": 4201.130262011553,
+            "status": "PASS"
+          },
+          {
+            "evaluation_index": 26,
+            "view": "cv_only",
+            "source": "proxy_best_solution",
+            "iteration": 25000,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 27,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 28,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 29,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 30,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 31,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 32,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 33,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 34,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 35,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 36,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 37,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 38,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 39,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 40,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 41,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 42,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 43,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 44,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 45,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 46,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 47,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 48,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 49,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 50,
+            "view": "naive_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 51,
+            "view": "naive_ev",
+            "source": "common_initial_solution",
+            "iteration": null,
+            "complete_objective": 4201.130262011553,
+            "status": "PASS"
+          },
+          {
+            "evaluation_index": 52,
+            "view": "naive_ev",
+            "source": "proxy_best_solution",
+            "iteration": 25000,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 53,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 54,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 55,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 56,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 57,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 58,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 59,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 60,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 61,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 62,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 63,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 64,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 65,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 66,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 67,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 68,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 69,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 70,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 71,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 72,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 73,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 74,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 75,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 76,
+            "view": "mechanism_ev",
+            "source": "terminal_population_archive",
+            "iteration": null,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 77,
+            "view": "mechanism_ev",
+            "source": "common_initial_solution",
+            "iteration": null,
+            "complete_objective": 4201.130262011553,
+            "status": "PASS"
+          },
+          {
+            "evaluation_index": 78,
+            "view": "mechanism_ev",
+            "source": "proxy_best_solution",
+            "iteration": 25000,
+            "complete_objective": null,
+            "status": "INFEASIBLE_OR_ERROR",
+            "exception_type": "ValueError",
+            "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_chengdu': overage=(1, 0, 1)"
+          },
+          {
+            "evaluation_index": 79,
+            "view": "route_pool",
+            "source": "route_pool_candidate_or_parent",
+            "iteration": null,
+            "complete_objective": 4201.130262011553,
+            "status": "PASS"
+          },
+          {
+            "evaluation_index": 80,
+            "view": "route_pool",
+            "source": "final_independent_certificate",
+            "iteration": null,
+            "complete_objective": 4201.130262011553,
+            "status": "PASS"
+          }
+        ],
+        "last_strict_improvement_evaluation": 25,
+        "last_strict_improvement_fraction": 0.3125,
+        "view_count": 3,
+        "exact_elites_per_view": 8,
+        "archive_candidates_per_view": {
+          "cv_only": 24,
+          "naive_ev": 24,
+          "mechanism_ev": 24
+        },
+        "exact_checkpoint_interval_iterations": {
+          "cv_only": null,
+          "naive_ev": null,
+          "mechanism_ev": null
+        },
+        "exact_checkpoint_attempts_by_view": {
+          "cv_only": 0,
+          "naive_ev": 0,
+          "mechanism_ev": 0
+        },
+        "preserve_base_pool_recombination": false,
+        "base_route_pool_mip": null,
+        "parent_solution_count": 3,
+        "route_pool_candidate_solution_count": 3,
+        "route_pool_size": 18,
+        "best_parent_objective": 4201.130262011553,
+        "selected_source": "best_exact_hgs_parent",
+        "final_objective": 4201.130262011553,
+        "strict_recombination_improvement": false,
+        "improvement_over_best_parent": 0.0,
+        "route_pool_mip": {
+          "solver": "scipy.optimize.milp/HiGHS",
+          "component": "time-limited MIP route-pool recombination",
+          "formulation": "customer exact cover surrogate",
+          "fleet_semantics": "route-count caps omitted because strict multi-trip assigns physical vehicles only in the shared complete evaluator",
+          "objective_semantics": "sum of route proxy costs; final authority is the shared complete evaluator",
+          "success": true,
+          "status": 0,
+          "status_class": "OPTIMAL",
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+          "incumbent_available": true,
+          "objective": 5221.130262011553,
+          "dual_bound": 5221.130262011553,
+          "mip_gap": 0.0,
+          "mip_node_count": 0,
+          "time_limit_seconds": 5.0,
+          "optimality_proven": true,
+          "incumbent_vector_integral": true,
+          "incumbent_cover_exact": true,
+          "selected_route_count": 18,
+          "independent_violation_count": 0,
+          "independent_complete_candidate_evaluation_attempts": 1,
+          "independent_exact_objective": 4201.130262011553,
+          "objective_closes_under_complete_model": false,
+          "objective_is_search_surrogate": true,
+          "recombined_exact_objective": 4201.130262011553
+        },
+        "set_partitioning": {
+          "solver": "scipy.optimize.milp/HiGHS",
+          "component": "time-limited MIP route-pool recombination",
+          "formulation": "customer exact cover surrogate",
+          "fleet_semantics": "route-count caps omitted because strict multi-trip assigns physical vehicles only in the shared complete evaluator",
+          "objective_semantics": "sum of route proxy costs; final authority is the shared complete evaluator",
+          "success": true,
+          "status": 0,
+          "status_class": "OPTIMAL",
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+          "incumbent_available": true,
+          "objective": 5221.130262011553,
+          "dual_bound": 5221.130262011553,
+          "mip_gap": 0.0,
+          "mip_node_count": 0,
+          "time_limit_seconds": 5.0,
+          "optimality_proven": true,
+          "incumbent_vector_integral": true,
+          "incumbent_cover_exact": true,
+          "selected_route_count": 18,
+          "independent_violation_count": 0,
+          "independent_complete_candidate_evaluation_attempts": 1,
+          "independent_exact_objective": 4201.130262011553,
+          "objective_closes_under_complete_model": false,
+          "objective_is_search_surrogate": true,
+          "recombined_exact_objective": 4201.130262011553,
+          "legacy_key_name_only": true
+        },
+        "hard_home_depot_lock": false,
+        "measured_elapsed_seconds": 326.34467883303296
+      },
+      "hgs_iterations_by_view": {
+        "cv_only": 25000,
+        "naive_ev": 25000,
+        "mechanism_ev": 25000
+      },
+      "stop_reasons_by_view": {
+        "cv_only": "MAX_ITERATIONS",
+        "naive_ev": "MAX_ITERATIONS",
+        "mechanism_ev": "MAX_ITERATIONS"
+      },
+      "elapsed_seconds": 326.3520369170001,
+      "used_cv": 5,
+      "used_ev": 7,
+      "used_total": 12,
+      "route_count": 18,
+      "unserved_customer_count": 0,
+      "duplicate_service_count": 0
+    }
+  },
+  "blind_rescored_under_aware_prices": {
+    "total_cost": 4201.130262011553,
+    "cost_fix": 2040.0,
+    "cost_km": 1253.5027891151587,
+    "cost_fuel": 668.5971337681067,
+    "cost_elec": 216.130430303042,
+    "cost_occ": 0.0,
+    "cost_time": 0.0,
+    "cost_transship": 0.0,
+    "cost_carbon": 22.899908825245706,
+    "E_total": 305.2507174786151,
+    "E_cv_direct": 241.3242095691444,
+    "E_ev_indirect": 63.9265079094707,
+    "n_veh_cv": 5.0,
+    "n_veh_ev": 7.0,
+    "distance_total": 1758910.545079953,
+    "distance_cv": 682115.671923548,
+    "distance_ev": 1076794.873156405,
+    "fuel_liters": 89.22054611484329,
+    "electricity_kwh": 335.3728421982436,
+    "route_time_hours": 27.32886111111111,
+    "depot_charging_kwh": 335.3728421982436,
+    "station_charging_kwh": 0.0,
+    "carbon_quota_kg": 0.0,
+    "ev_drive_kwh": 335.3728421982436
+  },
+  "decision_layer_changes": {
+    "charging_timing_change_count": 0,
+    "charging_action_unmatched_count": 0,
+    "vehicle_type_change_customer_count": 0,
+    "route_change_customer_count": 0,
+    "route_count_difference": 0
+  }
+}

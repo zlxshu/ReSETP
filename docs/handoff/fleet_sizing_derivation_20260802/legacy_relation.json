@@ -1,0 +1,36 @@
+{
+  "conditions_for_special_case_citation": [
+    "The legacy per-depot available CV/EV vector exactly equals a mechanically generated new level vector for that instance; equality of a rounded headline percentage is insufficient.",
+    "The same route, vehicle type, charging amount/time, demand, road, battery, charger and checker contract is retained and the saved solution passes the new cap vector.",
+    "All comparison arms use the same new fixed total and composition vector.",
+    "If only the saved solution fits but the optimized feasible set differs, cite it only as a feasible witness or legacy observation, not as an optimized result for that level."
+  ],
+  "current_special_case_assessment": "No automatic special-case mapping is established. The legacy reserve-factor vector must stay labelled legacy unless the four conditions above are checked row by row.",
+  "legacy_results": [
+    {
+      "evidence": "baselines/china_e3_e7/e4_carbon_timing_20260729/report.md:8-10,64-70; 405 solutions, charging emissions -54.97%, system emissions -9.75%, electricity cost +134.88%",
+      "relation": "retain as frozen-solution timing evidence only",
+      "result": "E4 fixed-route carbon timing"
+    },
+    {
+      "evidence": "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/decision.json:5-12; 30 pairs, typed path changed 2/30",
+      "relation": "retain as legacy-cap panel; not a new electrification level",
+      "result": "E4 joint routing/type/charging panel"
+    },
+    {
+      "evidence": "docs/handoff/memory/codex_audit_independent_verification_20260802.md:24-28; EV cap hit 1909/1920 depot-solution units",
+      "relation": "retain as legacy-cap coalition accounting; new fixed-total levels require all coalition values to be re-estimated before a level claim",
+      "result": "E6 coalition/fairness results"
+    }
+  ],
+  "overall_decision": "Existing E4/E6 results remain valid facts for their frozen legacy constructed fleet-cap scenario, but they are not automatically any level of the new fixed-total proportion design and cannot estimate the new level effects without rerunning that design.",
+  "schema": "resetp.x4-legacy-relation.v1",
+  "status": "X4_FLEET_SIZING_PARTIAL",
+  "task_id": "X4",
+  "why_not_an_automatic_level": [
+    "Legacy caps use num_cv=R_d plus additional num_ev=ceil(0.25R_d), so their total denominator exceeds the new candidate total max(R_d,R_e) in the ordinary case.",
+    "The legacy value 0.25 is a reserve factor applied to R_d, not an EV share of total fleet; rounding makes the realized cap share depot-specific.",
+    "E4 has 180/180 depot-solution EV cap hits and E6 has 1909/1920, so the changed cap changes an active feasible-set boundary rather than an idle label.",
+    "COST_PLUS_CARBON versus COST_ONLY changes route or typed path in only 2/30 paired units under the legacy cap; this is evidence of the old constrained response, not the response curve after releasing composition."
+  ]
+}

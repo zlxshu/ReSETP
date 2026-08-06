@@ -1,0 +1,261 @@
+{
+  "schema": "resetp.d6-algorithm-review-verdict.v1",
+  "task_id": "D6",
+  "status": "D6_ALGORITHM_REVIEW_COMPLETE",
+  "claim_A_verdict": {
+    "value": "PARTIALLY_SUPPORTED_PROTOCOL_ONLY",
+    "overall_conclusion": "公开算例目标值具有竞争力，但现有比较协议与部件归因不足以把竞争力归给MV-HGS-SP的三项自称创新。",
+    "branches": {
+      "per_instance_bks_gap_not_reported": {
+        "verdict": "OVERTURNED",
+        "evidence": "paper_main.tex:1111-1116,1130-1165已逐实例报告BKS、Best gap和avg gap；p1_formal_gate/decision.json.table5保留精确值。"
+      },
+      "gap_not_competitive": {
+        "verdict": "OVERTURNED",
+        "evidence": "p1_formal_gate/decision.json.avg_row_error_pct.hybrid_error_pct=0.9048706160882664，为表内最低；paper_main.tex:1116-1117给出19/28优于MDFIHA-ETGA。"
+      },
+      "comparison_protocol_insufficient": {
+        "verdict": "SUPPORTED",
+        "evidence": "paper_main.tex:1106-1108承认MV在母体后继续搜索；raw_runs.csv显示逐题平均CPU比1.450051-2.003249；metadata.json没有硬件字段；boundary_probe_20260726/d4_summary.json与report.md给出等迭代Wilcoxon p=0.2894。"
+      }
+    }
+  },
+  "public_benchmark_facts": {
+    "benchmark_family": "Vidal et al. 2013 V13 large-scale MDVRPTW",
+    "not_benchmark_families": [
+      "Solomon",
+      "Goeke",
+      "Schneider"
+    ],
+    "instances": 28,
+    "instance_range": "PR11A-PR24B",
+    "customer_range": [360, 960],
+    "runs_per_instance": 10,
+    "seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "seed_units": 280,
+    "reported_statistic": {
+      "best": "minimum final objective over 10 runs",
+      "average": "mean final BKS gap over 10 runs"
+    },
+    "gap_reference": "2013 published reference values stored as bks_2013; not a verified 2026 community BKS registry",
+    "gap_definition": "100*(MV_best-BKS)/BKS",
+    "mean_best_gap_percent": 0.9048706160882664,
+    "worst_best_gap_percent": 2.258370119889063,
+    "worst_instance": "PR16B",
+    "reached_bks_count": 1,
+    "improved_bks_count": 0,
+    "reached_or_improved_count": 1,
+    "better_than_etga_count": 19,
+    "vs_same_machine_mother_seed_units": {
+      "win": 264,
+      "tie": 16,
+      "loss": 0
+    },
+    "equal_iteration_test": {
+      "instances": 6,
+      "seeds_per_instance": 5,
+      "generations": 6200,
+      "paired_units": 30,
+      "hybrid_win": 18,
+      "hybrid_loss": 12,
+      "aggregate_hybrid_vs_mother_percent": -0.1003,
+      "aggregate_improvement_percent": 0.1003,
+      "wilcoxon_p": 0.2894,
+      "sign_test_p": 0.3616,
+      "conclusion": "NO_STATISTICALLY_DISTINGUISHABLE_DIFFERENCE"
+    },
+    "stopping_conditions_repository": {
+      "K_MOTHER": 4000,
+      "CAP_MOTHER_SECONDS": 240.0,
+      "K_EPOCH": 2000,
+      "CAP_EPOCH_SECONDS": 60.0,
+      "MAX_EPOCHS": 4,
+      "STALL_EPOCHS": 2,
+      "ELITE_COUNT": 8,
+      "POOL_CAP": 600,
+      "SP_TIME_SECONDS": 10.0
+    },
+    "cpu_seconds_280_runs": {
+      "mother_mean": 231.943327,
+      "mother_min": 77.132099,
+      "mother_max": 240.520478,
+      "hybrid_mean": 433.776769,
+      "hybrid_min": 115.820906,
+      "hybrid_max": 482.222701,
+      "per_instance_mean_ratio_min": 1.450051,
+      "per_instance_mean_ratio_max": 2.003249
+    },
+    "paper_disclosure": {
+      "already_in_paper": [
+        "benchmark identity and size",
+        "seeds 1-10",
+        "per-instance BKS",
+        "per-instance rounded best and average gaps",
+        "mean gaps",
+        "19 of 28 comparison against ETGA",
+        "264/16/0 comparison against mother",
+        "CPU ratio stated as 1.47-2.00",
+        "30-unit equal-iteration inference",
+        "18-row hot-start boundary table"
+      ],
+      "repository_only": [
+        "exact MV best objective by instance",
+        "unrounded gap by instance",
+        "280 per-run CPU seconds",
+        "all numeric stopping constants",
+        "five failed hot-start reproduction targets",
+        "strict SP attribution only for PR14B"
+      ],
+      "absent": [
+        "externally maintained current 2026 per-instance BKS registry",
+        "CPU model in the cold-start P1 package",
+        "per-instance objective and actual seconds in the paper table"
+      ]
+    },
+    "per_instance": [
+      {"instance": "PR11A", "n": 360, "bks_2013": 6655.548, "mv_best": 6672.748, "gap_percent": 0.25843101124054424, "bks_status": "MISS"},
+      {"instance": "PR11B", "n": 360, "bks_2013": 4814.803, "mv_best": 4816.902, "gap_percent": 0.0435947223593605, "bks_status": "MISS"},
+      {"instance": "PR12A", "n": 480, "bks_2013": 8148.107, "mv_best": 8194.636, "gap_percent": 0.5710406110278186, "bks_status": "MISS"},
+      {"instance": "PR12B", "n": 480, "bks_2013": 6004.834, "mv_best": 6011.056, "gap_percent": 0.1036165196240188, "bks_status": "MISS"},
+      {"instance": "PR13A", "n": 600, "bks_2013": 9501.934, "mv_best": 9580.149, "gap_percent": 0.8231482138267867, "bks_status": "MISS"},
+      {"instance": "PR13B", "n": 600, "bks_2013": 7201.765, "mv_best": 7230.335, "gap_percent": 0.39670830692197967, "bks_status": "MISS"},
+      {"instance": "PR14A", "n": 720, "bks_2013": 10925.67, "mv_best": 11055.153, "gap_percent": 1.1851264041472986, "bks_status": "MISS"},
+      {"instance": "PR14B", "n": 720, "bks_2013": 8656.335, "mv_best": 8722.913, "gap_percent": 0.7691245775492902, "bks_status": "MISS"},
+      {"instance": "PR15A", "n": 840, "bks_2013": 12714.063, "mv_best": 12897.333, "gap_percent": 1.4414746883038132, "bks_status": "MISS"},
+      {"instance": "PR15B", "n": 840, "bks_2013": 10223.105, "mv_best": 10369.112, "gap_percent": 1.4282060098179528, "bks_status": "MISS"},
+      {"instance": "PR16A", "n": 960, "bks_2013": 13992.681, "mv_best": 14299.112, "gap_percent": 2.18993772530081, "bks_status": "MISS"},
+      {"instance": "PR16B", "n": 960, "bks_2013": 11225.795, "mv_best": 11479.315, "gap_percent": 2.258370119889063, "bks_status": "MISS"},
+      {"instance": "PR17A", "n": 360, "bks_2013": 6292.594, "mv_best": 6304.696, "gap_percent": 0.19232132249434591, "bks_status": "MISS"},
+      {"instance": "PR17B", "n": 360, "bks_2013": 4771.155, "mv_best": 4771.155, "gap_percent": 0.0, "bks_status": "REACHED"},
+      {"instance": "PR18A", "n": 520, "bks_2013": 8183.231, "mv_best": 8215.182, "gap_percent": 0.3904448010816379, "bks_status": "MISS"},
+      {"instance": "PR18B", "n": 520, "bks_2013": 6443.442, "mv_best": 6462.527, "gap_percent": 0.2961926249976338, "bks_status": "MISS"},
+      {"instance": "PR19A", "n": 700, "bks_2013": 10521.112, "mv_best": 10650.927, "gap_percent": 1.2338524673057423, "bks_status": "MISS"},
+      {"instance": "PR19B", "n": 700, "bks_2013": 8061.518, "mv_best": 8131.012, "gap_percent": 0.8620460811474921, "bks_status": "MISS"},
+      {"instance": "PR20A", "n": 880, "bks_2013": 11686.369, "mv_best": 11924.648, "gap_percent": 2.0389481112567864, "bks_status": "MISS"},
+      {"instance": "PR20B", "n": 880, "bks_2013": 10013.395, "mv_best": 10141.893, "gap_percent": 1.2832610717943274, "bks_status": "MISS"},
+      {"instance": "PR21A", "n": 420, "bks_2013": 6230.046, "mv_best": 6234.394, "gap_percent": 0.0697908169538388, "bks_status": "MISS"},
+      {"instance": "PR21B", "n": 420, "bks_2013": 4822.337, "mv_best": 4822.912, "gap_percent": 0.011923679328089638, "bks_status": "MISS"},
+      {"instance": "PR22A", "n": 600, "bks_2013": 7868.943, "mv_best": 7936.795, "gap_percent": 0.8622759117711217, "bks_status": "MISS"},
+      {"instance": "PR22B", "n": 600, "bks_2013": 6403.374, "mv_best": 6417.919, "gap_percent": 0.2271458765332163, "bks_status": "MISS"},
+      {"instance": "PR23A", "n": 780, "bks_2013": 9726.158, "mv_best": 9892.624, "gap_percent": 1.711528848287272, "bks_status": "MISS"},
+      {"instance": "PR23B", "n": 780, "bks_2013": 8317.649, "mv_best": 8405.473, "gap_percent": 1.0558752839895087, "bks_status": "MISS"},
+      {"instance": "PR24A", "n": 960, "bks_2013": 11638.608, "mv_best": 11889.491, "gap_percent": 2.1556100179677826, "bks_status": "MISS"},
+      {"instance": "PR24B", "n": 960, "bks_2013": 10486.45, "mv_best": 10641.27, "gap_percent": 1.4763814255539263, "bks_status": "MISS"}
+    ]
+  },
+  "bks_gap_available": {
+    "value": true,
+    "scope": "28/28 against the stored 2013 published reference",
+    "paper_location": "docs/paper_v2/paper_main.tex:1130-1165",
+    "repository_location": "baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p1_formal_gate/decision.json.table5",
+    "current_bks_registry_available": false,
+    "reason_current_label_invalid": "paper_main.tex:1111 says current BKS, while boundary_probe_20260726/NEW_BKS_TABLE.csv names the same values bks_2013 and contains 18 lower locally certified candidates."
+  },
+  "convention_gaps": {
+    "necessary": [
+      {
+        "item": "per-instance raw MV best objective in the paper table",
+        "support": "Vidal 2013 PDF pp.20,23; Lei 2026 PDF p.39; Schneider 2014 PDF pp.13-16; Goeke 2015 PDF p.15; Zhao 2024 PDF p.10"
+      },
+      {
+        "item": "per-instance or aggregate actual computation seconds/minutes",
+        "support": "all five direct comparator papers report time; Chen et al. 2023 pp.3328-3331 also report computation time"
+      },
+      {
+        "item": "CPU model, memory, operating system and thread mode",
+        "support": "Vidal p.16; Schneider p.11; Goeke p.10; Zhao p.9; Lei p.20"
+      },
+      {
+        "item": "all numeric stopping conditions including MIP time",
+        "support": "Vidal pp.17,21,23; Schneider p.11; Goeke p.10; Zhao p.9; Lei p.20; current values exist only in P1 metadata.json.frozen_constants"
+      },
+      {
+        "item": "cross-hardware time comparability boundary or normalization",
+        "support": "Goeke 2015 PDF p.16 limits precise timing comparison to same platform; Lei 2026 PDF pp.21,36 uses PassMark conversion"
+      },
+      {
+        "item": "one-factor attribution of three views, pool, MIP and acceptance",
+        "support": "Chen et al. 2023 p.3331 Table 8; Lei 2026 Section 5; model_scope_reduction_review_20260802/gaps.json severity=必要"
+      },
+      {
+        "item": "BKS version and provenance",
+        "support": "Vidal 2013 separates prev BKS and all experiments; Lei 2026 defines BKS-linked gaps; ReSETP stores bks_2013 but calls it current"
+      }
+    ],
+    "optional": [
+      {
+        "item": "standard deviations or full distribution for all 28 instances",
+        "support": "best/average/time without dispersion is common in Vidal, Schneider, Goeke and Zhao main tables"
+      },
+      {
+        "item": "statistical test across all 28 instances",
+        "support": "Lei reports Wilcoxon, but the other direct comparator tables do not uniformly require it; ReSETP already reports a 30-pair equal-iteration test"
+      }
+    ],
+    "extra_present": [
+      "280-unit same-machine win/tie/loss",
+      "30-pair confidence interval and Wilcoxon test",
+      "independent route certificates",
+      "hot-start boundary probe",
+      "performance profile"
+    ]
+  },
+  "three_innovations": [
+    {
+      "id": "three_mechanism_views",
+      "name": "HGS-F/HGS-E/HGS-M机制视角分解",
+      "closest_work": [
+        "Zhao et al. 2024 PDF pp.9-10: one HGS population plus DP split",
+        "Wang et al. 2025 PDF pp.13-18: problem-aware route evaluation plus route pool and SP"
+      ],
+      "difference": "No located source has three independent fossil/simplified-EV/mechanism-aware proxy populations with common write-back.",
+      "repository_can_refute_rename_objection": false,
+      "repository_evidence": "paper_main.tex:1225-1228 explicitly does not split a common total budget; single-case CPU is 1.84 min versus 0.50/0.63/0.64; public V13 deactivates missing mechanism fields at line 1110; no one-factor equal-total-compute formal comparison exists.",
+      "verdict": "FORMALLY_DISTINCT_BUT_NOT_EMPIRICALLY_ISOLATED"
+    },
+    {
+      "id": "cross_round_pool_and_sp",
+      "name": "跨轮累积路线池加限时MIP集合划分",
+      "closest_work": [
+        "Rochat and Taillard 1995 PDF pp.3-5,7-8: adaptive route memory plus exact set partitioning post-optimization",
+        "Wang et al. 2025 PDF pp.13-18: ILS-generated high-quality route pool plus set partitioning"
+      ],
+      "difference": "ReSETP adds three mechanism views, cross-round permanent accumulation, full-model rescoring and a time limit.",
+      "repository_can_refute_rename_objection": false,
+      "repository_evidence": "mvhgssp_bks_reproduction_full_20260727 passed 13/18 targets and only PR14B has strict SP attribution of 0.183; boundary_probe_20260726/report.md reports rich-pool 3 wins/3 losses and 12/12 initial final sources from HGS rather than SP.",
+      "verdict": "CORE_METHOD_CONVENTIONAL_INCREMENT_NOT_ISOLATED"
+    },
+    {
+      "id": "monotone_strict_acceptance",
+      "name": "严格改善才接受的单调规则",
+      "closest_work": [
+        "Lei and Hao 2026 Algorithm 1 PDF pp.8-9: incumbent updated only when f(S')<f(S*)",
+        "Zhao et al. 2024 PDF pp.9-10: survivor/diversification with best preservation"
+      ],
+      "difference": "ReSETP writes the min-accepted incumbent back to all three views and retains it across rounds.",
+      "repository_can_refute_rename_objection": false,
+      "repository_evidence": "china81_vs_opensource_20260727/decision.json.transition_counts.M_to_MV={improve:114,regress:0,tie:291}; zero regressions are mechanically guaranteed by paper_main.tex:1227 min acceptance; no acceptance-rule ablation exists.",
+      "verdict": "STANDARD_INCUMBENT_SAFEGUARD_NOT_INDEPENDENT_INNOVATION"
+    }
+  ],
+  "fusion_increment": {
+    "units": 405,
+    "formula": "mean_u[100*(C_arm(u)-C_MV(u))/C_arm(u)]",
+    "vs_HGS_E": {
+      "win": 125,
+      "tie": 280,
+      "loss": 0,
+      "mean_percent": 0.069133
+    },
+    "vs_HGS_M": {
+      "win": 114,
+      "tie": 291,
+      "loss": 0,
+      "mean_percent": 0.08473
+    },
+    "source": "docs/paper_v2/figures_e2_v2_20260730/generate_e2_v2_outputs.py:718-731 and report.md section 5",
+    "fair_for_fixed_protocol_terminal_ranking": true,
+    "fair_for_incremental_algorithm_attribution": false,
+    "reason": "single-view arms receive 25000 iterations per view while MV uses three views plus pool and SP; paper_main.tex:1225-1228 says no common total budget and the sealed archive has no wallclock."
+  }
+}

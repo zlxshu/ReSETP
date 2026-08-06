@@ -1,0 +1,90 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/monitor.json",
+  "csv_rules": [],
+  "forbidden_command_substrings": [
+    "--debug",
+    "formal_runner",
+    "paper_main"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 6,
+  "max_rss_mb": 6500,
+  "max_runtime_seconds": 7200,
+  "milestones": [],
+  "min_cpu_percent_when_active": 0.1,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "t7-eval-chain-carbon-consistency",
+  "objective": "Run the exact T5 18-run O/C/P matrix after the objective-consistent completion wiring repair",
+  "pause_on_anomaly": true,
+  "poll_seconds": 10,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/preregistration.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/t7_runner.py"
+    },
+    {
+      "kind": "repair_source",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py"
+    }
+  ],
+  "required_command_substrings": [
+    "eval_chain_carbon_consistency_20260804/t7_runner.py"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/runner_state.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/probe_raw.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/slot_distribution.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/completion_trace.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/eval_chain_carbon_consistency_20260804/solution_witnesses.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 600,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

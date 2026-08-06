@@ -1,0 +1,1151 @@
+{
+  "completed_at": "2026-08-04T06:53:24.996199+00:00",
+  "fleet_authority": "data/ChinaInstances/china81_finite_fleet_authority_v3_20260802",
+  "fleet_caps_by_depot": {
+    "D_guangzhou": {
+      "num_cv": 3,
+      "num_ev": 1,
+      "total_fleet_cap": 4
+    },
+    "D_shenzhen": {
+      "num_cv": 3,
+      "num_ev": 1,
+      "total_fleet_cap": 4
+    }
+  },
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "label": "pre",
+  "python_executable": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+  "runs": [
+    {
+      "archive_limit_per_view": 8,
+      "budget": 100,
+      "candidate_completion_attempts": 30,
+      "candidate_completion_failures": 25,
+      "candidate_completion_successes": 5,
+      "checkpoint_interval": 100,
+      "checkpoint_series": [
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 1,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 12,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.19380dac5cca8p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 23,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        }
+      ],
+      "exact_elites_per_view": 2,
+      "failure_category_distribution": {
+        "代理找到但完成失败": 25
+      },
+      "hgs_iterations_by_view": {
+        "cv_only": 100,
+        "mechanism_ev": 100,
+        "naive_ev": 100
+      },
+      "objective": 2018.3191543892503,
+      "objective_float_hex": "0x1.f8946d06880d2p+10",
+      "route_count": 9,
+      "route_signature": [
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C010",
+            "C006",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C013",
+            "C001",
+            "C004",
+            "C018",
+            "C017",
+            "C019",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C014",
+            "C021",
+            "C011",
+            "C023",
+            "C003",
+            "C007",
+            "C005",
+            "C012",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C022",
+            "C016",
+            "C020",
+            "C008",
+            "C002",
+            "C015",
+            "C009",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C029",
+            "C042",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C040",
+            "C038",
+            "C045",
+            "C044",
+            "C049",
+            "C048",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C050",
+            "C037",
+            "C039",
+            "C032",
+            "C034",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "ev",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C026",
+            "C027",
+            "C031",
+            "C033",
+            "C025",
+            "C024",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "ev",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C028",
+            "C043",
+            "C041",
+            "C046",
+            "C047",
+            "C036",
+            "C035",
+            "C030",
+            "D_shenzhen"
+          ]
+        ]
+      ],
+      "route_signature_sha256": "641235d4e0d8a5f528be4c123303ec8c7e8bcf12d1b3d853a231aa04f1497573",
+      "run_id": "seed1_budget100",
+      "search_trace_sha256": "03f45fcef1affce579492329a950523be0d7237e3e70a19d01728c8a92aeacab",
+      "seed": 1,
+      "selected_source": "best_exact_hgs_parent",
+      "solution_sha256": "0d13c92bc9c29a4416ba29e27061de5daa93c7edaf9ff15bd71b1e52806ded81",
+      "sp_seconds": 0.5,
+      "total_distance_m": 740404.006511743,
+      "total_emissions_kg": 214.15862119032573
+    },
+    {
+      "archive_limit_per_view": 8,
+      "budget": 100,
+      "candidate_completion_attempts": 30,
+      "candidate_completion_failures": 23,
+      "candidate_completion_successes": 7,
+      "checkpoint_interval": 100,
+      "checkpoint_series": [
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.191b1bf52fdfdp+11",
+          "completion_succeeded": true,
+          "evaluation_index": 1,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.04693ae9822fcp+11",
+          "completion_succeeded": true,
+          "evaluation_index": 12,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 23,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "mechanism_ev"
+        }
+      ],
+      "exact_elites_per_view": 2,
+      "failure_category_distribution": {
+        "代理找到但完成失败": 23
+      },
+      "hgs_iterations_by_view": {
+        "cv_only": 100,
+        "mechanism_ev": 100,
+        "naive_ev": 100
+      },
+      "objective": 2018.3191543892503,
+      "objective_float_hex": "0x1.f8946d06880d2p+10",
+      "route_count": 9,
+      "route_signature": [
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C010",
+            "C006",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C013",
+            "C001",
+            "C004",
+            "C018",
+            "C017",
+            "C019",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C014",
+            "C021",
+            "C011",
+            "C023",
+            "C003",
+            "C007",
+            "C005",
+            "C012",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C022",
+            "C016",
+            "C020",
+            "C008",
+            "C002",
+            "C015",
+            "C009",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C029",
+            "C042",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C040",
+            "C038",
+            "C045",
+            "C044",
+            "C049",
+            "C048",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C050",
+            "C037",
+            "C039",
+            "C032",
+            "C034",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "ev",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C026",
+            "C027",
+            "C031",
+            "C033",
+            "C025",
+            "C024",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "ev",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C028",
+            "C043",
+            "C041",
+            "C046",
+            "C047",
+            "C036",
+            "C035",
+            "C030",
+            "D_shenzhen"
+          ]
+        ]
+      ],
+      "route_signature_sha256": "641235d4e0d8a5f528be4c123303ec8c7e8bcf12d1b3d853a231aa04f1497573",
+      "run_id": "seed2_budget100",
+      "search_trace_sha256": "3b0c4c4a3e4277b95782b81e0354ecfbe21dc5827b5cc00feca298fcab367d89",
+      "seed": 2,
+      "selected_source": "best_exact_hgs_parent",
+      "solution_sha256": "0d13c92bc9c29a4416ba29e27061de5daa93c7edaf9ff15bd71b1e52806ded81",
+      "sp_seconds": 0.5,
+      "total_distance_m": 740404.006511743,
+      "total_emissions_kg": 214.15862119032573
+    },
+    {
+      "archive_limit_per_view": 8,
+      "budget": 100,
+      "candidate_completion_attempts": 30,
+      "candidate_completion_failures": 24,
+      "candidate_completion_successes": 6,
+      "checkpoint_interval": 100,
+      "checkpoint_series": [
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 1,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 12,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 23,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "mechanism_ev"
+        }
+      ],
+      "exact_elites_per_view": 2,
+      "failure_category_distribution": {
+        "代理找到但完成失败": 24
+      },
+      "hgs_iterations_by_view": {
+        "cv_only": 100,
+        "mechanism_ev": 100,
+        "naive_ev": 100
+      },
+      "objective": 2018.3191543892503,
+      "objective_float_hex": "0x1.f8946d06880d2p+10",
+      "route_count": 9,
+      "route_signature": [
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C010",
+            "C006",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C013",
+            "C001",
+            "C004",
+            "C018",
+            "C017",
+            "C019",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C014",
+            "C021",
+            "C011",
+            "C023",
+            "C003",
+            "C007",
+            "C005",
+            "C012",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C022",
+            "C016",
+            "C020",
+            "C008",
+            "C002",
+            "C015",
+            "C009",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C029",
+            "C042",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C040",
+            "C038",
+            "C045",
+            "C044",
+            "C049",
+            "C048",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C050",
+            "C037",
+            "C039",
+            "C032",
+            "C034",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "ev",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C026",
+            "C027",
+            "C031",
+            "C033",
+            "C025",
+            "C024",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "ev",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C028",
+            "C043",
+            "C041",
+            "C046",
+            "C047",
+            "C036",
+            "C035",
+            "C030",
+            "D_shenzhen"
+          ]
+        ]
+      ],
+      "route_signature_sha256": "641235d4e0d8a5f528be4c123303ec8c7e8bcf12d1b3d853a231aa04f1497573",
+      "run_id": "seed3_budget100",
+      "search_trace_sha256": "d5cef2cad78190e7b0983ab33f3fcae965a62f6470466012ade3aad8fefaf267",
+      "seed": 3,
+      "selected_source": "best_exact_hgs_parent",
+      "solution_sha256": "0d13c92bc9c29a4416ba29e27061de5daa93c7edaf9ff15bd71b1e52806ded81",
+      "sp_seconds": 0.5,
+      "total_distance_m": 740404.006511743,
+      "total_emissions_kg": 214.15862119032573
+    },
+    {
+      "archive_limit_per_view": 8,
+      "budget": 1000,
+      "candidate_completion_attempts": 57,
+      "candidate_completion_failures": 11,
+      "candidate_completion_successes": 46,
+      "checkpoint_interval": 100,
+      "checkpoint_series": [
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 1,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 2,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 200,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 3,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 300,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 4,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 400,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 5,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 500,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 6,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 600,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 7,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 700,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 8,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 800,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 9,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 900,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 10,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 1000,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "cv_only"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "",
+          "completion_succeeded": false,
+          "evaluation_index": 21,
+          "exception_message": "China81 route skeleton cannot satisfy the registered physical fleet caps at 'D_shenzhen': overage=(1, 0, 1)",
+          "exception_type": "ValueError",
+          "failure_category": "代理找到但完成失败",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "INFEASIBLE_OR_ERROR",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 22,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 200,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 23,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 300,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 24,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 400,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 25,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 500,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 26,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 600,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 27,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 700,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 28,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 800,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 29,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 900,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 30,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 1000,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "naive_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.19380dac5cca8p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 41,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 100,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.19380dac5cca8p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 42,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 200,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.19380dac5cca8p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 43,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 300,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.19380dac5cca8p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 44,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 400,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.19380dac5cca8p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 45,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 500,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.19380dac5cca8p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 46,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 600,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 47,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 700,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 48,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 800,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 49,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 900,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        },
+        {
+          "candidate_id": "",
+          "complete_objective_float_hex": "0x1.18b0b9d920ab2p+11",
+          "completion_succeeded": true,
+          "evaluation_index": 50,
+          "exception_message": "",
+          "exception_type": "",
+          "failure_category": "",
+          "iteration": 1000,
+          "source": "hgs_iteration_checkpoint",
+          "status": "PASS",
+          "view": "mechanism_ev"
+        }
+      ],
+      "exact_elites_per_view": 2,
+      "failure_category_distribution": {
+        "代理找到但完成失败": 11
+      },
+      "hgs_iterations_by_view": {
+        "cv_only": 1000,
+        "mechanism_ev": 1000,
+        "naive_ev": 1000
+      },
+      "objective": 2018.3191543892503,
+      "objective_float_hex": "0x1.f8946d06880d2p+10",
+      "route_count": 9,
+      "route_signature": [
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C010",
+            "C006",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C013",
+            "C001",
+            "C004",
+            "C018",
+            "C017",
+            "C019",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C014",
+            "C021",
+            "C011",
+            "C023",
+            "C003",
+            "C007",
+            "C005",
+            "C012",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_guangzhou",
+          [
+            "D_guangzhou",
+            "C022",
+            "C016",
+            "C020",
+            "C008",
+            "C002",
+            "C015",
+            "C009",
+            "D_guangzhou"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C029",
+            "C042",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C040",
+            "C038",
+            "C045",
+            "C044",
+            "C049",
+            "C048",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "cv",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C050",
+            "C037",
+            "C039",
+            "C032",
+            "C034",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "ev",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C026",
+            "C027",
+            "C031",
+            "C033",
+            "C025",
+            "C024",
+            "D_shenzhen"
+          ]
+        ],
+        [
+          "ev",
+          "D_shenzhen",
+          [
+            "D_shenzhen",
+            "C028",
+            "C043",
+            "C041",
+            "C046",
+            "C047",
+            "C036",
+            "C035",
+            "C030",
+            "D_shenzhen"
+          ]
+        ]
+      ],
+      "route_signature_sha256": "641235d4e0d8a5f528be4c123303ec8c7e8bcf12d1b3d853a231aa04f1497573",
+      "run_id": "seed1_budget1000",
+      "search_trace_sha256": "a438f008993225e644bbedb705b34326377b3dacd0cdb193017232a9b6a49c08",
+      "seed": 1,
+      "selected_source": "best_exact_hgs_parent",
+      "solution_sha256": "0d13c92bc9c29a4416ba29e27061de5daa93c7edaf9ff15bd71b1e52806ded81",
+      "sp_seconds": 0.5,
+      "total_distance_m": 740404.006511743,
+      "total_emissions_kg": 214.15862119032573
+    }
+  ],
+  "schema": "resetp.t4-solver-fleetcap-probe.v1",
+  "started_at": "2026-08-04T06:53:01.167806+00:00",
+  "status": "PASS_PROBE_EXECUTION"
+}

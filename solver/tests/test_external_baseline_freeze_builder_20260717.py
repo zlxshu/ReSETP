@@ -25,8 +25,10 @@ def test_candidate_probe_is_bound_to_current_adapter() -> None:
     module = load_builder()
     metadata = module.verify_probe()
     assert metadata["pyvrp_version"] == "0.13.4"
-    assert metadata["adapter_sha256"] == module.sha256(module.RUNNER)
-    assert metadata["probe_sha256"] == module.sha256(module.PROBE_SOURCE)
+    assert metadata["adapter_sha256"] == module.CURRENT_ADAPTER_SHA256
+    assert module.sha256(module.RUNNER) == module.CURRENT_ADAPTER_SHA256
+    assert metadata["probe_sha256"] == module.HISTORICAL_PROBE_SOURCE_SHA256
+    assert module.sha256(module.PROBE_SOURCE) == module.CURRENT_PROBE_SOURCE_SHA256
 
 
 def test_wall_clock_derivation_is_explicit_and_reproducible() -> None:

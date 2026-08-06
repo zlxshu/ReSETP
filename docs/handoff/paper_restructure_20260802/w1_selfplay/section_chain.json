@@ -1,0 +1,96 @@
+{
+  "task_id": "W1",
+  "selected_thesis_id": "A",
+  "sections": [
+    {
+      "section": "1 引言",
+      "claim": "现有研究分别知道时变碳充电、静态混合车队和动态重规划，但不知道碳信号在动态混合车队中何时真正进入决策。证据边界：Cheng et al. (2022) PDF pp.1-2,5-6；陈婉茹等(2023) PDF pp.12-14；Goodson et al. (2013) PDF pp.2-3,13-15；Qiu et al. (2024) PDF p.16 将动态需求留作未来研究。",
+      "depends_on": "无",
+      "prepares_for": "第2章把缺口变成可观测的激活条件，而不是列举因素。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "全文失去唯一研究问题，5.1-5.3 退化为三个并列敏感性。"
+    },
+    {
+      "section": "2 问题与模型",
+      "claim": "模型显式表示碳信号、合法充电窗口、油电运力替代和动态状态继承，因而‘激活’可以用充电时刻、车型化路径和事件后可用运力观测；协同、分账、非线性充电只承担可行域/记账定义。当前模型已有相应主张位置见 docs/paper_v2/paper_main.tex:245-267。",
+      "depends_on": "第1章提出的联合激活缺口。",
+      "prepares_for": "第3章获得明确搜索对象，第5章获得两类自由度的观测定义。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "‘窗口’和‘运力自由度’变成事后语言，中心命题不可检验。"
+    },
+    {
+      "section": "3 算法设计",
+      "claim": "算法能在同一可行状态中搜索充电时刻、车型/任务重分并继承已执行状态，使‘决策不变’不先等于搜索器未覆盖。当前动态状态继承的论文要求见 docs/paper_v2/paper_main.tex:238-249。",
+      "depends_on": "第2章定义的两类自由度和动态状态。",
+      "prepares_for": "4.2 排除弱搜索解释，第5章才可归因机制激活/退化。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "无法区分机制未激活与算法没搜到。"
+    },
+    {
+      "section": "4.1 算例与参数",
+      "claim": "碳日历、车型上限、充电窗口、动态事件和配对单位均可追溯，使三节机制比较只改变其声称的因素。当前 China81 的城市、规模、路网、订单与代表算例来源见 docs/paper_v2/paper_main.tex:920-950。",
+      "depends_on": "第2章变量定义与第3章求解语义。",
+      "prepares_for": "为4.2和5.1-5.3提供同一分母、参数来源和适用边界。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "读者无法判断每个实验改变了什么、保持了什么，也无法复核结果边界。"
+    },
+    {
+      "section": "4.2 算法有效性",
+      "claim": "在公开退化问题和本文问题上，算法质量与计算行为足以支撑机制比较，不把弱搜索误写成碳机制边界。陈雨蝶等(2025) PDF pp.13-15 和 Soriano et al.(2023) PDF pp.6-7 均先验证算法再进入机制结果。",
+      "depends_on": "第3章算法和4.1算例。",
+      "prepares_for": "允许第5章解释路线/车型/充电是否响应。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "最强审稿反驳‘算法没找到可用调整’无法排除。"
+    },
+    {
+      "section": "5.1 时变碳强度",
+      "claim": "当碳强度有时段差且合法充电窗口可移动时，碳信号首先表现为充电时移，并产生排放—电费权衡。现有 E4：baselines/china_e3_e7/e4_carbon_timing_20260729/report.md:8-10,41-45,64-70。",
+      "depends_on": "第2章窗口定义与第4章可信配对。",
+      "prepares_for": "给5.2/5.3提供第一类自由度和静态参考响应。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "题眼未被证明在本模型中活跃，后两节没有低碳响应基准。"
+    },
+    {
+      "section": "5.2 车队电动化配置",
+      "claim": "车型配置要检验的是可替代油电运力是否改变5.1的碳响应及其决策层级，而不是重复‘EV越多越低碳’。静态一般结论已见陈婉茹等(2023) PDF pp.12-14、Qiu et al.(2024) PDF pp.13-15；当前固定上限触顶见 docs/handoff/memory/codex_audit_independent_verification_20260802.md:24-28。",
+      "depends_on": "5.1已经定义的碳响应。",
+      "prepares_for": "给5.3提供第二类自由度和未激活边界。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "混合车队只剩模型标签，无法参与中心论点。"
+    },
+    {
+      "section": "5.3 动态需求触发",
+      "claim": "在同一事件流下，动态触发通过改变剩余窗口与可用运力，决定5.1和5.2的两类自由度是否仍相交；这才是对论点A的直接检验。当前 E7 仅为非正式诊断，见 baselines/china_e3_e7/e7_trigger_policies_20260801/qiu_accept_all_three_triggers_50c_seeds1to10_eval8_comparison_20260801/report.md:1-5,24-25。",
+      "depends_on": "5.1第一类自由度与5.2第二类自由度。",
+      "prepares_for": "给结语可回答的激活/退化边界。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "动态需求柱子无正式检验，中心论点不闭合。"
+    },
+    {
+      "section": "6 总结与展望",
+      "claim": "回答哪些条件下碳信号进入充电、车型或路线决策，哪些条件下退化，并回收代价和适用边界；不按表格顺序罗列数字。写法对照：Soriano et al.(2023) PDF pp.10-11；Goodson et al.(2013) PDF pp.15-16。",
+      "depends_on": "5.1-5.3完成的条件链。",
+      "prepares_for": "关闭全文研究问题。",
+      "deletable_yes_no": "否",
+      "break_if_deleted": "读者看到结果却得不到中心命题的答案。"
+    }
+  ],
+  "deletable_content": [
+    {
+      "section": "5章中的协同、公平分账、非线性充电独立敏感性",
+      "claim": "这些是已固定的模型组件，不承担论点A的必要条件；定义和引文留在第2章，独立效果实验会使5章重回因素清单。",
+      "depends_on": "用户固定故事；陈雨蝶等(2025) PDF p.22 §4.9 是逐因素控制变量导致流水账的反例。",
+      "prepares_for": "无",
+      "deletable_yes_no": "是",
+      "break_if_deleted": "不断链。"
+    },
+    {
+      "section": "5.1中的静态碳价/碳配额重复敏感性",
+      "claim": "前人已完成静态碳政策对车队/排放的响应，且它不回答时变电网碳强度的激活条件。",
+      "depends_on": "陈婉茹等(2023) PDF pp.13-14；Qiu et al.(2024) PDF pp.13-15。",
+      "prepares_for": "无",
+      "deletable_yes_no": "是",
+      "break_if_deleted": "不断链，引用即可。"
+    }
+  ]
+}

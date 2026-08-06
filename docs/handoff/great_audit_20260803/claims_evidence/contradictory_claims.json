@@ -1,0 +1,93 @@
+[
+  {
+    "tex_line": "143,160",
+    "claim_text": "机制视角分解、完整模型复算和路线池重组提高求解质量。",
+    "evidence_path_and_field": "baselines/china_e3_e7/formal_algorithm_20260802/decision.json#/scientific_claim_assessment; table_4_2_five_algorithms.csv#Best_cny,Avg_cny",
+    "direction_conflict": "论文为正向提升；当前正式五臂全部同值，成本优势、多视角贡献和路线池贡献均为false。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "678-681,703-707,747",
+    "claim_text": "三个机制视角互补并增强覆盖，路线池提升全局组合能力。",
+    "evidence_path_and_field": "baselines/china_e3_e7/formal_ablation_200c_20260803/decision.json#/scientific_verdict,/scientific_claim_assessment",
+    "direction_conflict": "论文为正向组件作用；最大规模正式消融为NO_MEASURABLE_DIFFERENCE，三臂目标及结构相同。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "476-478,577",
+    "claim_text": "固定成本与配送趟数成正比。",
+    "evidence_path_and_field": "solver/src/setp_solver/cost.py#evaluate.cost_fix; solver/src/setp_solver/profit.py#calculate_depot_profits.unique_vehicle_keys",
+    "direction_conflict": "论文按趟增加；当前合同按使用的唯一物理车辆计一次，多趟不重复计固定成本。",
+    "depends_on_old_contract": true
+  },
+  {
+    "tex_line": "570,598-599",
+    "claim_text": "车场和公共站均受逐时段充电桩并发上限约束。",
+    "evidence_path_and_field": "solver/src/setp_solver/model_config.py#depot_charger_capacity_mode; solver/src/setp_solver/check.py#station_capacity",
+    "direction_conflict": "论文把D与S都有限约束；当前默认车场为unbounded，仅公共站容量受限。",
+    "depends_on_old_contract": true
+  },
+  {
+    "tex_line": "931-934",
+    "claim_text": "需求为20—350 kg三段、服务时长8/12/18 min、时间窗按30 min网格生成。",
+    "evidence_path_and_field": "docs/handoff/diagnosis_20260802/d4_instances/wording_gaps.json#tex_line 931-934; provenance_ledger.json#demand,service,time-window records",
+    "direction_conflict": "实际需求支持点为139/208/278/347/417 kg，服务时长6/9/12/15/18 min，时间窗为外部匿名企业行有放回抽样。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "936",
+    "claim_text": "油电车型均为国内在售厢式货车。",
+    "evidence_path_and_field": "docs/handoff/diagnosis_20260802/d4_instances/provenance_ledger.json#EV official record",
+    "direction_conflict": "EV证据是福田欧马可智蓝ES1快递版栏板配置，不是厢式配置。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "940-943",
+    "claim_text": "最终解和各机制实验均使用同一珠三角50客户广州—深圳双车场算例。",
+    "evidence_path_and_field": "paper lines 1386,1428,1481; docs/handoff/representative_instance_selection_20260803/selected_instance.json#/selected_instance_id",
+    "direction_conflict": "E3/E6实际使用150/200客户四车场，E4使用3个50客户算例；新选择又是成渝100客户，均不是所称同一算例。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "983",
+    "claim_text": "EV迎风面积为6.08 m²。",
+    "evidence_path_and_field": "solver/src/setp_solver/china81.py#EV frontal_area_m2",
+    "direction_conflict": "当前源值为4.6376 m²。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "1034",
+    "claim_text": "170元是每趟派遣费。",
+    "evidence_path_and_field": "solver/src/setp_solver/cost.py#evaluate.cost_fix",
+    "direction_conflict": "当前170元为每个使用的物理车辆固定成本。",
+    "depends_on_old_contract": true
+  },
+  {
+    "tex_line": "1040-1042",
+    "claim_text": "京津冀、珠三角、成渝分别统一用北京、广东、重庆序列。",
+    "evidence_path_and_field": "solver/src/setp_solver/china81.py#city carbon profile mapping",
+    "direction_conflict": "运行输入实际使用北京、天津、河北、广东、四川、重庆六列，非三个核心省网统一映射。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "1111,1121",
+    "claim_text": "分母是当前逐题BKS，PR17B达到当前已知最好解。",
+    "evidence_path_and_field": "baselines/algorithm_prototypes/boundary_probe_20260726/NEW_BKS_TABLE.csv#bks_2013; docs/handoff/risk_remediation_20260802/risks.json#BKS wording risk",
+    "direction_conflict": "实际分母字段明确为bks_2013，且仓库已有18个更低PASS候选；未核验当前共同体BKS。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "1175,1213",
+    "claim_text": "18题累计降低69.875。",
+    "evidence_path_and_field": "docs/paper_v2/paper_main.tex#table lines 1194-1213; baselines/algorithm_prototypes/boundary_probe_20260726/NEW_BKS_TABLE.csv#improvement",
+    "direction_conflict": "同一正文表内18行降低量合计与合计行均为62.598，不是69.875。",
+    "depends_on_old_contract": false
+  },
+  {
+    "tex_line": "1251-1266,1299-1369",
+    "claim_text": "China81中MV成本最低、组件互补、相对各臂有正向成本与覆盖优势。",
+    "evidence_path_and_field": "baselines/china_e3_e7/formal_algorithm_20260802/table_4_2_five_algorithms.csv#all five rows; decision.json#/scientific_claim_assessment",
+    "direction_conflict": "当前合同五臂Best/Avg全平，正式判断不支持成本优势、多视角贡献或路线池贡献。旧表数值另已作废。",
+    "depends_on_old_contract": true
+  }
+]

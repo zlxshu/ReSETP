@@ -1,0 +1,27 @@
+{
+  "schema": "resetp.literature_evidence_decision.v1",
+  "task_id": "T1-CHARGE-OBJ-MODEL",
+  "date": "2026-08-04",
+  "question": "前人有没有现成的、可直接迁移的建模，把充电发生在哪个时段写进电动车路径模型的目标函数和约束？",
+  "answer": "有",
+  "facts": [
+    "Lin et al. (2021) use binary vehicle-station-period charging/discharging variables and period-specific prices in a joint routing objective.",
+    "Shi et al. (2025) integrate a continuous charging interval over piecewise time-of-use prices in a mixed-fleet routing objective.",
+    "Yao et al. (2023) connect continuous arrival time, partial charging amount, charging-period occupancy, charging-period start, and spatio-temporal charging prices.",
+    "Miyabe et al. (2025) use a 5-minute time-expanded routing and charging model whose objective multiplies time-indexed grid carbon intensity by grid-supplied charging energy.",
+    "Cheng et al. (2022) provide the time-indexed carbon objective, SOC recursion, individual charging-power bounds, station transformer capacity, and session-window constraint, but do not include routing.",
+    "No included paper simultaneously contains mixed fleet, multi-depot, multi-trip, hard customer time windows, and both depot and public charging locations."
+  ],
+  "evidence_counts": {
+    "full_text_papers_with_equation_level_records": 11,
+    "direct_time_varying_price_or_carbon_objectives": 5,
+    "partial_nonlinear_or_capacitated_charging_models": 3,
+    "multi_trip_return_time_models": 2,
+    "queueing_boundary_papers": 1,
+    "inaccessible_full_text_candidates": 4
+  },
+  "judgment_A_route_changed": "yes; direct quantitative evidence is Lin et al. (2021), PDF pp.25-26, where Scheme B is approximately 32 km longer on average than Scheme A",
+  "judgment_B_worse_or_unchanged": "yes; report.md Section 8 records unchanged routes, higher distance or objective, reduced delivered energy, and modeling/heuristic failure modes with paper-page evidence",
+  "judgment_C_scale": "answered per paper in report.md Section 9; no cross-paper universal scalability threshold is inferred",
+  "implementation_or_experiment_decision": null
+}

@@ -1,0 +1,17 @@
+{
+  "schema": "resetp.t16-clock-alignment-fixups.decision.v1",
+  "task_id": "T16",
+  "status": "PASS_REGRESSION_GATES",
+  "FACT": [
+    "仅撤销两处指定越界改动。",
+    "T15 定向 7 项通过，阳性 3/3 命中，T10 保存解 18/18 合法。",
+    "全量测试为 906 passed / 1 skipped / 6 failed，与 T15 相同。",
+    "三个受保护文件开工/收工 SHA-256 一致。"
+  ],
+  "INFERENCE": [],
+  "DECISION": "T16 完成；不改变四项挂起决定，不形成论文主张。",
+  "HALT_NONE": "未触发停止条件。",
+  "paper_claim_allowed": false,
+  "protected_files_changed": false,
+  "suspended_decisions_changed": false
+}

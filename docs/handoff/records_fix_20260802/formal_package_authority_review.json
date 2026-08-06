@@ -1,0 +1,1014 @@
+{
+  "authority_evidence": {
+    "current_mainline": {
+      "lines": "10-18,48-54,107-136",
+      "path": "docs/handoff/TODO_施工总清单_20260802.md",
+      "sha256": "56bfebeded7900b06e9af5e86874dba8ab5043b5374fd7d579f89ee6ab8ebdd7"
+    },
+    "input_manifest": {
+      "json_pointer": "/inputs",
+      "path": "docs/handoff/input_provenance_manifest_20260802/manifest.json",
+      "registered_files": 574
+    }
+  },
+  "generated_at": "2026-08-02",
+  "packages": [
+    {
+      "current_authority_status": "历史",
+      "disposition": "KEEP_AS_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "6da79cc34f434428262849ea3baefdc91d0f5d732e17fa9de89d3a799213bdee",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/china_e3_e7/e3_environment_authority_20260723",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": "resetp.e3-environment-authority.decision.v1",
+          "status": null,
+          "verdict": "PASS_E3_FORMAL_ENVIRONMENT_AUTHORITY"
+        },
+        "decision_sha256": "689c84a4cec21eed1a0e727037c66dcfd3ed86a951f92f550473f726fda095e3",
+        "metadata_sha256": "6da79cc34f434428262849ea3baefdc91d0f5d732e17fa9de89d3a799213bdee",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "1c309cf3093ebe4cd1262dd8080d2f834ca96492f55c3bb059414f80d384e865"
+      },
+      "status_reason": "只承担 2026-07-23 E3 运行环境技术证明，不产生 ReSETP 搜索或当前论文数字。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "承担当前数字",
+      "disposition": "KEEP_IN_PLACE_AND_ADD_MACHINE_READABLE_UPSTREAM_EDGE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "metadata role/status contains FORMAL",
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "66bae8eaa61471689a8fc97ec7d9cc8871d35c42e240ae327bc37898166c4c13",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": "resetp.e3-capacity-rank-aligned-formal-panel-aggregate.decision.v1",
+          "status": "PASS_FORMAL_PANEL_AGGREGATE",
+          "verdict": null
+        },
+        "decision_sha256": "72dbbb1412f2b50096e527845a631930ff9200ea4a56808c7ad3bdd2d7669b87",
+        "metadata_sha256": "66bae8eaa61471689a8fc97ec7d9cc8871d35c42e240ae327bc37898166c4c13",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "d9bc01f4e8235d6d623e55c79ff79669ff1a368acdaca7963ccb7663980b2431"
+      },
+      "status_reason": "当前 paper_main.tex 的 E3 数字仍由本汇总承担；2026-08-02 新主线已决定 E3 不进入新正文结果段，因此保留到论文结构改写完成。",
+      "upstream_source_edges": [
+        {
+          "artifact_hashes_sha256": "4fdab0d0bb7fad70b80a1585e40af808ff37784cc03d64ad61a008468a940ef6",
+          "edge_type": "AGGREGATES_RAW_RUNS",
+          "evidence": {
+            "json_pointer": "/source_packages/cn-prd-150c-01-V2-LOCATIONS",
+            "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/metadata.json"
+          },
+          "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+          "raw_runs_sha256": "8cf92930b26390604b58f3e87896f66fc2b39c14d5266ad00086aad4db99a43d",
+          "source_package": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-150c-01-V2-LOCATIONS"
+        },
+        {
+          "artifact_hashes_sha256": "02b238458f879597591ab862606742899ca4376956636fbcef012f69a47f65e4",
+          "edge_type": "AGGREGATES_RAW_RUNS",
+          "evidence": {
+            "json_pointer": "/source_packages/cn-prd-150c-02-V2-LOCATIONS",
+            "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/metadata.json"
+          },
+          "instance_id": "cn-prd-150c-02-V2-LOCATIONS",
+          "raw_runs_sha256": "1b463d107a8d11090f81bf707bc2ea4555c9e46f04b48b4db65495868d04107e",
+          "source_package": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-150c-02-V2-LOCATIONS"
+        },
+        {
+          "artifact_hashes_sha256": "8f506c752e19bde58585282359d9340a58a5b284618d4e7277f47bd180e7d98b",
+          "edge_type": "AGGREGATES_RAW_RUNS",
+          "evidence": {
+            "json_pointer": "/source_packages/cn-prd-150c-03-V2-LOCATIONS",
+            "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/metadata.json"
+          },
+          "instance_id": "cn-prd-150c-03-V2-LOCATIONS",
+          "raw_runs_sha256": "42daaaad7e214d77cb2db87d58c3902313a11565ea71f724582d9d9854db530a",
+          "source_package": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-150c-03-V2-LOCATIONS"
+        },
+        {
+          "artifact_hashes_sha256": "97a515c28dfb6e7159d1ef636094a3e90f71091c869090c4905fb62081e5638e",
+          "edge_type": "AGGREGATES_RAW_RUNS",
+          "evidence": {
+            "json_pointer": "/source_packages/cn-prd-200c-01-V2-LOCATIONS",
+            "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/metadata.json"
+          },
+          "instance_id": "cn-prd-200c-01-V2-LOCATIONS",
+          "raw_runs_sha256": "86e731a982cfe1e00b11cba2eeeaeb19d592d0d551cc9408c31c7ad26c74a208",
+          "source_package": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-200c-01-V2-LOCATIONS"
+        },
+        {
+          "artifact_hashes_sha256": "53d6174d727a04a4950e98d04f52cbaa148571b9d31bcc1b119f2247a2df168e",
+          "edge_type": "AGGREGATES_RAW_RUNS",
+          "evidence": {
+            "json_pointer": "/source_packages/cn-prd-200c-02-V2-LOCATIONS",
+            "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/metadata.json"
+          },
+          "instance_id": "cn-prd-200c-02-V2-LOCATIONS",
+          "raw_runs_sha256": "ca192318a2790802072def76e5d1617cd1f4047aa9de98ce2b21cac23c7905bf",
+          "source_package": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-200c-02-V2-LOCATIONS"
+        },
+        {
+          "artifact_hashes_sha256": "8e1daa0dfa4ddc281a5522872a8bc47d619bff4ee53359bf8a854c0efe784e2f",
+          "edge_type": "AGGREGATES_RAW_RUNS",
+          "evidence": {
+            "json_pointer": "/source_packages/cn-prd-200c-03-V2-LOCATIONS",
+            "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/metadata.json"
+          },
+          "instance_id": "cn-prd-200c-03-V2-LOCATIONS",
+          "raw_runs_sha256": "33feb43d9f355874c336cfe886eecc554242c552f9162a5b33123c9e7791483a",
+          "source_package": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-200c-03-V2-LOCATIONS"
+        }
+      ]
+    },
+    {
+      "current_authority_status": "承担当前数字",
+      "disposition": "KEEP_IN_PLACE_AND_ADD_MACHINE_READABLE_UPSTREAM_EDGE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "metadata role/status contains FORMAL",
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "df3ae6dc81a5940605c9cbf2de1ff2833b07066381a25d3088be2c716d4e1a9d",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/cn-prd-50c-01-V2-LOCATIONS",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": "PASS_FORMAL_PANEL_MEMBER",
+          "verdict": null
+        },
+        "decision_sha256": "3dbf7c33fdd379018173b2d60d4a2c0d448e29e49502c990da6acd2dbde981c1",
+        "metadata_sha256": "df3ae6dc81a5940605c9cbf2de1ff2833b07066381a25d3088be2c716d4e1a9d",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "ddf9460e8a1dde78f350bb17e93dc07a9b179d92b51e3ae98349be7a1b8e3d4f"
+      },
+      "status_reason": "当前 E4 联合优化汇总的 90 行由三个成员包组成；新主线保留时变碳强度但要求随多趟和新车队档位重做联合部分。",
+      "upstream_source_edges": [
+        {
+          "declared_vehicle_lock_record": {
+            "path": "data/ChinaInstances/china_parameter_lock_v2_20260718.json",
+            "record_number": 574,
+            "runtime_relation": "LOADER_SOURCE_PATH_DECLARATION; FILE_NOT_OPENED_BY_CURRENT_LOADER",
+            "sha256": "05078ffd735fc0f17f22b47d0c4d709dab2ba6838c002ab7cd85436010e155a8"
+          },
+          "edge_type": "USES_INPUT_PROVENANCE_MANIFEST",
+          "input_records": [
+            {
+              "authority": "finite_fleet_v1",
+              "path": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/fleet_caps.csv",
+              "record_number": 1,
+              "sha256": "48fcf934e480504d22981e850e24ce0daa7ff11b2f73d4f806b6396cd9fcd367"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-01-V2-LOCATIONS/cv/road_distance_m.csv",
+              "record_number": 452,
+              "sha256": "167be8fb9120ba29e495b8453c6e61182b785f35b920437af7bd66eefb4c19f9"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-01-V2-LOCATIONS/cv/road_duration_s.csv",
+              "record_number": 453,
+              "sha256": "0265c8b770934b7d6e8dc75bcb9e133934e82321a7ee0db576fb2d06ada3a69e"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-01-V2-LOCATIONS/cv/road_sum_v2d_m3_s2.csv",
+              "record_number": 454,
+              "sha256": "8a165b2dc37e64ebb6737217937359398b79eada5a9514721c4aa7cbde7ce11f"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-01-V2-LOCATIONS/ev/road_distance_m.csv",
+              "record_number": 455,
+              "sha256": "167be8fb9120ba29e495b8453c6e61182b785f35b920437af7bd66eefb4c19f9"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-01-V2-LOCATIONS/ev/road_duration_s.csv",
+              "record_number": 456,
+              "sha256": "0265c8b770934b7d6e8dc75bcb9e133934e82321a7ee0db576fb2d06ada3a69e"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-01-V2-LOCATIONS/ev/road_sum_v2d_m3_s2.csv",
+              "record_number": 457,
+              "sha256": "8a165b2dc37e64ebb6737217937359398b79eada5a9514721c4aa7cbde7ce11f"
+            },
+            {
+              "authority": "runtime_parameters_v4",
+              "path": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv",
+              "record_number": 488,
+              "sha256": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv",
+              "record_number": 489,
+              "sha256": "b7bcafb0fcaabc5ebc1557583b92858d3537ce8aca4ad7dbf6b1098387e21d2e"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv",
+              "record_number": 490,
+              "sha256": "886354a6a6a5fd3e63512caa800f9541637fd5e99e432b6843b235ef96300655"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instances/cn-prd-50c-01-V2-LOCATIONS/nodes.csv",
+              "record_number": 566,
+              "sha256": "d719607daeb61c3512c0ee0646343ecf2427d7a3ee6c9eb6c86ed8fc8eda1005"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/node_city_membership.csv",
+              "record_number": 572,
+              "sha256": "b60109531ab4c89fff57dd5e8a7640c887f63b09bbd3b218e063387a72999a20"
+            },
+            {
+              "authority": "additional_live_input",
+              "path": "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv",
+              "record_number": 573,
+              "sha256": "a36b833228f9313f02a5e7796156b1f1e0b1a39982e5427c017d25522349c982"
+            }
+          ],
+          "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+          "source_manifest": "docs/handoff/input_provenance_manifest_20260802/manifest.json"
+        }
+      ]
+    },
+    {
+      "current_authority_status": "承担当前数字",
+      "disposition": "KEEP_IN_PLACE_AND_ADD_MACHINE_READABLE_UPSTREAM_EDGE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "metadata role/status contains FORMAL",
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "7b860657f2abc6a7ad09a074c4aec0817c6bf2ca5ee1bb12757ee271a4f2cc7b",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/cn-prd-50c-02-V2-LOCATIONS",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": "PASS_FORMAL_PANEL_MEMBER",
+          "verdict": null
+        },
+        "decision_sha256": "bc4205b328690759fac1b4b5a54137ace711892c1029a5327ad5f8c04d3d4411",
+        "metadata_sha256": "7b860657f2abc6a7ad09a074c4aec0817c6bf2ca5ee1bb12757ee271a4f2cc7b",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "8dff9d796f6c2c3859ed31060eaba0a3c1c7b6b906d200f07a5237e5c5deea1d"
+      },
+      "status_reason": "当前 E4 联合优化汇总的 90 行由三个成员包组成；新主线保留时变碳强度但要求随多趟和新车队档位重做联合部分。",
+      "upstream_source_edges": [
+        {
+          "declared_vehicle_lock_record": {
+            "path": "data/ChinaInstances/china_parameter_lock_v2_20260718.json",
+            "record_number": 574,
+            "runtime_relation": "LOADER_SOURCE_PATH_DECLARATION; FILE_NOT_OPENED_BY_CURRENT_LOADER",
+            "sha256": "05078ffd735fc0f17f22b47d0c4d709dab2ba6838c002ab7cd85436010e155a8"
+          },
+          "edge_type": "USES_INPUT_PROVENANCE_MANIFEST",
+          "input_records": [
+            {
+              "authority": "finite_fleet_v1",
+              "path": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/fleet_caps.csv",
+              "record_number": 1,
+              "sha256": "48fcf934e480504d22981e850e24ce0daa7ff11b2f73d4f806b6396cd9fcd367"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-02-V2-LOCATIONS/cv/road_distance_m.csv",
+              "record_number": 458,
+              "sha256": "9a6971bb4448fba4e1ecec2202abb60227ec8640e0f5b0fcdc8459461130689f"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-02-V2-LOCATIONS/cv/road_duration_s.csv",
+              "record_number": 459,
+              "sha256": "1cf189bc29ff68c2bf0fa1e9232651bc5689022cd8cb6c4d66963bdefce8a49f"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-02-V2-LOCATIONS/cv/road_sum_v2d_m3_s2.csv",
+              "record_number": 460,
+              "sha256": "74f32aed3f23e92fd62aeac181f59e2587b1e901049a901607dd67bef6232707"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-02-V2-LOCATIONS/ev/road_distance_m.csv",
+              "record_number": 461,
+              "sha256": "9a6971bb4448fba4e1ecec2202abb60227ec8640e0f5b0fcdc8459461130689f"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-02-V2-LOCATIONS/ev/road_duration_s.csv",
+              "record_number": 462,
+              "sha256": "1cf189bc29ff68c2bf0fa1e9232651bc5689022cd8cb6c4d66963bdefce8a49f"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-02-V2-LOCATIONS/ev/road_sum_v2d_m3_s2.csv",
+              "record_number": 463,
+              "sha256": "74f32aed3f23e92fd62aeac181f59e2587b1e901049a901607dd67bef6232707"
+            },
+            {
+              "authority": "runtime_parameters_v4",
+              "path": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv",
+              "record_number": 488,
+              "sha256": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv",
+              "record_number": 489,
+              "sha256": "b7bcafb0fcaabc5ebc1557583b92858d3537ce8aca4ad7dbf6b1098387e21d2e"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv",
+              "record_number": 490,
+              "sha256": "886354a6a6a5fd3e63512caa800f9541637fd5e99e432b6843b235ef96300655"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instances/cn-prd-50c-02-V2-LOCATIONS/nodes.csv",
+              "record_number": 567,
+              "sha256": "7724d4a197f5f7eb9f14af785cb427c3ccc0f3fbd020f780012e847c6d9c082b"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/node_city_membership.csv",
+              "record_number": 572,
+              "sha256": "b60109531ab4c89fff57dd5e8a7640c887f63b09bbd3b218e063387a72999a20"
+            },
+            {
+              "authority": "additional_live_input",
+              "path": "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv",
+              "record_number": 573,
+              "sha256": "a36b833228f9313f02a5e7796156b1f1e0b1a39982e5427c017d25522349c982"
+            }
+          ],
+          "instance_id": "cn-prd-50c-02-V2-LOCATIONS",
+          "source_manifest": "docs/handoff/input_provenance_manifest_20260802/manifest.json"
+        }
+      ]
+    },
+    {
+      "current_authority_status": "承担当前数字",
+      "disposition": "KEEP_IN_PLACE_AND_ADD_MACHINE_READABLE_UPSTREAM_EDGE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "metadata role/status contains FORMAL",
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "339c16550b8bd1d42a91a3134d06520b61eaf52da0efa235294a199d2d3a2be3",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/cn-prd-50c-03-V2-LOCATIONS",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": "PASS_FORMAL_PANEL_MEMBER",
+          "verdict": null
+        },
+        "decision_sha256": "54095a531c3c39030951d983adc645009435919113692baa186f958562062faa",
+        "metadata_sha256": "339c16550b8bd1d42a91a3134d06520b61eaf52da0efa235294a199d2d3a2be3",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "3898dcb9c00c771d9a7a96637c916f82fbfe792501413a66c25c7c16b93a684c"
+      },
+      "status_reason": "当前 E4 联合优化汇总的 90 行由三个成员包组成；新主线保留时变碳强度但要求随多趟和新车队档位重做联合部分。",
+      "upstream_source_edges": [
+        {
+          "declared_vehicle_lock_record": {
+            "path": "data/ChinaInstances/china_parameter_lock_v2_20260718.json",
+            "record_number": 574,
+            "runtime_relation": "LOADER_SOURCE_PATH_DECLARATION; FILE_NOT_OPENED_BY_CURRENT_LOADER",
+            "sha256": "05078ffd735fc0f17f22b47d0c4d709dab2ba6838c002ab7cd85436010e155a8"
+          },
+          "edge_type": "USES_INPUT_PROVENANCE_MANIFEST",
+          "input_records": [
+            {
+              "authority": "finite_fleet_v1",
+              "path": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/fleet_caps.csv",
+              "record_number": 1,
+              "sha256": "48fcf934e480504d22981e850e24ce0daa7ff11b2f73d4f806b6396cd9fcd367"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-03-V2-LOCATIONS/cv/road_distance_m.csv",
+              "record_number": 464,
+              "sha256": "61920d08ed447715ebcf4d6d551f7d59bcec5e56e0e64d8832758fceddb566de"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-03-V2-LOCATIONS/cv/road_duration_s.csv",
+              "record_number": 465,
+              "sha256": "9047cbca4b4e9b1c74156117d5ba15497eb1abbe9d77cc5269adabaf6e6b0111"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-03-V2-LOCATIONS/cv/road_sum_v2d_m3_s2.csv",
+              "record_number": 466,
+              "sha256": "4df638cd1a8668755677c8700a8def2d83f9e1f6f4a420354176f797120ceb15"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-03-V2-LOCATIONS/ev/road_distance_m.csv",
+              "record_number": 467,
+              "sha256": "340335b8ee3bb2030a2203dd4a62135b085d97f39da4fb294f83fc649cd7394e"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-03-V2-LOCATIONS/ev/road_duration_s.csv",
+              "record_number": 468,
+              "sha256": "450e9e6103803417d6933329cc881ec5f4a3c0e439874f62df9e5d1a66164dc2"
+            },
+            {
+              "authority": "matrices_v10",
+              "path": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/instances/cn-prd-50c-03-V2-LOCATIONS/ev/road_sum_v2d_m3_s2.csv",
+              "record_number": 469,
+              "sha256": "f73aebca727f582acb8110f0b75a3d63bf9506bddd2d5b85af94fe13dbe65530"
+            },
+            {
+              "authority": "runtime_parameters_v4",
+              "path": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv",
+              "record_number": 488,
+              "sha256": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv",
+              "record_number": 489,
+              "sha256": "b7bcafb0fcaabc5ebc1557583b92858d3537ce8aca4ad7dbf6b1098387e21d2e"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv",
+              "record_number": 490,
+              "sha256": "886354a6a6a5fd3e63512caa800f9541637fd5e99e432b6843b235ef96300655"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instances/cn-prd-50c-03-V2-LOCATIONS/nodes.csv",
+              "record_number": 568,
+              "sha256": "a82707aa1741ee084f2b2a4bf0cd7f9fb1cca590fe88909302884073c8e6de3b"
+            },
+            {
+              "authority": "static_v3",
+              "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/node_city_membership.csv",
+              "record_number": 572,
+              "sha256": "b60109531ab4c89fff57dd5e8a7640c887f63b09bbd3b218e063387a72999a20"
+            },
+            {
+              "authority": "additional_live_input",
+              "path": "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv",
+              "record_number": 573,
+              "sha256": "a36b833228f9313f02a5e7796156b1f1e0b1a39982e5427c017d25522349c982"
+            }
+          ],
+          "instance_id": "cn-prd-50c-03-V2-LOCATIONS",
+          "source_manifest": "docs/handoff/input_provenance_manifest_20260802/manifest.json"
+        }
+      ]
+    },
+    {
+      "current_authority_status": "历史",
+      "disposition": "KEEP_AS_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "15981b3494933046828fcd8eb3835b2c12410fd3c9c78ea36fa28d48f05014b3",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/china_e3_e7/e5_enroute_nonlinear_20260801/b2_low_cost_diagnostic_20260801",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": false,
+          "schema": null,
+          "status": "DIAGNOSTIC_COMPLETE_NOT_FORMAL",
+          "verdict": null
+        },
+        "decision_sha256": "8c51bd9608e87ec224fcfc803ae3f904e089a70fcd58e4f04f2dede853729601",
+        "metadata_sha256": "15981b3494933046828fcd8eb3835b2c12410fd3c9c78ea36fa28d48f05014b3",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "74f72c057dc374dcbeb95ce34dd094f34711ee4835bdaf9d7dd03a46d2691ed6"
+      },
+      "status_reason": "decision.status=DIAGNOSTIC_COMPLETE_NOT_FORMAL 且 formal_result=false；FORMAL 命中是字符串误标，不是正式结果。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "29f589c70126c5a1d3e115a8732f999a15c8a5da43f592f594efd00324d78288",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/contract_audit/e1_e7_submission_contract_20260711",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "BLOCK_FORMAL_E4_E7_PENDING_SUBMISSION_CONTRACT_DECISION"
+        },
+        "decision_sha256": "d44f0c8924d7db0b01f2989ec911cf536d233fbcd60c4dce9b46a7eca5073054",
+        "metadata_sha256": "29f589c70126c5a1d3e115a8732f999a15c8a5da43f592f594efd00324d78288",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "8200de2fe0821fef52f1ac9aab60b79f1c0f8bc5d11f36916bfbce1a55568fea"
+      },
+      "status_reason": "旧提交合同阻断审计，当前 authority chain 已由 2026-08-02 TODO 与主线覆盖。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "历史",
+      "disposition": "KEEP_AS_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "da8266d3706e8b88976f36daaf937bdc7490acf74616bc463e78c1e0c944ab71",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e2_alns/e2b_component_ablation_formal_20260715",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "E2B_FORMAL_EVIDENCE_READY"
+        },
+        "decision_sha256": "a6287b56beda2dfa5b5662b220a12376ea6f3773847732d9b420a00efb6214fe",
+        "metadata_sha256": "da8266d3706e8b88976f36daaf937bdc7490acf74616bc463e78c1e0c944ab71",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "6fc4dc2a163c59df961fe7beb3506004428b2b98f102dcad5bf32e77a1ce0460"
+      },
+      "status_reason": "旧 E2 四臂消融为封存历史；2026-08-02 TODO 已另列当前车型下一因素三臂消融。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "历史",
+      "disposition": "KEEP_AS_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "a2de1849a6d57ebdc4dad0747aead3a37e4a5ad822091e9c4bd271eb55088a6a",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e2_alns/homberger_g1_true_swapstar_risk_gate_20260718",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "HOLD_TRUE_SWAPSTAR_BEFORE_FORMAL_G1"
+        },
+        "decision_sha256": "cee0b0fa97fa0dcee2b2e16c0332b83e16458c11a7e988039ab75ea40c0aef29",
+        "metadata_sha256": "a2de1849a6d57ebdc4dad0747aead3a37e4a5ad822091e9c4bd271eb55088a6a",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "d5d029f09384be03d4c8ac179083c87ee2d67e40497e8e19d42c93f81e508560"
+      },
+      "status_reason": "单实例风险门，decision.verdict=HOLD_TRUE_SWAPSTAR_BEFORE_FORMAL_G1，不承担正式性能数字。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "历史",
+      "disposition": "KEEP_AS_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "0a57d6cefd0879034de18dff07ef1286b47b5b889890577e407a301786937ae1",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e2_alns/homberger_g1_true_swapstar_risk_gate_v2_20260718",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "HOLD_TRUE_SWAPSTAR_BEFORE_FORMAL_G1"
+        },
+        "decision_sha256": "ee842934144d2e8a73cc3cfa5805309c206507ac8d67afe62bf2f31d10955b6b",
+        "metadata_sha256": "0a57d6cefd0879034de18dff07ef1286b47b5b889890577e407a301786937ae1",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "69897bf1afb66926dd8a77745c869dc16b85d2a756893cd8c754c47a439140bf"
+      },
+      "status_reason": "单实例风险门，decision.verdict=HOLD_TRUE_SWAPSTAR_BEFORE_FORMAL_G1，不承担正式性能数字。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "fd9ea349691f5429e30faa6b3c726e360cf6372d591909027b65bb223e40e02e",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e3_ablation/e3_mismatch_formal_20260713_25",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": "setp.e3.mismatch_formal.decision.v1",
+          "status": "PASS",
+          "verdict": "E3_MISMATCH_FORMAL_IDEAL"
+        },
+        "decision_sha256": "5a099f6b866fd392267f9a5c0cc3c30b45a342ca6b0f0c6a6ee1df5efcdf7b37",
+        "metadata_sha256": "fd9ea349691f5429e30faa6b3c726e360cf6372d591909027b65bb223e40e02e",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "e893b047ee0ef728c802496f12fa7fd7e77923adf8979820a721e5e4c760ea5c"
+      },
+      "status_reason": "旧 E3 参数扫描/旧正式批先被 2026-08-01 结构面板替代，随后 E3 又在 2026-08-02 新主线中降为模型组件。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "d44364f056d41b69dda44c657ed9f6376182b396e770495bec11bdd1ea631157",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e3_ablation/e3_mismatch_formal_20260713_50",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": "setp.e3.mismatch_formal.decision.v1",
+          "status": "PASS",
+          "verdict": "E3_MISMATCH_FORMAL_IDEAL"
+        },
+        "decision_sha256": "9bb141d5564eb813932a5b3d28edf871085ef136a8a6eb118f85e657012afab8",
+        "metadata_sha256": "d44364f056d41b69dda44c657ed9f6376182b396e770495bec11bdd1ea631157",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "e2b3be14d4de2d5a8e76c822a327a6d798d81f5b0076f1d7ef36319af772266b"
+      },
+      "status_reason": "旧 E3 参数扫描/旧正式批先被 2026-08-01 结构面板替代，随后 E3 又在 2026-08-02 新主线中降为模型组件。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "e9b020b5bf1ed59e022317b496f3caa37eddb542b0a81395b692b9c26db57131",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e3_ablation/e3_v11_clean_20260713/formal70",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "E3_FORMAL70_PASS"
+        },
+        "decision_sha256": "30b5fa8707982758ab2b05c1d8dbe55489b6b3276f1c581ce3b0af736da45b90",
+        "metadata_sha256": "e9b020b5bf1ed59e022317b496f3caa37eddb542b0a81395b692b9c26db57131",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "c0216785c35e6481cd0af150d73c83d03fa719cd4c7c160af87609a81107fcc1"
+      },
+      "status_reason": "旧 E3 参数扫描/旧正式批先被 2026-08-01 结构面板替代，随后 E3 又在 2026-08-02 新主线中降为模型组件。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "bfacdc71b01530d3af350ad49fa1b2cd76c79e8f9845d3ee095d3079f6ef6595",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e7_dynamic/e7_multinetwork_formal_20260715",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "E7_FORMAL_EVIDENCE_COMPLETE_WITH_ARM_FAILURES"
+        },
+        "decision_sha256": "9b7fbe0b3d45ac5a375962c91ee85590ea1e417af9a88b53e54adb41c62eaca9",
+        "metadata_sha256": "bfacdc71b01530d3af350ad49fa1b2cd76c79e8f9845d3ee095d3079f6ef6595",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "27329b1c5f78d521ec2e4f141a13bba80eec3a9bc8faf3a3eb7b4d97c33f53da"
+      },
+      "status_reason": "旧 E7 动态链被 2026-08-02 发车时机正式层重组取代；TODO 明确旧 E7 无可直接沿用的正式结果。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "434287491e88d2cf3050773481a9e8985f78f192df26f83b5850cb370fa2b9e0",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e7_dynamic/e7_multinetwork_independent_audit_20260715",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "PASS_E7_MULTINETWORK_FORMAL_AND_REPLAY_INDEPENDENT_AUDIT"
+        },
+        "decision_sha256": "4c47d28883165e893604df4d6023c5553aa37682ac6b985a69254abc6c672b18",
+        "metadata_sha256": "434287491e88d2cf3050773481a9e8985f78f192df26f83b5850cb370fa2b9e0",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "f9d41eee41a22f9beb9438dbc7f26f38b86db0fa41299703688829f2508ca537"
+      },
+      "status_reason": "旧 E7 动态链被 2026-08-02 发车时机正式层重组取代；TODO 明确旧 E7 无可直接沿用的正式结果。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "ec22e93a251fa5e9c8310227abeec72e20703941aa9d764cb34b3a1bff0fc89c",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e7_dynamic/e7_multinetwork_independent_audit_20260715_pre_hygiene_patch_20260718",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "PASS_E7_MULTINETWORK_FORMAL_AND_REPLAY_INDEPENDENT_AUDIT"
+        },
+        "decision_sha256": "4c47d28883165e893604df4d6023c5553aa37682ac6b985a69254abc6c672b18",
+        "metadata_sha256": "ec22e93a251fa5e9c8310227abeec72e20703941aa9d764cb34b3a1bff0fc89c",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "f9d41eee41a22f9beb9438dbc7f26f38b86db0fa41299703688829f2508ca537"
+      },
+      "status_reason": "旧 E7 动态链被 2026-08-02 发车时机正式层重组取代；TODO 明确旧 E7 无可直接沿用的正式结果。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "9840149175cd73642a97be98c379c8aa3cf6519d0de114ee23477edaa1283f94",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e7_dynamic/e7_multinetwork_preflight_v4_20260715",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "E7_FORMAL_EVIDENCE_COMPLETE_WITH_ARM_FAILURES"
+        },
+        "decision_sha256": "e5a6a0f37efe0d8e34c7e0103cb4aab590bf73f511e54e7efa805c540b5df5a3",
+        "metadata_sha256": "9840149175cd73642a97be98c379c8aa3cf6519d0de114ee23477edaa1283f94",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "df3423de8999a34f0951b348d8bb7f2f340116b171e1d6a145bbffd8710e8940"
+      },
+      "status_reason": "旧 E7 动态链被 2026-08-02 发车时机正式层重组取代；TODO 明确旧 E7 无可直接沿用的正式结果。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "e66b3d0289f835411be92e17a2f063008146b24dcbd1bd645faa98887cd80025",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e7_dynamic/e7_multinetwork_preflight_v5_20260715",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "E7_FORMAL_EVIDENCE_COMPLETE_WITH_ARM_FAILURES"
+        },
+        "decision_sha256": "e5a6a0f37efe0d8e34c7e0103cb4aab590bf73f511e54e7efa805c540b5df5a3",
+        "metadata_sha256": "e66b3d0289f835411be92e17a2f063008146b24dcbd1bd645faa98887cd80025",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "df3423de8999a34f0951b348d8bb7f2f340116b171e1d6a145bbffd8710e8940"
+      },
+      "status_reason": "旧 E7 动态链被 2026-08-02 发车时机正式层重组取代；TODO 明确旧 E7 无可直接沿用的正式结果。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "7fdb3fc68d51d0a0f6f28d4ac97beac5d4ca8211ae8595a27429a238134b84e4",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e7_dynamic/e7_v2_20260714/formal_batched_400_asset_aware",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "E7_PAIRED_FORMAL_PASS"
+        },
+        "decision_sha256": "0047a3dd0df7eaef88050fdaf896cc3b2aa1d1c7a3837cd32f31406b317ec837",
+        "metadata_sha256": "7fdb3fc68d51d0a0f6f28d4ac97beac5d4ca8211ae8595a27429a238134b84e4",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "2f87e0e374bbbd6547934275fb19ae7d8640bd8cbaee8c27b2921de2fc678ff2"
+      },
+      "status_reason": "旧 E7 动态链被 2026-08-02 发车时机正式层重组取代；TODO 明确旧 E7 无可直接沿用的正式结果。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "6f60ab92964c03b0158c11a71a18cca96ea6683e657671b856cc02af43b413f1",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "E7_PAIRED_FORMAL_PASS"
+        },
+        "decision_sha256": "0047a3dd0df7eaef88050fdaf896cc3b2aa1d1c7a3837cd32f31406b317ec837",
+        "metadata_sha256": "6f60ab92964c03b0158c11a71a18cca96ea6683e657671b856cc02af43b413f1",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "2f87e0e374bbbd6547934275fb19ae7d8640bd8cbaee8c27b2921de2fc678ff2"
+      },
+      "status_reason": "旧 E7 动态链被 2026-08-02 发车时机正式层重组取代；TODO 明确旧 E7 无可直接沿用的正式结果。",
+      "upstream_source_edges": []
+    },
+    {
+      "current_authority_status": "已被取代",
+      "disposition": "KEEP_AS_SUPERSEDED_HISTORY_NO_DELETE",
+      "graph_facts": {
+        "formal_marker_reasons": [
+          "decision role/status contains FORMAL"
+        ],
+        "hash_entries": 0,
+        "metadata_sha256": "fa3e7baec7085edd41f422e8a7bd35c9c3f9a7887f0beb6a735c63618c1de40f",
+        "paper_direct_reference_count": 0,
+        "zero_hash_reference": true,
+        "zero_indegree": true
+      },
+      "package": "baselines/e7_dynamic/m1_dynamic_truth_gate_20260711/e2_replay_post_dynamic_port",
+      "package_artifacts": {
+        "decision_fields": {
+          "evidence_role": null,
+          "formal_result": null,
+          "schema": null,
+          "status": null,
+          "verdict": "BLOCK_FORMAL_E4_E7_PENDING_SUBMISSION_CONTRACT_DECISION"
+        },
+        "decision_sha256": "d44f0c8924d7db0b01f2989ec911cf536d233fbcd60c4dce9b46a7eca5073054",
+        "metadata_sha256": "fa3e7baec7085edd41f422e8a7bd35c9c3f9a7887f0beb6a735c63618c1de40f",
+        "report_line_evidence": "report.md:1-12",
+        "report_sha256": "8200de2fe0821fef52f1ac9aab60b79f1c0f8bc5d11f36916bfbce1a55568fea"
+      },
+      "status_reason": "旧 E7 动态链被 2026-08-02 发车时机正式层重组取代；TODO 明确旧 E7 无可直接沿用的正式结果。",
+      "upstream_source_edges": []
+    }
+  ],
+  "schema": "resetp.formal-package-authority-review.v1",
+  "source_graph": {
+    "json_pointers": [
+      "/summary",
+      "/nodes",
+      "/isolated_packages_zero_indegree_zero_hash_reference"
+    ],
+    "path": "docs/handoff/legacy_sweep_round2_20260802/baselines_reference_graph.json",
+    "sha256": "a35d23ddd918d6d0ebd0e7a4dc5c824dca609511dc74eab15aca8aa680e40bab"
+  },
+  "status": "COMPLETE",
+  "summary": {
+    "carries_current_numbers": 4,
+    "deleted": 0,
+    "historical": 5,
+    "moved": 0,
+    "reviewed_packages": 21,
+    "superseded": 12
+  },
+  "task_id": "Z2"
+}

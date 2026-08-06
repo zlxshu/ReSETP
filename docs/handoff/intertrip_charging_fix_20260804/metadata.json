@@ -1,0 +1,258 @@
+{
+  "checker_change": "solver/src/setp_solver/check.py: CHARGING_TRIP_OVERLAP",
+  "draft_status": "TECHNICAL_FIX_VALIDATION",
+  "forbidden_changes": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/search/evaluation.py",
+    "docs/paper_gci_dmm_vrp_20260804/"
+  ],
+  "frozen_matrix": {
+    "arms": [
+      "O",
+      "C",
+      "P"
+    ],
+    "budgets": [
+      100,
+      1000
+    ],
+    "pythonhashseed": 0,
+    "run_count_expected": 18,
+    "seeds": [
+      1,
+      2,
+      3
+    ]
+  },
+  "generator_changes": [
+    "solver/src/setp_solver/china81_completion.py",
+    "solver/src/setp_solver/search/multitrip_schedule.py"
+  ],
+  "instance": {
+    "customers": 50,
+    "demand": 13264.0,
+    "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+    "scenario_date": "2025-02-12"
+  },
+  "midday_12_15_zero_all_pass": true,
+  "missing_keys": [],
+  "paper_claim_allowed": false,
+  "protected_hash_contract_pass": true,
+  "protected_hashes_after": {
+    "solver/src/setp_solver/check.py": "886e91108f666c4c4dcb379020b5ec4e055e9a6150fdb42d69bd1ffc9e5ad38c",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/check.py": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "regression": {
+    "legal": [
+      {
+        "pass": true,
+        "solution_locator": "runs/C_seed1_budget1000/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/C_seed2_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/C_seed3_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/O_seed2_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/O_seed2_budget1000/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/P_seed1_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/P_seed2_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/P_seed3_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/P_seed3_budget1000/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/C_seed1_budget1000/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/C_seed2_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/C_seed3_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/O_seed1_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/O_seed1_budget1000/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/O_seed2_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/O_seed2_budget1000/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/O_seed3_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/O_seed3_budget1000/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/P_seed1_budget100/solution",
+        "violation_types": []
+      },
+      {
+        "pass": true,
+        "solution_locator": "runs/P_seed1_budget1000/solution",
+        "violation_types": []
+      }
+    ],
+    "legal_checked": 20,
+    "legal_passed": 20,
+    "legal_required": 20,
+    "positive": [
+      {
+        "charging_trip_overlap_count": 1,
+        "key": "C_seed2_budget1000",
+        "pass": true,
+        "violation_types": [
+          "CHARGING_TRIP_OVERLAP"
+        ]
+      },
+      {
+        "charging_trip_overlap_count": 1,
+        "key": "C_seed1_budget100",
+        "pass": true,
+        "violation_types": [
+          "CHARGING_TRIP_OVERLAP"
+        ]
+      },
+      {
+        "charging_trip_overlap_count": 1,
+        "key": "C_seed3_budget1000",
+        "pass": true,
+        "violation_types": [
+          "CHARGING_TRIP_OVERLAP"
+        ]
+      }
+    ],
+    "positive_passed": 3,
+    "positive_required": 3,
+    "schema": "resetp.t10-intertrip-charging-fix-regression.v1",
+    "status": "PASS"
+  },
+  "run_count_observed": 18,
+  "schema": "resetp.t10-intertrip-charging-fix-metadata.v1",
+  "service_red_line_all_pass": true,
+  "status": "TECHNICAL_FIX_VALIDATION_COMPLETE",
+  "task_id": "T10-INTERTRIP-CHARGING-FIX",
+  "test_suite": {
+    "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src /opt/anaconda3/bin/python3.13 -m pytest solver/tests -q",
+    "duration_seconds": 333.74,
+    "failed": 14,
+    "failures": [
+      {
+        "reason": "old test requires charge_day_offset=0; repaired generator emits pre-horizon first-trip charging at -1",
+        "test": "tests/test_china81_shared_completion_20260720.py::test_shared_completion_is_feasible_monotone_and_complete"
+      },
+      {
+        "reason": "pre-existing protected-contract verdict HALT_FROZEN_PROTECTED_CONTRACT",
+        "test": "tests/test_e2_80k_robustness_gate.py::test_protected_semantics_and_goeke80_parameters_match_frozen_commit"
+      },
+      {
+        "reason": "pre-existing E5 carbon-aware replay is infeasible",
+        "test": "tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables"
+      },
+      {
+        "reason": "pre-existing diagnostic labels one case repair_logic_defect",
+        "test": "tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts"
+      },
+      {
+        "reason": "pre-existing candidate objective is not below initial objective",
+        "test": "tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps"
+      },
+      {
+        "reason": "pre-existing E4 manifest reports multitrip_schedule.py and check.py drift",
+        "test": "tests/test_paper_evidence_boundaries.py::test_current_e2b_e3_e4_and_e6_identity_matrices_are_exact"
+      },
+      {
+        "reason": "new approved hard constraint correctly rejects in-trip public charging overlap",
+        "test": "tests/test_public_station_multitrip_20260723.py::test_public_station_route_closes_strict_clock_soc_and_certificate"
+      },
+      {
+        "reason": "same new hard constraint makes the old in-trip public-charge fixture infeasible",
+        "test": "tests/test_public_station_multitrip_20260723.py::test_public_station_route_passes_mandatory_strict_runtime"
+      },
+      {
+        "reason": "new approved hard constraint correctly rejects in-trip charging overlap",
+        "test": "tests/test_refined_carbon_charging.py::test_integrated_route_repair_inserts_station_and_remains_fully_feasible"
+      },
+      {
+        "reason": "same new hard constraint rejects the old in-trip charging fixture",
+        "test": "tests/test_refined_carbon_charging.py::test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation"
+      },
+      {
+        "reason": "new hard constraint removes the old in-trip charging witness",
+        "test": "tests/test_search.py::SearchGateTests::test_h2_initial_solution_contains_deterministic_ev_charging_witness"
+      },
+      {
+        "reason": "same new hard constraint removes the old in-trip charging witness",
+        "test": "tests/test_search.py::SearchGateTests::test_h3_short_alns_has_nonzero_charging_signal"
+      },
+      {
+        "reason": "same new hard constraint removes the old in-trip charging witness",
+        "test": "tests/test_search.py::SearchGateTests::test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges"
+      },
+      {
+        "reason": "pre-existing strong-bridge verdict differs from fixture expectation",
+        "test": "tests/test_strong_bridge_backend_alignment.py::StrongBridgeBackendAlignmentTests::test_decision_gate_reports_backend_only_and_main_local_search_separately"
+      }
+    ],
+    "passed": 898,
+    "skipped": 1
+  }
+}

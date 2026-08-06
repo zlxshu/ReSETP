@@ -1,0 +1,62 @@
+[
+  {
+    "tex_line": 928,
+    "original_text": "车场与客户位置基于真实设施点位构建,",
+    "gap_description": "强于来源。facilities.csv的depot_point_semantics为SCENARIO_ROAD_ACCESS_POINT_NOT_OBSERVED_TRUCK_GATE；客户是按固定种子从公开OSM POI池选作假设客户。准确方向：区分公开设施/POI身份坐标与构造的客户选择、车场道路接入点。"
+  },
+  {
+    "tex_line": 929,
+    "original_text": "弧段距离与行驶时间来自OpenStreetMap路网数据和OSRM路径引擎的真实道路计算,",
+    "gap_description": "“真实道路计算”易被读成实测。矩阵权威metadata.json登记router=OSRM 26.7.3、静态profile和1578948个有向点对；没有车辆轨迹或逐时拥堵观测。准确方向：冻结OSM路网快照上的OSRM路由距离与静态profile时间。"
+  },
+  {
+    "tex_line": "931-934",
+    "original_text": "客户需求、服务时长和时间窗为按固定随机种子生成的中国单位合成订单(非企业实测订单): 需求量按20--80、81--200、201--350 kg三段混合生成, 对应服务时长8、12、18 min, 时间窗在06:00--22:00内按30 min网格生成; 同一规模的三个复本使用相同的时间窗分布, 仅客户实现与订单随机种子互斥.",
+    "gap_description": "来源等级的总括“合成、非企业实测”是诚实的，但具体生成规则已失真。orders.csv实际为需求139/208/278/347/417 kg五档，服务6/9/12/15/18 min；时间窗来自Zhang 2025外部匿名企业案例的交付窗整行有放回重采样，不是30分钟网格。准确方向：需求单列为容量占比构造代理，服务时长和连续时间窗单列为外部案例迁移，并交代联合重采样。"
+  },
+  {
+    "tex_line": 936,
+    "original_text": "车队由燃油车和电动车混合组成, 车型参数取自国内在售厢式货车车型的官方公开数据,",
+    "gap_description": "过度概括。当前EV是FOTON-AUMARK-ES1-EXPRESS-STAKE快递版栏板，不是厢式；官方只支持载重、质量、电池等指定字段，EV高度、风阻、投影因子不在官方字段内。准确方向：逐车型写配置，并把官方规格与构造/未登记物理参数分开。"
+  },
+  {
+    "tex_line": 938,
+    "original_text": "电动车充电曲线为SOC分段常功率: 90%前保持额定功率, 90%--100%降为一半.",
+    "gap_description": "曲线规则可与代码NL90_MILD对上，但现有来源链没有ES1 77.28 kWh实测曲线或具页码文献。准确方向：明确其为预设充电情景；若要称车型规律须另补可核验来源。"
+  },
+  {
+    "tex_line": 983,
+    "original_text": "迎风面积(m^2) & 4.64 & 6.08\\",
+    "gap_description": "与当前实现直接冲突。china81.py:644和671对CV、EV都使用0.85×2.2×2.48=4.6376 m^2；EV的2.480 m高度还是构造迁移。准确方向：数值先与运行时一致，再单列高度/投影因子的非观测边界。"
+  },
+  {
+    "tex_line": 991,
+    "original_text": "注：质量、载重与电池为厂家官方车型数据(燃油车厢式配置、电动车快递版栏板配置)；空气阻力系数、迎风面积投影因子和能耗系数为公开情景代理与文献迁移值；电动车电机额定/峰值功率待补充官方数据。",
+    "gap_description": "把三组证据混在一起并抬高其中两组。滚阻/能耗系数可回到Goeke/Demir文献；0.45风阻和0.85投影因子只有代码source id，未映射原件，属于未登记；EV高度为构造迁移。准确方向：官方规格、文献迁移、构造假设、未登记四层分别交代。"
+  },
+  {
+    "tex_line": 994,
+    "original_text": "参考现实数据与相关文献设置以下参数.",
+    "gap_description": " blanket措辞覆盖了公开发布、构造代理和未登记值。随后参数中车场合同类别、公共服务费、60/22 kW、固定费、收入等并非统一意义的“现实数据”。准确方向：按公开发布值、文献迁移值和构造情景分组引出。"
+  },
+  {
+    "tex_line": "995-996",
+    "original_text": "燃油价按2025年2月12日各城市发展改革部门公布的0号柴油最高零售价分城市设置: 北京、成都7.48; 天津、石家庄7.43; 广州、深圳、东莞、佛山7.44; 重庆7.50元/L;",
+    "gap_description": "重庆部分强于来源。diesel_price_2025_02_12_source_register.csv把重庆7.50标为DERIVED_FROM_OFFICIAL_NDRC_PER_TON_AND_OFFICIAL_LOCAL_ADJACENT_RETAIL_TABLES，并非同日地方升价直录。准确方向：八城直用公开区域价；重庆单列为官方材料推导情景。"
+  },
+  {
+    "tex_line": 1036,
+    "original_text": "公共站额定充电功率60 kW, 车场充电功率22 kW.",
+    "gap_description": "缺少来源边界。facilities.csv把公共站60 kW/单枪标为UNIFORM_PREDECLARED_SCENARIO_PROXY，把车场22 kW/2枪标为UNIFORM_PLANNED_CAPACITY_SCENARIO_PROXY。准确方向：明确为全站统一预设能力，不是命名站或园区设备观测。"
+  },
+  {
+    "tex_line": "1040-1042",
+    "original_text": "由于电网碳排放因子按省级电网发布, 且城市群横跨多张省级电网, 三个城市群分别采用其核心省级电网的序列作为区域碳强度: 京津冀取北京电网、珠三角取广东电网、成渝取重庆电网.",
+    "gap_description": "与当前运行时映射不符。china81.py:70-125及日历carbon_source_column实际逐城使用Beijing、Tianjin、Hebei、Guangdong、Sichuan、Chongqing六列，不是三区各用一条核心序列。准确方向：逐城列出六省级列映射。"
+  },
+  {
+    "tex_line": 1545,
+    "original_text": "通过公开标准算例和中国81个自有算例验证算法的求解表现,",
+    "gap_description": "“自有”在前文已称仿真时可理解为作者自建，但在结语脱离来源限定后仍可能被读成自有业务数据。准确方向：直接称“本文构建的中国三大城市群81个仿真算例”或同等明确表述。"
+  }
+]

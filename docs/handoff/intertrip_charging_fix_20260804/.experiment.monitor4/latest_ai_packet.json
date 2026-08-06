@@ -1,0 +1,121 @@
+{
+  "created_at": "2026-08-04T15:23:37+00:00",
+  "current_status": {
+    "checked_at": "2026-08-04T15:23:37+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/raw_runs.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/raw_runs.csv"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log": {
+        "age_seconds": 29.603424787521362,
+        "exists": true,
+        "mtime": 1785856987.63,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log",
+        "size": 66
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json"
+      }
+    },
+    "findings": [
+      {
+        "code": "FINAL_RESULT_MISSING",
+        "details": {},
+        "message": "completion marker exists but result is missing: /Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/raw_runs.csv",
+        "severity": "critical"
+      },
+      {
+        "code": "FINAL_RESULT_MISSING",
+        "details": {},
+        "message": "completion marker exists but result is missing: /Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json",
+        "severity": "critical"
+      }
+    ],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log"
+    ],
+    "name": "t10-intertrip-charging-fix",
+    "paused": false,
+    "process": {
+      "alive": false,
+      "cpu_percent": 0,
+      "members": [],
+      "pgid": 50397,
+      "root_pid": 50397,
+      "rss_mb": 0.0
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 770.7159769535065,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1785856246.52,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "a4d8d57e7fd01c581464453896cc49978d22bceedb9534359d1e09670151e481",
+        "size": 48155
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 187349.74483585358,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1785669667.49,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+        "size": 46269
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+        "age_seconds": 1852871.9369180202,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784004145.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+        "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+        "size": 7609
+      }
+    },
+    "runtime_seconds": 30.114866256713867,
+    "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/.experiment.monitor4/scenes/20260804-232337-anomaly",
+    "schema_version": 1,
+    "state": "ANOMALY",
+    "system": {
+      "free_memory_mb": 407.9375,
+      "load_average_15m": 2.73681640625,
+      "load_average_1m": 2.98779296875,
+      "load_average_5m": 2.98291015625,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 46.0,
+      "swapouts": 66068781
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "t10-intertrip-charging-fix",
+    "objective": "Replay the frozen T5 18-run matrix after the approved inter-trip charging fix"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log": [
+      "RUNNER_HALT RuntimeError: preregistration draft marker is missing"
+    ]
+  },
+  "reason": "ANOMALY",
+  "schema_version": 1
+}

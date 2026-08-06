@@ -1,0 +1,31 @@
+{
+  "schema": "resetp.artifact-hashes.v1",
+  "task_id": "T7-EVAL-CHAIN-CARBON-CONSISTENCY",
+  "algorithm": "sha256",
+  "draft_status": "TECHNICAL_FIX_VALIDATION",
+  "artifacts": {
+    "completion_trace.csv": "ce4a7bdeb379c3cd27bd5ce2358d12e41e2f5b843825ed83f16300bcc7c2a1ac",
+    "decision.json": "8f97fabb9fbaa83ed829062d02a6e6f6a055afaf18f481d9ae2626849e53a633",
+    "done.json": "bac1866a1b3bb6e2c47a7fa3cf47e5f9525db6d45d553c4988cbd85af36cf72f",
+    "metadata.json": "0b280d6d9ad6212b05e3569e5deda7591d922852233c0a86ebaea30803c300d3",
+    "monitor.json": "b070a1a075a72c665bbcab0627a9a2ad25a6e8614ec9dc5da6942a3bac71bcb6",
+    "preregistration.json": "4d59c5a13394e3de626e5b6271afd2d10996864730415fbf8e2a1da1fdd434b8",
+    "probe_raw.csv": "8c04a57508a722ff510314b0ef08fcfd914c54a525f745c234fd9bec595be81c",
+    "raw_runs.csv": "8c04a57508a722ff510314b0ef08fcfd914c54a525f745c234fd9bec595be81c",
+    "report.md": "d4b62815a52276f806f88ca817e6b6771aaa59509090d3d98a7fe82775989b1e",
+    "reproduce_minimal.py": "eedb595829b41136affa5168c018ef3e6d496ff884212e7fc9d6c8f4501ecd4b",
+    "runner_state.json": "31c68b08616eb14f52e87d28a064fecacd6193d14856eb312b8cc49380445786",
+    "slot_distribution.csv": "af046ad83750033da550d74072ba8ab0713e153becae280272efedf5a3999ce8",
+    "solution_witnesses.json": "6d11d6e20d4d4b768313ecaa1eba3a461cccdee534d9f8372c0ab7783e3f905f",
+    "t7_runner.py": "2b5fab3f5b46a6d775b7617fff183acefa8b9d0396c13015d11bfe9b31210774"
+  },
+  "exclusions": [
+    "artifact_hashes.json",
+    "._*",
+    "**/__pycache__/**",
+    "**/.pytest_cache/**",
+    ".t7-eval-chain-carbon-consistency.monitor/**",
+    "*.pyc",
+    "temporary files (*.tmp, *.temp)"
+  ]
+}

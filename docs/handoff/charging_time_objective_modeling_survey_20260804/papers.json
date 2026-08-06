@@ -1,0 +1,234 @@
+{
+  "task_id": "T1-CHARGE-OBJ-MODEL",
+  "date": "2026-08-04",
+  "page_convention": "pdf_page is the physical page number in the listed PDF, counted from the first page of the file; printed_page is included only where it differs",
+  "record_count": 11,
+  "papers": [
+    {
+      "id": "lin_ghaddar_nathwani_2021",
+      "authors": ["Bo Lin", "Bissan Ghaddar", "Jatin Nathwani"],
+      "year": 2021,
+      "title": "Electric vehicle routing with charging/discharging under time-variant electricity prices",
+      "venue": "Transportation Research Part C: Emerging Technologies",
+      "volume": "130",
+      "pages_or_article": "103285",
+      "doi": "10.1016/j.trc.2021.103285",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/LPDQN9V7/Lin 等 _ 2021 _ Electric Vehicle Routing and ChargingDischarging under Time-Variant Electricity Prices.pdf",
+      "pdf_version": "publisher full text",
+      "full_text_read": true,
+      "directions": ["time-of-use electricity price", "joint routing and charging/discharging", "time-period occupancy"],
+      "equation_evidence": [
+        {"equation": "(1)", "pdf_pages": [8], "role": "time-period charging/discharging net-cost objective"},
+        {"equation": "(6)", "pdf_pages": [8], "role": "departure time after occupied charging/discharging periods"},
+        {"equations": ["(10)", "(11)", "(12)", "(13)"], "pdf_pages": [8], "role": "battery transition and charging/discharging bounds"},
+        {"equation": "(14)", "pdf_pages": [8, 9], "role": "arrival-time and period-start activation"}
+      ],
+      "result_pages": [20, 21, 22, 25, 26, 29, 30]
+    },
+    {
+      "id": "shi_wang_zhou_he_2025",
+      "authors": ["Weixuan Shi", "Nengmin Wang", "Li Zhou", "Zhengwen He"],
+      "year": 2025,
+      "title": "The bi-objective mixed-fleet vehicle routing problem under decentralized collaboration and time-of-use prices",
+      "venue": "Expert Systems with Applications",
+      "volume": "273",
+      "pages_or_article": "126875",
+      "doi": "10.1016/j.eswa.2025.126875",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/K4WVSUAB/Shi 等 _ 2025 _ The bi-objective mixed-fleet vehicle routing problem under decentralized collaboration and time-of-u.pdf",
+      "pdf_version": "publisher full text",
+      "full_text_read": true,
+      "directions": ["time-of-use electricity price", "mixed fleet", "continuous charging interval integral"],
+      "equation_evidence": [
+        {"equation": "unnumbered P_E(tau_i) definition", "pdf_pages": [4], "role": "integral of piecewise electricity price over a continuous charging interval"},
+        {"equation": "(3)", "pdf_pages": [4], "role": "mixed-fleet profit objective including time-dependent charging cost"},
+        {"equation": "(12)", "pdf_pages": [5], "role": "route time propagation including full-charge duration"}
+      ],
+      "result_pages": [9, 10, 12]
+    },
+    {
+      "id": "yao_chen_salazar_yang_2023",
+      "authors": ["Canqi Yao", "Shibo Chen", "Mauro Salazar", "Zaiyue Yang"],
+      "year": 2023,
+      "title": "Joint Routing and Charging Problem of Electric Vehicles With Incentive-Aware Customers Considering Spatio-Temporal Charging Prices",
+      "venue": "IEEE Transactions on Intelligent Transportation Systems",
+      "volume": "24",
+      "issue": "11",
+      "pages_or_article": "12215-12226",
+      "doi": "10.1109/TITS.2023.3286952",
+      "pdf_path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/charging_time_objective_modeling_survey_20260804/source_pdfs/Yao_et_al_2023_arXiv2201.02311.pdf",
+      "pdf_version": "author preprint v4, arXiv:2201.02311; page references are to this PDF",
+      "full_text_read": true,
+      "directions": ["spatio-temporal charging prices", "continuous arrival time", "discrete charging-period start and occupancy"],
+      "equation_evidence": [
+        {"equation": "(6)", "pdf_pages": [5, 6], "role": "battery transition with partial charging amount"},
+        {"equations": ["(10a)", "(10b)"], "pdf_pages": [6], "role": "charging-period start and single contiguous session"},
+        {"equation": "(11)", "pdf_pages": [6], "role": "charging duration versus occupied periods"},
+        {"equations": ["(12a)", "(12b)"], "pdf_pages": [6], "role": "continuous arrival time placed in the start period"},
+        {"equation": "Problem 1 objective, unnumbered", "pdf_pages": [7], "role": "spatio-temporal charging price in joint routing objective"}
+      ],
+      "result_pages": [14, 15, 16],
+      "transcription_note": "The first charging-cost summation index is printed as i in R although charging nodes are defined as C; report.md preserves the printed index."
+    },
+    {
+      "id": "miyabe_fujimoto_hayashi_2025",
+      "authors": ["Ryoji Miyabe", "Yu Fujimoto", "Yasuhiro Hayashi"],
+      "year": 2025,
+      "title": "Low-carbon routing and charging planning for electric freight trucks utilizing local surplus solar power",
+      "venue": "Journal of Energy Storage",
+      "volume": "132",
+      "pages_or_article": "117626",
+      "doi": "10.1016/j.est.2025.117626",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/MP2SVFTJ/Miyabe 等 _ 2025 _ Low-carbon routing and charging planning for electric freight trucks utilizing local surplus solar p.pdf",
+      "pdf_version": "publisher full text",
+      "full_text_read": true,
+      "directions": ["time-varying grid carbon intensity", "joint routing and charging", "time-expanded network"],
+      "equation_evidence": [
+        {"equation": "(3)", "pdf_pages": [8], "role": "grid/PV carbon objective"},
+        {"equation": "(9)", "pdf_pages": [9], "role": "time-indexed battery feasibility"},
+        {"equation": "(13)", "pdf_pages": [9, 10], "role": "one vehicle state per time period"},
+        {"equation": "(17)", "pdf_pages": [10], "role": "grid electricity after local surplus-PV offset"}
+      ],
+      "result_pages": [11, 13, 14, 15, 17]
+    },
+    {
+      "id": "cheng_bian_shi_chen_2022",
+      "authors": ["Kai-Wen Cheng", "Yuexin Bian", "Yuanyuan Shi", "Yize Chen"],
+      "year": 2022,
+      "title": "Carbon-Aware EV Charging",
+      "venue": "2022 IEEE International Conference on Communications, Control, and Computing Technologies for Smart Grids (SmartGridComm)",
+      "volume": null,
+      "pages_or_article": "186-192",
+      "doi": "10.1109/SmartGridComm52983.2022.9960988",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/57ITRNUI/Cheng 等 _ 2022 _ Carbon-Aware EV Charging.pdf",
+      "pdf_version": "author full text",
+      "full_text_read": true,
+      "directions": ["time-varying grid carbon intensity", "charging scheduling", "station power capacity"],
+      "equation_evidence": [
+        {"equations": ["(2a)", "(2b)", "(2c)", "(2d)", "(2e)", "(2f)", "(2g)"], "pdf_pages": [3, 4], "role": "carbon-aware charging objective, SOC, vehicle and station limits, fixed session window"}
+      ],
+      "result_pages": [5, 6, 7]
+    },
+    {
+      "id": "keskin_catay_2016",
+      "authors": ["Merve Keskin", "Bülent Çatay"],
+      "year": 2016,
+      "title": "Partial recharge strategies for the electric vehicle routing problem with time windows",
+      "venue": "Transportation Research Part C: Emerging Technologies",
+      "volume": "65",
+      "pages_or_article": "111-127",
+      "doi": "10.1016/j.trc.2016.01.013",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/9BB85AR9/Keskin和Çatay _ 2016 _ Partial recharge strategies for the electric vehicle routing problem with time windows.pdf",
+      "pdf_version": "publisher full text",
+      "full_text_read": true,
+      "directions": ["partial recharging", "continuous charging amount", "hard time windows"],
+      "equation_evidence": [
+        {"equation": "(1)", "pdf_pages": [4], "role": "distance objective"},
+        {"equation": "(6)", "pdf_pages": [4], "role": "route time including continuous partial-charge duration"},
+        {"equations": ["(11)", "(12)"], "pdf_pages": [4, 5], "role": "battery transition and partial-charge bounds"}
+      ],
+      "result_pages": [13, 14, 15]
+    },
+    {
+      "id": "montoya_gueret_mendoza_villegas_2017",
+      "authors": ["Alberto Montoya", "Christelle Guéret", "Jorge E. Mendoza", "Juan G. Villegas"],
+      "year": 2017,
+      "title": "The electric vehicle routing problem with nonlinear charging function",
+      "venue": "Transportation Research Part B: Methodological",
+      "volume": "103",
+      "pages_or_article": "87-110",
+      "doi": "10.1016/j.trb.2017.02.004",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/72THJGSQ/Montoya 等 _ 2017 _ The electric vehicle routing problem with nonlinear charging function.pdf",
+      "pdf_version": "publisher full text",
+      "full_text_read": true,
+      "directions": ["partial recharging", "nonlinear charging function", "piecewise-linear charging curve"],
+      "equation_evidence": [
+        {"equation": "(1)", "pdf_pages": [5], "role": "travel plus charging time objective"},
+        {"equations": ["(11)", "(12)", "(13)", "(14)", "(15)", "(16)", "(17)"], "pdf_pages": [6], "role": "adjacent-breakpoint interpolation on nonlinear charging curve"},
+        {"equation": "(25)", "pdf_pages": [6], "role": "actual charging duration"},
+        {"equation": "(27)", "pdf_pages": [6, 7], "role": "route time propagation with charging duration"}
+      ],
+      "result_pages": [13, 14, 15]
+    },
+    {
+      "id": "froger_jabali_mendoza_laporte_2022",
+      "authors": ["Aurélien Froger", "Ola Jabali", "Jorge E. Mendoza", "Gilbert Laporte"],
+      "year": 2022,
+      "title": "The Electric Vehicle Routing Problem with Capacitated Charging Stations",
+      "venue": "Transportation Science",
+      "volume": "56",
+      "issue": "2",
+      "pages_or_article": "460-482",
+      "doi": "10.1287/trsc.2021.1111",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/DS4ZEACC/Froger 等 _ 2022 _ The electric vehicle routing problem with capacitated charging stations.pdf",
+      "pdf_version": "HAL author manuscript; physical PDF page is printed manuscript page plus one",
+      "full_text_read": true,
+      "directions": ["partial recharging", "capacitated charging stations", "continuous session non-overlap"],
+      "equation_evidence": [
+        {"equation": "(1)", "pdf_pages": [8], "printed_pages": [7], "role": "path travel, charging and waiting-time objective"},
+        {"equation": "(24)", "pdf_pages": [8, 9], "printed_pages": [7, 8], "role": "partial-charge duration"},
+        {"equations": ["(27)", "(28)", "(29)"], "pdf_pages": [9], "printed_pages": [8], "role": "continuous charging-session start and end"},
+        {"equations": ["(34)", "(35)"], "pdf_pages": [9, 10], "printed_pages": [8, 9], "role": "station-capacity ordering and flow"}
+      ],
+      "result_pages": [20, 21, 22, 23, 24, 25, 26, 27]
+    },
+    {
+      "id": "zhen_ma_wang_xiao_zhang_2020",
+      "authors": ["Lu Zhen", "Chengle Ma", "Kai Wang", "Liyang Xiao", "Wei Zhang"],
+      "year": 2020,
+      "title": "Multi-depot multi-trip vehicle routing problem with time windows and release dates",
+      "venue": "Transportation Research Part E: Logistics and Transportation Review",
+      "volume": "135",
+      "pages_or_article": "101866",
+      "doi": "10.1016/j.tre.2020.101866",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/4QNKCCAE/Zhen 等 _ 2020 _ Multi-depot multi-trip vehicle routing problem with time windows and release dates.pdf",
+      "pdf_version": "publisher full text",
+      "full_text_read": true,
+      "directions": ["multi-depot", "multi-trip", "return and next-departure time"],
+      "equation_evidence": [
+        {"equation": "(1)", "pdf_pages": [4], "role": "total travel-time objective"},
+        {"equations": ["(10)", "(11)", "(12)", "(13)", "(14)"], "pdf_pages": [5], "role": "release, departure, return, next-trip and customer time propagation"}
+      ],
+      "result_pages": [12, 13, 14, 15, 16, 17]
+    },
+    {
+      "id": "zhao_poon_tan_zhang_2024",
+      "authors": ["Jingyi Zhao", "Mark Poon", "Vincent Y. F. Tan", "Zhenzhen Zhang"],
+      "year": 2024,
+      "title": "A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-dependent vehicle routing problem",
+      "venue": "European Journal of Operational Research",
+      "volume": "317",
+      "issue": "3",
+      "pages_or_article": "921-935",
+      "doi": "10.1016/j.ejor.2024.04.011",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/YRTBDEXW/Zhao 等 _ 2024 _ A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-depend.pdf",
+      "pdf_version": "publisher full text",
+      "full_text_read": true,
+      "directions": ["multi-trip", "time-dependent travel time", "continuous return and next-departure time"],
+      "equation_evidence": [
+        {"equation": "(1)", "pdf_pages": [3], "printed_pages": [923], "role": "route-duration and vehicle-use objective"},
+        {"equation": "(8)", "pdf_pages": [4], "printed_pages": [924], "role": "time-dependent return time"},
+        {"equation": "(11)", "pdf_pages": [4], "printed_pages": [924], "role": "non-overlap of consecutive trips"}
+      ],
+      "result_pages": [10, 11, 12]
+    },
+    {
+      "id": "keskin_catay_laporte_2021",
+      "authors": ["Merve Keskin", "Bülent Çatay", "Gilbert Laporte"],
+      "year": 2021,
+      "title": "A simulation-based heuristic for the electric vehicle routing problem with time windows and stochastic waiting times at recharging stations",
+      "venue": "Computers & Operations Research",
+      "volume": "125",
+      "pages_or_article": "105060",
+      "doi": "10.1016/j.cor.2020.105060",
+      "pdf_path": "/Users/zhouleixishu/Zotero/storage/CCE5YQGB/Keskin 等 _ 2021 _ A simulation-based heuristic for the electric vehicle routing problem with time windows and stochast.pdf",
+      "pdf_version": "publisher full text",
+      "full_text_read": true,
+      "directions": ["stochastic waiting at charging stations", "partial charging", "boundary evidence: not time-of-use pricing"],
+      "equation_evidence": [
+        {"equation": "(1)", "pdf_pages": [3], "role": "distance, duration and vehicle-use objective"},
+        {"equation": "(6)", "pdf_pages": [3], "role": "route time with partial charging and expected waiting"}
+      ],
+      "result_pages": [10, 11, 12, 13, 14]
+    }
+  ]
+}

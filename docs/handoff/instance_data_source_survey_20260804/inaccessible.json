@@ -1,0 +1,61 @@
+{
+  "task_id": "T2-INSTANCE-SOURCE",
+  "as_of": "2026-08-04",
+  "policy": "Record failed endpoints and continue; do not infer unavailable content.",
+  "entries": [
+    {
+      "channel": "VRP-REP",
+      "attempted_url": "https://www.vrp-rep.org/",
+      "access_status": "partial_endpoint_failure_with_fallback",
+      "failure": "curl exit 35; LibreSSL SSL_connect: SSL_ERROR_SYSCALL; HTTP code 000",
+      "fallbacks": [
+        {"url": "http://www.vrp-rep.org/", "result": "HTTP 200"},
+        {"url": "https://dimacs.rutgers.edu/index.php/programs/challenge/vrp/evrp/", "result": "accessible; Montoya/Froger instance descriptions and downloads"}
+      ],
+      "content_claim_boundary": "No claim was made from the failed HTTPS endpoint alone."
+    },
+    {
+      "channel": "IEEE DataPort",
+      "attempted_url": "https://ieee-dataport.org/",
+      "attempted_query": "site:ieee-dataport.org China logistics vehicle routing time window dataset",
+      "access_status": "catalog_search_inaccessible",
+      "failure": "web search reported non-retryable robots.txt block for ieee-dataport.org; direct homepage returned HTTP 200 but did not expose verifiable catalog results",
+      "fallbacks": [],
+      "content_claim_boundary": "Hit count is recorded as unavailable, not zero; no IEEE DataPort dataset fields or license were described from memory."
+    },
+    {
+      "channel": "Ministry of Transport internal search",
+      "attempted_url": "https://search.mot.gov.cn/jsearchfront/search.do?websiteid=110000000000000&searchid=1&pg=&p=1&tpl=search&cateid=24&q=%E5%9F%8E%E5%B8%82%E9%85%8D%E9%80%81%20%E8%AE%A2%E5%8D%95%20%E6%95%B0%E6%8D%AE",
+      "access_status": "partial_endpoint_failure_with_fallback",
+      "failure": "curl exit 6; Could not resolve host: search.mot.gov.cn; HTTP code 000",
+      "fallbacks": [
+        {"url": "https://www.mot.gov.cn/", "result": "accessible through domain-restricted web search"},
+        {"query": "site:mot.gov.cn 物流 订单 客户 坐标 时间窗 数据集 城市配送", "result": "industry aggregates and policy pages only"}
+      ],
+      "content_claim_boundary": "No order-level dataset content was inferred from the inaccessible internal search endpoint."
+    },
+    {
+      "channel": "ScienceDB search route",
+      "attempted_url": "https://www.scidb.cn/en/search?keyword=vehicle%20routing%20time%20window",
+      "access_status": "partial_endpoint_failure_with_fallback",
+      "failure": "HTTP 404",
+      "fallbacks": [
+        {"url": "https://www.scidb.cn/en", "result": "official homepage accessible"},
+        {"query": "site:scidb.cn vehicle routing time window 物流 订单 数据集", "result": "no qualifying dataset page found"}
+      ],
+      "content_claim_boundary": "The channel result is based on the fallback site-restricted query, not the 404 route."
+    },
+    {
+      "channel": "MDPI article HTML",
+      "attempted_url": "https://www.mdpi.com/2220-9964/4/4/2019",
+      "access_status": "partial_endpoint_failure_with_fallback",
+      "failure": "HTTP 429 Too Many Requests during direct HTML fetch",
+      "fallbacks": [
+        {"url": "https://mdpi-res.com/d_attachment/ijgi/ijgi-04-02019/article_deploy/ijgi-04-02019.pdf", "result": "official PDF accessible"},
+        {"url": "https://github.com/spatialsmart/VRPTW/tree/master/Shanghai/Problem", "result": "data directory accessible"},
+        {"url": "https://doi.org/10.3390/ijgi4042019", "result": "DOI metadata/search result accessible"}
+      ],
+      "content_claim_boundary": "C04 facts come from the official PDF and GitHub files, not from the failed HTML response."
+    }
+  ]
+}

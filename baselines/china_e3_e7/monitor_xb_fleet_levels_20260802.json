@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "name": "xb-formal-fleet-levels-20260802",
+  "objective": "Complete 50 registered paired fleet-electrification units and atomically emit XB_FLEET_LEVELS_FORMAL_COMPLETE",
+  "workdir": "../..",
+  "poll_seconds": 30,
+  "stale_seconds": 7200,
+  "max_runtime_seconds": 172800,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_formal_fleet_levels_xb_20260802",
+    "--workers",
+    "3"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--self-test"
+  ],
+  "min_cpu_percent_when_active": 0,
+  "low_cpu_consecutive_checks": 6,
+  "max_rss_mb": 0,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [
+    "formal_fleet_levels_20260802/progress.json",
+    "formal_fleet_levels_20260802/raw_runs.csv"
+  ],
+  "result_files": [
+    "formal_fleet_levels_20260802/metadata.json",
+    "formal_fleet_levels_20260802/raw_runs.csv",
+    "formal_fleet_levels_20260802/decision.json",
+    "formal_fleet_levels_20260802/artifact_hashes.json",
+    "formal_fleet_levels_20260802/report.md"
+  ],
+  "completion_files": [
+    "formal_fleet_levels_20260802/done.json"
+  ],
+  "checkpoint_paths": [
+    "formal_fleet_levels_20260802/solutions"
+  ],
+  "protected_files": [
+    {
+      "path": "run_formal_fleet_levels_xb_20260802.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "monitor_xb_driver_20260802.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../solver/src/setp_solver/china81.py",
+      "kind": "core_data"
+    },
+    {
+      "path": "../../solver/src/setp_solver/china81_completion.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../solver/src/setp_solver/model_config.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv",
+      "kind": "core_data"
+    }
+  ],
+  "csv_rules": [
+    {
+      "path": "formal_fleet_levels_20260802/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 7200,
+      "required_fields": [
+        "unit_id",
+        "instance_id",
+        "fleet_level_percent",
+        "seed",
+        "status",
+        "violation_count",
+        "solution_sha256"
+      ],
+      "duplicate_key_fields": [
+        "fleet_level_percent",
+        "seed"
+      ],
+      "max_duplicate_fraction": 0
+    }
+  ],
+  "milestones": [
+    {
+      "path": "formal_fleet_levels_20260802/raw_runs.csv",
+      "min_size": 4096
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

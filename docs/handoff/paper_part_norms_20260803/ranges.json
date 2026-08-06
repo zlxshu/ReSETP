@@ -1,0 +1,53 @@
+{
+  "task_id": "NORM",
+  "sample": {
+    "total": 15,
+    "chinese": 5,
+    "foreign": 10,
+    "inaccessible": 0
+  },
+  "source_context_not_recomputed": {
+    "source": "docs/handoff/journal_fullness_calibration_20260803/",
+    "chinese_sample_n": 5,
+    "body_pages": {"min": 14, "max": 21},
+    "first_level_sections": {"min": 5, "max": 7},
+    "mechanisms": {"min": 5, "max": 8},
+    "tables": {"min": 4, "max": 17},
+    "experiment_blocks": {"min": 3, "max": 9},
+    "references": {"min": 23, "max": 41}
+  },
+  "part_1_problem_definition": {
+    "qualifier_count": {"min": 2, "max": 8, "n": 15},
+    "acronym_present": {"yes": 13, "no": 2, "n": 15}
+  },
+  "part_2_introduction": {
+    "paragraph_count": {"min": 4, "max": 21, "n": 15},
+    "last_paragraph_numbered_contributions": {"yes": 3, "no": 12, "n": 15},
+    "research_gap_item_count": {"min": 0, "max": 4, "n": 15}
+  },
+  "part_3_model": {
+    "numbered_subsection_count": {"min": 0, "max": 10, "n": 15},
+    "objective_item_count": {"min": 1, "max": 6, "n": 15, "note": "多目标或多版本论文取其正文列出的成本项/层级目标项；逐篇字段保留原结构。"},
+    "constraint_explanation_group_count": {"min": 3, "max": 24, "n": 14, "unclear": ["jiang2024"], "note": "按作者成组解释句计；jiang2024含两套模型且无统一分组，未强行合并。"},
+    "classic_reduction_statement": {"yes": 7, "no": 8, "n": 15}
+  },
+  "part_4_algorithm": {
+    "numbered_subsection_count": {"min": 2, "max": 18, "n": 15},
+    "flowchart_present": {"yes": 8, "no": 7, "n": 15},
+    "parameter_summary_table_present": {"yes": 8, "no": 7, "n": 15}
+  },
+  "part_5_experiments": {
+    "numbered_subsection_count": {"min": 3, "max": 13, "n": 15},
+    "algorithm_effectiveness_section_count": {"min": 1, "max": 4, "n": 15},
+    "single_factor_analysis_section_count": {"min": 0, "max": 6, "n": 15},
+    "mechanism_count": {"min": 2, "max": 8, "n": 15},
+    "final_solution_detail_section": {"yes": 6, "no": 9, "n": 15},
+    "concentrated_discussion_section": {"yes": 4, "no": 11, "n": 15}
+  },
+  "part_6_conclusion": {
+    "paragraph_count": {"min": 2, "max": 5, "n": 15},
+    "management_insights_in_conclusion_or_dedicated_adjacent_section": {"yes": 7, "no": 8, "n": 15},
+    "note": "Wang2026的管理启示位于§6.6而非§7；逐篇字段已明确位置。"
+  },
+  "inference_limit": "以上仅为这15篇可访问全文的区间与计数，不外推为国际惯例或期刊偏好。"
+}

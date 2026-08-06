@@ -1,0 +1,37 @@
+{
+  "E4": {
+    "disposition": "retain restricted single-trip benchmark",
+    "expanded_multitrip_claim": "requires new optimization; post-hoc repacking is a feasibility witness only"
+  },
+  "E6": {
+    "disposition": "retain restricted single-trip coalition ledger",
+    "expanded_multitrip_claim": "all coalition values and allocation outputs require re-estimation after multitrip optimization"
+  },
+  "existing_rowwise_multitrip_interface_recheck": {
+    "E4": {
+      "complete_checker_pass": 90,
+      "interface_directly_usable": 90,
+      "source_solutions": 90,
+      "terminal_charge_kwh": 5869.852618210776,
+      "terminal_charge_rows": 270
+    },
+    "E6": {
+      "complete_checker_pass": 900,
+      "interface_directly_usable": 900,
+      "source_solutions": 900
+    }
+  },
+  "not_full_multitrip_optima": true,
+  "overall_decision": "RETAIN_AS_EXPLICIT_SINGLE_TRIP_RESTRICTED_SUBMODEL_EVIDENCE",
+  "schema": "resetp.y2-legacy-experiment-impact.v1",
+  "status": "Y2_FLEET_MULTITRIP_COMPLETE",
+  "strict_conditions_for_single_trip_special_case": [
+    "Each saved route is one trip and is assigned a distinct physical vehicle, so every physical vehicle has trip_count=1 and no two routes share an asset.",
+    "The saved route order, vehicle type, home depot, customer coverage, charging amount and clock, time windows, payload, battery, two-by-22kW depot capacity, public-station capacity and service horizon are unchanged.",
+    "E4 retains its saved 60%-20%-80%-next-day-60 ContinuousSOCContract and all 270 terminal-charge ledger rows; E6 retains the corrected inherited-SOC and certificate-departure clock semantics.",
+    "The available CV/EV vector remains the legacy experiment vector. A Y2 level claim additionally requires exact per-depot vector equality under Hamilton allocation; headline percentage equality is insufficient.",
+    "All comparison arms use the same trip_count=1 restriction. The result is described as the restricted submodel result, not the optimum of the expanded multitrip feasible set.",
+    "If any saved row is changed, or if it is mapped to a Y2 level, that row must be rechecked for fleet caps, complete certificate legality and objective/component identity."
+  ],
+  "task_id": "Y2"
+}

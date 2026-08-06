@@ -2495,6 +2495,25 @@ AppleDouble、临时文件、`__pycache__` 和受污染诊断归档。保护文�
 - **AWAITING_USER_DECISION（E6新发现）**：新增“收入归实际配送方”的自然账本显示57/60场景至少一家低于单干，但该故事曾在较晚审批中被排除。是否重新纳入正文由用户决定；当前TeX仅保留已批准的合作节省与核仁主线。
 - **AWAITING_USER_DECISION（E7 O2）**：O1已按顺序授权进入O2。O2零搜索证明确有等待效应，但经济发车规则、等待损失、最长等待后的处理以及30分钟的业务含义尚未获批，正式效应实验不得先行。
 
+## 2026-08-02 X2-DF-007 决议状态补记
+
+`status=HALT_REQUIRED_RESOLVED_BY_TARGET_ABSENT`。本补记只追加决议状态与证据指针；上文 M1/M2 原始选项、旧包单趟边界及其他历史事实原文全部保留。
+
+- **DECISION（用户已拍板）**：实体车多趟选择“打开”。`resolved_by[0]` 指向 `docs/handoff/TODO_施工总清单_20260802.md:20-33` 的 B1 与 C1（SHA-256 `56bfebeded7900b06e9af5e86874dba8ab5043b5374fd7d579f89ee6ab8ebdd7`）。配置语义写明为：**多趟由环境变量升级为默认开启的显式模型配置**。
+- **HALT（必需实现包缺失）**：用户要求的 `resolved_by[1]` 目标为 `baselines/china_e3_e7/blocker_fix_20260802/`；截至本补记核验时该路径不存在，因而没有可登记的 `decision.json`、`report.md`、字段值或 SHA-256，不能把“用户已决定打开”升级为“指定实现包已经闭环”。
+- **相关但不替代的技术证据**：现存 `baselines/china_e3_e7/multitrip_interface_completion_20260802/decision.json:status=MULTITRIP_INTERFACE_COMPLETE`（SHA-256 `19b66506e0f5acfa92f010eb3d1bde7df0d17c1ab2634c17196937775b081208`）及同目录 `report.md`（SHA-256 `b9ff52f621ecb6ed12c31c8a44e242e56f5b5daea559630550c9805c39b3135c`）仅证明既有多趟接口核验完成；它不冒充缺失的 `blocker_fix_20260802/`，也不解除本项 HALT。
+
+### resolved_by 补全（2026-08-02，Z2B）
+
+- `resolved_by.decision`：用户 2026-08-02 拍板原文要点为“打开”；依据指针为 `docs/handoff/TODO_施工总清单_20260802.md` 的 B1 条。
+- `resolved_by.implementation_package`：`baselines/china_e3_e7/blocker_fix_20260802/`。该包把原先缺省值为 `0` 的环境变量 `SETP_E3_STRICT_MULTITRIP` 所控制的多趟语义，升级为**默认开启的显式模型配置**；中国主线入口在模型配置缺失时 fail-closed，实际配置取值写入产物 metadata。四个指定文件的当前原值与实算 SHA-256 为：
+  - `done.json`：`status=HALT_FULL_TEST_SUITE_5_FAILED`；SHA-256 `efa12caeeb921de837b34ce1376cf8eab6965d7edda2919a7562c3e92509a244`。
+  - `decision.json`：`status=HALT_FULL_TEST_SUITE_5_FAILED`；SHA-256 `910bc5a32645c38208f27b218a7db7b4813d7f104b2e6041f6c61cbdc46f578c`。
+  - `report.md`：`终态=HALT_FULL_TEST_SUITE_5_FAILED`；SHA-256 `5c4ae7366b6dcb7cd9d557e4f025b5d89a8c75a2ae7fb30218508b757bd90496`。
+  - `metadata.json`：顶层 `status` 字段不存在；SHA-256 `b2457b3654aadf24a3af1cf34ebd98c178ecb9820cb29baa4a176e2f47e0a8b1`。
+- `resolved_by.terminal_status`：修复包终态仍为 `HALT_FULL_TEST_SUITE_5_FAILED`，原因是权威全量 `solver/tests` 结果为 901 passed、1 skipped、5 failed；四项指定修复虽均为 PASS，也不得把该包写成已完成。
+- `resolved_by.critical_regressions`：多趟关闭时，E4 30/30、E6 30/30 的保存解目标值与 13 个关键分项均按 binary64 逐位一致；多趟开启时，E4 30/30、E6 30/30 均生成合法证书，60 份完整检查零违反。
+
 ## 2026-08-01 E2车型合同与E7等待损失二次复核
 
 状态：`FACTS_CONFIRMED__USER_DECISIONS_REQUIRED__NO_FORMAL_SEARCH_STARTED`。
@@ -2505,3 +2524,44 @@ AppleDouble、临时文件、`__pycache__` 和受污染诊断归档。保护文�
 - **FACT（E3来源链）**：E3六个正式成员包未锁`china81.py`、Git提交或完整车型参数，也未保存完整solution。运行时间与57/60个E6对应方案强烈指向现行车型，但证据链未完全闭合。
 - **FACT（E7文献参数）**：倪冠群等的等待损失`c=1`是理论归一化；Gautam--Geunes给出的`h`和固定费是数值情景/敏感性，没有企业标定来源。不得直接抄成China81人民币参数。
 - **AWAITING_USER_DECISION（E7-W1/W2/W3）**：W1用统一相对成本做理论策略实验；W2不货币化等待、用硬时间窗作服务底线；W3继续寻找现实赔付/流失/收入衰减数据。与D1/D2一起批准后才可启动O2正式效果实验。
+
+## 2026-08-02 MC-W1-F2-DEPOT-CONCURRENCY-01 正式变更登记
+
+- **变更编号**：`MC-W1-F2-DEPOT-CONCURRENCY-01`。
+- **日期**：2026-08-02。
+- **用户批准原文**："①②③按建议、④更新。注意改公式的纪律。以前的数据和设计几乎全部作废，以最新的为准。"
+- **批准项解释**：①车辆固定成本由按配送趟数改为按实体车数计费；②车场充电并发上限改为默认不设；③车队总量口径固定由 W2 另行实施，本次 W1 不触及。
+- **F2 变更前公式与代码位置**：论文现有文字位于 `docs/paper_v2/paper_main.tex:475-480`，公式为 `F_2=c_fix·Σ_{k∈K}Σ_{p∈P_k} n_{kp}z_{kp}`，即按配送趟数重复计费；活动代码为 `solver/src/setp_solver/cost.py:168` 的 `cost_fix=len(solution.routes)·vehicle_fixed_cost`。利润账本 `solver/src/setp_solver/profit.py:92-99` 同样按路线逐次扣除固定成本。
+- **F2 变更后公式与代码位置**：应改为 `F_2=c_fix·Σ_{v∈V}y_v=c_fix(|V^g_used|+|V^e_used|)`，其中 `y_v=1` 当且仅当实体车 `v` 至少承担一趟配送；同一实体车的第二趟及后续趟不重复收费。实现位置登记为 `solver/src/setp_solver/cost.py` 的固定成本聚合行，并同步保持 `solver/src/setp_solver/profit.py` 的实体车利润账本与该总成本合同一致；`c_fix=170 元/辆` 不变。
+- **车场充电并发变更前位置与合同**：`solver/src/setp_solver/china81.py:573-579`，其中原 `:578` 把车场输入 `depot_charger_count=2` 绑定到 `Node.station_chargers`；受保护的 `solver/src/setp_solver/check.py:504-550`（容量读取原 `:538`，静态容量函数 `:1120-1128`）以及 `solver/src/setp_solver/search/dynamic_multitrip_schedule.py:1352-1408`（静态容量读取原 `:1397-1403`）据此执行有限并发检查。
+- **车场充电并发变更后位置与合同**：在 `solver/src/setp_solver/model_config.py` 增加显式配置，默认模式为车场并发不设上限；`solver/src/setp_solver/china81.py` 在默认模式下把车场 `Node.station_chargers` 置为 `None`，从而复用现有检查器的非约束性静态容量回退。旧的实例有限容量模式保留为可选配置并继续读取 `depot_charger_count=2`，供旧包复现与 Froger 式敏感性使用。受保护的 `check.py`、`search/evaluation.py` 均不改；公共站构造 `china81.py:581-594` 及其 `station_gun_count` 语义不改。
+- **固定成本文献依据**：证据册 `docs/handoff/billing_and_charging_basis_20260802/fixed_cost_billing_literature.json`。Zhao 等（2024）p.923 式(1)与约束(6)对每辆实际使用实体车收取一次固定成本，第二趟不再收费；Wang 等（2024）p.11 式(11)采用相同实体车口径；Zhen 等（2020）p.4 式(1)不设货币固定成本。已核 9 篇中无一篇按配送趟数重复计费。
+- **充电并发文献依据**：证据册 `docs/handoff/billing_and_charging_basis_20260802/charging_infrastructure_classified.json`。真正建模充电的 7 篇中，李得成、Montoya、Hiermann、Schneider、Wang 等（2023）共 5 篇不设并发上限；Froger 等（2022）pp.467-468 与 Wu 等（2022）pp.11-12 明设有限容量。本文原“每场 2 个 22 kW 加并发约束”为构造设定、无观察来源，故活动默认采用 5/7 的主流口径，同时保留有限模式。
+- **影响范围**：本变更改变成本目标、利润账本及多趟方案之间的比较口径；**所有既有成本数字在数值上作废**，旧排序、差额、百分比、合作节省与分配结论均须在新合同下重新核验。即使单趟保存解在本次不变量核算中数值恰好不变，也只能作为重验通过的旧包，不得绕过新口径登记。车场有限并发造成的旧可行性分档也失效；公共站容量结论不受本变更授权影响。
+- **回归合同**：以单趟解逐位不变、多趟固定成本精确满足 `旧值-(路线数-实体车数)×170`、1040 趟/693 辆算术锚 `176800→117810`、五档零搜索可行性前后数目及全量测试分类为准；不得沿用旧的全目标逐位一致断言，不得放宽其他断言。
+- **改动前锁定**：Git 提交 `850cea5f3d3e11a21e073a7c1a45477a65a7a66f`；`cost.py` SHA-256 `7f59a47a3aab9b582b17e29d7e9dc13f16f892fc7b5ae7b54eec84412aa77333`；`profit.py` `216c4f16f2e26f1c2840fa272adbf1e3ccb056c3de9403dd15b71fa5edfef1dc`；`china81.py` `c70133cf59e33f6331a1fafb95188430615472974c2a1e3d2e838f822a09e79e`；`model_config.py` `534f5aa3f06a4b5da8c755a3c0e42d9103930f4969e617ed26d3ec1597bc8fe6`；`check.py` `86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b`；`search/evaluation.py` `c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3`；`dynamic_multitrip_schedule.py` `2897a1700e8591bbd93f57152d0cd2277dcd33f7d79fcdfd1ca165065385c8b7`；两份文献证据册 SHA-256 分别为 `d62ac004490289afa4758b2890ebb2abbfaa3381a336fc29b975c5ceaa89d42b`、`1ea91baee1180efbc24833bd4fdebe9b11f57e355ab5daec2165f70d513d8607`。
+- **本任务边界**：不修改 `docs/paper_v2/paper_main.tex`、`solver/src/setp_solver/check.py`、`solver/src/setp_solver/search/evaluation.py`；不启动正式实验或路径搜索；不实施 W2 的固定车队总量口径。
+- **本任务产出目录**：`baselines/china_e3_e7/formula_change_20260802/`。该目录必须新建，不覆盖任何既有实验结果，并交付 `metadata.json`、`raw_runs.csv`、`decision.json`、`report.md`、`done.json`、`artifact_hashes.json`。
+## 2026-08-02 MC-W2-FLEET-AUTHORITY-V3-01 正式变更登记
+
+- **变更编号**：`MC-W2-FLEET-AUTHORITY-V3-01`。
+- **批准人和日期**：用户，2026-08-02。
+- **批准依据**：用户原文“①②③按建议、④更新。注意改公式的纪律。以前的数据和设计几乎全部作废，以最新的为准。”；本任务进一步明确要求 W2 采用“口径 B，总量固定”、更新冻结锚并逐包登记旧结果。
+- **变更前**：默认 authority 为 `data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/`，v2 为 `data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/`；两者 `fleet_caps.csv` SHA-256 均为 `48fcf934e480504d22981e850e24ce0daa7ff11b2f73d4f806b6396cd9fcd367`。旧公式 `num_ev(d)=max(1,ceil(0.25*R_d))` 无外部出处。旧 X4 单趟总量为 1042。
+- **文献依据**：`docs/handoff/multitrip_fleet_literature_20260802/` 的 7 篇合格多趟论文 7/7 总量固定，无一随多趟按比例缩小；6/7 不设每车每日趟数上限。
+- **变更后**：默认 authority 为 `data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/`；144 个车场合计 943 辆实体车。五档继续用 Hamilton 最大余数分配，0/25/50/75/100% 的零搜索认证均为 81/81，合计 405/405、违反项 0。固定成本继续按 W1 的实体车口径计费，车场并发默认不设。
+- **最小性边界**：每场 `T_d` 是登记的两族确定性 EDF 路线见证及兼容 DAG 路径覆盖下，使五档同时存在可行见证的最小总规模；它是可复算的零搜索 authority，不冒充所有潜在路径集合上的全局最优证明。
+- **历史保留**：v1/v2 目录和原哈希不删除、不移动、不覆盖；`china81.py` 默认绑定切到 v3，但 `fleet_authority=` 仍可显式选择 v1/v2 作历史复算。
+- **冻结重锚授权执行**：四类活动 SHA 守卫和三个 10c 车队数锚仅更新锚定值；旧 commit、manifest、metadata、哈希和断言保留。完整前后表见 `docs/handoff/frozen_baseline_reanchor_20260802.md`。
+- **旧结果登记**：`docs/handoff/superseded_results_register_20260802.md` 逐包给出路径、原数值、失效原因和仍有效边界；凡标记数值或设定失效者不得作为结果引用。
+- **回归终态**：定向重锚与 v3 authority 测试 11/11 通过；全量 `solver/tests` 为 907 passed、1 skipped、5 failed。两项是真实的旧 completion 未接多趟实体车排班，两个是 E5 历史未解决项，一个是旧按趟计费契约；均未删除或放宽断言。
+- **边界核验**：`docs/paper_v2/paper_main.tex`、`solver/src/setp_solver/check.py`、`solver/src/setp_solver/search/evaluation.py` 未由 W2 修改；路径搜索和正式实验均为 0。
+- **交付**：`baselines/china_e3_e7/fleet_authority_v3_20260802/`，终态 `W2_FLEET_AUTHORITY_V3_COMPLETE`。
+
+## 2026-08-04 T5-CARBON-OBJ-PROBE 草案方法登记
+
+- **登记状态**：`DRAFT_METHOD_AWAITING_USER_APPROVAL`；本条是草案方法探针登记，不是正式模型变更批准。
+- **改动内容**：在隔离探针中，一臂把既有充电侧碳项 `sum_t gamma_t*y_qt` 按仓库登记碳价 `75.02 CNY/tCO2e` 加入搜索所用评价目标；另一臂构造石家庄式中午谷段电价情景，只把北京、天津的 12:00—15:00 时段归属改为各自既有谷段，沿用各城市自身谷/平/峰价格，不引入新价格。
+- **为什么是草案**：改动只在单一算例、单一日期、三个配对种子和两个探针预算上验证；结果方向随种子和预算变化，不能外推为正式方法、总体规律或论文结论。正式入口、正式实验 runner、正式合同、完整核算口径与论文正文均未修改。
+- **待用户批准**：是否接受碳项进入正式搜索评价目标、是否接受中午谷段电价情景作为正式比较面，仍由用户另行决定；本登记不产生自动批准，`formal_search_allowed=false`。
+- **探针产物路径**：`docs/handoff/carbon_objective_probe_20260804/`；终态 `PROBE_COMPLETE_DRAFT_METHOD`，方法标记 `DRAFT_METHOD_AWAITING_USER_APPROVAL`。

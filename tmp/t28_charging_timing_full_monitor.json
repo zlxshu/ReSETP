@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "name": "t31-charging-timing-batched-resume",
+  "objective": "Resume exactly 20 unfinished units from the retained 70 in batches of at most five with the unit worker pool fixed at three",
+  "workdir": "..",
+  "poll_seconds": 30,
+  "stale_seconds": 3600,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_t28_charging_timing_resume_20260806.py",
+    "--workers",
+    "3",
+    "--batch-size",
+    "5"
+  ],
+  "forbidden_command_substrings": [
+    "--workers 1",
+    "--workers 2",
+    "--workers 4",
+    "--workers 5",
+    "--workers 6"
+  ],
+  "logs": [],
+  "progress_files": [
+    "../docs/handoff/charging_timing_three_arms_uncapped_20260806/run_progress.json"
+  ],
+  "result_files": [
+    "../docs/handoff/charging_timing_three_arms_uncapped_20260806/raw_runs.csv",
+    "../docs/handoff/charging_timing_three_arms_uncapped_20260806/batch_summaries.json",
+    "../docs/handoff/charging_timing_three_arms_uncapped_20260806/report.md"
+  ],
+  "completion_files": [
+    "../docs/handoff/charging_timing_three_arms_uncapped_20260806/t28_done.json"
+  ],
+  "checkpoint_paths": [
+    "../docs/handoff/charging_timing_three_arms_uncapped_20260806/unit_states"
+  ],
+  "protected_files": [
+    {
+      "path": "../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../solver/src/setp_solver/charge_timing.py",
+      "kind": "model"
+    },
+    {
+      "path": "../solver/src/setp_solver/china81_completion.py",
+      "kind": "model"
+    },
+    {
+      "path": "../baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../baselines/china_e3_e7/run_t28_charging_timing_resume_20260806.py",
+      "kind": "experiment_contract"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [
+    {
+      "path": "../docs/handoff/charging_timing_three_arms_uncapped_20260806/raw_runs.csv",
+      "min_size": 1024
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

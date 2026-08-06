@@ -1,0 +1,53 @@
+{
+  "command": [
+    "env",
+    "PYTHONHASHSEED=0",
+    "PYTHONPATH=solver/src",
+    "/opt/anaconda3/bin/python3",
+    "docs/handoff/intertrip_charging_fix_20260804/t10_runner.py",
+    "--run"
+  ],
+  "events_emitted": [],
+  "last_event_state": "ANOMALY",
+  "log_initial_sizes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log": 0
+  },
+  "low_cpu_checks": 0,
+  "mode": "start",
+  "monitor_config_sha256": "f3dbb1ed471eb2a1f698da5613c989d036efbec158e5ad03b8f3b6435169e169",
+  "paused": false,
+  "pgid": 50628,
+  "pid": 50628,
+  "protected_hashes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 924.1600561141968,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1785856246.52,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "a4d8d57e7fd01c581464453896cc49978d22bceedb9534359d1e09670151e481",
+      "size": 48155
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 187503.18916392326,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1785669667.49,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "size": 46269
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 1853025.3810229301,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "started_at": "2026-08-04T15:26:10+00:00",
+  "started_at_epoch": 1785857170.678381,
+  "stdout_path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/intertrip_charging_fix_20260804/run.log"
+}

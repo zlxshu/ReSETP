@@ -1,0 +1,170 @@
+{
+  "schema": "resetp.t5-carbon-objective-probe-metadata.v1",
+  "task_id": "T5-CARBON-OBJ-PROBE",
+  "status": "PROBE_COMPLETE_DRAFT_METHOD",
+  "draft_status": "DRAFT_METHOD_AWAITING_USER_APPROVAL",
+  "formal_search_allowed": false,
+  "generated_at_utc": "2026-08-04T08:44:18Z",
+  "git_head": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "instance": {
+    "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+    "scenario_date": "2025-02-12",
+    "customer_count": 50,
+    "required_demand": 13264.0,
+    "depot_cities": [
+      "beijing",
+      "tianjin"
+    ],
+    "substitution_allowed": false
+  },
+  "frozen_design": {
+    "arms": [
+      "O",
+      "C",
+      "P"
+    ],
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "budgets_per_hgs_view": [
+      100,
+      1000
+    ],
+    "expected_run_count": 18,
+    "paired_by_budget_and_seed": true,
+    "carbon_price_cny_per_kgco2e": 0.07502,
+    "carbon_price_source": "docs/handoff/china_policy_scenario_contract_20260717.md section 3",
+    "p_changed_half_hour_slots": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "p_changed_interval": "12:00:00-15:00:00",
+    "p_changed_city_slot_rows": 12,
+    "p_new_price_values_introduced": false,
+    "initial_solution": "finite-fleet-authority-v3 level-25 certified witness",
+    "exact_checkpoint_interval_iterations": 100,
+    "archive_candidates_per_view": 8,
+    "exact_elites_per_view": 2,
+    "sp_time_limit_seconds": 0.5,
+    "wallclock_limit_seconds_per_arm_seed": 1800,
+    "wallclock_safety_seconds_per_view": 540.0,
+    "pythonhashseed": 0,
+    "numeric_backend_threads": 1
+  },
+  "search_objectives": {
+    "O": "operating_cost",
+    "C": "operating_cost + 0.07502 * charging_emissions_kg",
+    "P": "operating_cost"
+  },
+  "full_evaluation": {
+    "objective": "operating_cost + 0.07502 * system_emissions_kg",
+    "system_emissions": "fuel_direct_emissions_kg + charging_emissions_kg",
+    "checker": [
+      "exact_china81_score",
+      "check_solution",
+      "finite depot-fleet checks"
+    ],
+    "contract_changed": false
+  },
+  "execution": {
+    "started_at_utc": "2026-08-04T08:30:12.372189Z",
+    "finished_at_utc": "2026-08-04T08:33:41.320533Z",
+    "monitor_runtime_seconds": 212.17795491218567,
+    "sum_run_elapsed_seconds": 208.75020358373877,
+    "max_single_run_elapsed_seconds": 20.456349833053537,
+    "wallclock_safety_trigger_count": 0,
+    "budget_reduction_applied": false,
+    "run_count": 18,
+    "full_legal_solution_count": 18,
+    "full_violation_count": 0,
+    "complete_customer_and_demand_count": 18,
+    "monitor_state": "COMPLETED",
+    "monitor_findings_count": 0
+  },
+  "result_index": {
+    "paired_comparison_count": 12,
+    "c_route_changed_pairs": 3,
+    "c_route_unchanged_pairs": 3,
+    "c_system_emissions_reduced_pairs": 4,
+    "c_system_emissions_increased_pairs": 2,
+    "c_adverse_pair_count": 2,
+    "p_slot_distribution_changed_pairs": 5,
+    "p_slot_distribution_unchanged_pairs": 1,
+    "p_system_emissions_reduced_pairs": 2,
+    "p_system_emissions_unchanged_pairs": 1,
+    "p_system_emissions_increased_pairs": 3,
+    "judgement_questions_answered": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "unanswered_judgement_questions": []
+  },
+  "completion_audit": {
+    "runs_with_completion_failure": [
+      "O_seed2_budget1000",
+      "C_seed2_budget1000"
+    ],
+    "failure_count_each": 1,
+    "failure_category": "代理找到但完成失败",
+    "failure_detail": "E3_STRICT_MULTITRIP_V2: route CH81-0004 misses C019's time window",
+    "failed_candidates_selected_as_final": false
+  },
+  "pre_result_attempts": [
+    {
+      "attempt": 0,
+      "status": "HALT_BEFORE_SEARCH",
+      "reason": "PYTHONHASHSEED=0 was omitted; runner refused before search",
+      "completed_run_count": 0,
+      "results_read": false,
+      "evidence_path": ".attempt0_preflight_halt"
+    },
+    {
+      "attempt": 1,
+      "status": "HALT_CONTRACT_SCOPE_CORRECTION",
+      "reason": "C had been scoped to system emissions instead of only sum_t gamma_t*y_qt; stopped before accepting or reading results",
+      "results_read": false,
+      "evidence_path": ".attempt1_wrong_c_scope_halt"
+    }
+  ],
+  "protected_files": {
+    "unchanged": true,
+    "sha256_before_and_after": {
+      "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "solver/src/setp_solver/check.py": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+      "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+    }
+  },
+  "environment": {
+    "python": "3.13.9",
+    "numpy": "2.5.1",
+    "scipy": "1.16.3",
+    "pyvrp": "0.12.2",
+    "logical_cpu": 8,
+    "physical_memory_bytes": 8589934592
+  },
+  "artifacts": [
+    "report.md",
+    "probe_raw.csv",
+    "slot_distribution.csv",
+    "route_diff.csv",
+    "metadata.json",
+    "raw_runs.csv",
+    "decision.json",
+    "artifact_hashes.json",
+    "preregistration.json",
+    "completion_trace.csv",
+    "solution_witnesses.json",
+    "runner_state.json",
+    "analysis_summary.json"
+  ],
+  "boundary": "Draft method probe only; not a formal experiment, paper result, statistical conclusion, or user approval."
+}

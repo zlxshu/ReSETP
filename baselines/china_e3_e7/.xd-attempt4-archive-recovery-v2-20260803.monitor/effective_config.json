@@ -1,0 +1,87 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/.archive_recovery_v2"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_monitor_v2.json",
+  "csv_rules": [],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 8,
+  "max_rss_mb": 10000,
+  "max_runtime_seconds": 7200,
+  "milestones": [
+    {
+      "min_size": 256,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_progress.json"
+    }
+  ],
+  "min_cpu_percent_when_active": 0.1,
+  "min_system_free_memory_mb": 512,
+  "min_system_memory_free_percent": 5,
+  "name": "xd-attempt4-archive-suffix-recovery-v2-20260803",
+  "objective": "Reuse verified interrupted prefixes and regenerate only the missing XD archive and validation-ledger suffixes",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_progress.json"
+  ],
+  "protected_files": [
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/pre_registration.json"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/raw_runs.csv"
+    },
+    {
+      "kind": "research_question",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/decision.json"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_carbon_timing_rescore_20260802.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/recover_carbon_timing_rescore_archives_20260803.py"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "paper_conclusion",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/paper_main.tex"
+    }
+  ],
+  "required_command_substrings": [
+    "recover_carbon_timing_rescore_archives_20260803.py"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/solutions.jsonl.gz",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/validation_ledger.jsonl",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/carbon_timing_rescore_20260802/recovery_verification.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 1800,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

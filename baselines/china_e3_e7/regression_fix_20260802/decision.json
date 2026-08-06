@@ -1,0 +1,105 @@
+{
+  "schema": "resetp.w3-regression-fix.decision.v1",
+  "task_id": "W3",
+  "status": "W3_REGRESSION_FIX_COMPLETE",
+  "authority_defect": {
+    "verdict": false,
+    "halt_status": null,
+    "reason": "D_beijing 的 T_d=2 有可行物理排班；失败来自 shared completion 沿路线条数和未经时序认证的旧 #T 标签执行车队约束。"
+  },
+  "root_causes": {
+    "monotonicity": {
+      "pre_fix_pseudo_baseline_cost": 499.75649570293297,
+      "certified_all_cv_level_0_cost": 669.7564957029331,
+      "default_level_25_mixed_cost": 577.531087595572,
+      "certified_improvement": 92.22540810736109,
+      "all_cv_physical_vehicle_count": 2,
+      "default_mix_physical_vehicle_counts": {
+        "cv": 1,
+        "ev": 1
+      },
+      "cause": "旧 scorer 信任 CV1#T1/CV1#T2 的共同前缀，把两个时间重叠的 trip 计作 1 台 CV，造成固定成本少计和伪单调参照。"
+    },
+    "depot_type_caps": {
+      "input_route_count": 3,
+      "input_all_cv_physical_vehicle_count": 2,
+      "final_physical_vehicle_counts": {
+        "cv": 1,
+        "ev": 1
+      },
+      "mandatory_assignment_count": 1,
+      "converted_route_index": 1,
+      "cause": "旧代码用 route_count 与 num_cv+num_ev 比较，并按 EV 路线条数执行上限；多趟合同要求按不重叠 trip 链的物理车集合计数。"
+    }
+  },
+  "production_fix": {
+    "file": "solver/src/setp_solver/china81_completion.py",
+    "tests_changed": false,
+    "authority_changed": false,
+    "changes": [
+      "精确评分前调用既有严格多趟调度器，重新认证 route-to-physical-vehicle 映射并据此计固定成本。",
+      "全 CV 参照显式使用 v3 同一 T_d 下的 0% 档；混合解使用默认 25% 档车型上限。",
+      "mandatory fleet assignment 以车场物理 CV/EV/总量 overage 是否严格下降为接受条件。",
+      "最终返回解写入认证后的 physical_vehicle#T 标识，车场上限按物理车集合执行。"
+    ]
+  },
+  "regression": {
+    "target_tests": {
+      "passed": 2,
+      "failed": 0
+    },
+    "target_file_after_final_edit": {
+      "passed": 3,
+      "failed": 0
+    },
+    "related_tests": {
+      "passed": 49,
+      "failed": 0
+    },
+    "full_suite": {
+      "passed": 909,
+      "skipped": 1,
+      "failed": 3,
+      "duration_seconds": 284.25,
+      "remaining_failures": {
+        "unresolved_historical": [
+          "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+          "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts"
+        ],
+        "old_contract": [
+          "solver/tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps"
+        ],
+        "real_regression": []
+      }
+    }
+  },
+  "zero_search_certification": {
+    "status": "PASS",
+    "instances": 81,
+    "levels": {
+      "0": 81,
+      "25": 81,
+      "50": 81,
+      "75": 81,
+      "100": 81
+    },
+    "certification_units": 405,
+    "violating_units": 0,
+    "authority_total_physical_cap": 943,
+    "route_search_executed": false,
+    "search_evaluations": 0
+  },
+  "protected_diff_quiet": {
+    "solver/src/setp_solver/check.py": 0,
+    "solver/src/setp_solver/search/evaluation.py": 0,
+    "docs/paper_v2/paper_main.tex": 0
+  },
+  "cost_py_boundary": {
+    "git_diff_quiet_exit": 1,
+    "classification": "PREEXISTING_DIRTY_NOT_MODIFIED_BY_W3"
+  },
+  "git_diff_stat": {
+    "summary_at_final_audit": "36 files changed, 6190 insertions(+), 216 deletions(-)",
+    "scope_note": "继承的脏工作树，含持续变化 watchdog 日志；新建未跟踪 W3 交付文件不计入 git diff --stat。W3 生产代码仅 china81_completion.py。"
+  }
+}

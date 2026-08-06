@@ -1,0 +1,181 @@
+{
+  "schema": "resetp.z4-fixed-cost-billing-literature.v1",
+  "task_id": "Z4",
+  "status": "Z4_FIXED_COST_EVIDENCE_COMPLETE",
+  "sample_size": 9,
+  "explicit_entity_multitrip_papers": 3,
+  "multitrip_summary": {
+    "per_used_physical_vehicle": 2,
+    "no_monetary_fixed_cost": 1,
+    "per_trip_repeated_vehicle_fixed_cost": 0,
+    "finding": "三篇明确让同一实体车执行多趟/多条配送路线的论文中，Zhao et al. (2024) 与 Wang et al. (2024) 都按实际启用的实体车计一次固定/租赁成本；Zhen et al. (2020) 不计货币固定成本。样本中没有论文在同一实体车执行第二趟时再次计车辆固定成本。"
+  },
+  "records": [
+    {
+      "paper": "Zhen, Ma, Wang & Wang (2020), Multi-depot multi-trip vehicle routing problem with time windows and release dates, Transportation Research Part E 135, 101866",
+      "doi": "10.1016/j.tre.2020.101866",
+      "source_url": "https://doi.org/10.1016/j.tre.2020.101866",
+      "page": "p.4 Eq. (1); pp.4-5 constraints (5) and (11)",
+      "objective_formula": "Min Z = sum_{k,w,i,j} t^N_{ij} xi_{ijkw} + sum_{k,w,i} t^D_{ki} mu_{kiw} + sum_{k,w,i} t^D_{ki} eta_{kiw}",
+      "billing_unit": "NOT_MODELED_NO_MONETARY_FIXED_COST",
+      "multitrip_modeled": true,
+      "multitrip_evidence": "p.4 defines k as a vehicle and w as a trip; the note gives real trip sets {1,2} and {1,2,3}; p.4 assumes no time overlap between trips of the same vehicle; p.5 says constraint (11) links consecutive trips of the same vehicle.",
+      "second_trip_charged_again": null,
+      "second_trip_charged_again_explanation": "No vehicle fixed-cost term exists, so neither the first nor the second trip is charged a monetary fixed cost.",
+      "value_source": "NOT_APPLICABLE_NO_FIXED_COST_VALUE",
+      "rationale": "The objective is total vehicle travel time; the paper uses an exogenously defined vehicle set and does not explain a per-trip fixed charge because none is present.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/4QNKCCAE/Zhen 等 _ 2020 _ Multi-depot multi-trip vehicle routing problem with time windows and release dates.pdf",
+      "source_pdf_sha256": "e5b631cda4239813e16545bf78af3fffdcf315331bf12a79c659590ea2024c0d"
+    },
+    {
+      "paper": "Zhao, Poon, Tan & Zhang (2024), A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-dependent vehicle routing problem, European Journal of Operational Research 317, 921-935",
+      "doi": "10.1016/j.ejor.2024.04.011",
+      "source_url": "https://doi.org/10.1016/j.ejor.2024.04.011",
+      "page": "pp.922-924, especially p.923 Eq. (1) and constraint (6); pp.932-934 Tables 6-7 and discussion",
+      "objective_formula": "min sum_{k in K} sum_{r in R} (t_tilde^{k,r}_{n+1} - t_tilde^{k,r}_0) + P sum_{k in K} z_k",
+      "billing_unit": "EACH_USED_PHYSICAL_VEHICLE",
+      "multitrip_modeled": true,
+      "multitrip_evidence": "p.922 states that each vehicle can undertake multiple trips. Variable z_k indicates whether physical vehicle k is used; constraint (6) activates the same z_k if any trip (k,r) departs. p.924 constraint (11) sequences successive trips of that vehicle.",
+      "second_trip_charged_again": false,
+      "second_trip_charged_again_explanation": "All trips r assigned to vehicle k share one binary z_k, so P is paid once when k is activated; later trips do not add another P.",
+      "value_source": "CONSTRUCTED_SENSITIVITY_ON_REAL_WORLD_SINGAPORE_FOOD_AND_BEVERAGE_GEOMETRY; p.932 uses P=0,10,20 in small cases; p.933 uses Set AA P=10 and Set DD P=50.",
+      "rationale": "p.934 explains that a higher fixed cost per vehicle makes it economical to maximize use of existing vehicles rather than deploy additional vehicles. The authors do not justify a per-trip fixed fee because the term is explicitly per vehicle.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/YRTBDEXW/Zhao 等 _ 2024 _ A hybrid genetic search and dynamic programming-based split algorithm for the multi-trip time-depend.pdf",
+      "source_pdf_sha256": "e031b3f78e2950006e4fbdfd49c296519fc9066cd2c2c8bb2d4b440e728891f2"
+    },
+    {
+      "paper": "Wang, Wei, Luo, Zhou & Zhen (2024), Collaboration and resource sharing in the multidepot time-dependent vehicle routing problem with time windows, Transportation Research Part E 192, 103798",
+      "doi": "10.1016/j.tre.2024.103798",
+      "source_url": "https://doi.org/10.1016/j.tre.2024.103798",
+      "page": "p.9 route-sharing example and parameter paragraph; p.11 Eq. (11)",
+      "objective_formula": "SC = sum_{v in V} h_v * min{sum_{i in D} sum_{j in C} phi_{v,i,j}, 1} + sum_{v in V} sum_{s in S,(m,i,j) in A} FP_v * FC_{s,v,(m,i,j)} * lambda_{s,v,(m,i,j)}",
+      "billing_unit": "EACH_USED_PHYSICAL_VEHICLE",
+      "multitrip_modeled": true,
+      "multitrip_evidence": "p.9 says vehicle V1 first performs route DC1-C5-C1-C2-DC1 and then continues with the route departing from DC3, DC3-C16-C14-C11-C12-DC3. Thus one named physical vehicle serves two delivery routes.",
+      "second_trip_charged_again": false,
+      "second_trip_charged_again_explanation": "The min{departure-indicator sum,1} in Eq. (11) caps the rental indicator for each v at one, while operating cost remains route/segment dependent.",
+      "value_source": "CONSTRUCTED_ILLUSTRATIVE_PARAMETER; p.9 states that rental cost for each vehicle is set to USD 80, without an observed contract or source for that value.",
+      "rationale": "The formulation separates one-time vehicle rental h_v from distance/fuel operating cost. It provides no rationale for repeated per-trip rental because the formula prevents it.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/DAJGL2PA/Wang 等 _ 2024 _ Collaboration and resource sharing in the multidepot time-dependent vehicle routing problem with tim.pdf",
+      "source_pdf_sha256": "4dae06c1e012ee1faef19d0adce84d93369025ca9d8d60f9ec650922bd69011e"
+    },
+    {
+      "paper": "Hiermann, Puchinger, Ropke & Hartl (2016), The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations, European Journal of Operational Research 252, 995-1018",
+      "doi": "10.1016/j.ejor.2016.01.038",
+      "source_url": "https://doi.org/10.1016/j.ejor.2016.01.038",
+      "page": "pp.997-998, Eq. (2.1) and its explanation; pp.1006-1007 benchmark construction",
+      "objective_formula": "min sum_{k in V} sum_{j in N} f_k x^k_{0j} + sum_{k in V} sum_{i in N_0} sum_{j in N_{n+1},i!=j} c^k_{ij} x^k_{ij}",
+      "billing_unit": "EACH_USED_OR_ACQUIRED_VEHICLE; equivalent to each route only because this is a single-trip route model",
+      "multitrip_modeled": false,
+      "multitrip_evidence": "The solution consists of tours, one vehicle per tour; it does not sequence multiple depot-return trips for the same entity vehicle.",
+      "second_trip_charged_again": null,
+      "second_trip_charged_again_explanation": "A second trip by the same entity vehicle is outside this model, so the single-trip route coefficient cannot establish repeated charging under multitrip.",
+      "value_source": "LITERATURE_MIGRATION_AND_BENCHMARK_CONSTRUCTION; pp.1006-1007 base customer/station data on Schneider et al. (2014) and vehicle classes/acquisition costs on Liu & Shen (1999), with energy parameters added/scaled.",
+      "rationale": "p.998 states that f_k is added when a vehicle leaves the depot and calls it the acquisition cost of a used vehicle; no per-trip rationale is given.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/NIM4H4ID/Hiermann 等 _ 2016 _ The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations.pdf",
+      "source_pdf_sha256": "b6bbcc1e5be659d8add4012f24d640b55da5ca147b0f62854cb47d01c7c8fc8c"
+    },
+    {
+      "paper": "Schmidt, Silva, Darvish & Coelho (2023), Time-dependent fleet size and mix multi-depot vehicle routing problem, International Journal of Production Economics 255, 108653",
+      "doi": "10.1016/j.ijpe.2022.108653",
+      "source_url": "https://doi.org/10.1016/j.ijpe.2022.108653",
+      "page": "p.3 Eq. (1); p.7 instance generation",
+      "objective_formula": "min sum_{(i,j) in A} sum_{h in H} C t^h_{ij} x^h_{ij} + sum_{k in K} sum_{j in N_c} sum_{d in N_d} sum_{v in delta_k(d)} sum_{h in H} F_k x^h_{jv}",
+      "billing_unit": "EACH_USED_VEHICLE_ROUTE_OF_TYPE_K; equivalent to each used physical vehicle in this single-trip model",
+      "multitrip_modeled": false,
+      "multitrip_evidence": "Each route departs a depot and terminates at the depot/type terminal; no repeated daily trips are assigned to one physical vehicle.",
+      "second_trip_charged_again": null,
+      "second_trip_charged_again_explanation": "Not modeled; the terminal-arrival term counts one completed single-trip route.",
+      "value_source": "CONSTRUCTED_AND_LITERATURE_MIGRATED; p.7 sets F_k=1000,1500,2000 for new Quebec-network instances and reports literature benchmark formula F_k=0.7+0.1k from Salhi/Sari/Lahyani instance families.",
+      "rationale": "The paper defines F_k as the fixed cost for each vehicle of type k. It gives no reason for a per-trip interpretation under multitrip.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/PCKYQ9XN/Schmidt 等 _ 2023 _ Time-dependent fleet size and mix multi-depot vehicle routing problem.pdf",
+      "source_pdf_sha256": "664da35014eb6cbca5672aed858524a92a3b6f32ab6136aa9bcba8d0cb159b8b"
+    },
+    {
+      "paper": "陈婉茹, 胡祥培, 彭飞 (2023), 碳交易机制下多中心混合车队配送路径和速度优化研究, 系统工程理论与实践 43(11), 3320-3334",
+      "doi": "10.12011/SETP2022-2971",
+      "source_url": "https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2022-2971",
+      "page": "p.3324 Eq. (5); p.3330 Table 7 and Section 4.2.1",
+      "objective_formula": "Min F includes p1 * sum_{k in K_e} sum_{i in D} sum_{j in N} x^k_{ij} + p2 * sum_{k in K_g} sum_{i in D} sum_{j in N} x^k_{ij}",
+      "billing_unit": "EACH_DISPATCHED_VEHICLE; equivalent to each route because every vehicle serves only one route",
+      "multitrip_modeled": false,
+      "multitrip_evidence": "p.3322 says each vehicle serves one delivery route and returns to the starting depot.",
+      "second_trip_charged_again": null,
+      "second_trip_charged_again_explanation": "A second trip by the same entity vehicle is not in the model.",
+      "value_source": "LITERATURE_MIGRATION; p.3330 says model parameters refer to references [11,12], and Table 7 sets EV fixed cost p1=550 yuan/vehicle and fuel-vehicle fixed cost p2=500 yuan/vehicle.",
+      "rationale": "p.3324 explicitly says fixed cost is related to the number of dispatched vehicles. The paper does not offer a per-trip rationale for a multitrip setting.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/5GXPYVZH/陈婉茹 等 _ 2023 _ 碳交易机制下多中心混合车队配送路径和速度优化研究.pdf",
+      "source_pdf_sha256": "aceb753db36f8d3c0f062ec25317fd3cbc6e6c18971bd193f0986a845a985b6f"
+    },
+    {
+      "paper": "Goeke & Schneider (2015), Routing a mixed fleet of electric and conventional vehicles, European Journal of Operational Research 245, 81-99",
+      "doi": "10.1016/j.ejor.2015.01.049",
+      "source_url": "https://doi.org/10.1016/j.ejor.2015.01.049",
+      "page": "published p.85 / local corrected-proof p.5, Eqs. (4)-(6)",
+      "objective_formula": "Eq. (5) minimizes propulsion plus driver labor cost; Eq. (6) adds EV battery replacement cost per kilometer. Neither equation contains a vehicle fixed/acquisition/rental/dispatch term.",
+      "billing_unit": "NOT_MODELED_NO_MONETARY_VEHICLE_FIXED_COST",
+      "multitrip_modeled": false,
+      "multitrip_evidence": "The solution is a set of ECV and ICCV routes under maximum fleet counts; no entity vehicle is sequenced over multiple routes.",
+      "second_trip_charged_again": null,
+      "second_trip_charged_again_explanation": "Not applicable: monetary vehicle fixed cost and multitrip are both absent.",
+      "value_source": "NOT_APPLICABLE_NO_FIXED_COST_VALUE; propulsion, labor and battery-depreciation values are different cost categories.",
+      "rationale": "No per-trip fixed charge appears and therefore no author rationale for one exists.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/PGY3QPNT/Goeke和Schneider _ 2015 _ Routing a mixed fleet of electric and conventional vehicles.pdf",
+      "source_pdf_sha256": "86f482f74297fc10d035e6565a49dc4993c7ef4b80e71021425f94c8413bc260"
+    },
+    {
+      "paper": "Wang et al. (2023), Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations, Expert Systems with Applications 219, 119654",
+      "doi": "10.1016/j.eswa.2023.119654",
+      "source_url": "https://doi.org/10.1016/j.eswa.2023.119654",
+      "page": "PDF p.7 Eq. (7); PDF p.5 illustrative data",
+      "objective_formula": "Z1 = f_e * sum_{v in V} sum_{i,j in I,i!=j} phi_{ijv} x_{ijv} + sum_{v in V} FV_v * sum_{d in D} x_{dv}",
+      "billing_unit": "EACH_USED_EV",
+      "multitrip_modeled": false,
+      "multitrip_evidence": "Each EV has one depot-originating delivery route; the paper optimizes the number of used EVs but does not assign successive depot-return trips to a physical EV.",
+      "second_trip_charged_again": null,
+      "second_trip_charged_again_explanation": "A second trip is outside the formulation. Within its single-route scope, FV_v is paid once if EV v departs a depot.",
+      "value_source": "CONSTRUCTED_ILLUSTRATIVE_PARAMETER; PDF p.5 says the authors assume USD 50 per EV rental cost in the three-depot example.",
+      "rationale": "The text below Eq. (6) identifies the second term of Eq. (7) as EV rental cost; no per-trip rationale is supplied.",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/FWMR6V2Q/Wang 等 _ 2023 _ Collaborative multidepot electric vehicle routing problem with time windows and shared charging stat.pdf",
+      "source_pdf_sha256": "5e40ba7f6631983ff9b2c7d05393df1480c4324e7fd7284cfeba22740bf6d412"
+    },
+    {
+      "paper": "Schneider, Stenger & Goeke (2014), The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations, Transportation Science 48(4), 500-520",
+      "doi": "10.1287/trsc.2013.0490",
+      "source_url": "https://doi.org/10.1287/trsc.2013.0490",
+      "page": "Articles in Advance p.5 / published p.504, hierarchical objective text and Eq. (1)",
+      "objective_formula": "First hierarchical objective: minimize the number of vehicles; second objective Eq. (1): min sum_{i in V''_0} sum_{j in V'_{N+1},i!=j} d_{ij} x_{ij}",
+      "billing_unit": "NO_MONETARY_FIXED_COST; vehicle count is a lexicographic objective, not a priced term",
+      "multitrip_modeled": false,
+      "multitrip_evidence": "Each route starts and ends at the depot; the same physical vehicle is not assigned multiple routes in a day.",
+      "second_trip_charged_again": null,
+      "second_trip_charged_again_explanation": "Not applicable: the model has no monetary fixed-cost coefficient and no multitrip linkage.",
+      "value_source": "NOT_APPLICABLE_NO_MONETARY_FIXED_COST_VALUE",
+      "rationale": "The authors motivate minimizing vehicle count by high EV acquisition cost, but they do not insert a monetary fixed cost or a per-trip fee into Eq. (1).",
+      "source_pdf": "/Users/zhouleixishu/Zotero/storage/3KG6RDYU/Schneider 等 _ 2014 _ The Electric Vehicle-Routing Problem with Time Windows and Recharging Stations.pdf",
+      "source_pdf_sha256": "4455c9c93ae866e1847b4882ca5bb96d90d4226f0818e033a8dcfeca6150f6d4"
+    }
+  ],
+  "current_resetp_audit": {
+    "paper_definition": {
+      "source": "docs/paper_v2/paper_main.tex:475-480",
+      "text": "line 476 bundles depreciation, maintenance, insurance and driver wages and says the cost is proportional to dispatched delivery trips; lines 478-479 define F2=c_fix*sum n_kp z_kp."
+    },
+    "implementation": {
+      "source": "solver/src/setp_solver/cost.py:164-168; solver/src/setp_solver/profit.py:92-99",
+      "text": "Physical vehicle IDs are de-duplicated for n_veh metrics at lines 164-165, but line 168 charges len(solution.routes)*vehicle_fixed_cost; profit allocation also adds the price once per route."
+    },
+    "value": {
+      "source": "solver/src/setp_solver/china81.py:905-909; docs/paper_v2/paper_main.tex:1033-1036",
+      "value_cny": 170.0,
+      "current_unit": "PER_DELIVERY_TRIP"
+    },
+    "value_provenance_conflict": {
+      "source": "docs/handoff/china_cost_proxy_evidence_20260718.md:24-31,35-51",
+      "finding": "The 170-yuan proxy is derived from monthly rental and acquisition-equivalent values divided by paid days. Lines 39 and 51 explicitly assume one model shift per vehicle per day. That provenance is vehicle-day/shift based, not evidence that depreciation/rent should be recharged for every trip when one physical vehicle performs multiple same-day trips."
+    },
+    "self_consistent_with_entity_multitrip": false,
+    "specific_conflict": "paper_main.tex:476 says depreciation, maintenance, insurance and wages are proportional to the number of delivery trips, and paper_main.tex:1034 calls 170 yuan a per-trip dispatch fee, while the source derivation in china_cost_proxy_evidence_20260718.md:30-31 and 39-51 is monthly vehicle rent/acquisition equivalent allocated once per paid vehicle-day under the hidden one-shift-per-day assumption. cost.py:168 then repeats that daily vehicle proxy for every route of the same physical vehicle.",
+    "one_sentence_conclusion": "In the explicit entity-multitrip sample, the mainstream unit is each used physical vehicle (or no monetary fixed cost when fleet size is exogenous), not each trip; ReSETP's current per-trip charging is therefore not self-consistent with an entity-vehicle multitrip interpretation of the same 170-yuan vehicle-day proxy."
+  }
+}

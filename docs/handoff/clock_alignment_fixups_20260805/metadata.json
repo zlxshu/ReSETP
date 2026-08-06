@@ -1,0 +1,88 @@
+{
+  "schema": "resetp.t16-clock-alignment-fixups.metadata.v1",
+  "task_id": "T16",
+  "date": "2026-08-05",
+  "repository": "/Volumes/移动硬盘（512G）/ReSETP",
+  "paper_claim_allowed": false,
+  "environment": {
+    "python": "/opt/anaconda3/bin/python3.13",
+    "python_version": "3.13.9",
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH": "solver/src:models/src",
+    "pytest_cache": "disabled"
+  },
+  "code_changes": [
+    {
+      "file": "solver/src/setp_solver/search/multitrip_schedule.py",
+      "line": 757,
+      "before": "float(carbon_weight) <= _TOL",
+      "after": "float(carbon_weight) <= 1e-12"
+    },
+    {
+      "file": "solver/src/setp_solver/search/multitrip_schedule.py",
+      "line": 1838,
+      "before": "physical_vehicle_id(route.vehicle_id).lower().startswith((\"cv\", \"ev\"))",
+      "after": "physical_vehicle_id(route.vehicle_id).startswith((\"CV_\", \"EV_\"))"
+    }
+  ],
+  "target_file_sha256_after": "92c9897361c672349498066ced0b1ea93365543104807c4f49cb0aaf1238510b",
+  "protected_hashes_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "validation_guards": {
+    "raise_assert_or_validation_deleted": false,
+    "raise_assert_or_validation_moved": false,
+    "window_inversion_guard_line": 719,
+    "no_registered_day_candidate_guard_line": 785,
+    "_TOL_constant_changed": false
+  },
+  "regression": {
+    "t15_targeted": {
+      "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider <7 T15 node ids>",
+      "exit_code": 0,
+      "passed": 7,
+      "failed": 0
+    },
+    "positive_witnesses": {
+      "required": 3,
+      "passed": 3,
+      "overlap_seconds": {
+        "C_seed2_budget1000": 6563.0712245500035,
+        "C_seed1_budget100": 6365.9078330282355,
+        "C_seed3_budget1000": 6239.742124296223
+      }
+    },
+    "t10_legal_witnesses": {
+      "required": 18,
+      "checked": 18,
+      "legal": 18
+    },
+    "full_suite": {
+      "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider solver/tests",
+      "exit_code": 1,
+      "passed": 906,
+      "skipped": 1,
+      "failed": 6,
+      "duration_seconds": 418.78,
+      "t15_baseline": {
+        "passed": 906,
+        "skipped": 1,
+        "failed": 6
+      },
+      "not_worse_than_t15": true
+    }
+  },
+  "artifacts": [
+    "report.md",
+    "metadata.json",
+    "decision.json",
+    "artifact_hashes.json"
+  ]
+}

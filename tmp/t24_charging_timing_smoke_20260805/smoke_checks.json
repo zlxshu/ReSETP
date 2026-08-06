@@ -1,0 +1,54 @@
+{
+  "actual_three_arm_charging_start_signatures": {
+    "ASAP": "b749af4dd0f45de48d9875d2e4c1921840be60c2537f3bae5d9de6cd893776f9",
+    "COST": "91ae8c091752d03af661597f847a269d31cc0afc3b83d82d5c3c54899ce18b95",
+    "COST_CARBON": "dec816cef6c1015cb78b872687b52c8d1d95915898f4a63e36a7998109ddbff8"
+  },
+  "actual_three_arm_charging_starts_distinct": true,
+  "all_customers_and_demand_fully_served": true,
+  "all_registered_units_materialized": true,
+  "all_required_run_fields_have_values": true,
+  "all_three_timing_policies_have_distinct_starts": true,
+  "all_three_timing_policies_selectable": true,
+  "all_unit_improvement_traces_nonempty": true,
+  "all_violation_counts_zero": true,
+  "closure_errors_by_task": {
+    "T24_SMOKE__JJJ__ASAP__S2026080201": 0.0,
+    "T24_SMOKE__JJJ__COST_CARBON__S2026080201": 0.0,
+    "T24_SMOKE__JJJ__COST__S2026080201": 0.0
+  },
+  "expected_run_count": 3,
+  "failed_unit_count": 0,
+  "improvement_iterations_strictly_monotone_within_view": true,
+  "improvement_row_count_by_task": {
+    "T24_SMOKE__JJJ__ASAP__S2026080201": 10,
+    "T24_SMOKE__JJJ__COST_CARBON__S2026080201": 10,
+    "T24_SMOKE__JJJ__COST__S2026080201": 10
+  },
+  "improvement_trace_nonempty": true,
+  "mip_actual_time_recorded": true,
+  "mip_extension_count_values": [
+    0,
+    0,
+    0
+  ],
+  "no_unit_failures": true,
+  "paper_claim_allowed": false,
+  "passed": true,
+  "required_check_keys": [
+    "actual_three_arm_charging_starts_distinct",
+    "all_customers_and_demand_fully_served",
+    "all_registered_units_materialized",
+    "all_required_run_fields_have_values",
+    "all_three_timing_policies_have_distinct_starts",
+    "all_three_timing_policies_selectable",
+    "all_unit_improvement_traces_nonempty",
+    "all_violation_counts_zero",
+    "improvement_iterations_strictly_monotone_within_view",
+    "improvement_trace_nonempty",
+    "mip_actual_time_recorded",
+    "no_unit_failures"
+  ],
+  "run_count": 3,
+  "successful_unit_count": 3
+}

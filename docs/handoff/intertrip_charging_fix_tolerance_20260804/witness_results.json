@@ -1,0 +1,246 @@
+{
+  "feasibility_tol": 1e-09,
+  "positive": [
+    {
+      "charging_trip_overlap_count": 1,
+      "key": "C_seed2_budget1000",
+      "overlap_seconds": [
+        {
+          "overlap_seconds": 6563.0712245500035,
+          "station_id": "D_beijing",
+          "vehicle_id": "EV_D_beijing_1#T2"
+        }
+      ],
+      "violation_types": [
+        "CHARGING_TRIP_OVERLAP"
+      ]
+    },
+    {
+      "charging_trip_overlap_count": 1,
+      "key": "C_seed1_budget100",
+      "overlap_seconds": [
+        {
+          "overlap_seconds": 6365.9078330282355,
+          "station_id": "D_beijing",
+          "vehicle_id": "EV_D_beijing_1#T2"
+        }
+      ],
+      "violation_types": [
+        "CHARGING_TRIP_OVERLAP"
+      ]
+    },
+    {
+      "charging_trip_overlap_count": 1,
+      "key": "C_seed3_budget1000",
+      "overlap_seconds": [
+        {
+          "overlap_seconds": 6239.742124296223,
+          "station_id": "D_beijing",
+          "vehicle_id": "EV_D_beijing_1#T2"
+        }
+      ],
+      "violation_types": [
+        "CHARGING_TRIP_OVERLAP"
+      ]
+    }
+  ],
+  "schema": "resetp.t12-intertrip-charging-fix-tolerance-regression.v1",
+  "t10": [
+    {
+      "key": "C_seed1_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed1_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed2_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed2_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed3_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "C_seed3_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed1_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed1_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed2_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed2_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed3_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "O_seed3_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed1_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed1_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed2_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed2_budget1000",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed3_budget100",
+      "pass": true,
+      "violation_types": []
+    },
+    {
+      "key": "P_seed3_budget1000",
+      "pass": true,
+      "violation_types": []
+    }
+  ],
+  "t10_count": 18,
+  "t10_passed": 18,
+  "t9": [
+    {
+      "pass": true,
+      "solution_locator": "runs/C_seed1_budget1000/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/C_seed2_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/C_seed3_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/O_seed2_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/O_seed2_budget1000/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/P_seed1_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/P_seed2_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/P_seed3_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/P_seed3_budget1000/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/C_seed1_budget1000/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/C_seed2_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/C_seed3_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/O_seed1_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/O_seed1_budget1000/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/O_seed2_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/O_seed2_budget1000/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/O_seed3_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/O_seed3_budget1000/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/P_seed1_budget100/solution",
+      "violation_types": []
+    },
+    {
+      "pass": true,
+      "solution_locator": "runs/P_seed1_budget1000/solution",
+      "violation_types": []
+    }
+  ],
+  "t9_count": 20,
+  "t9_passed": 20
+}

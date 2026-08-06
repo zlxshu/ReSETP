@@ -1,0 +1,32 @@
+{
+  "schema": "resetp.t5-carbon-objective-probe-decision.v1",
+  "task_id": "T5-CARBON-OBJ-PROBE",
+  "status": "PROBE_COMPLETE_DRAFT_METHOD",
+  "draft_status": "DRAFT_METHOD_AWAITING_USER_APPROVAL",
+  "formal_search_allowed": false,
+  "decided_at_utc": "2026-08-04T08:44:18Z",
+  "basis": {
+    "expected_runs": 18,
+    "completed_runs": 18,
+    "full_legal_solutions": 18,
+    "full_violation_count": 0,
+    "runs_completing_all_customers_and_demand": 18,
+    "paired_comparisons": 12,
+    "judgement_questions_answered": 5,
+    "judgement_questions_required": 5,
+    "protected_files_unchanged": true,
+    "wallclock_limit_exceeded": false
+  },
+  "answers": {
+    "A": "C changed the route signature in 3 of 6 paired runs; route counts stayed 8 to 8. Customer assignment changes were 25, 23, and 15; directed arc symmetric differences were 68, 62, and 52 in the three changed pairs.",
+    "B": "C reduced system emissions in 4 of 6 pairs and increased them in 2 of 6. Operating cost was unchanged in 2, increased in 1, and decreased in 3. Customer and demand completion differences were zero in all 6 pairs.",
+    "C": "Two adverse pairs occurred: budget 100 seed 3 increased operating cost by 48.971413 CNY and system emissions by 24.501572 kg; budget 1000 seed 1 reduced operating cost by 16.048161 CNY but increased system emissions by 14.239578 kg.",
+    "D": "P changed the 48-slot charging distribution in 5 of 6 pairs. System emissions decreased in 2, were unchanged in 1, and increased in 3; midday energy increased in 2, was unchanged in 1, and decreased in 3.",
+    "E": "C had the larger signed emissions reduction in 5 of 6 pairs and P in 1 of 6; one of the five C-larger pairs had emissions increases under both arms. Per-pair cost deltas are retained in report.md and route_diff.csv."
+  },
+  "unanswered_questions": [],
+  "halt": null,
+  "approval_effect": "none",
+  "paper_claim_allowed": false,
+  "note": "Completion of the probe does not approve either draft method and does not authorize formal experiments or manuscript claims."
+}

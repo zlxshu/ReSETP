@@ -1,0 +1,187 @@
+{
+  "ai_diagnosis": {
+    "invoked": false,
+    "reason": "disabled"
+  },
+  "checked_at": "2026-08-05T17:27:59+00:00",
+  "checkpoint_inventory": [
+    {
+      "age_seconds": 29.46454906463623,
+      "exists": true,
+      "mtime": 1785950850.51,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/unit_states/._T26_SMOKE__JJJ__COST_CARBON__S2026080201.json",
+      "size": 4096
+    },
+    {
+      "age_seconds": 29.464553117752075,
+      "exists": true,
+      "mtime": 1785950850.51,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/unit_states/T26_SMOKE__JJJ__COST_CARBON__S2026080201.json",
+      "size": 679
+    }
+  ],
+  "csv_summaries": [
+    {
+      "exists": true,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+      "rows": 0
+    }
+  ],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke.stdout": {
+      "age_seconds": 30.197041988372803,
+      "exists": true,
+      "mtime": 1785950849.77,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke.stdout",
+      "size": 0
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/decision.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/decision.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv": {
+      "age_seconds": 29.627942085266113,
+      "exists": true,
+      "mtime": 1785950850.34,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+      "size": 1810
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/run_progress.json": {
+      "age_seconds": 29.59762406349182,
+      "exists": true,
+      "mtime": 1785950850.37,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/run_progress.json",
+      "size": 265
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/smoke_checks.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/smoke_checks.json"
+    }
+  },
+  "findings": [
+    {
+      "code": "RESULT_SCHEMA_DRIFT",
+      "details": {},
+      "message": "missing field task_id in /Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+      "severity": "critical"
+    },
+    {
+      "code": "RESULT_SCHEMA_DRIFT",
+      "details": {},
+      "message": "missing field terminal_status in /Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+      "severity": "critical"
+    },
+    {
+      "code": "RESULT_SCHEMA_DRIFT",
+      "details": {},
+      "message": "missing field hgs_iterations_total in /Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+      "severity": "critical"
+    },
+    {
+      "code": "RESULT_SCHEMA_DRIFT",
+      "details": {},
+      "message": "missing field stop_trigger_reason in /Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+      "severity": "critical"
+    },
+    {
+      "code": "RESULT_SCHEMA_DRIFT",
+      "details": {},
+      "message": "missing field violation_count in /Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke_20260806/raw_runs.csv",
+      "severity": "critical"
+    }
+  ],
+  "log_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/t26_charging_timing_smoke.stdout"
+  ],
+  "name": "t26-charging-timing-smoke",
+  "pause_action": "SIGSTOP",
+  "paused": true,
+  "process": {
+    "alive": true,
+    "cpu_percent": 100.0,
+    "members": [
+      {
+        "command": "/opt/anaconda3/bin/python3.13 baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py --mode smoke --output tmp/t26_charging_timing_smoke_20260806 --workers 1",
+        "cpu_percent": 100.0,
+        "elapsed": "00:30",
+        "pgid": 95005,
+        "pid": 95005,
+        "ppid": 1,
+        "rss_kb": 571568,
+        "state": "Rs"
+      }
+    ],
+    "pgid": 95005,
+    "root_pid": 95005,
+    "rss_mb": 558.171875
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+      "age_seconds": 438.791081905365,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1785950441.18,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "sha256": "8d73a208ac5b3a1c00a3c2eab85aa01604c9134dab022413c7199fa16904f644",
+      "size": 44304
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+      "age_seconds": 412.811448097229,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1785950467.16,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "sha256": "095e2af66cfa4f30f7715d68000496b73a96dd756fd4f4ac0cef77c74104cec1",
+      "size": 34602
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py": {
+      "age_seconds": 167.95181322097778,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1785950712.02,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py",
+      "sha256": "2fe270ac36c7a3e701660b803519404d44464e38dc3f9830cbc1239eb95163d2",
+      "size": 91606
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 90721.00932097435,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1785860158.96,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+      "size": 48650
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 281212.478954792,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1785669667.49,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "size": 46269
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 1946734.6699311733,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "runtime_seconds": 30.133134841918945,
+  "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/.t26-charging-timing-smoke.monitor/scenes/20260806-012759-anomaly",
+  "schema_version": 1,
+  "state": "ANOMALY",
+  "system": {
+    "free_memory_mb": 78.59375,
+    "load_average_15m": 2.12353515625,
+    "load_average_1m": 1.78173828125,
+    "load_average_5m": 2.18408203125,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent": 57.0,
+    "swapouts": 111082182
+  }
+}

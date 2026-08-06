@@ -1,0 +1,237 @@
+{
+  "task_id": "RT-CON",
+  "role": "con",
+  "status": "RT_CON_COMPLETE",
+  "position_count": 32,
+  "verdict_counts": {
+    "拆除": 2,
+    "修改": 18,
+    "保留": 12
+  },
+  "positions": [
+    {
+      "id": "A1",
+      "verdict": "保留",
+      "real_cost": "无真实代价，仅为理论负担。目标期刊样本中三篇无附录、一篇仅有电子附录；仓库已按“必要性而非数量上限”纠正过一次过度删图规则，见 docs/handoff/session_handoff_20260731_claude_night_shift.md:144-159。没有证据表明“不设附录”已经挡住必要证据。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；继续以“删掉后是否妨碍主张理解”为正文必要性判据，必要产物可不限数量。"
+    },
+    {
+      "id": "A2",
+      "verdict": "保留",
+      "real_cost": "无真实代价，仅为理论负担。仓库规则明确允许跑前把机制放到有发挥空间的区间，也允许对称试算，同时禁止看结果后挑算例、种子或参数，见 docs/handoff/memory/user_operating_principles.md:47-51；没有发现该规则阻断合法跑前设计。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；只需把“正式结果出现前”和“正式结果出现后”的时间边界记录清楚。"
+    },
+    {
+      "id": "A3",
+      "verdict": "修改",
+      "real_cost": "没有可单独归因的已实现损失；但绝对化措辞已与仓库实际做法冲突。代表实例选择仍把旧 140.41 kWh 批次作为 discrimination prior，且明确不当作新模型结果，见 docs/handoff/representative_instance_selection_20260803/selection_rule.json:25-37。若“旧设计几乎全部作废”按字面执行，会删掉目前定位 C1 停止条件问题的唯一长预算先验。",
+      "rewrite_if_modify": "旧批次凡模型语义、参数、评价器或机器基准已改变者，不得作为当前正式数值或跨时代比较；其设计、失败诊断、收敛轨迹和实例判别先验可以保留，但必须标出旧合同及可迁移边界。",
+      "lighter_alternative": "把“一律作废”降为“必须带时代标签并说明只用于什么”；现有 docs/handoff/memory/user_operating_principles.md:131-133 已提供等效办法。"
+    },
+    {
+      "id": "A4",
+      "verdict": "修改",
+      "real_cost": "人民币等待损失实验被证据缺口挡住：WL1 status=WAITING_LOSS_EVIDENCE_COMPLETE、candidate_count=15、usable_count=0，见 HANDOFF.md:4803-4808。核心禁伪造是正确的；代价只出现在过宽解释上，因为同一报告已经给出归一化、直接报等待时间、硬时窗/服务量和明确标为情景敏感性四条有页码替代，见 docs/handoff/waiting_loss_evidence_20260802/report.md:128-164。",
+      "rewrite_if_modify": "不得把构造、归一化或跨场景迁移的参数冒充企业观测值或人民币实证参数；允许使用有文献结构依据、经用户批准且明确标为无量纲或构造情景的参数做敏感性分析，其结论只对应所声明情景。",
+      "lighter_alternative": "可以降为“必须记录参数来源类别、单位、可支持主张及用户批准号”；对人民币经营结论仍维持硬禁令。"
+    },
+    {
+      "id": "A5",
+      "verdict": "修改",
+      "real_cost": "该规则 08-03 才写入，尚无可归因的已实现损失；但单实例正式实验已经暴露风险：100c 五算法与三消融臂全部为 3621.569908，见 baselines/china_e3_e7/formal_algorithm_20260802/report.md:5-25，而旧批次 81 实例的 M→MV 方向为改进 114、退化 0、持平 291，见 baselines/algorithm_prototypes/china81_vs_opensource_20260727/report.md:14-17。一个主实例可以统一叙事，不能独占机制识别。",
+      "rewrite_if_modify": "正文用一个跑前冻结的主实例贯通展示；凡主张算法、机制或政策具有一般效果，必须同时报告跑前冻结的稳定性实例，且不得在看过正式结果后更换、增删或挑选。旧合同数据只可用于跑前选取判别先验。",
+      "lighter_alternative": "保留单一主实例的写作要求，把“其余仅作稳定性校验”改成必须登记稳定性结果而非禁止其承担反证作用。"
+    },
+    {
+      "id": "A6",
+      "verdict": "保留",
+      "real_cost": "找不到拆除理由，应当保留。用户曾明确指出文档“全是 AI 黑话，已丧失可读性”，见 docs/handoff/memory/user_operating_principles.md:163-169；没有仓库证据表明平实中文降低了技术准确性。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；内部文件名和算法缩写可以保留，但首次出现必须解释现实含义。"
+    },
+    {
+      "id": "A7",
+      "verdict": "修改",
+      "real_cost": "身份式分工确实失效过：Codex 配额耗尽后，用户在 HANDOFF.md:2281-2286 明令废止 CLAUDE.md 的角色铁律并由 Claude 直接执行；次日又恢复分工，见 HANDOFF.md:2445-2449。固定到模型身份会让执行通道随配额和会话能力停摆。",
+      "rewrite_if_modify": "每个任务须明确“判断/科研裁决者”和“执行者”；默认 Claude 负责判断与任务定义、Codex 负责执行，但用户当前授权、配额或工具能力变化时可更换执行者。保护文件、审批和证据纪律不随角色更换而变化。",
+      "lighter_alternative": "降为任务卡中的 role_assignment 字段并记录变更理由，不再把某个模型身份写成全局硬禁令。"
+    },
+    {
+      "id": "B1",
+      "verdict": "修改",
+      "real_cost": "绝对保护会延迟已证记账缺陷。仓库直到 08-02 才确认 cost.py:168 按路线数重复收实体车固定成本；零搜索见证中 1040 趟对应 693 辆实体车，按车计费可少 58990 元，见 docs/handoff/billing_and_charging_basis_20260802/report.md:13-21。当前入口其实已给出例外：经证实且不涉及制度选择的接线/记账修复应自主推进，见 docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:123-131。",
+      "rewrite_if_modify": "未经用户批准，不得改变 cost.py、check.py、search/evaluation.py 的模型语义、评价口径或可行域；对已获批准的语义变更，以及有独立证据确认、不引入研究选择的接线或记账缺陷，可以在隔离分支修复，但必须保存旧证据、增加回归检查并记录源码哈希。",
+      "lighter_alternative": "把文件级禁改降为语义级审批加变更清单；机械修复用双人证据、回归和版本记录取得同等防护。"
+    },
+    {
+      "id": "B2",
+      "verdict": "保留",
+      "real_cost": "无真实代价，仅为理论负担。五件记录面的要求见 docs/handoff/memory/user_operating_principles.md:71-75；当前 200c 批次用完整解、哈希和逐次结构证明三臂 10/10 同构，见 baselines/china_e3_e7/formal_ablation_200c_20260803/report.md:39-45，说明记录成本换来了可裁决性。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "仅对纯取证或零结果影响的小任务允许不用 raw_runs；影响论文结论的任务不降级。"
+    },
+    {
+      "id": "B3",
+      "verdict": "保留",
+      "real_cost": "找不到拆除理由，应当保留。仓库已记录 AppleDouble `._*` 被当作真证书导致分母错误，见 docs/handoff/memory/user_operating_principles.md:135-141；排除缓存正是更轻的修复，不是负担来源。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；清单同时记录排除模式，且 artifact_hashes.json 排除自身以避免自哈希悖论。"
+    },
+    {
+      "id": "B4",
+      "verdict": "保留",
+      "real_cost": "无真实代价，仅为理论负担。CLAUDE.md:11 明确 M1 与 x86 浮点不同、绝对值不可跨机；仓库没有发现该规则挡住相对比例或诊断性计算。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；非 M1 可以做工程诊断和相对比较，但必须标机器且不得进入正式绝对数表。"
+    },
+    {
+      "id": "B5",
+      "verdict": "修改",
+      "real_cost": "看门狗本身多次制造代价：首版 Bash 关联数组在 macOS 3.2 下把三个 done.json 路径塌缩成一个并误报 WL1 跑死，见 HANDOFF.md:4826-4828；另一次两任务抢目录破坏审计链、12 workers 挤 8 核导致吞吐归零、仅看父进程差点杀健康 E7，见 docs/handoff/session_handoff_20260731_claude_night_shift.md:177-184。",
+      "rewrite_if_modify": "仅对长时或后台任务设置一个只读看门狗；它必须绑定唯一任务目录和 PID，综合权威终态文件、进程树及已声明的进度/日志信号判断，不得向任务发送信号，不得把“暂时无输出”直接判死；短时前台任务无需看门狗。",
+      "lighter_alternative": "从“一任务必有”降为“长时任务必须”；以 runner 自写权威状态和终态文件替代外部猜测。"
+    },
+    {
+      "id": "B6",
+      "verdict": "保留",
+      "real_cost": "找不到拆除理由，应当保留。XB 明确登记三个 falsifier 并以 NOT_SUPPORTED_BY_ONE_OR_MORE_REGISTERED_FALSIFIERS 结束，见 baselines/china_e3_e7/formal_fleet_levels_20260802/report.md:21-24；没有证据表明如实标签阻断发现。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；允许在同一报告中并列写工程通过或诊断价值，但不得替换科学终态。"
+    },
+    {
+      "id": "B7",
+      "verdict": "修改",
+      "real_cost": "该规则被误用为复制论文内部标定数。r2_evidence_inventory 直接把陈婉茹的 51--149 客户、2000/150 和三臂搬入当前实验，见 docs/handoff/paper_restructure_20260802/r2_evidence_inventory/report.md:62-69；结果 100c 五臂全为 3621.569908，200c 三臂全为 7820.181472，见 formal_algorithm_20260802/report.md:13-25 与 formal_ablation_200c_20260803/report.md:23-25。目标期刊页码证明原文做过什么，不证明该数字适配本求解器。",
+      "rewrite_if_modify": "凡决定实验能否启动、数据能否进入结果或主张是否成立的门槛，须用目标期刊原文确认其用途和完整前提；文献中的实例规模、种群、迭代数、无改进次数等内部标定值不得原样移植。项目专属数值必须在不读取正式结果方向的前提下，用本项目收敛、功效或可行性标定并版本化预登记；只有文献结构支持而无项目标定的数值，只能作试算起点，不得作科学门槛。",
+      "lighter_alternative": "保留页码要求，同时增加 transfer_mapping 和 project_calibration 两个必填记录；不再把“有页码”当成数值可迁移的充分条件。"
+    },
+    {
+      "id": "C1",
+      "verdict": "修改",
+      "real_cost": "真实代价明确。100c 在 2000/150 下五算法和三消融臂全部 3621.569908，见 baselines/china_e3_e7/formal_algorithm_20260802/report.md:7-25；200c 同规则三臂全部 7820.181472，见 baselines/china_e3_e7/formal_ablation_200c_20260803/report.md:7-25。旧合同每视角 25000 次下，405 对 M→MV 有改进 114、退化 0、持平 291，见 baselines/algorithm_prototypes/china81_vs_opensource_20260727/report.md:10-17；其中一个 100c 候选五个种子全改进，见 docs/handoff/representative_instance_selection_20260803/discriminating_power_matrix.json:13-64。旧批次不是当前正式结果，但足以证明长预算是合法诊断变量。",
+      "rewrite_if_modify": "停止条件不得复制陈婉茹的 2000/150。先在当前模型、当前评价器和跑前冻结的主实例上做不读取臂间优劣的长程收敛标定，按各臂进入稳定平台所需的完整评价数设共同上限；连续无改善只能作为经本项目标定的辅助提前停止，并记录实际迭代、完整评价数和终止原因。",
+      "lighter_alternative": "把 2000/150 降为首轮试算起点；允许版本化诊断批次调整预算，但原批次和不利结果必须保留。"
+    },
+    {
+      "id": "C2",
+      "verdict": "修改",
+      "real_cost": "单算例×10 确实把 80 个 100c 正式运行集中在一个无判别实例：五算法 50 次和消融 30 次全部同值，见 baselines/china_e3_e7/formal_algorithm_20260802/report.md:5-25。重复次数证明了稳定的全平，未证明算法在 China81 上普遍无差异。",
+      "rewrite_if_modify": "每个预先登记的实例仍运行 10 次；正文可主展示一个实例，但算法或机制主张必须同时覆盖跑前冻结的稳定性实例。实例集合、种子和全部结果在正式结果出现后不得增删。",
+      "lighter_alternative": "保留“×10”，只拆除“只能一个实例”；用预先冻结的小型稳定性集合而不是事后补题。"
+    },
+    {
+      "id": "C3",
+      "verdict": "修改",
+      "real_cost": "51--149 限制把外文实例规模当成项目判别条件。selection_rule 只准 75/100c，依据就是陈婉茹 71 客户及 51--149 停止区间，见 docs/handoff/representative_instance_selection_20260803/selection_rule.json:10-15。把规模提高到 200c 后三臂仍全平且解结构 10/10 相同，见 formal_ablation_200c_20260803/report.md:23-41；反过来旧合同的一个 100c 实例五种子 5/5 有差异，见 discriminating_power_matrix.json:13-64。因此规模不是已证根因，固定规模带只造成一次 30-run 的错误排查和过强“最大规模”叙述。",
+      "rewrite_if_modify": "代表实例规模不得固定为 51--149。应在正式结果出现前，依据当前模型的可行性、机制活跃度和收敛/判别诊断选择主实例及稳定性实例；规模只是候选维度，不得用另一篇论文的客户数区间代替本项目标定。",
+      "lighter_alternative": "把 51--149 降为候选起点并记录迁移差异；允许跑前跨规模诊断，但禁止根据正式效果方向挑规模。"
+    },
+    {
+      "id": "C4",
+      "verdict": "修改",
+      "real_cost": "三臂删除式消融缺少“双删除”单元，当前三臂 10/10 结构完全相同，无法区分两个组件都无效、互相替代或只在联合删除时显效；同时去路线池臂 CPU 均值 4.2351 分钟，约为完整臂 1.4330 分钟的三倍，见 baselines/china_e3_e7/formal_ablation_200c_20260803/report.md:23-41。三臂模板在本项目既无效果信息，也产生反常计算成本。",
+      "rewrite_if_modify": "若检验两个组件 A、B，使用跑前冻结的 2×2 消融：完整、去 A、去 B、同时去 A 与 B；四臂共享当前项目标定的停止条件、起点、种子和评价器，并同时报告目标值、解结构、组件触发次数与计算成本。若组件根本未触发，先报机制未激活，不作贡献结论。",
+      "lighter_alternative": "若算力不允许四臂，保留三臂但必须增加触发计数，并把结论限于两个单独删除的边际效应，不能声称独立贡献。"
+    },
+    {
+      "id": "C5",
+      "verdict": "修改",
+      "real_cost": "固定总量扫构成造成服务/可行性混杂。XB 的 0/25/50% 各 10/10 可行，75/100% 各 0/10，并在 D_guangzhou 分别超上限 2 和 3 辆；主张因此触发 FALSIFIER_SERVICE_OR_FEASIBILITY_CONFOUND，见 baselines/china_e3_e7/formal_fleet_levels_20260802/report.md:13-24。50 个档位-种子单元中 20 个无法比较政策效果。",
+      "rewrite_if_modify": "在车型容量和运营语义可比时，固定总车队实体数、只改变油电构成；若固定总量使某些构成系统性不可行，必须把可行性边界单列，不得把不可行或少服务写成成本/碳效果。是否增加容量等价或服务等价敏感性由用户另行批准，且不得替换原五档结果。",
+      "lighter_alternative": "保留固定总量主分析，同时强制并列可用数、实派数、完成服务量和不可行原因；用另一个明确标注的敏感性回答容量不等价。"
+    },
+    {
+      "id": "C6",
+      "verdict": "保留",
+      "real_cost": "无真实代价，仅为理论负担。三段产出已在 HANDOFF.md:5858-5863 登记，并要求代表事件跑前登记、不能按平均成本挑正文赢家；没有证据表明这种展示顺序限制了科学发现。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "允许某一段因没有可用数据而省略，但须记录缺失原因；不强迫制造空图表。"
+    },
+    {
+      "id": "C7",
+      "verdict": "保留",
+      "real_cost": "找不到拆除理由，应当保留为主情景。主动建模充电的 7 篇中 5 篇不设有限并发；本文 2×22 kW 没有观测现场合同支持，见 docs/handoff/billing_and_charging_basis_20260802/report.md:61-80。无上限会排除排队机制，但仓库没有证据证明该机制在当前 China81 是实证存在。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "主情景保留无上限；若以后取得场站容量证据，可增加有来源、单独声明且不替换主结果的有限并发敏感性。"
+    },
+    {
+      "id": "C8",
+      "verdict": "保留",
+      "real_cost": "找不到拆除理由，应当保留。9 篇核验中，真正建模多趟的论文没有一篇对同一实体车第二趟重复收固定费；当前旧公式会在 1040 趟、693 辆实体车见证中多计 58990 元，见 docs/handoff/billing_and_charging_basis_20260802/report.md:13-21。该约束修正了真实记账错误，没有造成已知损失。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；若未来引入每趟装卸或启动边际费，应另设有来源的新成本项，不能把实体车日固定费改回按趟。"
+    },
+    {
+      "id": "C9",
+      "verdict": "修改",
+      "real_cost": "无可归因的正式结果损失，因为动态批次尚未完成：status=XC_DYNAMIC_FORMAL_RUNNING、completed_scenarios=21/30、runtime_failures=[]，见 baselines/china_e3_e7/formal_dynamic_dispatch_20260802/status.json:2-6。但当前预优化和动态重优化都机械使用 population_size=120、MaxIterations(2000)_only，且 independent_secondary_stop_rule=null，见 preregistration.json:40-47；这把 21 店铺静态标定直接复制到 100 客户剩余问题，理论负担已实存。",
+      "rewrite_if_modify": "种群和停止条件分别按当前预优化问题与各动态剩余问题的规模和收敛行为跑前标定；只有诊断显示二者在共同 120/2000 下均达到可比平台时，才可统一。所有策略在同一决策时点仍使用相同标定规则。",
+      "lighter_alternative": "120/2000 只作初始 cap；记录每次剩余客户数、实际迭代、终止原因和改进曲线，批次完成前不据中间结果改参数。"
+    },
+    {
+      "id": "D1",
+      "verdict": "修改",
+      "real_cost": "绝对禁换题阻断真因排查。200c 三臂仍全平后被要求“不换题、不换种子、不加预算”，见 baselines/china_e3_e7/formal_ablation_200c_20260803/report.md:7-17；同报告却显示三臂迭代区间不重叠、结构 10/10 相同，见 :35-41，而旧 25k 证据存在 114 次 M→MV 改进，见 china81_vs_opensource_20260727/report.md:14-17。它阻止的不是挑好结果，而是区分预算、实例和实现的后续诊断。",
+      "rewrite_if_modify": "全平批次必须原样封存并如实报告，不得通过换算例替换它；但可以新建有编号、跑前冻结且明确标为诊断的任务，系统检查停止条件、机制触发与实例判别力。诊断结果不得反向删除原批次，是否据此重做正式实验由用户另行裁决。",
+      "lighter_alternative": "将“不得再换”降为“不得无版本地替换”；要求新任务、全候选留痕和原结果共存即可防止挑题。"
+    },
+    {
+      "id": "D2",
+      "verdict": "修改",
+      "real_cost": "不可修改的否定条件把错误实验设计和科学问题绑死。200c 批次在 30 个目标全同后直接给出 NO_MEASURABLE_DIFFERENCE_AT_CHINA81_MAX_SCALE，见 formal_ablation_200c_20260803/report.md:11-17；后续即使发现 2000/150 无判别力，也只能另起整批，不能把原预注册修正为“停止规则失效”的诊断。旧合同中“首个目标值后不可修改”已被期刊对齐审查判定无依据，见 docs/handoff/experiment_contract_v2_journal_aligned_20260730.md:18-25。",
+      "rewrite_if_modify": "每一批的原预注册和否定条件必须永久保留，跑后不得改写以改变该批结论；新证据证明设计、门槛或实现有缺陷时，可以建立带版本号的修订预注册和新诊断批次，明确旧批回答的问题、新批改变的唯一因素及两批不可互相替换。",
+      "lighter_alternative": "用 append-only 版本链替代不可修改；禁止覆写旧条款，但允许有证据的后继版本。"
+    },
+    {
+      "id": "D3",
+      "verdict": "拆除",
+      "real_cost": "整份 TeX 禁改会扩大实验—正文漂移。项目受保护清单只有 cost.py、check.py、search/evaluation.py，见 docs/handoff/READ_ME_FIRST_FOR_AGENTS.md:121-129；实际 E4 正式图已经 COMPLETE，但 paper_main.tex 仍引用错误路径并退化成占位框，见 docs/handoff/tex_evidence_reconciliation_20260731/report.md:74-83。不能证明禁改条款造成了最初错误，但它会直接阻止最小路径修复。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "实验 runner 不写 TeX；专门写作任务在终态证据和用户批准范围内可以更新 TeX，并做编译/路径核验。保护具体已冻结段落或生成器，不保护整份文件。"
+    },
+    {
+      "id": "D4",
+      "verdict": "保留",
+      "real_cost": "找不到拆除理由，应当保留。它是 A2 的直接实现；仓库明令禁止正式结果出现后挑算例、种子、补跑或改口径，见 docs/handoff/memory/user_operating_principles.md:47-51。没有发现合法诊断必须删除多个实例中的不利行。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；允许跑前冻结的多实例诊断，但全部实例和结果必须保留。"
+    },
+    {
+      "id": "D5",
+      "verdict": "拆除",
+      "real_cost": "堆叠禁令已经造成范围和门禁膨胀。仓库记录八条自建约束分别杀死 E5、让 E5 白停、误报健康运行和闲置 6 核，见 docs/handoff/session_handoff_20260731_claude_night_shift.md:44-59；项目总复盘把两个月停滞归因于每次审计生出新强制工作和防伪工程自身缺陷，见 docs/handoff/memory/user_operating_principles.md:145-153。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "每个任务只写范围、受保护边界、产物、验收和停止条件；通用禁令链接到唯一有效规则，不在提示词重复扩写。"
+    },
+    {
+      "id": "D6",
+      "verdict": "修改",
+      "real_cost": "绝对不改断言会保护错误验收值。MT1 的锁定合计 5869.852618210777 比 Decimal 精确和 5869.852618210776059 高 1 ULP，导致实质检查全部通过仍 HALT；随后才把验收值更正为 5869.852618210776，见 HANDOFF.md:4870-4907。原执行者不放宽检查是对的，但后续必须能修正检验装置。",
+      "rewrite_if_modify": "不得为转绿而删除或放宽仍然成立的断言；若独立复算证明断言、锚值或测试合同本身错误或已被批准的新语义取代，必须保留原失败证据，记录原因，以版本化变更修正断言，并增加能覆盖真实风险的替代回归测试。",
+      "lighter_alternative": "把“禁改”降为“证据负担加版本化”；错误测试可改，不能静默删。"
+    },
+    {
+      "id": "D7",
+      "verdict": "修改",
+      "real_cost": "“加预算就是制造差异”会封死最有证据的排查轴。200c 下无多视角臂仅跑 441--1203 次，完整臂跑 1569--2000 次，三臂结构仍 10/10 相同，见 formal_ablation_200c_20260803/report.md:35-41；旧 25000 次每视角批次 M→MV 改进 114、退化 0，见 china81_vs_opensource_20260727/report.md:14-17。旧批次合同不同，不能救正式结论，但它证明增加预算并非天然造假。",
+      "rewrite_if_modify": "不得在看过正式结果后通过挑种子、挑算例或只保留较大预算的结果来制造差异；当全平或机制未触发时，可以建立跑前冻结的新诊断批次，对所有臂对称地改变一个因素，包括预算。原批次必须保留，新批次不得替换原批次，正式设计是否更新由用户裁决。",
+      "lighter_alternative": "用“对称、单因素、版本化、全报告”四项记录要求替代对预算/种子/实例的一刀切禁令；种子替换仍禁止，预先扩充种子集合可以另议。"
+    },
+    {
+      "id": "D8",
+      "verdict": "保留",
+      "real_cost": "找不到拆除理由，应当保留。XD 零搜索重打分发现当前合同下 247 个源单元和联合面板需要新搜索后，以 HALT_XD_CURRENT_CONTRACT_REQUIRES_SEARCH 结束且 search_evaluations=0，见 baselines/china_e3_e7/carbon_timing_rescore_20260802/report.md:63-79；它没有把旧解冒充新合同最优解。",
+      "rewrite_if_modify": "",
+      "lighter_alternative": "不降级；发现必须搜索时输出精确范围，由新的明确授权任务启动，不在零搜索任务中偷跑。"
+    },
+    {
+      "id": "D9",
+      "verdict": "修改",
+      "real_cost": "尚无可确认的已实现损失；但绝对禁止以澄清问题结束与仓库决策边界直接冲突。等待损失取证留下四种会改变论文含义的替代口径，status=DECISION_PENDING，见 HANDOFF.md:4819-4824；长期原则要求只有改变研究问题、模型语义、主要比较或论文故事时才一次性请用户拍板，见 docs/handoff/memory/user_operating_principles.md:53-57。D9 若按字面执行，会逼代理替用户选研究口径。",
+      "rewrite_if_modify": "不得因普通实现细节反复提问；若唯一剩余选择会改变研究问题、模型语义、主要比较、参数方案、论文故事或证据效力，必须把同层级选项和代价一次性列全并请用户拍板，不得用“本轮必须结束”替代授权。",
+      "lighter_alternative": "降为“最多一次、问题合并、只问科学决策”；实现细节继续自主推进。"
+    }
+  ]
+}

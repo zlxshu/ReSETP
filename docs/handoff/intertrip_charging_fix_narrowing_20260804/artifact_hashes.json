@@ -1,0 +1,20 @@
+{
+  "schema": "resetp.t11-intertrip-charging-fix-narrowing-artifact-hashes.v1",
+  "task_id": "T11-INTERTRIP-CHARGING-FIX-NARROWING",
+  "hash_policy": {
+    "algorithm": "SHA-256",
+    "excluded": ["._*", "__pycache__", ".pytest_cache", "artifact_hashes.json"]
+  },
+  "artifacts": {
+    "decision.json": "6ea57ed6f628b470aeabc189e89320d5bfcd4d6d4bed28c84be3a545076d9b1e",
+    "metadata.json": "5db7b8a48e025205439bcd55bd5cae150a8340bf46c7030fb236f906bcabff1d",
+    "regression_results.json": "04c526a5eeae7571ca7c1692745aaf3c7c6a50e53cf12b652be2a32b4e6fb94c",
+    "regression_verify_narrowing.py": "216c628f59ac99925cb83b65ce92ba3b7f2eccf72a7878cb67fd97cf5360102a",
+    "report.md": "f3049b3ea085b71c1a79b95e61ccb7edca2936d5c14783fa24e85be62aa49349"
+  },
+  "protected_source_hashes_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "93139ea143d361d1b4cde7e9e2a34506bf90b95fe718809c1a467c2fd97b7f73",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  }
+}

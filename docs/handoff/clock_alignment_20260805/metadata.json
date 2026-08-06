@@ -1,0 +1,44 @@
+{
+  "schema": "resetp.t15-clock-alignment.metadata.v1",
+  "task_id": "T15",
+  "date": "2026-08-05",
+  "repository": "/Volumes/移动硬盘（512G）/ReSETP",
+  "environment": {
+    "python": "/opt/anaconda3/bin/python3.13",
+    "python_version": "3.13.9",
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH": "solver/src:models/src",
+    "pytest_cache": "disabled"
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072"
+  },
+  "full_suite": {
+    "baseline": "898 passed / 1 skipped / 14 failed",
+    "actual": "906 passed / 1 skipped / 6 failed",
+    "new_failures": 0,
+    "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider solver/tests"
+  },
+  "source_authority": {
+    "clock": "solver/src/setp_solver/search/multitrip_schedule.py:route_timing/build_multitrip_certificate",
+    "calendar": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv",
+    "witness_positive": "docs/handoff/eval_chain_carbon_consistency_20260804/solution_witnesses.json",
+    "witness_legal": "docs/handoff/intertrip_charging_fix_20260804/solution_witnesses.json"
+  },
+  "artifacts": [
+    "report.md",
+    "metadata.json",
+    "raw_runs.csv",
+    "decision.json",
+    "artifact_hashes.json",
+    "regression_verify.py",
+    "regression_results.json"
+  ]
+}

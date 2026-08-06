@@ -1,0 +1,179 @@
+{
+  "created_at": "2026-08-05T23:24:08+00:00",
+  "current_status": {
+    "checked_at": "2026-08-05T23:24:08+00:00",
+    "checkpoint_inventory": [
+      {
+        "age_seconds": 356.17566299438477,
+        "exists": true,
+        "mtime": 1785971892.59,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/unit_states/._T26_SMOKE__JJJ__COST_CARBON__S2026080201.json",
+        "size": 4096
+      },
+      {
+        "age_seconds": 356.1756682395935,
+        "exists": true,
+        "mtime": 1785971892.59,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/unit_states/T26_SMOKE__JJJ__COST_CARBON__S2026080201.json",
+        "size": 679
+      }
+    ],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/decision.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/decision.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/raw_runs.csv": {
+        "age_seconds": 356.3222568035126,
+        "exists": true,
+        "mtime": 1785971892.44,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/raw_runs.csv",
+        "size": 1810
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/run_progress.json": {
+        "age_seconds": 356.30223989486694,
+        "exists": true,
+        "mtime": 1785971892.46,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/run_progress.json",
+        "size": 265
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/smoke_checks.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/t28_charging_timing_smoke_20260806/smoke_checks.json"
+      }
+    },
+    "findings": [],
+    "log_paths": [],
+    "name": "t28-charging-timing-threshold-smoke",
+    "paused": false,
+    "process": {
+      "alive": true,
+      "cpu_percent": 100.0,
+      "members": [
+        {
+          "command": "/opt/anaconda3/bin/python3.13 baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py --mode smoke --workers 1 --output tmp/t28_charging_timing_smoke_20260806",
+          "cpu_percent": 100.0,
+          "elapsed": "05:57",
+          "pgid": 11664,
+          "pid": 11664,
+          "ppid": 1,
+          "rss_kb": 852784,
+          "state": "Rs"
+        }
+      ],
+      "pgid": 11664,
+      "root_pid": 11664,
+      "rss_mb": 832.796875
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+        "age_seconds": 472.9125978946686,
+        "exists": true,
+        "kind": "primary_config",
+        "mtime": 1785971775.85,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+        "sha256": "d2f6c21a100c7ab76788013571b0ee6c8e2c95cfc400409922b8c100cebff8d4",
+        "size": 50474
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+        "age_seconds": 584.7726721763611,
+        "exists": true,
+        "kind": "primary_config",
+        "mtime": 1785971663.99,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+        "sha256": "9bd3c967c4197b1966fafa446086038e8eddd624962834bf3844252876137ae8",
+        "size": 35663
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py": {
+        "age_seconds": 428.72273206710815,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1785971820.04,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py",
+        "sha256": "515fe2e4862d04337acfe4233b1ceb9464b504a000e185a98e9bf81e896fcc2a",
+        "size": 93453
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/charge_timing.py": {
+        "age_seconds": 55980.34249806404,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1785916268.42,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/charge_timing.py",
+        "sha256": "c199307557494320b87bd897e0ac5d68788a12c1788349e8b5052d46124fcc42",
+        "size": 6220
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 112089.80238485336,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1785860158.96,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+        "size": 48650
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py": {
+        "age_seconds": 54079.30253791809,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1785918169.46,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py",
+        "sha256": "cb0bb62eeba2ad6ebc92d39ecf36a2aa2592b11f1f6a02abd53b2cdcc34bffe9",
+        "size": 29732
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 302581.2722887993,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1785669667.49,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+        "size": 46269
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+        "age_seconds": 1968103.4624509811,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784004145.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+        "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+        "size": 7609
+      }
+    },
+    "runtime_seconds": 0.08223795890808105,
+    "schema_version": 1,
+    "state": "RUNNING",
+    "system": {
+      "free_memory_mb": 65.953125,
+      "load_average_15m": 7.85595703125,
+      "load_average_1m": 1.51513671875,
+      "load_average_5m": 3.39208984375,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 49.0,
+      "swapouts": 9244
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "t28-charging-timing-threshold-smoke",
+    "objective": "Validate one T28 unit with 1 percent timer reset threshold, 180 second idle window, 10 second MIP limit, and bounded unit concurrency"
+  },
+  "minimal_log_tails": {},
+  "reason": "MILESTONE",
+  "schema_version": 1
+}

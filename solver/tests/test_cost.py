@@ -77,6 +77,21 @@ def _ev_drive_kwh(distance_m: float, load_kg: float, prices: PriceParameters) ->
 
 
 class CostEvaluatorTests(unittest.TestCase):
+    def test_multitrip_fixed_cost_is_charged_once_per_physical_vehicle(self) -> None:
+        prices = PriceParameters(vehicle_fixed_cost=170.0)
+        solution = Solution(
+            routes=[
+                Route("CV1#T1", "cv", "D0", ["D0", "C1", "D0"]),
+                Route("CV1#T2", "cv", "D0", ["D0", "C2", "D0"]),
+            ]
+        )
+
+        result = evaluate(solution, _toy_instance(), [], prices)
+
+        self.assertEqual(result["n_veh_cv"], 1)
+        self.assertEqual(result["n_veh_ev"], 0)
+        self.assertEqual(result["cost_fix"], 170.0)
+
     def test_manual_two_vehicle_bill_matches_cmem_hand_calculation(self) -> None:
         prices = PriceParameters()
         carbon_profile = [{"horizon_second_start": 0.0, "actual_gco2_per_kwh": 86.0}]

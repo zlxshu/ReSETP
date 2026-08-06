@@ -1,0 +1,35 @@
+{
+  "schema_version": "resetp.t31-halt.v1",
+  "recorded_at_utc": "2026-08-06T05:47:55Z",
+  "status": "HALT_T31_WORKERS3_MEMORY_SWAP_INSTABILITY",
+  "paper_claim_allowed": false,
+  "configured_workers": 3,
+  "max_batch_units": 5,
+  "materialized_unit_count_before": 70,
+  "materialized_unit_count_after": 73,
+  "new_successful_unit_count": 3,
+  "new_failed_unit_count": 0,
+  "remaining_unit_count": 17,
+  "interrupted_unmaterialized_task_ids": [
+    "T26__PRD__COST__S2026080204",
+    "T26__PRD__COST__S2026080205"
+  ],
+  "resource_evidence": {
+    "prelaunch_load_average_1m": 2.58,
+    "halt_observed_load_average_1m": 4.73,
+    "prelaunch_swap_total_mb": 6144.0,
+    "prelaunch_swap_used_mb": 5308.94,
+    "halt_observed_swap_total_mb": 7168.0,
+    "halt_observed_swap_used_mb": 6723.06,
+    "post_pause_swap_total_mb": 8192.0,
+    "post_pause_swap_used_mb": 6939.44,
+    "largest_worker_rss_mb_before_pause": 1078.7,
+    "largest_worker_state_before_pause": "U",
+    "memory_pressure_free_percent_before_pause": 32.0,
+    "swapouts_prelaunch": 91862707,
+    "swapouts_before_pause": 93446190
+  },
+  "protected_files_unchanged": true,
+  "resume_or_worker_reduction_performed": false,
+  "monitor_run_dir": "tmp/.t31-charging-timing-full-resume1.monitor"
+}

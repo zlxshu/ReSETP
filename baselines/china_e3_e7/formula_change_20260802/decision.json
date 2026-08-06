@@ -1,0 +1,71 @@
+{
+  "schema_version": "resetp.w1-formula-change.decision.v1",
+  "task_id": "W1",
+  "change_id": "MC-W1-F2-DEPOT-CONCURRENCY-01",
+  "status": "W1_FORMULA_CHANGE_COMPLETE",
+  "complete": true,
+  "formal_experiment_executed": false,
+  "route_search_executed": false,
+  "assertions_relaxed": false,
+  "paper_tex_modified": false,
+  "check_py_modified": false,
+  "search_evaluation_py_modified": false,
+  "public_station_semantics_changed": false,
+  "fleet_total_contract_changed_in_w1": false,
+  "existing_results_overwritten": false,
+  "invariants": {
+    "single_trip_E4": "PASS_30_OF_30_BINARY64_EQUAL",
+    "single_trip_E6": "PASS_30_OF_30_BINARY64_EQUAL",
+    "multitrip_prediction": "PASS_20_OF_20_BINARY64_EQUAL",
+    "full_arithmetic_anchor": "PASS_176800_TO_117810",
+    "charging_zero_search": "PASS_81_81_81_81_75_TO_81_81_81_81_81"
+  },
+  "full_test_suite": {
+    "status": "FAIL_7_CLASSIFIED",
+    "passed": 901,
+    "skipped": 1,
+    "failed": 7,
+    "true_w1_regression_count": 0,
+    "old_billing_or_approved_hash_contract_count": 4,
+    "preexisting_unrelated_failure_count": 3,
+    "failures": [
+      {
+        "node": "solver/tests/test_e2_80k_robustness_gate.py::test_protected_semantics_and_goeke80_parameters_match_frozen_commit",
+        "classification": "PREEXISTING_FAILURE_WITH_APPROVED_COST_HASH_DRIFT",
+        "reason": "The frozen protected-source contract already failed before W1; the now-authorized cost.py hash change is additionally incompatible with that historical freeze."
+      },
+      {
+        "node": "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+        "classification": "PREEXISTING_UNRELATED_TRUE_FAILURE",
+        "reason": "The carbon-aware arm remains infeasible; this was in the five-failure pre-W1 baseline and is unrelated to W1."
+      },
+      {
+        "node": "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts",
+        "classification": "PREEXISTING_UNRELATED_TRUE_FAILURE",
+        "reason": "The saved diagnostic still reports repair_logic_defect; this was in the pre-W1 baseline and is unrelated to W1."
+      },
+      {
+        "node": "solver/tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps",
+        "classification": "ASSERTS_OLD_PER_TRIP_BILLING_CONTRACT",
+        "reason": "Under the old route bill the candidate improves 5803.553350198799 to 5754.204438573212; under the approved physical-vehicle bill it uses 12 rather than 11 physical vehicles and changes 4923.553350198799 to 4954.204438573212. The assertion was retained unchanged."
+      },
+      {
+        "node": "solver/tests/test_external_baseline_freeze_builder_20260717.py::test_candidate_probe_is_bound_to_current_adapter",
+        "classification": "PREEXISTING_UNRELATED_ARTIFACT_HASH_FAILURE",
+        "reason": "The candidate probe source differs from its frozen execution artifact; this was in the pre-W1 baseline."
+      },
+      {
+        "node": "solver/tests/test_paper_evidence_boundaries.py::test_current_e2b_e3_e4_and_e6_identity_matrices_are_exact",
+        "classification": "PREEXISTING_FAILURE_WITH_APPROVED_COST_HASH_DRIFT",
+        "reason": "The E4 global manifest already had five source drifts before W1; the authorized cost.py change remains intentionally incompatible with the old manifest."
+      },
+      {
+        "node": "solver/tests/test_strong_bridge_backend_alignment.py::StrongBridgeBackendAlignmentTests::test_decision_gate_reports_backend_only_and_main_local_search_separately",
+        "classification": "ASSERTS_OLD_PROTECTED_SOURCE_HASH_CONTRACT",
+        "reason": "The gate returns HALT only because protected_diff contains the user-authorized cost.py change; its BACKEND_ONLY and MAIN_LOCAL_SEARCH component verdicts still match the test data. The assertion was retained unchanged."
+      }
+    ]
+  },
+  "impact": "所有既有成本数字在数值上作废；旧排序、差额、百分比、合作节省和分配结论须按新合同重新核验。",
+  "next_boundary": "W2 alone may implement the fixed total-fleet convention. W1 does not authorize formal reruns or path search."
+}

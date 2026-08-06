@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "name": "t7-eval-chain-carbon-consistency",
+  "objective": "Run the exact T5 18-run O/C/P matrix after the objective-consistent completion wiring repair",
+  "workdir": "../../..",
+  "poll_seconds": 10,
+  "stale_seconds": 600,
+  "max_runtime_seconds": 7200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "eval_chain_carbon_consistency_20260804/t7_runner.py"
+  ],
+  "forbidden_command_substrings": [
+    "--debug",
+    "formal_runner",
+    "paper_main"
+  ],
+  "min_cpu_percent_when_active": 0.1,
+  "low_cpu_consecutive_checks": 6,
+  "max_rss_mb": 6500,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "runner_state.json",
+    "raw_runs.csv",
+    "probe_raw.csv",
+    "slot_distribution.csv",
+    "completion_trace.csv",
+    "solution_witnesses.json"
+  ],
+  "completion_files": ["done.json"],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {"path": "../../../solver/src/setp_solver/cost.py", "kind": "cost_function"},
+    {"path": "../../../solver/src/setp_solver/check.py", "kind": "evaluator"},
+    {"path": "../../../solver/src/setp_solver/search/evaluation.py", "kind": "evaluator"},
+    {"path": "../../../data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv", "kind": "core_data"},
+    {"path": "../../../data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv", "kind": "core_data"},
+    {"path": "../../../baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py", "kind": "model"},
+    {"path": "../../../baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py", "kind": "experiment_contract"},
+    {"path": "../../../baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py", "kind": "experiment_contract"},
+    {"path": "preregistration.json", "kind": "experiment_contract"},
+    {"path": "t7_runner.py", "kind": "experiment_contract"},
+    {"path": "../../../solver/src/setp_solver/china81_completion.py", "kind": "repair_source"}
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {"enabled": false, "timeout_seconds": 180}
+}

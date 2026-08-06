@@ -1,0 +1,115 @@
+{
+  "schema": "resetp.z3-refeasibility-under-literature-setup.v1",
+  "task_id": "Z3",
+  "status": "Z3_CHARGER_FLEET_BASIS_COMPLETE",
+  "method": {
+    "type": "ZERO_SEARCH_RECERTIFICATION_OF_EXISTING_FIXED_TRIP_DIAGNOSTICS",
+    "route_search_executed": false,
+    "search_evaluations": 0,
+    "formal_experiment_executed": false,
+    "rule": "保留客户、路线、访问顺序、趟时钟、车型容量、电池和充电曲线；只把有限 2 枪并发约束替换为文献中的无限并发/始终可用合同。原来只因 TWO_22KW_CHARGERS 失败的记录转为认证；任何载重、时窗或 EV 趟兼容性失败保留。",
+    "source_files": [
+      "docs/handoff/fleet_sizing_derivation_20260802/levels_design.json",
+      "docs/handoff/fleet_sizing_multitrip_20260802/levels_design_multitrip.json",
+      "docs/handoff/fleet_sizing_multitrip_20260802/fleet_sizing_multitrip.json"
+    ]
+  },
+  "literature_setups": [
+    {
+      "setup_id": "LIT_U22_MONTOYA",
+      "simultaneous_charger_capacity": "UNBOUNDED",
+      "power_kw": 22.0,
+      "source": "Montoya et al. (2017), p.4",
+      "result_equivalence_note": "现有 22 kW 单作业时长不变，只删除构造的每场 2 枪并发上限。"
+    },
+    {
+      "setup_id": "LIT_U30_WANG_MD",
+      "simultaneous_charger_capacity": "UNBOUNDED_ALWAYS_AVAILABLE",
+      "power_kw_equivalent": 30.0,
+      "source": "Wang et al. (2023), pp.14,18",
+      "result_equivalence_note": "30 kWh/h 不慢于现有 22 kW；所有已在 22 kW 下单作业可放置的链继续可放置，删除并发上限后分类与 U22 相同。"
+    }
+  ],
+  "convention_a": {
+    "current_constructed_2x22kw": {
+      "certified_by_level": {
+        "0.0": 81,
+        "0.25": 81,
+        "0.5": 78,
+        "0.75": 63,
+        "1.0": 41
+      }
+    },
+    "under_each_literature_setup": {
+      "certified_by_level": {
+        "0.0": 81,
+        "0.25": 81,
+        "0.5": 78,
+        "0.75": 63,
+        "1.0": 44
+      },
+      "not_certified_by_level": {
+        "0.0": 0,
+        "0.25": 0,
+        "0.5": 3,
+        "0.75": 18,
+        "1.0": 37
+      }
+    },
+    "answer_to_41_of_81": "41/81 becomes 44/81",
+    "recovered_instances": [
+      "cn-cy-100c-01-V2-LOCATIONS",
+      "cn-cy-200c-02-V2-LOCATIONS",
+      "cn-jjj-100c-01-V2-LOCATIONS"
+    ],
+    "failure_decomposition_at_100_percent_before": {
+      "charging_only": 3,
+      "route_or_trip_compatibility_only": 36,
+      "both_charging_and_route_or_trip_compatibility": 1,
+      "total_not_certified": 40
+    },
+    "failure_decomposition_at_100_percent_after": {
+      "route_or_trip_compatibility": 37,
+      "charging_capacity": 0,
+      "total_not_certified": 37
+    },
+    "judgment": "在口径 A 下，高电动化仍显著少于同一文献配置下的单趟 81/81；因此 2×22 kW 不是主体根因。主体根因是压缩总车队上限以及把既有 CV 趟原样当 EV 趟造成的载重/时窗不兼容。"
+  },
+  "convention_b": {
+    "current_constructed_2x22kw": {
+      "certified_by_level": {
+        "0.0": 81,
+        "0.25": 81,
+        "0.5": 81,
+        "0.75": 81,
+        "1.0": 75
+      },
+      "reason_100_percent_is_75": "单趟口径原 6 个 200 客户实例均只因必要充电槽前缀超载而未认证；levels_design.json 的 reason 全为 charger_schedule，未记录非车队违反。"
+    },
+    "under_each_literature_setup": {
+      "certified_by_level": {
+        "0.0": 81,
+        "0.25": 81,
+        "0.5": 81,
+        "0.75": 81,
+        "1.0": 81
+      },
+      "not_certified_by_level": {
+        "0.0": 0,
+        "0.25": 0,
+        "0.5": 0,
+        "0.75": 0,
+        "1.0": 0
+      }
+    },
+    "answer_to_41_of_81": "The 41/81 figure is inapplicable under convention B; the corresponding result is 81/81",
+    "judgment": "总量固定且多趟可选时，单趟解保留在可行域中，多趟不可能使可行性变差；文献无限并发合同同时消除原 6 个单趟充电槽边界。"
+  },
+  "causal_answer": {
+    "does_multitrip_make_high_electrification_worse": "NO_AS_A_GENERAL_STATEMENT",
+    "under_convention_a": "YES_IN_THE_COMBINED_REDIMENSIONING_DESIGN, 44/81 versus 81/81 under the same literature setup",
+    "under_convention_b": "NO, 81/81 versus 81/81",
+    "role_of_constructed_charger_configuration": "每场 2×22 kW 单独造成口径 A 的 3 个实例状态失败，并在另 1 个本已受路线不兼容阻断的实例中共同出现；在当前 34 个由单趟转差的实例中，2 个仅由充电造成、1 个为充电与路线共同、31 个仅为路线/趟兼容性。",
+    "retracted_previous_claim": "撤回‘多趟本身使 100% 电动化由 75/81 降至 41/81’。可保留的事实是：口径 A 的联合压缩设计在构造 2×22 kW 下得到 41/81；改成文献无限并发后为 44/81；口径 B 为 81/81。"
+  }
+}

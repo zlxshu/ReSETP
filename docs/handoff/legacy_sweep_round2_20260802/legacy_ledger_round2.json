@@ -1,0 +1,162 @@
+{
+  "task_id": "Y1",
+  "round": 2,
+  "generated_at": "2026-08-02",
+  "status": "Y1_SWEEP2_COMPLETE",
+  "base_ledger": {
+    "path": "docs/handoff/legacy_sweep_20260802/legacy_ledger.json",
+    "sha256": "78c73657c65eff0b47b7a69da0b6ea0ae7d6fafac13fbb9a3d9acf8972d56b01",
+    "inherited_item_count": 32,
+    "repeated_in_this_file": 0
+  },
+  "new_item_count": 10,
+  "items": [
+    {
+      "id": "X2-DC-005",
+      "类别": "死代码",
+      "路径与行号": [
+        "solver/src/setp_solver/search/dynamic.py:131-133",
+        "solver/src/setp_solver/search/dynamic.py:897-898"
+      ],
+      "事实": "逐行符号图未找到 myopic_rolling_policy 与 dynamic_final_failure_payload_for_test 的任何仓库内调用者；前者只返回 action=myopic 的 RollingPolicyDecision，后者只把参数原样转交 dynamic_final_failure_payload。全仓 importlib、模块 __getattr__、getattr/setattr/hasattr、字符串注册表和环境变量分支扫描也未发现二者的动态入口。",
+      "是否影响当前主线": "是",
+      "建议处置": "归档：若动态正式入口不需要这两个接口，将其迁入历史兼容层；若保留，则补记唯一调用合同和对应 runner。",
+      "风险": "直接删除可能破坏仓库外调用或未纳入仓库的历史 runner；继续留在动态主模块会让无效默认策略被误认为当前 E7 入口。"
+    },
+    {
+      "id": "X2-DC-006",
+      "类别": "死代码",
+      "路径与行号": [
+        "solver/src/setp_solver/search/instance_registry.py:24-28",
+        "solver/src/setp_solver/search/instance_registry.py:41-42",
+        "solver/src/setp_solver/search/multitrip_schedule.py:37-40"
+      ],
+      "事实": "LMAIN_TO_E2_ALIAS、formal_instance_names 与 LEGACY_CONTRACT_ID 均为公开符号且仓库内零调用；同文件仍实际使用 E2_TO_LMAIN_ALIAS、FORMAL_INSTANCE_ORDER、CONTRACT_ID、NONLINEAR_CONTRACT_ID 和 E4_CONTINUOUS_SOC_CONTRACT_ID。前两项属于退役 L-main/E2 兼容面，LEGACY_CONTRACT_ID 只保存 V1 名称。",
+      "是否影响当前主线": "否",
+      "建议处置": "归档：随 L-main/E2 历史兼容层保留版本记录；当前模块只暴露实际使用的注册表与 V2/V3 合同。",
+      "风险": "仓库外脚本仍可能直接导入这些公开名；未核对外部 runner 前删除会形成不可见兼容破坏。"
+    },
+    {
+      "id": "X2-DC-007",
+      "类别": "死代码",
+      "路径与行号": [
+        "solver/src/setp_solver/algorithms/resetp_alns/runtime/select.py:50-51",
+        "solver/src/setp_solver/algorithms/resetp_alns/support/fleet.py:55",
+        "solver/src/setp_solver/prices.py:158-168",
+        "solver/src/setp_solver/search/certificate_execution.py:48",
+        "solver/src/setp_solver/search/e5_probe.py:64-71",
+        "solver/src/setp_solver/search/fleet.py:55",
+        "solver/src/setp_solver/search/gates.py:20",
+        "solver/src/setp_solver/search/scout.py:21-22"
+      ],
+      "事实": "除第一轮已登记的 multi_customer_removal 与重复 record_timing 外，符号图还识别出 16 个公开属性/字段的仓库内零调用候选：legal_pairs、三个 PriceParameters 兼容属性，以及若干诊断 dataclass 字段。它们没有直接、导入、字符串反射或环境分支调用；但 dataclass 序列化、getattr 和仓库外消费者可能按字段名读取。完整逐符号证据在 symbol_call_graph.json 的 dead_symbol_candidates 与 repository_caller_sets。",
+      "是否影响当前主线": "是",
+      "建议处置": "保留：先把运行期序列化字段与纯兼容属性分开标记；只有确认无外部 schema 消费的纯兼容项才归档。",
+      "风险": "把静态零调用直接等同可删会破坏 JSON/CSV 序列化接口；完全不标则继续扩大未声明的公共 API。"
+    },
+    {
+      "id": "X2-RA-007",
+      "类别": "退役资产",
+      "路径与行号": [
+        "docs/paper_v2/figures_e2_20260730/",
+        "docs/paper_v2/figures_e2_v2_20260730/fig_e2_aggregate_convergence.*",
+        "docs/paper_v2/generated_figures/figure3_carbon_profile_v4.pdf",
+        "docs/paper_v2/generated_figures/figure3_carbon_profile_v5.pdf",
+        "docs/paper_v2/generated_figures/figure3_carbon_profile_v8.*--v13.*",
+        "docs/paper_v2/generated_figures/figure4_convergence_v2.pdf",
+        "docs/paper_v2/generated_figures/figure4_convergence_v4.pdf--v13.*",
+        "docs/paper_v2/generated_figures/algorithm_flow_backup_20260720.tex",
+        "docs/paper_v2/generated_figures/v7_candidates/",
+        "docs/paper_v2/generated_tables/"
+      ],
+      "事实": "反向资产图核对 69 个正式图表资产：5 个被 paper_main.tex 直接引用，16 个是这 5 个文件对应的 PNG、CSV、TeX、validation 或哈希支撑件，剩余 48 个既未被论文引用、也不是当前被引用文件的直接支撑件，主要是旧版本图、旧 E2 图包、候选流程图和未 input 的表体。",
+      "是否影响当前主线": "否",
+      "建议处置": "归档：把 48 个反向孤儿按版本包整体归档；保留 5 个直接引用文件及其 16 个直接支撑/溯源资产。",
+      "风险": "按“未直接引用”批量删除会误删当前 PDF 的 CSV、PNG、TeX 源和哈希证据；不分版本会让旧图被重新嵌入。"
+    },
+    {
+      "id": "X2-PD-009",
+      "类别": "参数漂移",
+      "路径与行号": [
+        "solver/src/setp_solver/china81.py:37-55",
+        "solver/src/setp_solver/china81.py:178-198",
+        "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/metadata.json:5-7",
+        "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/metadata.json:20-23"
+      ],
+      "事实": "当前 china81 loader 把 corrected static v3 设为默认静态 authority，并在未显式传参时加载 runtime v4；但该静态包 metadata 仍写 diesel_candidate_values_activated=false、draft_only=true、formal_search_allowed=false，并把 runtime_parameter_authority 锁为 v3 及其哈希。文件内容哈希没有漂移，漂移发生在 authority 状态与运行时绑定字段。",
+      "是否影响当前主线": "是",
+      "建议处置": "补记：保留静态文件和原哈希，新增当前 authority 绑定记录，明确 static v3 内容被 runtime v4 外壳使用；不要改写旧 metadata 的历史事实。",
+      "风险": "继续使用旧状态字段会让审计器把当前正式 loader 判为加载草稿，或让重建者错误回退 runtime v3；直接改旧 metadata 会破坏封存哈希。"
+    },
+    {
+      "id": "X2-HR-004",
+      "类别": "悬挂引用",
+      "路径与行号": [
+        "solver/src/setp_solver/china81.py:37-55",
+        "solver/src/setp_solver/china81.py:178-198",
+        "solver/src/setp_solver/china81.py:906-918",
+        "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv",
+        "data/ChinaInstances/china_parameter_lock_v2_20260718.json",
+        "docs/handoff/legacy_sweep_round2_20260802/instance_hash_audit.json:summary"
+      ],
+      "事实": "81 算例当前四条 authority 实际形成 572 个唯一运行输入；逐个检索 2,838 份 metadata 的 source_hashes/protected_hashes/expected_source_hashes 后，对这 572 个路径的直接声明为 0，故 572/572 没有正式包级直接哈希边。china81 另实际读取 orders.csv 与 vehicle lock，两者也没有上述三字段声明。authority 自身 artifact_hashes 的 1,014/1,014 一致不消除正式运行包与输入之间的缺边。",
+      "是否影响当前主线": "是",
+      "建议处置": "补记：在后续正式包 metadata 中逐文件登记四 authority 的有效输入及 orders/vehicle lock；保留 authority 自身 manifest 作为第二层校验。",
+      "风险": "只有 authority 内部哈希而没有运行包到输入的边，无法从单个正式结果包证明其究竟使用了哪一版 81 算例输入。"
+    },
+    {
+      "id": "X2-HR-005",
+      "类别": "悬挂引用",
+      "路径与行号": [
+        "docs/handoff/legacy_sweep_round2_20260802/baselines_reference_graph.json:summary",
+        "docs/handoff/legacy_sweep_round2_20260802/baselines_reference_graph.json:isolated_packages_zero_indegree_zero_hash_reference"
+      ],
+      "事实": "2,838 个实验包中有 480 个同时满足入度为 0、三类 hash 字段条目为 0、未被 paper_main.tex 直接引用；排除 metadata 明示 NOT_FORMAL/NONFORMAL 后，其中 21 个仍带正式状态标记。该 21 项包括当前 E3 panel_summary、E4 三个单题 formal 包，也包括旧 E3/E7 正式包。完整路径逐项列在 baselines_reference_graph.json 的 nodes 与孤立清单。",
+      "是否影响当前主线": "是",
+      "建议处置": "补记：为仍承担当前数字的孤立正式包补正式来源/上游边；其余只在当前权威状态判定后归档，不按零入度直接删除。",
+      "风险": "孤立不等于无价值；直接删除会损失正式证据，继续无边则让当前聚合包无法机器追溯上游。"
+    },
+    {
+      "id": "X2-HR-006",
+      "类别": "悬挂引用",
+      "路径与行号": [
+        "docs/paper_v2/paper_main.tex:1406-1416",
+        "docs/paper_v2/paper_main.tex:1485-1511",
+        "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/report.md:14-17",
+        "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6a_panel_20260801/report.md:5-7",
+        "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6s2_nucleolus_20260801/decision.json:2-10"
+      ],
+      "事实": "论文 E3 的 36.477%、57.372%、57.307%、2.95、121.58 与 E6 的 33.018%、28.442%--37.145%、444.280 元均可按正式汇总高精度字段舍入复核；但 paper_main.tex 没有到这些 E3/E6 正式包的 input 或机器可读来源边。第一轮 X2-HR-002 已登记 E4，本项只增补 E3/E6，不重复 E4。",
+      "是否影响当前主线": "是",
+      "建议处置": "补记：给论文数字建立单一 source manifest 或生成表输入，让 TeX 数字与正式 decision/report 哈希形成可机读边。",
+      "风险": "数值当前正确但来源边悬空；正式包换版或论文舍入调整后，纯文本一致性无法发现引用漂移。"
+    },
+    {
+      "id": "X2-DF-007",
+      "类别": "文档失效",
+      "路径与行号": [
+        "docs/handoff/model_change_approval_register_20260718.md:2487-2493",
+        "docs/handoff/TODO_施工总清单_20260802.md:20-33",
+        "docs/handoff/TODO_施工总清单_20260802.md:85-90"
+      ],
+      "事实": "approval register 仍把多趟 M1/M2 标为 AWAITING_USER_DECISION，并禁止代理提前修改；当前 TODO 已逐字记录用户拍板“打开”，同时登记把 SETP_E3_STRICT_MULTITRIP 从默认 0 的环境变量升级为默认开启的显式模型配置。旧段只剩历史审批事实，不再是未决状态。",
+      "是否影响当前主线": "是",
+      "建议处置": "补记：在 approval register 的该段添加 resolved_by 指针，保留 M1/M2 原始选项与旧包单趟边界。",
+      "风险": "不标已决会阻止已获批的多趟改造；覆盖掉原段则会丢失旧 E3/E4/E6 为什么不能当多趟证据的审批链。"
+    },
+    {
+      "id": "X2-DF-008",
+      "类别": "文档失效",
+      "路径与行号": [
+        "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md:3-6",
+        "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md:27-35",
+        "HANDOFF.md:5141-5164",
+        "HANDOFF.md:5411-5442"
+      ],
+      "事实": "CONTRACT-JOURNAL-ALIGNED-V2 仍标 ACTIVE，并以 E3/E5/E6/E7 并列正式机制实验为适用面；2026-08-02 当前主线已把协同、公平分账和非线性充电降为模型组件/引文，把正式实验重组为时变碳强度、车队电动化配置与动态发车时机三层。合同中的四件套、禁改语义、保留失败和结论标签仍有效，冲突只在实验角色与 ACTIVE 全称状态。",
+      "是否影响当前主线": "是",
+      "建议处置": "合并：保留第 2 节记录红线为通用纪律，把旧 E3/E5/E6/E7 实验规程标成历史适用范围并指向 2026-08-02 主线。",
+      "风险": "整篇废弃会丢失有效证据纪律；继续无范围地标 ACTIVE 会重新授权已降级的机制实验。"
+    }
+  ]
+}

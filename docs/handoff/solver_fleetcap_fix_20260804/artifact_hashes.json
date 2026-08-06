@@ -1,0 +1,19 @@
+{
+  "algorithm": "sha256",
+  "artifacts": {
+    "decision.json": "e49d12ee4082f9a82307f2ff35ff250746e11eb41ddb3e6fee093f577829e1bb",
+    "diff.patch": "acd442a0b195481007dc391a3ff82ed54ca68116ded14944ba1191a1303f2379",
+    "metadata.json": "5b16beaf78e1302d3e32adc5179dfe8c25a1c4af0a1ef3ff0c88dd0a1fb691bd",
+    "probe_raw.csv": "7b47ca2e6b13bdf705368db08d03d55af529b5a26f161d366f7122114952e7b1",
+    "raw_runs.csv": "b1c1a6d20032a1b644bfc21ee4ff8de65170422a939b663bf360faba46ae41dd",
+    "report.md": "a59d204a71ae33c8fa6fd2806b0b53b4ccf1215b21372e311dc5e84b6f2602b5"
+  },
+  "exclusions": [
+    "artifact_hashes.json",
+    "._*",
+    "**/__pycache__/**",
+    "**/.pytest_cache/**",
+    "temporary checkpoint files (*.tmp, *.temp)"
+  ],
+  "schema": "resetp.artifact-hashes.v1"
+}

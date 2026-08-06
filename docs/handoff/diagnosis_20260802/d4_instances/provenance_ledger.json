@@ -1,0 +1,401 @@
+[
+  {
+    "input_name": "China81算例规模梯度、城市群分层与三复本结构",
+    "class": "构造",
+    "evidence": [
+      "docs/paper_v2/paper_main.tex:923-927（3城市群、9城市、9个规模档、每档3复本、共81）",
+      "data/ChinaInstances/china81_customer_location_assignments_gis_v3_20260723/decision.json: fields verdict=PASS_81_DISJOINT_LOCATION_ASSIGNMENTS_BUILT, instances=81, assignment_rows=5805"
+    ],
+    "note": "规模档、地域分层和复本数是研究设计，不是企业业务样本的自然抽样框。"
+  },
+  {
+    "input_name": "客户点位坐标及其作为客户的身份",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaInstances/china81_customer_location_assignments_gis_v3_20260723/assignments.csv: fields osm_type, osm_id, latitude, longitude, name, source_response_path, source_response_sha256, location_seed, city_selection_rank",
+      "baselines/china_instances/build_china81_customer_location_assignments_v2_20260718.py:55-57,103-124（按固定哈希种子从公开OSM POI池排列并选取）"
+    ],
+    "note": "底层POI身份与坐标可回到公开OSM记录，但把这些POI选作某个China81实例的客户是固定种子构造；不存在企业客户名册观测。"
+  },
+  {
+    "input_name": "客户在各城市的配额与实例内分配",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaInstances/china81_customer_location_assignments_gis_v3_20260723/assignments.csv: fields city_quota, city_selection_rank, replicate",
+      "baselines/china_instances/build_china81_customer_location_assignments_v2_20260718.py:96-108（读取冻结city_quotas并按种子选取）"
+    ],
+    "note": "城市配额和复本互斥选择属于构造规则。"
+  },
+  {
+    "input_name": "客户需求量（kg）",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv: fields source_volume_m3, demand_kg, demand_classification=CONSTRUCTED_CAPACITY_SHARE_SCENARIO_PROXY",
+      "baselines/china_instances/calibrate_china_order_attributes_v2_20260718.py:221-235,310-316（demand_kg=round(volume_m3/7.2*1000)）",
+      "baselines/china_instances/build_china81_order_attributes_mc001_20260718.py:154,164-165,184,189-191（正式五档139/208/278/347/417 kg）"
+    ],
+    "note": "源货物体积来自外部案例数据，但公斤需求由容量占比转换，不能称China81企业实测重量。"
+  },
+  {
+    "input_name": "客户服务时长",
+    "class": "文献迁移",
+    "evidence": [
+      "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv: fields service_minutes, service_classification=PUBLISHED_CASE_PARAMETER_NOT_OBSERVED_STOP_DURATION",
+      "baselines/china_instances/calibrate_china_order_attributes_v2_20260718.py:227-230,310-312（0.1小时/立方米是案例参数、非逐站实测）",
+      "baselines/china_instances/build_china81_order_attributes_mc001_20260718.py:155,166-167,185,192-194（正式五档6/9/12/15/18 min）"
+    ],
+    "note": "从Zhang（2025）案例参数迁入并随抽中的源订单行计算，不是China81站点观测。"
+  },
+  {
+    "input_name": "客户交付时间窗",
+    "class": "文献迁移",
+    "evidence": [
+      "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/metadata.json: fields sampling=complete empirical rows with replacement, order_rows=5805, instances=81",
+      "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv: fields source_order_uid, time_window_early_minute, time_window_late_minute, time_window_width_minute, window_classification=OBSERVED_JOINT_EMPIRICAL_DELIVERY_WINDOW",
+      "baselines/china_instances/calibrate_china_order_attributes_v2_20260718.py:210-218,221-235,310-322（源为Figshare 10.6084/m9.figshare.28113608.v1；外部匿名企业交付窗整行联合重采样）"
+    ],
+    "note": "时间窗在外部匿名案例中属于观测字段，但被有放回重采样到另行选择的OSM客户，故对China81应记文献迁移而非本地观测。"
+  },
+  {
+    "input_name": "车场名称与设施身份",
+    "class": "公开发布",
+    "evidence": [
+      "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv: fields depot_name, depot_source（命名物流园及公开设施页）"
+    ],
+    "note": "公开设施页支持名称/身份；不支持后续道路接入点、车队、充电合同为实测。"
+  },
+  {
+    "input_name": "车场模型坐标（道路接入点）",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv: fields depot_lon, depot_lat, depot_point_semantics=SCENARIO_ROAD_ACCESS_POINT_NOT_OBSERVED_TRUCK_GATE"
+    ],
+    "note": "模型点是可路由接入点，不是命名园区实测货车门坐标。"
+  },
+  {
+    "input_name": "每个实例的车场数量与客户—车场城市对应",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:355-375（每个出现城市要求唯一车场，并令customer_home_depot=同城唯一车场）",
+      "baselines/china_e3_e7/e3_mismatch_20260731/depot_field_investigation.json: fields literal_registered_depot_column_found=false, loader_derivation=customer city -> unique depot in that same city"
+    ],
+    "note": "车场数随构造的城市配额/出现城市形成；没有企业组织结构或客户合同登记列。"
+  },
+  {
+    "input_name": "公共充电站名称、运营商身份与坐标",
+    "class": "公开发布",
+    "evidence": [
+      "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv: fields station_name, station_operator, station_lon, station_lat, station_identity, station_source, station_source_sha256, station_source_class"
+    ],
+    "note": "OSM或运营商页面支持站点身份/位置；设备能力须另行分类。"
+  },
+  {
+    "input_name": "有向道路距离矩阵",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/metadata.json: fields router=OSRM 26.7.3 CH Route API, instances=81, ordered_pairs=1578948, euclidean_or_symmetry_fallback=false, same_route_distance_duration_sum_v2d=true",
+      "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/report.md（冻结OSM图与OSRM路由构造说明）"
+    ],
+    "note": "来自公开OSM路网快照上的路由计算，不是车辆轨迹里程观测。"
+  },
+  {
+    "input_name": "有向行驶时间矩阵",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/metadata.json: fields profiles=[cv,ev], router=OSRM 26.7.3 CH Route API, cache_reuse_semantics=same WGS84 pair same frozen OSRM graph and profile"
+    ],
+    "note": "OSRM静态profile估计，不含2025-02逐时拥堵或企业车辆实际行程时间。"
+  },
+  {
+    "input_name": "道路运动学量sum(v^2 d)矩阵",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/metadata.json: field same_route_distance_duration_sum_v2d=true"
+    ],
+    "note": "与路由距离、时长同路径计算得到，不是传感器测量。"
+  },
+  {
+    "input_name": "燃油车数量num_cv",
+    "class": "构造",
+    "evidence": [
+      "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv: fields base_all_cv_routes_Rd, num_cv, fleet_parameter_class=CONSTRUCTED_DEMAND_TIME_WINDOW_ROAD_SCENARIO",
+      "baselines/china_instances/build_china81_finite_fleet_authority_v2_20260731.py:208-237（由全燃油车路线装箱数R_d生成）"
+    ],
+    "note": "这是由构造需求、时间窗和路网推导的可行车队上限，不是企业车辆清册。"
+  },
+  {
+    "input_name": "电动车数量与CV/EV车型配比",
+    "class": "构造",
+    "evidence": [
+      "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv: fields main_reserve_factor=1.25, num_cv, num_ev, total_fleet_cap, fleet_parameter_class=CONSTRUCTED_DEMAND_TIME_WINDOW_ROAD_SCENARIO",
+      "baselines/china_instances/build_china81_finite_fleet_authority_v2_20260731.py:214-223,233-237（num_ev=max(1,ceil((factor-1)R_d))）",
+      "data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/report.md（v1/v2逐行全等；总CV=1040、EV=309）"
+    ],
+    "note": "车型配比由1.25储备因子公式构造；v2重算与默认v1数值相同不改变其来源类别。"
+  },
+  {
+    "input_name": "车队储备因子敏感性档",
+    "class": "构造",
+    "evidence": [
+      "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv: field sensitivity_json（1.10/1.25/1.50）",
+      "baselines/china_instances/build_china81_finite_fleet_authority_v2_20260731.py:218-224,246-250"
+    ],
+    "note": "研究者预设的情景轴。"
+  },
+  {
+    "input_name": "车场充电桩数量与功率",
+    "class": "构造",
+    "evidence": [
+      "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv: fields depot_charger_count=2, depot_charge_power_kw=22.0, charger_parameter_class=CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT",
+      "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv: fields depot_power_kw=22.0, depot_gun_count=2, depot_parameter_class=UNIFORM_PLANNED_CAPACITY_SCENARIO_PROXY"
+    ],
+    "note": "不是命名园区现场充电设备或合同观测。"
+  },
+  {
+    "input_name": "公共充电站模型桩数与功率",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv: fields station_power_kw=60.0, station_gun_count=1, station_parameter_class=UNIFORM_PREDECLARED_SCENARIO_PROXY, station_observed_boundary"
+    ],
+    "note": "全站统一60 kW单枪；station_observed_boundary明确公开页面不支持模型功率/枪数，个别运营商页甚至列示不同设备数和功率。"
+  },
+  {
+    "input_name": "分时电价公开表值",
+    "class": "公开发布",
+    "evidence": [
+      "data/ChinaPrices/china_2025_02_tariff_register_v2.json: fields sources, one_to_ten_kv_candidate_rows, source_strength=third_party_digital_archive_of_grid_original_scans",
+      "baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/tariff_source_hash_register.csv: fields path, expected_sha256, actual_sha256, status=PASS"
+    ],
+    "note": "各价区电价表是公开发布并留存扫描/哈希；部分来源为电网原始扫描的第三方数字档案，强度低于全部回到原发布URL。"
+  },
+  {
+    "input_name": "车场电价合同类别及城市—价区映射",
+    "class": "构造",
+    "evidence": [
+      "data/ChinaPrices/china_2025_02_tariff_register_v2.json: fields formal_row_rule, f3_scenario_rule.main, city_to_price_area",
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv: fields tariff_row_class=ONE_TO_TEN_KV_SINGLE_PART_SCENARIO_ROW, price_area_id",
+      "docs/paper_v2/paper_main.tex:1030（明确为构造情景、非命名车场合同观测）"
+    ],
+    "note": "价表公开不等于命名园区采用该电压、计费制和利用档；最终适用行是研究情景。"
+  },
+  {
+    "input_name": "公共充电服务费0.40元/kWh",
+    "class": "未登记",
+    "evidence": [
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv: fields public_service_fee_cny_per_kwh=0.4, service_fee_class=UNIFORM_SCENARIO_PROXY_NOT_MARKET_OBSERVATION",
+      "docs/handoff/ledger_input_provenance_01_20260728/report.md:563-574（未找到九城命名站同值一手价目）"
+    ],
+    "note": "有实现值和情景标签，但没有精确支撑九城统一0.40的来源登记。"
+  },
+  {
+    "input_name": "电网碳强度源序列（Li等S1-2025）",
+    "class": "公开发布",
+    "evidence": [
+      "docs/handoff/ledger_input_provenance_01_20260728/report.md:329-339（Figshare DOI 10.6084/m9.figshare.28953545.v3、原始文件哈希与S1投影边界）",
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv: fields carbon_factor_kgco2e_per_kwh, carbon_source_column"
+    ],
+    "note": "公开数据集是模型模拟的省级情景投影，不是官方实测、实时或边际碳强度。"
+  },
+  {
+    "input_name": "省级小时碳强度到九城48半小时槽日历的迁移",
+    "class": "文献迁移",
+    "evidence": [
+      "docs/handoff/ledger_input_provenance_01_20260728/report.md:331-339（逐小时值阶梯复制成两个半小时槽，并映射Beijing/Tianjin/Hebei/Guangdong/Sichuan/Chongqing）",
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/decision.json: fields calendar_rows=12096, city_count=9, scenario_date=2025-02-12",
+      "solver/src/setp_solver/china81.py:70-125,803-817"
+    ],
+    "note": "公开投影经时间分辨率转换和城市映射进入China81。"
+  },
+  {
+    "input_name": "调度预测碳强度与事后核算碳强度的关系",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:805-817（同一gamma_kg同时赋给actual与forecast）",
+      "docs/paper_v2/paper_main.tex:1043-1046（明确无独立事后观测序列，gamma_hat=gamma）"
+    ],
+    "note": "同值假设不是预测产品或事后观测。"
+  },
+  {
+    "input_name": "燃油车载重、整备质量、总质量及外廓尺寸",
+    "class": "公开发布",
+    "evidence": [
+      "docs/handoff/china_vehicle_parameter_sources_20260718/source_evidence.csv: row source_id=JAC-WLING-K7-CV-OFFICIAL, fields hard_fields and evidence_boundary",
+      "solver/src/setp_solver/china81.py:638-658"
+    ],
+    "note": "江淮官方同一配置列支持1735/2565/4495 kg及5995x2200x2480 mm。"
+  },
+  {
+    "input_name": "电动车载重、整备质量、总质量及电池容量",
+    "class": "公开发布",
+    "evidence": [
+      "docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/V04_foton_aumark_es1.md: fields publisher, url, 可复核字段（栏板1700/2600/4495 kg、77.28 kWh）",
+      "solver/src/setp_solver/china81.py:660-685"
+    ],
+    "note": "福田官方快递版栏板字段；不能扩写成厢式配置或官方高度。"
+  },
+  {
+    "input_name": "电动车车身高度2.480 m",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:666-671,682（HEIGHT_ASSUMED_SYMMETRIC_WITH_CV_FIELD_INCOMPLETE）",
+      "docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/V04_foton_aumark_es1.md（官方单页可复核字段不含该配置专属高度）"
+    ],
+    "note": "由燃油车高度对称迁移到EV，是明示假设。"
+  },
+  {
+    "input_name": "迎风面积投影因子0.85",
+    "class": "未登记",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:644,655,671,683,887（0.85×2.2×2.48及source id AF_0.85_WH_SCENARIO_TRIP_2026_102123）",
+      "docs/handoff/ledger_input_provenance_01_20260728/report.md:69-80（source id未映射到可核验原始来源）"
+    ],
+    "note": "有代码标识，无可回放URL/快照/文献位置。"
+  },
+  {
+    "input_name": "空气阻力系数0.45",
+    "class": "未登记",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:646,656,673,684,885",
+      "docs/handoff/ledger_input_provenance_01_20260728/report.md:82-93（CD_0.45 source id无原件映射）"
+    ],
+    "note": "不是两款目标车厂商实测风阻，现有来源登记不足。"
+  },
+  {
+    "input_name": "滚阻、空气密度、发动机及电驱能耗系数",
+    "class": "文献迁移",
+    "evidence": [
+      "solver/src/setp_solver/prices.py:9-41（Goeke 2015与Demir 2012逐参数来源；c_r、k_engine、xi、eta、kappa、psi、N、D、phi_d、varphi_d）",
+      "solver/src/setp_solver/china81.py:647,649-651,674,679,685"
+    ],
+    "note": "通用文献参数迁移到目标车型，未做K7/ES1实车标定。"
+  },
+  {
+    "input_name": "静态实验EV初始电量0 kWh",
+    "class": "未登记",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:893-895（initial_ev_battery_kwh=0.0）",
+      "docs/handoff/ledger_input_provenance_01_20260728/ledger.csv: L08（仅有实现值，无目标企业车队SOC观测）"
+    ],
+    "note": "未找到命名车队班前SOC或独立来源合同。"
+  },
+  {
+    "input_name": "NL90分段充电曲线",
+    "class": "未登记",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:20,915-917（NL90_MILD曲线）",
+      "docs/paper_v2/paper_main.tex:938（90%前额定、90%-100%半功率）"
+    ],
+    "note": "现有取证未把该曲线映射到ES1 77.28 kWh车型的实测充电曲线或具页码文献。"
+  },
+  {
+    "input_name": "CV/EV非能源里程费率",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:648,675,914（0.78/0.67元/km）",
+      "docs/handoff/ledger_input_provenance_01_20260728/report.md:550-561（ICCT与政府通行费近邻证据组合、50%收费公路暴露）"
+    ],
+    "note": "由公开近邻证据组合出的情景代理，不是企业成本账。"
+  },
+  {
+    "input_name": "北京、天津、河北、广东、四川0号柴油价",
+    "class": "公开发布",
+    "evidence": [
+      "baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/diesel_price_2025_02_12_source_register.csv: fields reviewed_source_strength（DIRECT_OFFICIAL_*）, reviewed_source_url, source_file, source_sha256",
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv: fields diesel_price_cny_per_l, diesel_source_strength, diesel_source_file"
+    ],
+    "note": "八个城市由五个公开区域价表映射；城市共用所属省级/区域价。"
+  },
+  {
+    "input_name": "重庆0号柴油价7.50元/L",
+    "class": "构造",
+    "evidence": [
+      "baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/diesel_price_2025_02_12_source_register.csv: row city=chongqing, reviewed_source_strength=DERIVED_FROM_OFFICIAL_NDRC_PER_TON_AND_OFFICIAL_LOCAL_ADJACENT_RETAIL_TABLES",
+      "docs/handoff/ledger_input_provenance_01_20260728/report.md:225-234"
+    ],
+    "note": "由国家调价幅度与相邻地方零售价表推导，不是2025-02-12重庆地方升价直录。"
+  },
+  {
+    "input_name": "柴油排放因子2.70480534 kgCO2e/L",
+    "class": "公开发布",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:908",
+      "docs/paper_v2/paper_main.tex:1033（中国官方低位热值、含碳量、氧化率与密度独立复算）",
+      "docs/handoff/ledger_input_provenance_01_20260728/ledger.csv: L27"
+    ],
+    "note": "由公开官方核算参数复算，不是企业尾气测量。"
+  },
+  {
+    "input_name": "碳价主值与低值",
+    "class": "公开发布",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:906-907",
+      "docs/paper_v2/paper_main.tex:1001-1002（全国CEA配额价75.02与56.32元/t）"
+    ],
+    "note": "公开市场价用于成本情景，不是企业内部碳价。"
+  },
+  {
+    "input_name": "每趟派遣费、占用费、单位货量收入",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:909-912（170元/趟、0.5元/min、1.5元/kg）",
+      "docs/paper_v2/paper_main.tex:1033-1035（公开报价的情景中位代理）",
+      "docs/handoff/ledger_input_provenance_01_20260728/ledger.csv: L37-L39"
+    ],
+    "note": "公开报价锚定的代理组合，不是命名企业合同、收入或会计成本。"
+  },
+  {
+    "input_name": "运营时域06:00-22:00及正式日期",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:30-32（DEFAULT_CHINA81_DATE=2025-02-12；时域6:00-22:00）",
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/decision.json: field scenario_date=2025-02-12"
+    ],
+    "note": "研究日历与班次边界，不是企业排班观测。"
+  },
+  {
+    "input_name": "China81基础客户承包商/归属车场",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:355-375（按customer city映射同城唯一depot）",
+      "baselines/china_e3_e7/e3_mismatch_20260731/depot_field_investigation.json: fields literal_registered_depot_column_found=false, loader_derivation=customer city -> unique depot in that same city"
+    ],
+    "note": "没有历史合同归属字段；基础归属是行政城市规则。"
+  },
+  {
+    "input_name": "E3散乱历史客户归属序列",
+    "class": "构造",
+    "evidence": [
+      "docs/paper_v2/paper_main.tex:1380-1383（采用Soriano均匀—不均衡序列构造，组按需求与车场运力排序配对）",
+      "docs/paper_v2/paper_main.tex:1535（明确客户责任采用构造的散乱历史归属）"
+    ],
+    "note": "构造方法受文献启发，但具体四组和配对是本项目研究设计，不是企业合同。"
+  },
+  {
+    "input_name": "动态订单事件类型、比例与到达时刻",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/search/dynamic.py:32-65,154-185（add=0.10、cancel=0.05、demand_change=0.10；到达时刻在5%-95%时域均匀抽取）",
+      "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e7_events/cn-prd-50c-01-V2-LOCATIONS/stream_seed1.json: fields event_type, t_appear, source=synthetic_overlay, seed"
+    ],
+    "note": "E7冻结流仅覆盖预定的3个PRD实例与种子，不是81个静态算例各自的企业到达日志。"
+  },
+  {
+    "input_name": "动态新增订单位置、需求、时间窗与服务时长",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/search/dynamic.py:196-210（从donor客户继承坐标、需求、时间窗、服务时长）",
+      "solver/src/setp_solver/search/dynamic.py:211-240（需求变更乘0.85-1.15；source=synthetic_overlay）",
+      "baselines/china_e3_e7/mechanism_foundation.py:156-197（转为China81绝对运营时钟）"
+    ],
+    "note": "动态订单属性由已有合成/迁移订单复制和扰动，非新订单观测。"
+  },
+  {
+    "input_name": "跨场服务摩擦与参与阈值",
+    "class": "构造",
+    "evidence": [
+      "solver/src/setp_solver/china81.py:911-913（cross_site_cost=0.0, fairness_theta=1.0）",
+      "docs/handoff/ledger_input_provenance_01_20260728/report.md:576-580"
+    ],
+    "note": "机制定义/主情景，不是已观测企业谈判结果。"
+  }
+]

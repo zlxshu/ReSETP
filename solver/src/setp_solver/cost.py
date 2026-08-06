@@ -165,7 +165,9 @@ def evaluate(
     n_veh_ev = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "ev"})
     electricity_kwh = sum(float(action.energy_kwh) for action in solution.charging_actions)
 
-    cost_fix = len(solution.routes) * _price(prices, "vehicle_fixed_cost")
+    # MC-W1-F2-DEPOT-CONCURRENCY-01: the fixed acquisition/activation charge
+    # applies once per used physical vehicle, not once per delivery trip.
+    cost_fix = (n_veh_cv + n_veh_ev) * _price(prices, "vehicle_fixed_cost")
     cost_km = sum(
         item.distance_m
         / 1000.0

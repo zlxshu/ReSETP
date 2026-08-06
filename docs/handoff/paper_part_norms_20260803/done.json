@@ -1,0 +1,30 @@
+{
+  "task_id": "NORM",
+  "status": "PART_NORMS_COMPLETE",
+  "mode": "只读摘录与计数；未跑实验；未修改既有文件",
+  "sample": {
+    "total_full_texts": 15,
+    "chinese_reused_and_checked": 5,
+    "foreign_measured": 10,
+    "inaccessible": 0
+  },
+  "six_parts_complete": true,
+  "checks": {
+    "report_grouped_by_six_parts": true,
+    "per_paper_six_part_records": 15,
+    "quotes_have_page_or_section": true,
+    "numbers_have_page_or_section": true,
+    "unclear_counts_are_labeled": true,
+    "abstract_used_to_fill_full_text_fields": false,
+    "recommendations_or_design_advice_added": false,
+    "existing_files_modified": false
+  },
+  "deliverables": [
+    "report.md",
+    "norms_by_part.json",
+    "ranges.json",
+    "inaccessible.json",
+    "done.json",
+    "artifact_hashes.json"
+  ]
+}

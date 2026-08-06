@@ -18,6 +18,7 @@ from .cost import (
 )
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
+from .search.multitrip_schedule import route_timing
 from .solution import ChargingAction, Route, Solution, physical_vehicle_id
 from .station_copies import physical_station_id
 
@@ -33,6 +34,7 @@ CHARGING_STATION_UNIQUENESS = "CHARGING_STATION_UNIQUENESS"
 ROUTE_STRUCTURE = "ROUTE_STRUCTURE"
 CHARGING_START = "CHARGING_START"
 CHARGING_POWER = "CHARGING_POWER"
+CHARGING_TRIP_OVERLAP = "CHARGING_TRIP_OVERLAP"
 STATION_CAPACITY = "STATION_CAPACITY"
 PROFIT_FAIRNESS = "PROFIT_FAIRNESS"
 FEASIBILITY_TOL = 1e-9
@@ -111,6 +113,13 @@ def check_solution(
         _check_charging_action_structure(
             solution,
             node_lookup,
+        )
+    )
+    violations.extend(
+        _check_charging_trip_overlap(
+            solution,
+            instance,
+            prices,
         )
     )
     violations.extend(_check_dynamic_context(solution, dynamic_context))
@@ -392,6 +401,91 @@ def _check_charging_action_structure(
                             f"sessions [{previous[0]:.3f},"
                             f"{previous[1]:.3f}) and "
                             f"[{current[0]:.3f},{current[1]:.3f})"
+                        ),
+                    )
+                )
+    return violations
+
+
+def _check_charging_trip_overlap(
+    solution: Solution,
+    instance: Instance,
+    prices: PriceParameters | dict[str, Any] | Any,
+) -> list[Violation]:
+    """Reject depot charging that overlaps the same physical vehicle's trip.
+
+    The frozen route schema stores one route per trip and stores depot charging
+    on the following trip's route.  Convert every route to the canonical
+    ``route_timing`` interval, then compare it with the action's absolute
+    day-offset interval.  Both intervals are half-open, exactly as specified
+    by the inter-trip overlap defect contract.  In-route public charging is
+    already included in ``route_timing`` and is therefore excluded from this
+    cross-trip check using the same route/station predicate.
+    """
+
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    routes_by_id = {route.vehicle_id: route for route in solution.routes}
+    intervals_by_physical: dict[str, list[tuple[float, float, Route]]] = defaultdict(list)
+    for route in solution.routes:
+        if route.vehicle_type.lower() != "ev":
+            continue
+        try:
+            timing = route_timing(
+                route,
+                instance,
+                prices,
+                charging_actions=solution.charging_actions,
+            )
+        except (TypeError, ValueError):
+            # The route-level checks report malformed timing inputs.  This
+            # cross-trip check must not manufacture a second diagnosis from an
+            # interval that cannot be reconstructed.
+            continue
+        intervals_by_physical[physical_vehicle_id(route.vehicle_id)].append(
+            (float(timing.earliest_departure_second), float(timing.return_second), route)
+        )
+
+    violations: list[Violation] = []
+    for action in solution.charging_actions:
+        route = routes_by_id.get(action.vehicle_id)
+        if route is None or route.vehicle_type.lower() != "ev":
+            continue
+        station = node_lookup.get(action.station_id)
+        if (
+            station is not None
+            and station.node_type.lower() == "f"
+            and action.station_id in route.node_sequence
+            and int(action.charge_day_offset) == 0
+        ):
+            continue
+        try:
+            charge_start = (
+                int(action.charge_day_offset) * 86_400.0
+                + float(action.charge_start_second)
+            )
+            charge_end = charge_start + float(action.occupancy_minutes) * 60.0
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if not all(math.isfinite(value) for value in (charge_start, charge_end)):
+            continue
+        if charge_end <= charge_start:
+            continue
+        physical_id = physical_vehicle_id(action.vehicle_id)
+        for departure, returned, trip in intervals_by_physical.get(physical_id, ()):
+            if (
+                charge_start < returned - FEASIBILITY_TOL
+                and departure < charge_end - FEASIBILITY_TOL
+            ):
+                violations.append(
+                    Violation(
+                        CHARGING_TRIP_OVERLAP,
+                        action.vehicle_id,
+                        trip.vehicle_id,
+                        (
+                            "charging interval intersects the same physical "
+                            f"vehicle's outside interval: "
+                            f"charge=[{charge_start:.6f},{charge_end:.6f}), "
+                            f"trip=[{departure:.6f},{returned:.6f})"
                         ),
                     )
                 )

@@ -1,0 +1,67 @@
+{
+  "task_id": "T6-HOUSEKEEPING",
+  "as_of": "2026-08-04",
+  "algorithm": "SHA-256",
+  "scope": "housekeeping record files plus inventory README.md and candidate SOURCE.md files; raw data bodies are not in this manifest",
+  "files": [
+    {
+      "path": "data/ExternalCandidates_20260804/C01_SN-Data/SOURCE.md",
+      "sha256": "bbf7751beb71c03c24874927b173d56b9ff18312e6db5a91c91706c9cba6e5a3"
+    },
+    {
+      "path": "data/ExternalCandidates_20260804/C02_JD-mobile-battery-swapping/SOURCE.md",
+      "sha256": "9b8f0eed8777c225e98585ffe8d1d24dc14454b696aa0b11eef1c54b06d9d410"
+    },
+    {
+      "path": "data/ExternalCandidates_20260804/C11_Goeke-Schneider-EVRPTW-MF/SOURCE.md",
+      "sha256": "dd612d20a880d2bb434f78ccd7b82babd3ee60b91efb67dc97f11f424eeb4463"
+    },
+    {
+      "path": "data/ExternalCandidates_20260804/C15_MFVRP-LEZ/SOURCE.md",
+      "sha256": "26783bb400238f2f42f9162c18451684072a4993a4a3fa747e7663979e87e3ed"
+    },
+    {
+      "path": "data/ExternalCandidates_20260804/C17_CCVUP/SOURCE.md",
+      "sha256": "698a9d6ca841571be0f488787bb98114b30baa9e06dbadf8b444cfe4f660622a"
+    },
+    {
+      "path": "data/ExternalCandidates_20260804/README.md",
+      "sha256": "7ade1ff3eb77613b2e33cded7a9c9121f06744c23ace450be67fa3eb6fb8685c"
+    },
+    {
+      "path": "docs/handoff/housekeeping_20260804/decision.json",
+      "sha256": "1f71fd5f103420bdd35fcee00d3b8ac17f6b6cd9c08bda1a2c25d2a684679c6b"
+    },
+    {
+      "path": "docs/handoff/housekeeping_20260804/inventory.json",
+      "sha256": "7e544b5f93cefddeb67c5f266d7d8f2bcb3490cf42c5a8caaee30ff38b5b9fa4"
+    },
+    {
+      "path": "docs/handoff/housekeeping_20260804/metadata.json",
+      "sha256": "fe5baaacfaf9e15174154cbb770f71745a01956012cd478a14b8b9585419de1e"
+    },
+    {
+      "path": "docs/handoff/housekeeping_20260804/raw_runs.csv",
+      "sha256": "043aa0d731a8b03f76653ee692ebe3d59c1dc7efcbb8ef6a129718d928a5b12d"
+    },
+    {
+      "path": "docs/handoff/housekeeping_20260804/report.md",
+      "sha256": "da151ef1f4db9c0f830d25b245877d2b1129fe8f636819a60f4c9059527dad15"
+    },
+    {
+      "path": "docs/handoff/housekeeping_20260804/test_failures.json",
+      "sha256": "e67395f3b7f99fc4eb20a7c51170f7ee7e35a9e0353951d74310de81aa24b807"
+    }
+  ],
+  "excluded_patterns": [
+    "._*",
+    "__pycache__/**",
+    ".pytest_cache/**"
+  ],
+  "excluded_paths": [
+    "data/ExternalCandidates_20260804/**/raw data files; their SHA-256 is recorded in each SOURCE.md",
+    "docs/handoff/housekeeping_20260804/artifact_hashes.json (self-hash excluded)"
+  ],
+  "search_evaluations": 0
+}
+

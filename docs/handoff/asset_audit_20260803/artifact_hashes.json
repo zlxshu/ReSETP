@@ -1,0 +1,23 @@
+{
+  "schema": "resetp.assetaudit.artifact_hashes.v1",
+  "task_id": "ASSET1",
+  "algorithm": "sha256",
+  "files": {
+    "package_inventory.csv": {
+      "sha256": "b24f4a128cdcec331b77372e9241b5368257c4254ae5c6589682eeac89e682ec",
+      "bytes": 1211514
+    },
+    "findings.json": {
+      "sha256": "e8695b99fbd385849f88f9c4f729e7a3a9bbfb9836e462ece4cb45c986b936f6",
+      "bytes": 109695
+    },
+    "report.md": {
+      "sha256": "b0945996f93b01d8835ea1c6a418c21220249cbd7363302d55d1cbc55d5e0ccc",
+      "bytes": 501876
+    }
+  },
+  "excluded": [
+    "artifact_hashes.json",
+    "done.json"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "schema": "resetp.z2.changed-files.v1",
+  "task_id": "Z2",
+  "generated_at": "2026-08-02",
+  "files": [
+    {
+      "path": "docs/handoff/model_change_approval_register_20260718.md",
+      "action": "追加",
+      "summary": "在原 M1/M2 段后追加用户打开决议、B1/C1 指针、显式默认开启配置语义及指定 blocker_fix 包缺失的 HALT；历史原文保留。"
+    },
+    {
+      "path": "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+      "action": "追加",
+      "summary": "追加 PARTIALLY_HISTORICAL 适用范围；保留第 2 节通用纪律并把旧 E3/E5/E6/E7 规程指向 2026-08-02 新主线。"
+    },
+    {
+      "path": "docs/handoff/input_provenance_manifest_20260802/README.md",
+      "action": "新建",
+      "summary": "说明 572 个 authority 输入、orders.csv、vehicle lock 与正式包实际使用关系的登记口径。"
+    },
+    {
+      "path": "docs/handoff/input_provenance_manifest_20260802/manifest.json",
+      "action": "新建",
+      "summary": "逐文件登记 572 个 authority 输入及 2 个补充输入的路径、SHA-256、authority、实例和正式包使用边。"
+    },
+    {
+      "path": "docs/handoff/input_provenance_manifest_20260802/artifact_hashes.json",
+      "action": "新建",
+      "summary": "登记 input provenance README 与 manifest 的 SHA-256，排除 AppleDouble。"
+    },
+    {
+      "path": "docs/handoff/records_fix_20260802/formal_package_authority_review.json",
+      "action": "新建",
+      "summary": "逐一判定 21 个正式标记孤立包：4 个承担当前数字、12 个已被取代、5 个历史，并为 4 个当前数字包补机器可读上游边。"
+    },
+    {
+      "path": "docs/handoff/paper_number_source_manifest_20260802.json",
+      "action": "新建",
+      "summary": "登记旧正文 E3/E6 数字的 22 个出现位置、9 个统计量、来源字段及 decision/report 哈希；未改 TeX。"
+    },
+    {
+      "path": "docs/handoff/orphan_asset_archive_plan_20260802.json",
+      "action": "新建",
+      "summary": "按 8 个版本包列出 48 个反向孤儿的产生批次、SHA-256 和可归档理由；仅出计划，不移动或删除。"
+    },
+    {
+      "path": "docs/handoff/records_fix_20260802/report.md",
+      "action": "新建",
+      "summary": "逐项记录修改段落、指针、字段值、行号、SHA-256、HALT 与边界核验。"
+    },
+    {
+      "path": "docs/handoff/records_fix_20260802/changed_files.json",
+      "action": "新建",
+      "summary": "登记本轮全部追加与新建记录文件。"
+    },
+    {
+      "path": "docs/handoff/records_fix_20260802/done.json",
+      "action": "新建",
+      "summary": "登记五项完成、一项 HALT 的非完全终态与禁止动作核验。"
+    },
+    {
+      "path": "docs/handoff/records_fix_20260802/artifact_hashes.json",
+      "action": "新建",
+      "summary": "登记本轮交付与追加文件的 SHA-256；不自哈希，排除 AppleDouble。"
+    }
+  ]
+}

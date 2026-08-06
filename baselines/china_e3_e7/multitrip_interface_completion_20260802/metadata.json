@@ -1,0 +1,143 @@
+{
+  "created_at": "2026-08-01T18:22:26.499639+00:00",
+  "e4_continuous_soc_contract_id": "E4_SOC_60_20_80_NEXT_DAY_60_V1",
+  "e4_soc_rule": {
+    "initial": 0.6,
+    "maximum": 0.8,
+    "minimum": 0.2,
+    "next_day_minimum": 0.6
+  },
+  "e4_terminal_charge_aggregate_evidence": {
+    "ledger_binary64_sum_kwh": 5869.852618210776,
+    "saved_binary64_sum_kwh": 5869.852618210776,
+    "source_json_decimal_sum_kwh": "5869.852618210776059",
+    "task_locked_kwh": 5869.852618210777,
+    "task_locked_minus_binary64_sum_kwh": 9.094947017729282e-13
+  },
+  "formal_result": false,
+  "git_commit": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "method": "zero-search saved-solution preparation, certificate validation, complete multi-trip checking, and predetermined bitwise single-trip replay",
+  "protected_files_unchanged": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py"
+  ],
+  "schema": "resetp.multitrip-interface-completion.metadata.v1",
+  "search_executed": false,
+  "single_trip_regression": {
+    "comparison": "IEEE-754 binary64 bitwise equality",
+    "components": [
+      "cost_fix",
+      "cost_km",
+      "cost_fuel",
+      "cost_elec",
+      "cost_occ",
+      "cost_transship",
+      "E_cv_direct",
+      "E_ev_indirect",
+      "E_total",
+      "distance_total",
+      "electricity_kwh",
+      "n_veh_cv",
+      "n_veh_ev"
+    ],
+    "sample_count": {
+      "E4": 20,
+      "E6": 20
+    },
+    "selection": "first record_id values in lexicographic order"
+  },
+  "source_code_sha256": {
+    "baselines/china_e3_e7/diagnose_saved_solution_multitrip_repack_20260801.py": "14b7f60303cd8b62b9d60a4729df3d6ad02488f8ca61cb404de1ac432396d7c4",
+    "baselines/china_e3_e7/e4_joint_routing_20260801/joint_soc_wrapper.py": "6ec46c254aa44baf47f50572566d6ecb332cc0ea09e8e504fd0fca3bda7b8bd8",
+    "baselines/china_e3_e7/e4_joint_routing_20260801/run_probe.py": "7cb7c1f7692c5f8ac80e44cfae91f4a7e2b862f8a16b767db4831e0933b113a6",
+    "baselines/china_e3_e7/e5_enroute_nonlinear_20260801/run_b2_low_cost.py": "7c9753288aa8431f95d847b5848bfe332bb07dcabec9ae90a69c344e9415948e",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/e6_methods.py": "0adaaf2b26860d3211ad775d46f56c1cdb1e0e4de538a1c3f6133f282b7031e6",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/run_pilot06_direct_15.py": "ec749c79687068c673c69accdedac91aade605fbd7ae3716e2422c6d52fdbc18",
+    "solver/src/setp_solver/check.py": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+    "solver/src/setp_solver/cost.py": "7f59a47a3aab9b582b17e29d7e9dc13f16f892fc7b5ae7b54eec84412aa77333",
+    "solver/src/setp_solver/search/certificate_execution.py": "a7f45aa1a2fa2f5d5885830e5d147061ad5433c83d71e9d99cb95f7ed713baea",
+    "solver/src/setp_solver/search/e3_multitrip_runtime.py": "227e54a7ce225699c31254843b243cc07204464265aad19aa59707e787f92c22",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/search/multitrip_schedule.py": "1274da792bdf03d9544f0f3afc74612f06f2d1324e9e75d1bc225e5bb3e94d13",
+    "solver/src/setp_solver/solution.py": "636b08d9434aebaf8d507f71fae70e71a977b7bdd1656673217fd1993feb1bbd",
+    "solver/tests/test_multitrip_schedule.py": "5f5df8073aac199a19d041ed49fa2be3e771301e1acfc346c3bfad0603184391"
+  },
+  "source_expected_counts": {
+    "E4": 90,
+    "E5_WITNESS": 2,
+    "E6": 900
+  },
+  "source_observed_counts": {
+    "E4": 90,
+    "E5_WITNESS": 2,
+    "E6": 900
+  },
+  "summary": {
+    "E4": {
+      "certificate_valid_count": 90,
+      "complete_checker_pass_count": 90,
+      "depot_charge_ledger_count": 270,
+      "depot_charge_ledger_entrywise_bitwise_equal_count": 90,
+      "depot_charge_ledger_kwh": 5869.852618210776,
+      "halt_count": 0,
+      "interface_directly_usable_count": 90,
+      "legacy_static_checker_violation_count": 0,
+      "max_saved_physical_vehicles": 1,
+      "original_route_count": 810,
+      "packed_physical_vehicle_count": 786,
+      "saved_physical_vehicle_count": 24,
+      "saved_terminal_charge_count": 270,
+      "saved_terminal_charge_kwh": 5869.852618210776,
+      "single_trip_regression_pass_count": 20,
+      "single_trip_regression_selected_count": 20,
+      "solutions_with_vehicle_saving": 24,
+      "source_count": 90
+    },
+    "E5_WITNESS": {
+      "certificate_valid_count": 2,
+      "complete_checker_pass_count": 2,
+      "depot_charge_ledger_count": 0,
+      "depot_charge_ledger_entrywise_bitwise_equal_count": 0,
+      "depot_charge_ledger_kwh": 0.0,
+      "halt_count": 0,
+      "interface_directly_usable_count": 2,
+      "legacy_static_checker_violation_count": 0,
+      "max_saved_physical_vehicles": 7,
+      "original_route_count": 27,
+      "packed_physical_vehicle_count": 16,
+      "saved_physical_vehicle_count": 11,
+      "saved_terminal_charge_count": 0,
+      "saved_terminal_charge_kwh": 0.0,
+      "single_trip_regression_pass_count": 0,
+      "single_trip_regression_selected_count": 0,
+      "solutions_with_vehicle_saving": 2,
+      "source_count": 2
+    },
+    "E6": {
+      "certificate_valid_count": 900,
+      "complete_checker_pass_count": 900,
+      "depot_charge_ledger_count": 0,
+      "depot_charge_ledger_entrywise_bitwise_equal_count": 0,
+      "depot_charge_ledger_kwh": 0.0,
+      "halt_count": 0,
+      "interface_directly_usable_count": 900,
+      "legacy_static_checker_violation_count": 30,
+      "max_saved_physical_vehicles": 2,
+      "original_route_count": 14252,
+      "packed_physical_vehicle_count": 14195,
+      "saved_physical_vehicle_count": 57,
+      "saved_terminal_charge_count": 0,
+      "saved_terminal_charge_kwh": 0.0,
+      "single_trip_regression_pass_count": 20,
+      "single_trip_regression_selected_count": 20,
+      "solutions_with_vehicle_saving": 55,
+      "source_count": 900
+    }
+  },
+  "targeted_tests": {
+    "failed": 0,
+    "passed": 52,
+    "test_file_count": 7
+  }
+}

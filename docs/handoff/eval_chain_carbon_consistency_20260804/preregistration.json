@@ -1,0 +1,52 @@
+{
+  "schema": "resetp.t7-eval-chain-carbon-consistency-preregistration.v1",
+  "task_id": "T7-EVAL-CHAIN-CARBON-CONSISTENCY",
+  "status": "TECHNICAL_FIX_VALIDATION",
+  "formal_search_allowed": false,
+  "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+  "scenario_date": "2025-02-12",
+  "run_order": [
+    {"budget": 100, "seed": 1, "arms": ["O", "C", "P"]},
+    {"budget": 100, "seed": 2, "arms": ["O", "C", "P"]},
+    {"budget": 100, "seed": 3, "arms": ["O", "C", "P"]},
+    {"budget": 1000, "seed": 1, "arms": ["O", "C", "P"]},
+    {"budget": 1000, "seed": 2, "arms": ["O", "C", "P"]},
+    {"budget": 1000, "seed": 3, "arms": ["O", "C", "P"]}
+  ],
+  "common_search_configuration": {
+    "algorithm": "MV-HGS-SP T4 repaired prototype",
+    "hgs_seconds_per_view": null,
+    "max_hgs_iterations_per_view": "budget",
+    "exact_checkpoint_interval_iterations": 100,
+    "max_archive_candidates_per_view": 8,
+    "exact_elites_per_view": 2,
+    "sp_time_limit_seconds": 0.5,
+    "hard_home_depot_lock": false,
+    "max_no_improvement_iterations_per_view": null,
+    "wallclock_safety_seconds_per_view": 540.0,
+    "preserve_base_pool_recombination": false,
+    "initial_solution": "finite-fleet-authority-v3 level-25 certified witness",
+    "pythonhashseed": 0,
+    "thread_count_per_numeric_backend": 1,
+    "strict_multitrip": true,
+    "depot_charger_capacity_mode": "unbounded"
+  },
+  "carbon_price_cny_per_kgco2e": 0.07502,
+  "arms": {
+    "O": {"search_objective": "operating_cost", "search_carbon_price_cny_per_kgco2e": 0.0, "timing_scalarization": "charging electricity cost only"},
+    "C": {"search_objective": "operating_cost + 0.07502 * charging_emissions_kg", "search_carbon_price_cny_per_kgco2e": 0.07502, "search_fuel_direct_emissions_weight": 0.0, "timing_scalarization": "charging electricity cost + 0.07502 * charging_emissions_kg"},
+    "P": {"search_objective": "operating_cost", "search_carbon_price_cny_per_kgco2e": 0.0, "timing_scalarization": "charging electricity cost only", "changed_slots": [25, 26, 27, 28, 29, 30]}
+  },
+  "validation_contract": {
+    "same_as_t5": true,
+    "required_run_count": 18,
+    "single_run_wallclock_limit_seconds": 1800.0,
+    "paper_claim_allowed": false,
+    "protected_files": [
+      "solver/src/setp_solver/cost.py",
+      "solver/src/setp_solver/check.py",
+      "solver/src/setp_solver/search/evaluation.py"
+    ],
+    "repair_scope": "objective-consistent completion wiring only"
+  }
+}

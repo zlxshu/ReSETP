@@ -1,0 +1,116 @@
+{
+  "command": [
+    "/opt/anaconda3/bin/python3.13",
+    "-c",
+    "import csv\nfrom concurrent.futures import ProcessPoolExecutor, as_completed\nimport importlib\nimport json\nimport os\nfrom pathlib import Path\nimport sys\nimport traceback\n\nif os.environ.get('PYTHONHASHSEED') != '0':\n    raise RuntimeError('PYTHONHASHSEED must equal 0')\nrepo = Path('/Volumes/移动硬盘（512G）/ReSETP')\nrunner_dir = repo / 'baselines/china_e3_e7'\nsys.path.insert(0, str(runner_dir))\nrunner = importlib.import_module('run_t21_charging_timing_three_arms_20260805')\nout = repo / 'docs/handoff/charging_timing_three_arms_run_20260805'\npreflight = json.loads((out / 't25_resume_preflight.json').read_text(encoding='utf-8'))\nif runner.protected_hashes() != preflight['protected_file_sha256_before']:\n    raise RuntimeError('protected hashes differ from T25 preflight')\nif (out / 't25_remaining_done.json').exists():\n    raise RuntimeError('T25 completion marker already exists')\n\ndef csv_rows(name):\n    with (out / name).open(encoding='utf-8', newline='') as handle:\n        return list(csv.DictReader(handle))\n\nraw_original = csv_rows('raw_runs.csv')\nif len(raw_original) != 17:\n    raise RuntimeError(f'expected exactly 17 materialized rows, found {len(raw_original)}')\noriginal_by_key = {\n    (row['instance_id'], row['arm'], int(row['seed'])): row\n    for row in raw_original\n}\nif len(original_by_key) != 17:\n    raise RuntimeError('existing materialized rows contain duplicate triples')\nimprovements = csv_rows('improvement_trace.csv')\nslots = csv_rows('slot_distribution.csv')\nmips = csv_rows('mip_timing_audit.csv')\nwitnesses = json.loads((out / 'solution_witnesses.json').read_text(encoding='utf-8'))['witnesses']\nfailures_existing = json.loads((out / 'failed_units.json').read_text(encoding='utf-8'))['failures']\nif failures_existing:\n    raise RuntimeError('pre-resume failed_units.json is not empty')\njson_fields = {\n    'violation_types_json',\n    'completion_failure_classification_original_json',\n    'last_persisted_state_json',\n    'hgs_iterations_by_view_json',\n    'hgs_iteration_limit_by_view_json',\n    'last_improvement_by_view_json',\n    'charging_start_times_json',\n}\nbool_fields = {\n    'paper_claim_allowed', 'route_pool_mip_extended', 'unit_succeeded',\n    'improvement_at_any_view_limit', 'improvement_at_total_iteration_limit',\n}\ndef decode_run(row):\n    item = dict(row)\n    for field in json_fields:\n        item[field] = json.loads(item[field])\n    for field in bool_fields:\n        item[field] = item[field] == 'True'\n    return item\n\nimp_by = {}\nfor row in improvements:\n    imp_by.setdefault(row['task_id'], []).append(row)\nslot_by = {}\nfor row in slots:\n    slot_by.setdefault(row['task_id'], []).append(row)\nmip_by = {row['task_id']: row for row in mips}\nwitness_by = {item['task']['task_id']: item for item in witnesses}\nresults = []\nfor row in raw_original:\n    task_id = row['task_id']\n    if task_id not in witness_by or task_id not in mip_by:\n        raise RuntimeError(f'incomplete persisted evidence for {task_id}')\n    results.append({\n        'run': decode_run(row),\n        'improvements': imp_by.get(task_id, []),\n        'slots': slot_by.get(task_id, []),\n        'mip': mip_by[task_id],\n        'witness': witness_by[task_id],\n        'failure': None,\n    })\nmanifest = runner.full_manifest()\nmanifest_keys = {\n    (item['instance_id'], item['arm'], int(item['seed']))\n    for item in manifest\n}\nremaining = [\n    item for item in manifest\n    if (item['instance_id'], item['arm'], int(item['seed'])) not in original_by_key\n]\nif len(manifest) != 90 or len(manifest_keys) != 90 or len(remaining) != 73:\n    raise RuntimeError('manifest/resume cardinality mismatch')\nconfiguration = {\n    'execution_mode': 'full',\n    'iterations': dict(runner.DEFAULT_FULL_ITERATIONS),\n    'checkpoints': dict(runner.REFERENCE_CHECKPOINTS),\n    'archives': dict(runner.REFERENCE_ARCHIVES),\n    'exact_elites': 8,\n    'unit_state_dir': out / 'unit_states',\n}\nwith ProcessPoolExecutor(max_workers=6) as pool:\n    futures = {\n        pool.submit(runner.run_one, spec, **configuration): spec\n        for spec in remaining\n    }\n    for future in as_completed(futures):\n        spec = futures[future]\n        try:\n            result = future.result()\n        except Exception as exc:\n            trace = traceback.format_exc()\n            state = runner.read_unit_state(out / 'unit_states', spec)\n            result = runner.failure_result(\n                spec,\n                execution_mode='full',\n                state=state,\n                exception_type=type(exc).__name__,\n                exception_message=str(exc),\n                traceback_text=trace,\n            )\n        results.append(result)\n        runner.persist_batch_progress(out, results, expected_count=90)\n        current = csv_rows('raw_runs.csv')\n        current_by_key = {\n            (row['instance_id'], row['arm'], int(row['seed'])): row\n            for row in current\n        }\n        if any(current_by_key.get(key) != row for key, row in original_by_key.items()):\n            raise RuntimeError('one or more of the 17 pre-existing result rows changed')\n        print(\n            f\"DONE {result['run']['task_id']} {result['run']['terminal_status']} \"\n            f\"MATERIALIZED={len(current)}/90\",\n            flush=True,\n        )\nfinal_rows = csv_rows('raw_runs.csv')\nfinal_keys = {\n    (row['instance_id'], row['arm'], int(row['seed']))\n    for row in final_rows\n}\nif len(final_rows) != 90 or len(final_keys) != 90 or final_keys != manifest_keys:\n    raise RuntimeError('final 90-unit materialization check failed')\nfinal_by_key = {\n    (row['instance_id'], row['arm'], int(row['seed'])): row\n    for row in final_rows\n}\nif any(final_by_key.get(key) != row for key, row in original_by_key.items()):\n    raise RuntimeError('pre-existing 17 result rows changed at completion')\nafter = runner.protected_hashes()\nif after != preflight['protected_file_sha256_before']:\n    raise RuntimeError('protected hashes changed during T25 resume')\nfailed = json.loads((out / 'failed_units.json').read_text(encoding='utf-8'))\nrunner.atomic_json(out / 't25_remaining_done.json', {\n    'schema_version': 'resetp.t25-remaining-done.v1',\n    'completed_at_utc': runner.utc_now(),\n    'paper_claim_allowed': False,\n    'preexisting_materialized_unit_count': 17,\n    'newly_materialized_unit_count': 73,\n    'total_materialized_unit_count': 90,\n    'unique_triple_count': 90,\n    'failed_unit_count': int(failed['failed_unit_count']),\n    'preexisting_17_rows_unchanged': True,\n    'protected_file_sha256_before': preflight['protected_file_sha256_before'],\n    'protected_file_sha256_after': after,\n    'protected_files_unchanged': True,\n})\nprint('T25_REMAINING_73_MATERIALIZED', flush=True)",
+    "t25_resume_inline",
+    "run_t21_charging_timing_three_arms_20260805.py",
+    "--mode",
+    "full",
+    "--workers",
+    "6",
+    "--cv-only-iterations",
+    "6000",
+    "--naive-ev-iterations",
+    "6000",
+    "--mechanism-ev-iterations",
+    "8000"
+  ],
+  "events_emitted": [],
+  "last_event_state": "ANOMALY",
+  "log_initial_sizes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/tmp/.t25-charging-timing-resume-73.monitor/experiment.stdout.log": 0
+  },
+  "low_cpu_checks": 0,
+  "mode": "start",
+  "monitor_config_sha256": "99c62da196ed0d17877a2cef0ea0c95938752996ccd942b485b41409e2d0358c",
+  "paused": true,
+  "pgid": 64424,
+  "pid": 64424,
+  "protected_hashes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+      "age_seconds": 9480.810760974884,
+      "exists": true,
+      "kind": "algorithm_search",
+      "mtime": 1785927397.44,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "sha256": "b99c9f31146e3e1447bb23fb1413403fe97aeedc49db6e9e21374e061f4310da",
+      "size": 39029
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+      "age_seconds": 8983.191312074661,
+      "exists": true,
+      "kind": "algorithm_search",
+      "mtime": 1785927895.06,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "sha256": "b8dad634ad0e931d18d1d4bced0f51cde3927e640a312436ece2835a4342b4c0",
+      "size": 31620
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py": {
+      "age_seconds": 6185.852635860443,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1785930692.4,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_t21_charging_timing_three_arms_20260805.py",
+      "sha256": "bad2d541515166924931b42a6d1540be39ecf416afde41108b9425808ac3ee60",
+      "size": 70775
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_alns/audit_alns_budget_g0_20260718.py": {
+      "age_seconds": 1599597.4619791508,
+      "exists": true,
+      "kind": "auditor",
+      "mtime": 1784337280.79,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_alns/audit_alns_budget_g0_20260718.py",
+      "sha256": "c7322d3704d90b9f658fef7dd1644686434dfd482fd093588466c25c53f68a99",
+      "size": 6208
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/charge_timing.py": {
+      "age_seconds": 20609.829521894455,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1785916268.42,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/charge_timing.py",
+      "sha256": "c199307557494320b87bd897e0ac5d68788a12c1788349e8b5052d46124fcc42",
+      "size": 6220
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 76719.28825092316,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1785860158.96,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+      "size": 48650
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py": {
+      "age_seconds": 18708.789976119995,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1785918169.46,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py",
+      "sha256": "cb0bb62eeba2ad6ebc92d39ecf36a2aa2592b11f1f6a02abd53b2cdcc34bffe9",
+      "size": 29732
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 267210.75752687454,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1785669667.49,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+      "size": 46269
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 1932732.9491169453,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "started_at": "2026-08-05T13:34:38+00:00",
+  "started_at_epoch": 1785936878.2472498,
+  "stdout_path": "/Volumes/移动硬盘（512G）/ReSETP/tmp/.t25-charging-timing-resume-73.monitor/experiment.stdout.log"
+}

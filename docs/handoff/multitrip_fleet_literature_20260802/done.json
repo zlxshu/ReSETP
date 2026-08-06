@@ -1,0 +1,34 @@
+{
+  "schema": "resetp.z5-multitrip-fleet-literature-done.v1",
+  "task_id": "Z5",
+  "status": "Z5_MULTITRIP_FLEET_LITERATURE_COMPLETE",
+  "scope": "READ_ONLY_LITERATURE_EVIDENCE_WITH_DELIVERABLE_WRITES_ONLY",
+  "qualified_papers": 7,
+  "excluded_papers": 5,
+  "coverage": [
+    "classic_multitrip_vrp",
+    "multidepot_multitrip_vrp",
+    "electric_multitrip_vrp"
+  ],
+  "formal_experiment_executed": false,
+  "route_search_executed": false,
+  "solver_executed": false,
+  "existing_project_files_modified": false,
+  "deliverables": [
+    "report.md",
+    "qualified_papers.json",
+    "excluded_papers.json",
+    "implications_for_this_paper.json",
+    "done.json",
+    "artifact_hashes.json"
+  ],
+  "terminal_findings": {
+    "comparison_contract": "HOLD_DEFENSIBLE_AVAILABILITY_FIXED_AND_REPORT_ENDOGENOUS_USED_PHYSICAL_VEHICLES",
+    "numeric_max_trips_required": false,
+    "only_explicit_main_instance_trip_caps_found": "3-5_IN_ZHEN_2020_WITHOUT_OPERATIONAL_BASIS",
+    "current_per_trip_fixed_cost_can_capture_physical_vehicle_reuse_savings": false,
+    "safe_primary_benefit": "PHYSICAL_VEHICLES_USED_REDUCED_1040_TO_693_MINUS_347_MINUS_33.4_PERCENT",
+    "fixed_cost_saving_claim_under_current_accounting": "NOT_SUPPORTED"
+  },
+  "halt": "Z5_MULTITRIP_FLEET_LITERATURE_COMPLETE"
+}

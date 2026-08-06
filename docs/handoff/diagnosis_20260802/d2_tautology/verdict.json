@@ -1,0 +1,158 @@
+{
+  "schema": "resetp.d2-tautology-review.v1",
+  "task_id": "D2",
+  "status": "D2_TAUTOLOGY_REVIEW_COMPLETE",
+  "claim_T_verdict": {
+    "code": "PARTIALLY_SUPPORTED_BUT_FALSE_AS_A_WHOLE",
+    "plain_chinese": "论断T作为整体不成立",
+    "supported_part": "E3精确最优成本不升的方向来自解除客户归属锁；两个成本百分比不是两项独立运营机制发现。",
+    "contradicted_part": "同类文献没有把这类增益统一排除出研究发现；效应幅度和次级结果常被写入结论。E6的singleton成本和不是全局可执行方案，因公共充电容量冲突而不存在严格可行域包含定理。",
+    "overall_classification": "两个百分比均降为情景效应量；E6分配稳定性保留为独立发现。"
+  },
+  "per_number_verdict": [
+    {
+      "number": "E3_36.477_percent",
+      "verdict": "SCENARIO_EFFECT_SIZE_FROM_NESTED_RELAXATION",
+      "direction_tautological_at_exact_optimum": true,
+      "magnitude_tautological": false,
+      "baseline_reality": "可执行但合成；由Soriano人工所有权标签与China81需求-运力排序构造，不是观察到的企业历史。",
+      "arm_symmetry": "同车队上限、共同Solomon I1初解、同seed、同预算、同评价器；仅hard_home_depot_lock不同。",
+      "evidence": [
+        "baselines/china_e3_e7/e3_scattered_ownership_20260801/README.md:3-40",
+        "baselines/china_e3_e7/e3_scattered_ownership_20260801/run_e3_capacity_rank_aligned.py:69-115,155-211,300-398",
+        "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/panel_summary/report.md:5-17",
+        "docs/paper_v2/paper_main.tex:1380-1418"
+      ]
+    },
+    {
+      "number": "E6_33.018_percent",
+      "verdict": "SCENARIO_EFFECT_SIZE_FROM_OPERATIONAL_POOLING_NOT_SETTLEMENT",
+      "strict_feasible_set_tautology": false,
+      "magnitude_tautological": false,
+      "baseline_reality": "四家singleton分别在自己的车场、客户和车队上限下用同一模型优化；成本和是合作博弈分母，但拼接后有公共充电容量冲突，不是一份全局可执行方案。",
+      "fleet_accounting": "四个singleton的可用CV/EV上限之和与大联盟相同；大联盟没有新增车辆，只开放跨成员客户服务。",
+      "mechanism_attribution": "33.018%在结算前形成，来自客户-车场重配与车队服务能力池化；没有正式消融可把客户重分与车辆共享进一步分开。",
+      "evidence": [
+        "baselines/china_e3_e7/e6_contractor_participation_20260801/e6_methods.py:22-80",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py:649-688",
+        "baselines/china_e3_e7/e6_contractor_participation_20260801/run_pilot06_direct_15.py:264-315,534-592,843-1002",
+        "baselines/china_e3_e7/e3_scattered_ownership_20260801/e3_diag_03_independent_baseline_20260801.md:9-24",
+        "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6a_panel_20260801/report.md:3-7",
+        "docs/paper_v2/paper_main.tex:1474-1512"
+      ]
+    }
+  ],
+  "cross_number_verdict": {
+    "same_operational_lever": true,
+    "same_denominator": false,
+    "independent_operational_findings": false,
+    "exact_same_treatment_solution_units": 57,
+    "total_units": 60,
+    "explanation": "E3联合臂和E6大联盟复用同一映射、共同初解、无归属锁、预算和评价器；57/60最终成本与solution_sha256完全相同。E3分母为全局合法固定归属解，E6分母为四个singleton成本和。",
+    "evidence": [
+      "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/*/raw_runs.csv",
+      "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6a_panel_20260801/units/*/seed_*/raw_runs.csv",
+      "docs/paper_v2/paper_main.tex:1521-1525"
+    ]
+  },
+  "literature_anchor": [
+    {
+      "id": "Rao2019_SETP",
+      "paper": "一种求解协作配送成本分摊问题核仁解的近似迭代算法",
+      "journal": "系统工程理论与实践",
+      "pages": ["1528", "1529", "1530", "1533"],
+      "baseline": "四个单成员子联盟按同一VRP重算的成本，与大联盟成本比较。",
+      "gain_location": "第1530页算例结果；第1533页贡献结论未把合作节约列为核心贡献。",
+      "author_characterization": "合作可降低配送成本；核心贡献是核仁近似迭代算法。",
+      "classification": "SCENARIO_RESULT_NOT_CORE_CONTRIBUTION"
+    },
+    {
+      "id": "Rao2022_SETP",
+      "paper": "考虑企业服务质量差异的协作配送问题及成本分摊方法研究",
+      "journal": "系统工程理论与实践",
+      "pages": ["2732", "2736", "2737"],
+      "baseline": "独立配送和各子联盟由同一ALNS模型求解。",
+      "gain_location": "第2732页表8/9、第2736页时间窗检验、第2737页数值结论。",
+      "author_characterization": "即使有时间窗，协作配送仍产生显著成本节约；主贡献是服务质量调整分配。",
+      "classification": "NUMERICAL_FINDING_BUT_NOT_SOLE_CONTRIBUTION"
+    },
+    {
+      "id": "Wang2023_JSM",
+      "paper": "资源共享模式下多中心共同配送电动车辆路径优化问题",
+      "journal": "系统管理学报",
+      "pages": ["1134", "1138", "1139"],
+      "baseline": "车辆和充电站均不共享，逐层放松到车辆全局共享且充电站共享。",
+      "gain_location": "第1134页表8、第1138页表13、第1139页结论。",
+      "author_characterization": "成本下降43.2%、车辆下降56.0%，资源共享提高配置与配送效率。",
+      "classification": "EXPLICIT_FINDING_AND_CONCLUSION"
+    },
+    {
+      "id": "Wang2023_ESWA",
+      "paper": "Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations",
+      "journal": "Expert Systems with Applications",
+      "pages": ["PDF 23", "PDF 27"],
+      "baseline": "非合作、合作但不共享充电站、合作且共享充电站。",
+      "gain_location": "PDF第23页6.4.1节和表22；PDF第27页结论。",
+      "author_characterization": "20%合作降本及进一步共享收益证明协作机制和共享策略有效。",
+      "classification": "EXPLICIT_FINDING_AND_MANAGERIAL_CONCLUSION"
+    },
+    {
+      "id": "Wang2024_TRE",
+      "paper": "Collaboration and resource sharing in the multidepot time-dependent vehicle routing problem with time windows",
+      "journal": "Transportation Research Part E",
+      "pages": ["PDF 26", "PDF 29", "PDF 31", "PDF 34"],
+      "baseline": "非合作且不共享、合作但不共享、合作且共享。",
+      "gain_location": "PDF第29页表14、第31页管理启示、第34页结论。",
+      "author_characterization": "仅合作即降本34.44%，客户重分和车辆共享分别提高路线与资源效率。",
+      "classification": "EXPLICIT_FINDING_AND_MANAGERIAL_CONCLUSION"
+    },
+    {
+      "id": "Soriano2023_IJPE",
+      "paper": "The multi-depot vehicle routing problem with profit fairness",
+      "journal": "International Journal of Production Economics",
+      "pages": ["PDF 2", "PDF 4", "PDF 7-11"],
+      "baseline": "各车场服务原属客户的stand-alone解；合作允许客户重分，并另做车辆数受限合作对照。",
+      "gain_location": "stand-alone作为公平分母；实验与结论集中报告公平代价、客户重分、限车代价和构型条件。",
+      "author_characterization": "贡献是MDVRP-PF、公平Pareto算法及公平影响，而非合作成本方向。",
+      "classification": "BASELINE_SETUP_WITH_NONTRIVIAL_TRADEOFF_FINDINGS"
+    }
+  ],
+  "remaining_findings": [
+    {
+      "id": "E4_carbon_cost_tradeoff",
+      "finding": "成本加碳目标使系统排放下降2.679%、运营成本增加0.0000448%；纯排放目标使排放下降13.935%、运营成本增加2.487%。",
+      "why_not_tautological": "同一可行域上的不同目标权衡，不是解除限制的可行域包含。",
+      "evidence": "docs/paper_v2/paper_main.tex:1420-1452"
+    },
+    {
+      "id": "E4_fixed_schedule_timing_tradeoff",
+      "finding": "固定排班只移动充电时刻时，充电排放下降54.970%、系统排放下降9.746%、电费增加134.880%。",
+      "why_not_tautological": "减排与电费方向冲突，处理不支配基准。",
+      "evidence": "docs/paper_v2/paper_main.tex:1454-1458"
+    },
+    {
+      "id": "E6_game_stability_and_rule_difference",
+      "finding": "60/60博弈核非空；Shapley仅52/60在核内，核仁与Shapley单家收益最大差444.280元。",
+      "why_not_tautological": "大联盟节约为正不保证核非空或Shapley在核内。核仁在非空核内及240/240参与条件不另重复计数。",
+      "evidence": "docs/paper_v2/paper_main.tex:1497-1512; baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6s2_nucleolus_20260801/decision.json:2-10"
+    },
+    {
+      "id": "E3_secondary_resource_environment_effects",
+      "finding": "成本目标下里程下降57.372%、系统排放下降57.307%、用车减少2.95，平均121.58个客户更换服务车场。",
+      "why_not_tautological": "成本可行域放松不保证次级指标同向变化；但这些仍是同一E3处理的联动效应。",
+      "evidence": "docs/paper_v2/paper_main.tex:1406-1418"
+    },
+    {
+      "id": "E2_algorithm_performance_descriptive",
+      "finding": "MV-HGS-SP相对O/HGS-F平均改进1.919%/1.059%，五臂最优覆盖400/405；完整非增阶梯仅299/405。",
+      "why_not_tautological": "算法不存在可行域包含保证；5个O胜出单元和非单调阶梯反证构造性支配。停止规则不同，故仅是描述性算法结果。",
+      "evidence": "docs/paper_v2/paper_main.tex:1296-1372"
+    }
+  ],
+  "not_counted_as_remaining_findings": [
+    "E3的60/60联合更便宜：与36.477%同一方向统计。",
+    "E6的60/60大联盟节约为正：与33.018%同一方向统计。",
+    "核仁60/60在核内和240/240高于单干：在核非空后主要是核仁与核定义的推论。",
+    "E5和E7：当前TeX没有正式结果，见paper_main.tex:1471,1552-1553。"
+  ]
+}

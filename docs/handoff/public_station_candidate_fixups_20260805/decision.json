@@ -1,0 +1,22 @@
+{
+  "schema": "resetp.t19-public-station-candidate-fixups-decision.v1",
+  "verdict": "PASS_T19_REPAIR_DELTA_ACCOUNTING",
+  "halt_status": "HALT_NONE",
+  "paper_claim_allowed": false,
+  "implementation_gate_passed": true,
+  "facts": {
+    "accounting_channel": "repair_delta",
+    "route_scoring": "route_model_cost_delta",
+    "static_audit": "30 scanned / 0 blockers / 0 unclassified",
+    "required_channels_present": ["candidate", "reference", "repair_delta"],
+    "targeted_pytest": "7 passed / 0 failed",
+    "positive_overlap_samples": "3/3 detected with exact overlap seconds retained",
+    "t10_legal_solutions": "18/18",
+    "parallel_minimal_case_selected": "depot_fallback",
+    "full_suite": "906 passed / 1 skipped / 6 failed",
+    "full_suite_matches_t15_t17b": true,
+    "protected_hashes_unchanged": true,
+    "existing_raise_assert_or_validation_weakened": false
+  },
+  "decision": "Accept the narrow T19 bookkeeping-channel correction. Keep the existing outer complete-candidate accounting and all model, option, default, constraint, threshold, and audit semantics unchanged."
+}

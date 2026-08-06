@@ -1,0 +1,183 @@
+{
+  "task_id": "WL1",
+  "evidence_date": "2026-08-02",
+  "classification_note": "class仅使用用户指定的实测标定、模型情景、推算三类；evidence_subtype进一步区分制度规则、企业条款、实际披露、交易数据、控制实验和陈述偏好，避免把它们混称为企业标定。",
+  "candidates": [
+    {
+      "id": "P1_GBT_27917_3_2023_A3_2",
+      "line": "赔付",
+      "value": "一般延误免除本次服务费用；延误导致内件直接价值丧失时按丢失或损毁处理",
+      "unit": "元/单（金额等于该票基础服务费；标准未给统一金额）",
+      "source": "国家市场监督管理总局、国家标准化管理委员会，GB/T 27917.3—2023《快递服务 第3部分：服务环节》，附录A.3.2；2023-12-28发布，2024-04-01实施，主管部门国家邮政局。https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=A47355CEF08AFBF7CBDB2E5C8C590532，访问日期2026-08-02。",
+      "class": "实测标定",
+      "evidence_subtype": "现行行业制度规则，不是统计实测",
+      "usable_for_china81": false,
+      "reason": "只在达到延误状态后一次性返还实际服务费；没有统一人民币金额，也不覆盖承诺时限内从订单到达到发车的连续等待。"
+    },
+    {
+      "id": "P2_SF_ON_TIME_GUARANTEE",
+      "line": "赔付",
+      "value": "揽收超时30分钟赔3元券；派件超时>1秒/1/2/3/4/5小时赔1/2/3/4/5/6元；>6小时退折后运费；特殊低实付订单补偿上限12元",
+      "unit": "元/单或元券/单，阶梯函数",
+      "source": "顺丰速运《准时宝》，覆盖范围、理赔标准。https://www.sf-express.com/chn/sc/express/add-service/OnTimeGuarantee，访问日期2026-08-02。",
+      "class": "实测标定",
+      "evidence_subtype": "企业当前公开增值服务条款",
+      "usable_for_china81": false,
+      "reason": "是真实人民币阶梯，但仅适用于购买准时宝且超过承诺时刻后的赔付；当前China81需要承诺前订单等待的连续代价，语义与起算点不一致。"
+    },
+    {
+      "id": "P3_SF_OVERTIME_COMPENSATION",
+      "line": "赔付",
+      "value": "基础运费返还20%—30%，会员在基础赔付上再增加5%—10%",
+      "unit": "%基础运费/单",
+      "source": "顺丰速运《“放心寄 超时赔”，顺丰行业首推“超时赔付”服务》，具体赔付标准、上线范围。https://www.sf-express.com/chn/sc/news/396，访问日期2026-08-02。",
+      "class": "实测标定",
+      "evidence_subtype": "企业当前公开服务承诺",
+      "usable_for_china81": false,
+      "reason": "官网未公开超时时长与百分比的完整映射，且没有China81各票基础运费；仍是承诺后赔付，不是承诺前等待损失。"
+    },
+    {
+      "id": "P4_EMS_2016_REFUND_CASE",
+      "line": "赔付",
+      "value": 13,
+      "unit": "元/票，一次性退邮费",
+      "source": "央广网，2016-10-31，《邮寄护照出现延误耽误出国行程 最终只赔13元邮寄费》，第35、38、41段；EMS客服确认两个邮件各退13元。https://m.cnr.cn/news/20161031/t20161031_523233013.html，访问日期2026-08-02。",
+      "class": "实测标定",
+      "evidence_subtype": "媒体核实的企业实际处置，不是司法判决",
+      "usable_for_china81": false,
+      "reason": "2016年特定EMS产品与个案，只能证明一次性退邮费；不能识别每分钟损失，也不能代表当前行业。"
+    },
+    {
+      "id": "P5_SHENSHENG_COLD_CHAIN_CONTRACT_AND_ACTUAL",
+      "line": "赔付",
+      "value": "典型合同：破损/丢失/超温按实际损失，赔偿上限与当票冷链运输服务费3倍、一年储存费或实际损失挂钩；2020/2021/2022/2023H1相关实际赔偿总额11.81/14.42/62.15/12.01万元",
+      "unit": "合同上限倍数；万元/报告期",
+      "source": "立信会计师事务所，2024，《关于上海生生医药冷链科技股份有限公司首次公开发行股票并在沪市主板上市申请文件的审核问询函的回复》，信会师函字〔2023〕第ZA673号，回复第31—32页。https://static.sse.com.cn/stock/disclosure/announcement/c/202401/001923_20240111_TCNO.pdf，访问日期2026-08-02。",
+      "class": "实测标定",
+      "evidence_subtype": "企业典型合同与经问询披露的实际赔偿总额",
+      "usable_for_china81": false,
+      "reason": "实际总额合并丢失、损坏、超温和未按时效送达，未披露原因拆分、事故票数或延误分钟；无法换算单票单位时间值。"
+    },
+    {
+      "id": "P6_SF_STEP_LOCAL_SLOPE",
+      "line": "赔付",
+      "value": 0.0167,
+      "unit": "元/(单·分钟)，仅为超时1—6小时间档位平均斜率",
+      "source": "输入来自顺丰速运《准时宝》派件超时阶梯：相邻小时档赔付增加1元。https://www.sf-express.com/chn/sc/express/add-service/OnTimeGuarantee，访问日期2026-08-02。",
+      "class": "推算",
+      "evidence_subtype": "对企业阶梯条款的拒绝性局部线性化",
+      "calculation_chain": [
+        "输入：派件超时1—6小时区间，相邻约60分钟档位赔付增加1元",
+        "算式：1元 ÷ 60分钟 = 0.016666...元/(单·分钟)",
+        "保留四位小数：0.0167元/(单·分钟)"
+      ],
+      "usable_for_china81": false,
+      "reason": "原函数在每个档位内不连续增加，超过6小时改为返还实际运费，承诺时刻前为0；线性化既改变函数形状也错置起算点。"
+    },
+    {
+      "id": "L1_HARTER_FIELD_HAZARD",
+      "line": "流失",
+      "value": "晚到分钟一次项系数−1.79×10^-3、hazard ratio 0.99821；平方项系数0.02×10^-3、hazard ratio 1.00002",
+      "unit": "下一次购买发生率的风险比/晚到分钟（含非线性项）",
+      "source": "Harter A, Stich L, Spann M. 2025. The Effect of Delivery Time on Repurchase Behavior in Quick Commerce. Journal of Service Research 28(2):211—227, pp.216—220, Tables 4—5. DOI:10.1177/10946705241236961.",
+      "class": "实测标定",
+      "evidence_subtype": "西欧即时配送企业顾客级交易数据",
+      "usable_for_china81": false,
+      "reason": "风险比不是流失概率；还需基线风险、观察期和平方项。场景为西欧餐饮/即时零售，非中国城配，也没有人民币映射。"
+    },
+    {
+      "id": "L2_HARTER_CONTROLLED_INTENTION",
+      "line": "流失",
+      "value": "复购意愿均值：早5分钟9.54，早25分钟8.68，迟5分钟8.74，迟25分钟4.03",
+      "unit": "11点复购意愿量表",
+      "source": "Harter A, Stich L, Spann M. 2025. Journal of Service Research 28(2):211—227, pp.220—223, Study 2, Table 7. DOI:10.1177/10946705241236961.",
+      "class": "实测标定",
+      "evidence_subtype": "411人受控情景实验，自报意愿",
+      "usable_for_china81": false,
+      "reason": "自报意愿不等于实际复购或流失概率，且样本不是中国快递/城配客户。"
+    },
+    {
+      "id": "L3_TMALL_CAINIAO_SALES_COUNTERFACTUAL",
+      "line": "收入衰减",
+      "value": "将约35%的3日达订单全部缩短为2日达，估计第三方卖家日均销售额提高13.3%",
+      "unit": "%日均销售额/1天时效改善（论文反事实）",
+      "source": "Deshpande V, Pendem P K. 2023 (online 2022). Logistics Performance, Ratings, and Its Impact on Customer Purchasing Behavior and Sales in E-Commerce Platforms. Manufacturing & Service Operations Management 25(3):827—845, pp.837—842 and Results. DOI:10.1287/msom.2021.1045.",
+      "class": "实测标定",
+      "evidence_subtype": "天猫/菜鸟超过1500万真实订单上的模型估计",
+      "usable_for_china81": false,
+      "reason": "结果为经过物流评分机制的卖家销售反事实，时间单位为天，不是快递客户流失概率，也不是单票人民币。"
+    },
+    {
+      "id": "R1_JD_EXPRESS_DELIVERY_PRICE",
+      "line": "收入衰减",
+      "value": "非生鲜中小件极速达99元/单、2小时内；大件极速达159元/单、3小时内；非客户责任晚点退极速达服务费",
+      "unit": "元/单与小时",
+      "source": "京东帮助中心《极速达（自营）服务说明》，第1、2、5节。https://help.jd.com/user/issue/94-959.html，访问日期2026-08-02。",
+      "class": "实测标定",
+      "evidence_subtype": "企业公开时效增值服务价格",
+      "usable_for_china81": false,
+      "reason": "价格包含个性化专人服务、运力占用、商品与覆盖范围；缺少同订单慢速产品的匹配价，不能把全部费用除以分钟当时间价值。"
+    },
+    {
+      "id": "R2_BEIJING_FOOD_DELIVERY_WTP",
+      "line": "收入衰减",
+      "value": "条件Logit：缩短等待的WTP为工作96.6、居家99.6元/小时；GMNL为工作92.4、居家90.6元/小时",
+      "unit": "元/(人·小时)",
+      "source": "Wang R, Zhong H. 2025. Putting a Price on Immobility: Food Deliveries and Pricing Approaches. arXiv:2510.26636, pp.6, 9, 13—15, Tables 3, 5—6. https://arxiv.org/pdf/2510.26636.",
+      "class": "实测标定",
+      "evidence_subtype": "北京525名外卖用户多属性陈述偏好实验；非同行评审预印本",
+      "usable_for_china81": false,
+      "reason": "是假设选择中的消费者支付意愿，不是实际支付、企业收入衰减或赔付；外卖个人订单与China81货运订单尺度不同。"
+    },
+    {
+      "id": "R3_BEIJING_WTP_PER_MINUTE_CONVERSION",
+      "line": "收入衰减",
+      "value": "工作1.61；居家1.66",
+      "unit": "元/(人·分钟)",
+      "source": "输入来自Wang R, Zhong H. 2025, arXiv:2510.26636, Table 6的条件Logit 96.6与99.6元/小时。",
+      "class": "推算",
+      "evidence_subtype": "对陈述偏好WTP的纯单位换算",
+      "calculation_chain": [
+        "工作场景输入：96.6元/(人·小时)",
+        "96.6 ÷ 60 = 1.61元/(人·分钟)",
+        "居家场景输入：99.6元/(人·小时)",
+        "99.6 ÷ 60 = 1.66元/(人·分钟)"
+      ],
+      "usable_for_china81": false,
+      "reason": "换算不改变证据性质：仍是单城外卖陈述偏好，不是企业实际损失；不能把人均WTP直接赋给多货量城配订单。"
+    },
+    {
+      "id": "R4_SF_ALIBABA_NATURAL_EXPERIMENT",
+      "line": "收入衰减",
+      "value": "顺丰选项被移除42小时期间，129448个SKU的销售下降14.56%，长尾销售贡献增加3%",
+      "unit": "%销售/42小时平台选项冲击",
+      "source": "Cui R, Li M, Li Q. 2020 (online 2019). Value of High-Quality Logistics: Evidence from a Clash Between SF Express and Alibaba. Management Science 66(9):3879—3902, pp.3879—3883 and abstract. DOI:10.1287/mnsc.2019.3411.",
+      "class": "实测标定",
+      "evidence_subtype": "中国平台自然实验",
+      "usable_for_china81": false,
+      "reason": "冲击是整个高质量物流选项消失，捆绑速度、可靠性、丢损风险和品牌；42小时不是每票延误时长，无法识别分钟衰减。"
+    },
+    {
+      "id": "R5_NI_NORMALIZED_C",
+      "line": "收入衰减",
+      "value": "c=1；一次发车成本为抽象常数C",
+      "unit": "归一化相对成本单位/(单位货量·单位时间)",
+      "source": "倪冠群、张自然、高伟，2025，《前置仓模式下O2O即时订单在线配送策略及其竞争分析》，《系统工程理论与实践》45(11):3873—3883，第3875—3876页。DOI:10.12011/SETP2024-1057。",
+      "class": "模型情景",
+      "evidence_subtype": "理论归一化",
+      "usable_for_china81": false,
+      "reason": "原文明确不失一般性令c=1，没有人民币或企业来源；不得解释为1元/(kg·min)。"
+    },
+    {
+      "id": "R6_GAUTAM_GEUNES_SCENARIOS",
+      "line": "收入衰减",
+      "value": "h=0.6/1.2/2.4，固定发车成本phi=100；另以基准h的20%和40%及高低组合做实验",
+      "unit": "论文模型成本单位",
+      "source": "Gautam N, Geunes J. 2024. Analysis of Real-Time Order Fulfillment Policies: When to Dispatch a Batch? Service Science 16(2):85—106, pp.97, 99, 101—102. DOI:10.1287/serv.2022.0042.",
+      "class": "模型情景",
+      "evidence_subtype": "数值情景与敏感性设计",
+      "usable_for_china81": false,
+      "reason": "论文未给h或phi的企业数据来源，并明确按比例构造情景；不是人民币企业标定。"
+    }
+  ]
+}

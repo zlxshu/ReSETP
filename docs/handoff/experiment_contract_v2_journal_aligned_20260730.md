@@ -111,3 +111,12 @@ L100_control vs NL90_mild。**饥饿门废止后 E5 的 HALT 自动解除**，�
 ## 7. 边界
 
 本合同规定实验规程，**不预设任何结果方向**。任何臂的效应可正可负可零，如实报告。若某机制在结构性对照下仍无效应，那是一个诚实的科学结论，按 `VALID_BUT_WEAK` 或 `MECHANISM_BUT_TIE` 标签写入，不得改门救援。
+
+## 2026-08-02 适用范围补记（X2-DF-008）
+
+`scope_status=PARTIALLY_HISTORICAL`。本补记只追加适用范围与当前指针，不改写上文任何历史条款。
+
+- 第 2 节“保留清单（红线）”继续作为通用记录纪律有效：不做结果过滤、四件套加 `report.md`、三份保护源码禁改、不覆盖封存证据、结论标签制，均保持原文。
+- 第 3--7 节关于 E3/E5/E6/E7 并列正式机制实验的规程，标注为 `HISTORICAL_SCOPE_20260730_E3_E5_E6_E7`；它们只解释旧包在 2026-07-30 合同下为何以及如何形成，不再授权按旧角色启动新实验。
+- 当前正式实验主线改为三层：时变碳强度、车队电动化配置、动态发车时机。协同、公平分账、非线性充电已降为模型组件。当前指针为 `docs/handoff/TODO_施工总清单_20260802.md:10-18,107-136`（SHA-256 `56bfebeded7900b06e9af5e86874dba8ab5043b5374fd7d579f89ee6ab8ebdd7`）与 `docs/handoff/paper_restructure_20260802/SYNTHESIS_施工图_20260802.md:6-18,27-49`（SHA-256 `2e11cd285657592a9d636ed9e74c3e5c86b04df5fb0f8b09772346b9db3e43bf`）。
+- 覆盖关系的机器核验依据为 `docs/handoff/legacy_sweep_round2_20260802/docs_supersede_dag.json:summary,conflicting_pairs`（SHA-256 `ad442cdf1e7afb70eef6232a78b9e5d23336b13ccdfb0d3f29822678f58165cf`）；其中明确记录本合同的 `ACTIVE` 全称状态与 2026-08-02 主线冲突，而第 2 节纪律仍有效。

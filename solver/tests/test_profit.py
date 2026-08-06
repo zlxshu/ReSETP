@@ -85,6 +85,24 @@ def _write_minimal_bundle(root: str) -> Path:
 
 
 class DepotProfitTests(unittest.TestCase):
+    def test_multitrip_fixed_cost_is_allocated_once_per_physical_vehicle(self) -> None:
+        solution = Solution(
+            routes=[
+                Route("CV1#T1", "cv", "D0", ["D0", "C1", "D0"]),
+                Route("CV1#T2", "cv", "D0", ["D0", "C2", "D0"]),
+            ]
+        )
+
+        profits = calculate_depot_profits(
+            solution,
+            _instance(),
+            carbon_profile=[],
+            prices=_prices(),
+            customer_home_depot={"C1": "D0", "C2": "D0"},
+        )
+
+        self.assertEqual(profits["D0"].cost_fixed, 10.0)
+
     # v2026-06-12: V2 hand-checks paper eq:profit and eq:depot_cost.
     def test_depot_profit_matches_manual_revenue_and_cost_allocation(self) -> None:
         profits = calculate_depot_profits(

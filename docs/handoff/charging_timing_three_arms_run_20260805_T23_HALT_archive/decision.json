@@ -1,0 +1,17 @@
+{
+  "schema_version": "resetp.t23-decision.v1",
+  "status": "HALT_T23_RUNNER_STOP_AND_FAILURE_CONTRACT_UNAVAILABLE_NO_SEARCH",
+  "FACT": {
+    "registered_run_count": 90,
+    "started_run_count": 0,
+    "search_started": false,
+    "runner_executed": false,
+    "reference_iterations_are_hard_MaxIterations_in_current_runner": true,
+    "unit_exception_isolated_and_continued_by_current_runner": false,
+    "completed_unit_state_materialized_before_batch_end": false,
+    "paper_claim_allowed": false
+  },
+  "INFERENCE": "Executing the current full mode would produce a hard-reference-iteration batch and could abort on the first unit exception; it would not satisfy T23's stopping and failure-preservation contract.",
+  "DECISION": "Do not start search and do not modify code or invent a plateau window in T23.",
+  "HALT": "HALT_T23_RUNNER_STOP_AND_FAILURE_CONTRACT_UNAVAILABLE_NO_SEARCH"
+}

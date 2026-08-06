@@ -25,11 +25,15 @@ from pyvrp.Statistics import Statistics
 from pyvrp.stop import MaxIterations, MaxRuntime, MultipleCriteria
 from pyvrp_adapter import (
     China81PyVRPProblem,
+    _completion_failure_category,
+    _native_candidate_id,
     _native_solution_key,
     _project_initial_solution,
+    _skeleton_candidate_id,
     _translate_solution,
     build_pyvrp_problem,
 )
+from setp_solver.charge_timing import DEFAULT_CHARGE_TIMING_POLICY
 from setp_solver.china81 import China81Bundle
 from setp_solver.china81_completion import (
     China81CompletionResult,
@@ -72,6 +76,7 @@ def run_epochal_mechanism_hgs(
     epoch_count: int = 2,
     exact_elite_count: int = 4,
     max_archive_candidates: int = 24,
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
 ) -> EpochalMechanismHgsRun:
     """Run equal-length HGS epochs with exact-model elite migration."""
 
@@ -101,6 +106,7 @@ def run_epochal_mechanism_hgs(
             warm_elites=warm_elites,
             exact_elite_count=exact_elite_count,
             max_archive_candidates=max_archive_candidates,
+            charge_timing_policy=charge_timing_policy,
         )
         epochs.append(epoch)
         warm_elites = epoch.elite_skeletons
@@ -108,6 +114,7 @@ def run_epochal_mechanism_hgs(
         complete_china81_route_skeleton(
             common_initial_solution,
             bundle,
+            charge_timing_policy=charge_timing_policy,
         ),
         *[
             completion
@@ -138,6 +145,7 @@ def run_epochal_mechanism_hgs(
             ),
             "base_seed": int(base_seed),
             "route_proxy_mode": route_proxy_mode,
+            "charge_timing_policy": charge_timing_policy,
             "total_hgs_seconds": float(total_hgs_seconds),
             "epoch_count": int(epoch_count),
             "epoch_seconds": epoch_seconds,
@@ -172,10 +180,40 @@ def _run_exact_epoch(
     max_archive_candidates: int,
     max_hgs_iterations: int | None = None,
     wallclock_safety_seconds: float | None = None,
+    no_improvement_wallclock_seconds: float | None = None,
+    no_improvement_minimum_relative_improvement: float = 0.0,
     exact_checkpoint_interval_iterations: int | None = None,
     collect_historical_population_archive: bool = False,
+    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
 ) -> HgsExactEpoch:
-    if max_hgs_iterations is None:
+    no_improvement_stop: _AuditedNoImprovementWallclock | None = None
+    if no_improvement_wallclock_seconds is not None:
+        if no_improvement_wallclock_seconds <= 0.0:
+            raise ValueError(
+                "no-improvement wallclock seconds must be positive"
+            )
+        if max_hgs_iterations is not None:
+            raise ValueError(
+                "no-improvement stopping cannot have an iteration cap"
+            )
+        if runtime_seconds is not None:
+            raise ValueError(
+                "no-improvement stopping cannot have a total runtime cap"
+            )
+        if wallclock_safety_seconds is not None:
+            raise ValueError(
+                "no-improvement stopping cannot have a wallclock safety cap"
+            )
+        no_improvement_stop = _AuditedNoImprovementWallclock(
+            float(no_improvement_wallclock_seconds),
+            minimum_relative_improvement=float(
+                no_improvement_minimum_relative_improvement
+            ),
+        )
+        stop = no_improvement_stop
+        stop_mode = "NO_IMPROVEMENT_WALLCLOCK_UNCAPPED_ITERATIONS"
+        safety = None
+    elif max_hgs_iterations is None:
         if runtime_seconds is None or runtime_seconds <= 0.0:
             raise ValueError("legacy HGS runtime must be positive")
         stop = MaxRuntime(float(runtime_seconds))
@@ -184,41 +222,26 @@ def _run_exact_epoch(
     else:
         if max_hgs_iterations < 1:
             raise ValueError("max_hgs_iterations must be positive")
+        safety = None
+        criteria = [MaxIterations(int(max_hgs_iterations))]
         if (
-            wallclock_safety_seconds is None
-            or wallclock_safety_seconds <= 0.0
+            wallclock_safety_seconds is not None
+            and wallclock_safety_seconds > 0.0
         ):
-            raise ValueError(
-                "deterministic HGS iteration mode requires a positive "
-                "wallclock safety cap"
+            safety = _AuditedWallclockSafety(
+                float(wallclock_safety_seconds)
             )
-        safety = _AuditedWallclockSafety(
-            float(wallclock_safety_seconds)
+            criteria.append(safety)
+        stop = MultipleCriteria(criteria)
+        stop_mode = (
+            "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY"
+            if safety is not None
+            else "DETERMINISTIC_ITERATIONS_NO_WALLCLOCK"
         )
-        stop = MultipleCriteria(
-            [
-                MaxIterations(int(max_hgs_iterations)),
-                safety,
-            ]
-        )
-        stop_mode = "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY"
     if exact_checkpoint_interval_iterations is not None:
-        if max_hgs_iterations is None:
-            raise ValueError(
-                "exact checkpoints require deterministic HGS iterations"
-            )
         if exact_checkpoint_interval_iterations < 1:
             raise ValueError(
                 "exact checkpoint interval must be positive"
-            )
-        if (
-            max_hgs_iterations
-            % exact_checkpoint_interval_iterations
-            != 0
-        ):
-            raise ValueError(
-                "HGS iteration budget must be divisible by the exact "
-                "checkpoint interval"
             )
     elif collect_historical_population_archive:
         raise ValueError(
@@ -243,7 +266,7 @@ def _run_exact_epoch(
     penalty_manager = PenaltyManager.init_from(data, params.penalty)
     population = Population(broken_pairs_distance, params.population)
     warm_native = [
-        _project_initial_solution(item, data, problem)
+        _project_initial_solution(item, data, problem, bundle)
         for item in warm_elites
     ]
     warm_input_route_type_counts = [
@@ -265,6 +288,7 @@ def _run_exact_epoch(
                         int(route.vehicle_type())
                     ]
                     for route in native.routes()
+                    for _ in route.trips()
                 ).items()
             )
         )
@@ -321,11 +345,13 @@ def _run_exact_epoch(
     ) -> None:
         nonlocal hard_lock_filtered_checkpoint_candidates
         observed_at = perf_counter() - started
+        candidate_id = _native_candidate_id(native)
         try:
             skeleton = _translate_solution(native, problem)
             completion = complete_china81_route_skeleton(
                 skeleton,
                 bundle,
+                charge_timing_policy=charge_timing_policy,
             )
             if (
                 problem.hard_home_depot_lock
@@ -334,11 +360,16 @@ def _run_exact_epoch(
                 hard_lock_filtered_checkpoint_candidates += 1
                 checkpoint_observations.append(
                     {
+                        "candidate_id": candidate_id,
                         "iteration": int(iteration),
                         "elapsed_seconds": float(observed_at),
                         "proxy_cost": int(proxy_cost),
+                        "completion_succeeded": True,
                         "complete_objective": None,
                         "status": "FILTERED_HARD_HOME_DEPOT_LOCK",
+                        "exception_type": None,
+                        "exception_message": None,
+                        "failure_category": None,
                     }
                 )
                 return
@@ -347,26 +378,36 @@ def _run_exact_epoch(
             )
             checkpoint_observations.append(
                 {
+                    "candidate_id": candidate_id,
                     "iteration": int(iteration),
                     "elapsed_seconds": float(observed_at),
                     "proxy_cost": int(proxy_cost),
+                    "completion_succeeded": True,
                     "complete_objective": float(
                         completion.objective
                     ),
                     "status": "PASS",
+                    "exception_type": None,
+                    "exception_message": None,
+                    "failure_category": None,
                 }
             )
         except (IndexError, KeyError, TypeError, ValueError) as exc:
             checkpoint_failures.append(str(exc))
             checkpoint_observations.append(
                 {
+                    "candidate_id": candidate_id,
                     "iteration": int(iteration),
                     "elapsed_seconds": float(observed_at),
                     "proxy_cost": int(proxy_cost),
+                    "completion_succeeded": False,
                     "complete_objective": None,
                     "status": "INFEASIBLE_OR_ERROR",
                     "exception_type": type(exc).__name__,
                     "exception_message": str(exc),
+                    "failure_category": _completion_failure_category(
+                        str(exc)
+                    ),
                 }
             )
 
@@ -440,20 +481,17 @@ def _run_exact_epoch(
     ] = []
     complete_candidate_evaluation_trace: list[dict[str, Any]] = [
         {
+            "candidate_id": observation["candidate_id"],
             "source": "hgs_iteration_checkpoint",
             "iteration": int(observation["iteration"]),
+            "completion_succeeded": observation[
+                "completion_succeeded"
+            ],
             "complete_objective": observation["complete_objective"],
             "status": observation["status"],
-            **(
-                {
-                    "exception_type": observation["exception_type"],
-                    "exception_message": observation[
-                        "exception_message"
-                    ],
-                }
-                if "exception_type" in observation
-                else {}
-            ),
+            "exception_type": observation["exception_type"],
+            "exception_message": observation["exception_message"],
+            "failure_category": observation["failure_category"],
         }
         for observation in checkpoint_observations
     ]
@@ -465,6 +503,7 @@ def _run_exact_epoch(
     cross_depot_direction_counts: dict[str, int] = {}
     for native in proxy_ranked:
         archive_completion_attempts += 1
+        candidate_id = _native_candidate_id(native)
         try:
             skeleton = _translate_solution(native, problem)
             annotated_skeleton = annotate_cross_site_services(
@@ -486,6 +525,7 @@ def _run_exact_epoch(
             completion = complete_china81_route_skeleton(
                 skeleton,
                 bundle,
+                charge_timing_policy=charge_timing_policy,
             )
             if (
                 problem.hard_home_depot_lock
@@ -494,10 +534,15 @@ def _run_exact_epoch(
                 hard_lock_filtered_archive_candidates += 1
                 complete_candidate_evaluation_trace.append(
                     {
+                        "candidate_id": candidate_id,
                         "source": "terminal_population_archive",
                         "iteration": None,
+                        "completion_succeeded": True,
                         "complete_objective": None,
                         "status": "FILTERED_HARD_HOME_DEPOT_LOCK",
+                        "exception_type": None,
+                        "exception_message": None,
+                        "failure_category": None,
                     }
                 )
                 continue
@@ -512,24 +557,34 @@ def _run_exact_epoch(
             )
             complete_candidate_evaluation_trace.append(
                 {
+                    "candidate_id": candidate_id,
                     "source": "terminal_population_archive",
                     "iteration": None,
+                    "completion_succeeded": True,
                     "complete_objective": float(
                         completion.objective
                     ),
                     "status": "PASS",
+                    "exception_type": None,
+                    "exception_message": None,
+                    "failure_category": None,
                 }
             )
         except (IndexError, KeyError, TypeError, ValueError) as exc:
             failures.append(str(exc))
             complete_candidate_evaluation_trace.append(
                 {
+                    "candidate_id": candidate_id,
                     "source": "terminal_population_archive",
                     "iteration": None,
+                    "completion_succeeded": False,
                     "complete_objective": None,
                     "status": "INFEASIBLE_OR_ERROR",
                     "exception_type": type(exc).__name__,
                     "exception_message": str(exc),
+                    "failure_category": _completion_failure_category(
+                        str(exc)
+                    ),
                 }
             )
     base_exact_candidates = list(exact_candidates)
@@ -537,13 +592,21 @@ def _run_exact_epoch(
     common_completion = complete_china81_route_skeleton(
         common_initial_solution,
         bundle,
+        charge_timing_policy=charge_timing_policy,
     )
     complete_candidate_evaluation_trace.append(
         {
+            "candidate_id": _skeleton_candidate_id(
+                common_initial_solution
+            ),
             "source": "common_initial_solution",
             "iteration": None,
+            "completion_succeeded": True,
             "complete_objective": float(common_completion.objective),
             "status": "PASS",
+            "exception_type": None,
+            "exception_message": None,
+            "failure_category": None,
         }
     )
     if (
@@ -584,12 +647,15 @@ def _run_exact_epoch(
     )
     selected = exact_ranked[: int(exact_elite_count)]
     proxy_best_completion_failure: str | None = None
+    proxy_best_completion_failure_category: str | None = None
     proxy_best_completion_attempts = 1
     hard_lock_filtered_proxy_best_candidates = 0
+    proxy_best_candidate_id = _native_candidate_id(result.best)
     try:
         proxy_best_completion = complete_china81_route_skeleton(
             _translate_solution(result.best, problem),
             bundle,
+            charge_timing_policy=charge_timing_policy,
         )
         if (
             problem.hard_home_depot_lock
@@ -601,10 +667,15 @@ def _run_exact_epoch(
             )
             complete_candidate_evaluation_trace.append(
                 {
+                    "candidate_id": proxy_best_candidate_id,
                     "source": "proxy_best_solution",
                     "iteration": int(result.num_iterations),
+                    "completion_succeeded": True,
                     "complete_objective": None,
                     "status": "FILTERED_HARD_HOME_DEPOT_LOCK",
+                    "exception_type": None,
+                    "exception_message": None,
+                    "failure_category": None,
                 }
             )
             proxy_best_completion = min(
@@ -614,24 +685,37 @@ def _run_exact_epoch(
         else:
             complete_candidate_evaluation_trace.append(
                 {
+                    "candidate_id": proxy_best_candidate_id,
                     "source": "proxy_best_solution",
                     "iteration": int(result.num_iterations),
+                    "completion_succeeded": True,
                     "complete_objective": float(
                         proxy_best_completion.objective
                     ),
                     "status": "PASS",
+                    "exception_type": None,
+                    "exception_message": None,
+                    "failure_category": None,
                 }
             )
     except (IndexError, KeyError, TypeError, ValueError) as exc:
         proxy_best_completion_failure = str(exc)
+        proxy_best_completion_failure_category = (
+            _completion_failure_category(str(exc))
+        )
         complete_candidate_evaluation_trace.append(
             {
+                "candidate_id": proxy_best_candidate_id,
                 "source": "proxy_best_solution",
                 "iteration": int(result.num_iterations),
+                "completion_succeeded": False,
                 "complete_objective": None,
                 "status": "INFEASIBLE_OR_ERROR",
                 "exception_type": type(exc).__name__,
                 "exception_message": str(exc),
+                "failure_category": (
+                    proxy_best_completion_failure_category
+                ),
             }
         )
         proxy_best_completion = min(
@@ -652,6 +736,65 @@ def _run_exact_epoch(
             "complete-candidate trace does not match the frozen "
             "evaluation-attempt counter"
         )
+    completion_failure_category_counts = dict(
+        sorted(
+            Counter(
+                item["failure_category"]
+                for item in complete_candidate_evaluation_trace
+                if item["failure_category"] is not None
+            ).items()
+        )
+    )
+    improvement_trace = list(
+        getattr(algorithm, "improvement_trace", ())
+    )
+    if no_improvement_stop is not None:
+        timer_audit = list(no_improvement_stop.improvement_audit)
+        if len(timer_audit) != len(improvement_trace):
+            raise RuntimeError(
+                "no-improvement timer audit does not match the proxy "
+                "improvement trace"
+            )
+        for improvement, audit in zip(improvement_trace, timer_audit):
+            if (
+                int(improvement["iteration"]) != int(audit["iteration"])
+                or int(improvement["objective_before"])
+                != int(audit["objective_before"])
+                or int(improvement["objective_after"])
+                != int(audit["objective_after"])
+            ):
+                raise RuntimeError(
+                    "no-improvement timer audit diverged from the proxy "
+                    "improvement trace: "
+                    f"trace={improvement!r}, audit={audit!r}"
+                )
+            improvement.update(
+                {
+                    "timer_reset": bool(audit["timer_reset"]),
+                    "timer_reset_threshold_relative": float(
+                        audit["timer_reset_threshold_relative"]
+                    ),
+                    "timer_observed_improvement_relative": float(
+                        audit["improvement_relative"]
+                    ),
+                }
+            )
+    if (
+        no_improvement_stop is not None
+        and no_improvement_stop.triggered
+    ):
+        hgs_stop_reason = "NO_IMPROVEMENT_WALLCLOCK"
+    elif safety is not None and safety.triggered:
+        hgs_stop_reason = "WALLCLOCK_SAFETY"
+    elif (
+        max_hgs_iterations is not None
+        and int(result.num_iterations) >= int(max_hgs_iterations)
+    ):
+        hgs_stop_reason = "MAX_ITERATIONS"
+    elif max_hgs_iterations is None:
+        hgs_stop_reason = "LEGACY_MAX_RUNTIME"
+    else:
+        hgs_stop_reason = "UNKNOWN_STOP_CRITERION"
     return HgsExactEpoch(
         elite_skeletons=tuple(item[0] for item in selected),
         elite_completions=tuple(item[1] for item in selected),
@@ -665,6 +808,7 @@ def _run_exact_epoch(
                 else float(runtime_seconds)
             ),
             "hgs_stop_mode": stop_mode,
+            "hgs_stop_reason": hgs_stop_reason,
             "max_hgs_iterations": (
                 None
                 if max_hgs_iterations is None
@@ -678,6 +822,61 @@ def _run_exact_epoch(
             "wallclock_safety_triggered": bool(
                 safety is not None and safety.triggered
             ),
+            "wallclock_safety_enabled": safety is not None,
+            "no_improvement_wallclock_seconds": (
+                None
+                if no_improvement_wallclock_seconds is None
+                else float(no_improvement_wallclock_seconds)
+            ),
+            "no_improvement_minimum_relative_improvement": (
+                None
+                if no_improvement_stop is None
+                else float(
+                    no_improvement_stop.minimum_relative_improvement
+                )
+            ),
+            "no_improvement_timer_reset_count": (
+                None
+                if no_improvement_stop is None
+                else int(no_improvement_stop.timer_reset_count)
+            ),
+            "no_improvement_ignored_strict_improvement_count": (
+                None
+                if no_improvement_stop is None
+                else int(
+                    no_improvement_stop.ignored_strict_improvement_count
+                )
+            ),
+            "no_improvement_wallclock_triggered": bool(
+                no_improvement_stop is not None
+                and no_improvement_stop.triggered
+            ),
+            "no_improvement_trigger_iteration": (
+                None
+                if no_improvement_stop is None
+                else no_improvement_stop.trigger_iteration
+            ),
+            "no_improvement_last_improvement_iteration": (
+                None
+                if no_improvement_stop is None
+                else no_improvement_stop.last_improvement_iteration
+            ),
+            "no_improvement_trigger_elapsed_seconds": (
+                None
+                if no_improvement_stop is None
+                else no_improvement_stop.trigger_elapsed_seconds
+            ),
+            "no_improvement_last_improvement_elapsed_seconds": (
+                None
+                if no_improvement_stop is None
+                else no_improvement_stop.last_improvement_elapsed_seconds
+            ),
+            "no_improvement_elapsed_seconds_at_trigger": (
+                None
+                if no_improvement_stop is None
+                else no_improvement_stop.no_improvement_elapsed_seconds
+            ),
+            "charge_timing_policy": charge_timing_policy,
             "warm_elite_count": len(warm_native),
             "warm_input_route_type_counts": (
                 warm_input_route_type_counts
@@ -762,11 +961,24 @@ def _run_exact_epoch(
             "proxy_best_completion_failure": (
                 proxy_best_completion_failure
             ),
+            "proxy_best_completion_failure_category": (
+                proxy_best_completion_failure_category
+            ),
+            "completion_failure_category_counts": (
+                completion_failure_category_counts
+            ),
             "complete_candidate_evaluation_attempts": (
                 complete_candidate_evaluation_attempts
             ),
             "complete_candidate_evaluation_trace": (
                 complete_candidate_evaluation_trace
+            ),
+            "proxy_improvement_trace": improvement_trace,
+            "proxy_improvement_count": len(improvement_trace),
+            "last_proxy_improvement_iteration": (
+                None
+                if not improvement_trace
+                else int(improvement_trace[-1]["iteration"])
             ),
             "hgs_iterations": int(result.num_iterations),
             "active_node_operators": active_node_operators,
@@ -833,6 +1045,7 @@ class _CheckpointGeneticAlgorithm(GeneticAlgorithm):
         )
         self._historical_population: list[NativeSolution] = []
         self._population_snapshot_count = 0
+        self._improvement_trace: list[dict[str, Any]] = []
 
     @property
     def historical_population(self) -> tuple[NativeSolution, ...]:
@@ -841,6 +1054,10 @@ class _CheckpointGeneticAlgorithm(GeneticAlgorithm):
     @property
     def population_snapshot_count(self) -> int:
         return int(self._population_snapshot_count)
+
+    @property
+    def improvement_trace(self) -> tuple[dict[str, Any], ...]:
+        return tuple(dict(item) for item in self._improvement_trace)
 
     def run(
         self,
@@ -857,6 +1074,13 @@ class _CheckpointGeneticAlgorithm(GeneticAlgorithm):
         iterations_without_improvement = 1
         for solution in self._initial_solutions:
             self._pop.add(solution, self._cost_evaluator)
+        use_external_observations = getattr(
+            stop,
+            "use_external_improvement_observations",
+            None,
+        )
+        if use_external_observations is not None:
+            use_external_observations()
         while not stop(self._cost_evaluator.cost(self._best)):
             iterations += 1
             if (
@@ -882,6 +1106,30 @@ class _CheckpointGeneticAlgorithm(GeneticAlgorithm):
             self._improve_offspring(offspring)
             new_best = self._cost_evaluator.cost(self._best)
             if new_best < current_best:
+                self._improvement_trace.append(
+                    {
+                        "iteration": int(iterations),
+                        "objective_before": int(current_best),
+                        "objective_after": int(new_best),
+                        "improvement_absolute": int(
+                            current_best - new_best
+                        ),
+                        "elapsed_seconds": float(
+                            perf_counter() - started
+                        ),
+                    }
+                )
+                observe_improvement = getattr(
+                    stop,
+                    "observe_improvement",
+                    None,
+                )
+                if observe_improvement is not None:
+                    observe_improvement(
+                        current_best,
+                        new_best,
+                        iterations,
+                    )
                 iterations_without_improvement = 1
             else:
                 iterations_without_improvement += 1
@@ -959,3 +1207,156 @@ class _AuditedWallclockSafety:
     def __call__(self, best_cost: float) -> bool:
         self.triggered = bool(self._criterion(best_cost))
         return self.triggered
+
+
+class _AuditedNoImprovementWallclock:
+    """Stop when no threshold-sized improvement resets a wallclock window."""
+
+    def __init__(
+        self,
+        maximum_no_improvement_seconds: float,
+        *,
+        minimum_relative_improvement: float = 0.0,
+        clock: Callable[[], float] = perf_counter,
+    ) -> None:
+        if maximum_no_improvement_seconds <= 0.0:
+            raise ValueError(
+                "maximum no-improvement seconds must be positive"
+            )
+        self.maximum_no_improvement_seconds = float(
+            maximum_no_improvement_seconds
+        )
+        if not 0.0 <= minimum_relative_improvement < 1.0:
+            raise ValueError(
+                "minimum relative improvement must be in [0, 1)"
+            )
+        self.minimum_relative_improvement = float(
+            minimum_relative_improvement
+        )
+        self._clock = clock
+        self._started_at: float | None = None
+        self._last_improvement_at: float | None = None
+        self._best_cost: float | None = None
+        self._completed_iterations = 0
+        self.triggered = False
+        self.trigger_iteration: int | None = None
+        self.last_improvement_iteration: int | None = None
+        self.trigger_elapsed_seconds: float | None = None
+        self.last_improvement_elapsed_seconds: float | None = None
+        self.no_improvement_elapsed_seconds: float | None = None
+        self.timer_reset_count = 0
+        self.ignored_strict_improvement_count = 0
+        self._improvement_audit: list[dict[str, Any]] = []
+        self._external_improvement_observations = False
+
+    @property
+    def improvement_audit(self) -> tuple[dict[str, Any], ...]:
+        return tuple(dict(item) for item in self._improvement_audit)
+
+    def use_external_improvement_observations(self) -> None:
+        self._external_improvement_observations = True
+
+    def observe_improvement(
+        self,
+        objective_before: int | float,
+        objective_after: int | float,
+        iteration: int,
+    ) -> None:
+        now = float(self._clock())
+        if self._started_at is None or self._last_improvement_at is None:
+            raise RuntimeError(
+                "no-improvement wallclock was not initialized"
+            )
+        if not objective_after < objective_before:
+            raise ValueError("observed improvement must be strict")
+        self._record_improvement(
+            objective_before=objective_before,
+            objective_after=objective_after,
+            iteration=int(iteration),
+            now=now,
+        )
+
+    def _record_improvement(
+        self,
+        *,
+        objective_before: int | float,
+        objective_after: int | float,
+        iteration: int,
+        now: float,
+    ) -> None:
+        if self._started_at is None:
+            raise RuntimeError(
+                "no-improvement wallclock was not initialized"
+            )
+        improvement_absolute = objective_before - objective_after
+        improvement_relative = (
+            0.0
+            if objective_before == 0.0
+            else improvement_absolute / abs(objective_before)
+        )
+        timer_reset = (
+            improvement_relative >= self.minimum_relative_improvement
+        )
+        self._best_cost = objective_after
+        if timer_reset:
+            self._last_improvement_at = now
+            self.last_improvement_iteration = int(iteration)
+            self.last_improvement_elapsed_seconds = float(
+                now - self._started_at
+            )
+            self.timer_reset_count += 1
+        else:
+            self.ignored_strict_improvement_count += 1
+        self._improvement_audit.append(
+            {
+                "iteration": int(iteration),
+                "objective_before": objective_before,
+                "objective_after": objective_after,
+                "improvement_absolute": improvement_absolute,
+                "improvement_relative": improvement_relative,
+                "timer_reset_threshold_relative": (
+                    self.minimum_relative_improvement
+                ),
+                "timer_reset": timer_reset,
+                "elapsed_seconds": float(now - self._started_at),
+            }
+        )
+
+    def __call__(self, best_cost: float) -> bool:
+        now = float(self._clock())
+        if self._started_at is None:
+            self._started_at = now
+            self._last_improvement_at = now
+            self._best_cost = float(best_cost)
+            self.last_improvement_iteration = 0
+            self.last_improvement_elapsed_seconds = 0.0
+        elif (
+            not self._external_improvement_observations
+            and (
+                self._best_cost is None
+                or float(best_cost) < self._best_cost
+            )
+        ):
+            objective_before = float(self._best_cost)
+            objective_after = float(best_cost)
+            self._record_improvement(
+                objective_before=objective_before,
+                objective_after=objective_after,
+                iteration=int(self._completed_iterations),
+                now=now,
+            )
+
+        if self._last_improvement_at is None or self._started_at is None:
+            raise RuntimeError(
+                "no-improvement wallclock was not initialized"
+            )
+        no_improvement_elapsed = float(now - self._last_improvement_at)
+        if no_improvement_elapsed >= self.maximum_no_improvement_seconds:
+            self.triggered = True
+            self.trigger_iteration = int(self._completed_iterations)
+            self.trigger_elapsed_seconds = float(now - self._started_at)
+            self.no_improvement_elapsed_seconds = no_improvement_elapsed
+            return True
+
+        self._completed_iterations += 1
+        return False

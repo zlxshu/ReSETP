@@ -1,0 +1,82 @@
+{
+  "schema": "resetp.t17-charge-timing-policy.v1",
+  "task": "T17",
+  "created_at": "2026-08-05T16:08:41+08:00",
+  "repository": "/Volumes/移动硬盘（512G）/ReSETP",
+  "git_head": "850cea5f3d3e11a21e073a7c1a45477a65a7a66f",
+  "paper_claim_allowed": false,
+  "status": "PASS_REGRESSION_GATE",
+  "parameter": {
+    "name": "charge_timing_policy",
+    "default": "carbon_min",
+    "allowed_values": [
+      "asap",
+      "carbon_min",
+      "cost_min",
+      "cost_plus_carbon"
+    ]
+  },
+  "environment": {
+    "PYTHONHASHSEED": "0",
+    "PYTHONPATH": "solver/src:models/src",
+    "python_executable": "/opt/anaconda3/bin/python3.13",
+    "python": "3.13.9",
+    "numpy": "2.3.5",
+    "scipy": "1.16.3",
+    "pytest": "8.4.2",
+    "pyvrp": "importable; module has no __version__"
+  },
+  "targeted_regression": {
+    "passed": 7,
+    "failed": 0,
+    "elapsed_seconds": 3.40,
+    "positive_witnesses_passed": 3,
+    "positive_overlap_seconds": {
+      "C_seed2_budget1000": 6563.0712245500035,
+      "C_seed1_budget100": 6365.9078330282355,
+      "C_seed3_budget1000": 6239.742124296223
+    },
+    "t10_legal_passed": 18,
+    "t10_legal_checked": 18,
+    "initial_invocation_error": {
+      "tests_run": 0,
+      "detail": "Three test_search node ids used nonexistent class SearchTests; corrected to SearchGateTests before the formal targeted run."
+    }
+  },
+  "full_regression": {
+    "command": "PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src /opt/anaconda3/bin/python3.13 -m pytest -q -p no:cacheprovider solver/tests",
+    "passed": 906,
+    "skipped": 1,
+    "failed": 6,
+    "elapsed_seconds": 426.53,
+    "matches_t15_counts": true,
+    "failed_node_ids": [
+      "solver/tests/test_e2_80k_robustness_gate.py::test_protected_semantics_and_goeke80_parameters_match_frozen_commit",
+      "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables",
+      "solver/tests/test_e5_ablation.py::E5ChargingAblationTests::test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts",
+      "solver/tests/test_ev_heavy_findability_gate.py::EvHeavyFindabilityGateTest::test_winner_vehicle_type_swap_uses_instance_fleet_caps",
+      "solver/tests/test_paper_evidence_boundaries.py::test_current_e2b_e3_e4_and_e6_identity_matrices_are_exact",
+      "solver/tests/test_strong_bridge_backend_alignment.py::StrongBridgeBackendAlignmentTests::test_decision_gate_reports_backend_only_and_main_local_search_separately"
+    ]
+  },
+  "minimal_fixture": {
+    "energy_kwh": 10.0,
+    "occupancy_minutes": 30.0,
+    "window_seconds": [0.0, 5400.0],
+    "carbon_price": 5.0,
+    "station_results_identical_for": ["D0", "F0"],
+    "results": {
+      "asap": {"start_second": 0.0, "electricity_cost": 10.0, "emissions_kg": 5.0},
+      "cost_min": {"start_second": 1800.0, "electricity_cost": 1.0, "emissions_kg": 10.0},
+      "cost_plus_carbon": {"start_second": 5400.0, "electricity_cost": 5.0, "emissions_kg": 2.0},
+      "carbon_min": {"start_second": 3600.0, "electricity_cost": 20.0, "emissions_kg": 1.0}
+    },
+    "zero_carbon_price": {
+      "cost_min_start_second": 1800.0,
+      "cost_plus_carbon_start_second": 1800.0,
+      "electricity_cost": 1.0,
+      "emissions_kg": 10.0,
+      "exactly_equal": true
+    }
+  }
+}

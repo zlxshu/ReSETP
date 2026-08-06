@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/run_scout_d.py", line 1370, in <module>
+    main()
+    ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/run_scout_d.py", line 1359, in main
+    run_nearest(int(args.workers))
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/scout_depot_ownership_20260803/run_scout_d.py", line 987, in run_nearest
+    with ProcessPoolExecutor(max_workers=workers, mp_context=context) as pool:
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/process.py", line 651, in __init__
+    _check_system_limits()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/process.py", line 594, in _check_system_limits
+    nsems_max = os.sysconf("SC_SEM_NSEMS_MAX")
+PermissionError: [Errno 1] Operation not permitted

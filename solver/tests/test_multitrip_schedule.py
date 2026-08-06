@@ -10,12 +10,18 @@ from setp_solver.prices import PriceParameters
 from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import enumerate_feasible_insertions
 from setp_solver.search.evaluation import EvaluationContext
-from setp_solver.search.e3_multitrip_runtime import hard_violations as e3_hard_violations, prepare_and_score_reference
+from setp_solver.search.e3_multitrip_runtime import (
+    complete_prepared_solution_violations,
+    hard_violations as e3_hard_violations,
+    prepare_and_score_reference,
+)
 from setp_solver.search.multitrip_schedule import (
     CHARGE_MODE_FULL,
     CHARGE_MODE_ON_DEMAND,
     CHARGE_MODE_PARTIAL,
     CONTRACT_ID,
+    ContinuousSOCContract,
+    E4_CONTINUOUS_SOC_CONTRACT_ID,
     STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
     STATIC_PREHORIZON_SECONDS,
     build_multitrip_certificate,
@@ -26,6 +32,7 @@ from setp_solver.search.multitrip_schedule import (
     validate_multitrip_certificate,
 )
 from setp_solver.solution import ChargingAction, Route, Solution
+from setp_solver.check import BATTERY, check_solution
 
 
 def _instance() -> Instance:
@@ -151,6 +158,119 @@ def test_between_trip_charge_is_exported_to_cost_and_carbon_ledger() -> None:
     assert sum(action.energy_kwh for action in actions) == pytest.approx(
         sum(float(trip.charge_energy_kwh or 0.0) for trip in certificate.trips)
     )
+
+
+def test_e4_continuous_soc_contract_retains_terminal_charge_in_trip_ledger() -> None:
+    route = Route("EV_A", "ev", "D0", ["D0", "C1", "D0"])
+    instance = _instance()
+    prices = PriceParameters(
+        B_battery_kwh=10.0,
+        initial_ev_battery_kwh=0.0,
+        depot_charge_power_kw=22.0,
+    )
+    drive = route_timing(route, instance, prices).drive_energy_kwh
+    start_energy = 4.0 - drive
+    duration = drive / prices.depot_charge_power_kw * 3_600.0
+    return_second = route_timing(route, instance, prices).return_second
+    next_departure = (
+        route_timing(route, instance, prices).earliest_departure_second + 86_400.0
+    )
+    saved_start = return_second
+    terminal = {
+        "vehicle_id": route.vehicle_id,
+        "station_id": route.home_depot_id,
+        "energy_kwh": drive,
+        "start_soc": 0.20 + start_energy / 10.0,
+        "end_soc": 0.60,
+        "occupancy_minutes": duration / 60.0,
+        "start_second_absolute": saved_start,
+        "end_second_absolute": saved_start + duration,
+        "latest_second_absolute": next_departure - duration,
+        "day_offset": 0,
+        "electricity_cost_cny": 1.25,
+        "emissions_kg": 2.5,
+    }
+    contract = ContinuousSOCContract(
+        E4_CONTINUOUS_SOC_CONTRACT_ID,
+        0.60,
+        0.20,
+        0.80,
+        0.60,
+        (terminal,),
+    )
+
+    prepared, certificate = prepare_multitrip_solution(
+        Solution(routes=[route]),
+        instance,
+        prices,
+        continuous_soc_contract=contract,
+    )
+
+    trip = certificate.trips[0]
+    entry = certificate.depot_charge_ledger[0]
+    assert prepared.charging_actions == []
+    assert trip.start_battery_kwh == pytest.approx(4.0)
+    assert trip.end_battery_kwh == pytest.approx(start_energy)
+    assert entry.energy_kwh == pytest.approx(drive)
+    assert entry.after_route_id == prepared.routes[0].vehicle_id
+    assert entry.relation == "between_trip_next_day_cycle"
+    assert entry.start_battery_kwh == pytest.approx(start_energy)
+    assert entry.end_battery_kwh == pytest.approx(4.0)
+
+    broken = replace(
+        contract,
+        terminal_charges=({**terminal, "energy_kwh": drive + 0.1},),
+    )
+    with pytest.raises(ValueError, match="terminal energy"):
+        prepare_multitrip_solution(
+            Solution(routes=[route]),
+            instance,
+            prices,
+            continuous_soc_contract=broken,
+        )
+
+
+def test_complete_multitrip_checker_replaces_only_certified_residual_battery() -> None:
+    from setp_solver.charging_curve import NL90_MILD
+
+    source = _instance()
+    nodes = [
+        source.nodes[0],
+        source.nodes[2],
+        replace(source.nodes[3], ready_time=1_380.0, due_time=4_380.0),
+    ]
+    matrix = [[0.0 if i == j else 1_000.0 for j in range(3)] for i in range(3)]
+    instance = Instance(nodes, matrix, num_cv=2, num_ev=2)
+    routes = [
+        Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
+        Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
+    ]
+    probe = PriceParameters(B_battery_kwh=280.0)
+    drive = route_timing(routes[0], instance, probe).drive_energy_kwh
+    prices = PriceParameters(
+        B_battery_kwh=drive * 1.05,
+        initial_ev_battery_kwh=0.0,
+        depot_charge_power_kw=22.0,
+        charging_curve_id=NL90_MILD.curve_id,
+        charging_soc_breakpoints=NL90_MILD.soc_breakpoints,
+        charging_relative_powers=NL90_MILD.relative_powers,
+    )
+    prepared, certificate = prepare_multitrip_solution(
+        Solution(routes=routes),
+        instance,
+        prices,
+    )
+    static_battery = [
+        item for item in check_solution(prepared, instance, prices)
+        if item.type == BATTERY
+    ]
+    assert static_battery
+    assert complete_prepared_solution_violations(
+        prepared,
+        certificate,
+        instance,
+        prices,
+    ) == []
 
 
 def _two_trip_solution_and_prices() -> tuple[Solution, PriceParameters]:
