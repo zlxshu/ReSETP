@@ -6,6 +6,12 @@ v3 2026-08-07: expose frozen input identities used by the formal runner.
 """
 
 from .charging import ChargingRepairPolicy
+from .dynamic import (
+    DutyDynamicState,
+    PreparedDynamicCandidate,
+    future_individual_from_cut,
+    prepare_dynamic_candidate,
+)
 from .evaluation import FrozenMappingIdentity, mapping_sha256
 from .model import (
     DutyChargingSession,
@@ -27,6 +33,7 @@ from .runner import (
 __all__ = [
     "ChargingRepairPolicy",
     "DutyChargingSession",
+    "DutyDynamicState",
     "DutyHGSRunProvenance",
     "DutyHGSRunResult",
     "DutyHGSSearchParameters",
@@ -36,8 +43,11 @@ __all__ = [
     "FrozenMappingIdentity",
     "FrozenPopulationIdentity",
     "PhysicalVehicleDuty",
+    "PreparedDynamicCandidate",
+    "future_individual_from_cut",
     "mapping_sha256",
     "population_sha256",
+    "prepare_dynamic_candidate",
     "run_duty_hgs",
     "search_configuration_sha256",
 ]

@@ -72,6 +72,14 @@ def repair_changed_duties(
             "charging repair and full evaluation use different depot windows"
         )
 
+    if context.dynamic_state is not None:
+        if any(duty.charging_sessions for duty in candidate.duties):
+            raise ValueError(
+                "dynamic future charging must be generated from the cut state"
+            )
+        assert_locks_preserved(reference, candidate)
+        return candidate
+
     candidate_by_id = {
         duty.physical_vehicle_id: duty for duty in candidate.duties
     }

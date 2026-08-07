@@ -301,9 +301,40 @@ def test_prepare_multitrip_solution_replaces_route_level_recharge_with_gap_ledge
 
 def test_prepare_multitrip_solution_is_idempotent() -> None:
     solution, prices = _two_trip_solution_and_prices()
-    first, _ = prepare_multitrip_solution(solution, _instance(), prices)
-    second, _ = prepare_multitrip_solution(first, _instance(), prices)
+    first, first_certificate = prepare_multitrip_solution(
+        solution,
+        _instance(),
+        prices,
+    )
+    second, second_certificate = prepare_multitrip_solution(
+        first,
+        _instance(),
+        prices,
+        depot_charge_window_mode="full_gap",
+    )
     assert second == first
+    assert first_certificate.first_trip_charge_day_offset == -1
+    assert second_certificate.first_trip_charge_day_offset == -1
+
+
+def test_repeated_preparation_preserves_same_day_first_trip_charging() -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    first, first_certificate = prepare_multitrip_solution(
+        solution,
+        _instance(),
+        prices,
+        depot_charge_window_mode="same_day_predeparture",
+    )
+    second, second_certificate = prepare_multitrip_solution(
+        first,
+        _instance(),
+        prices,
+        depot_charge_window_mode="full_gap",
+    )
+
+    assert second == first
+    assert first_certificate.first_trip_charge_day_offset == 0
+    assert second_certificate.first_trip_charge_day_offset == 0
 
 
 def test_prepare_multitrip_solution_accounts_first_trip_precharge_from_zero() -> None:

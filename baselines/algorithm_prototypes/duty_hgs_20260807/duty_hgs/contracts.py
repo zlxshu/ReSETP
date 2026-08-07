@@ -101,8 +101,10 @@ class SearchAccounting:
         self.accepted_actions[channel] += 1
 
     def record_cache_seed(self, duty_slice_count: int) -> None:
-        self.cache_seedings += 1
-        self.duty_slice_preparations += int(duty_slice_count)
+        count = int(duty_slice_count)
+        if count > 0:
+            self.cache_seedings += 1
+            self.duty_slice_preparations += count
 
     def record_population_admission(self, *, inserted: bool) -> None:
         """Record retention without recounting the candidate's evaluation work."""

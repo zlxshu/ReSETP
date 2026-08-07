@@ -9,6 +9,9 @@ education so a Solution round trip cannot silently erase dynamic commitments.
 
 v3 2026-08-07: refuse an ambiguous public-station decode when customer
 identity was not supplied by the caller.
+
+v4 2026-08-07: retain whether a physical asset already has a committed
+dynamic history even when that history is kept outside the future candidate.
 """
 
 from __future__ import annotations
@@ -109,6 +112,7 @@ class PhysicalVehicleDuty:
     home_depot_id: str
     trips: tuple[DutyTrip, ...]
     charging_sessions: tuple[DutyChargingSession, ...] = ()
+    has_dynamic_commitment: bool = False
 
     def __post_init__(self) -> None:
         vehicle_type = str(self.vehicle_type).lower()
@@ -118,6 +122,11 @@ class PhysicalVehicleDuty:
             self,
             "charging_sessions",
             tuple(self.charging_sessions),
+        )
+        object.__setattr__(
+            self,
+            "has_dynamic_commitment",
+            bool(self.has_dynamic_commitment),
         )
         expected_prefix = "EV_" if vehicle_type == "ev" else "CV_"
         if vehicle_type not in {"cv", "ev"}:
@@ -401,11 +410,20 @@ def assert_locks_preserved(
     for duty_id, reference_duty in reference_duties.items():
         candidate_duty = candidate_duties.get(duty_id)
         if candidate_duty is None:
+            if reference_duty.has_dynamic_commitment:
+                raise ValueError(f"candidate removed committed duty {duty_id!r}")
             if any(trip.locked_customer_prefix for trip in reference_duty.trips):
                 raise ValueError(f"candidate removed locked duty {duty_id!r}")
             if any(session.locked for session in reference_duty.charging_sessions):
                 raise ValueError(f"candidate removed locked charging duty {duty_id!r}")
             continue
+        if (
+            candidate_duty.has_dynamic_commitment
+            != reference_duty.has_dynamic_commitment
+        ):
+            raise ValueError(
+                f"candidate changed dynamic commitment on {duty_id!r}"
+            )
         candidate_trips = {
             int(trip.trip_index): trip for trip in candidate_duty.trips
         }

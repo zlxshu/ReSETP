@@ -31,7 +31,6 @@ from ..cost import (
     _price,
     best_charging_action_start,
     carbon_profile_row_for_slot,
-    charging_action_emissions_kg,
     charging_curve_for_action,
     charging_slot_breakdown,
     ev_instance_arc_energy_kwh,
@@ -1940,6 +1939,7 @@ def prepare_multitrip_solution(
             continue
         prepared_actions.append(replace(action, vehicle_id=id_map[action.vehicle_id]))
 
+    prepared_first_trip_charge_day_offsets: set[int] = set()
     for trip in certificate.trips:
         if trip.vehicle_type != "ev" or trip.trip_index != 1:
             continue
@@ -1974,6 +1974,7 @@ def prepare_multitrip_solution(
         )
         if depot_charge_window_mode == "full_gap" and old_action is not None:
             first_trip_charge_day_offset = int(old_action.charge_day_offset)
+        prepared_first_trip_charge_day_offsets.add(first_trip_charge_day_offset)
         prepared_actions.append(
             ChargingAction(
                 vehicle_id=id_map[trip.route_id],
@@ -2004,10 +2005,19 @@ def prepare_multitrip_solution(
         )
         for entry in certificate.depot_charge_ledger
     )
+    if len(prepared_first_trip_charge_day_offsets) > 1:
+        raise ValueError(
+            f"{CONTRACT_ID}: first-trip depot charges use inconsistent day offsets"
+        )
+    prepared_first_trip_charge_day_offset = next(
+        iter(prepared_first_trip_charge_day_offsets),
+        certificate.first_trip_charge_day_offset,
+    )
     remapped_certificate = replace(
         certificate,
         trips=remapped_trips,
         depot_charge_ledger=remapped_ledger,
+        first_trip_charge_day_offset=prepared_first_trip_charge_day_offset,
     )
     prepared_actions.extend(certificate_charging_actions(remapped_certificate))
     prepared_actions.sort(
@@ -2056,6 +2066,7 @@ def _certificate_from_prepared_solution(
         by_vehicle.setdefault(physical_vehicle_id(route.vehicle_id), []).append(route)
     scheduled: list[ScheduledTrip] = []
     counts = {"cv": 0, "ev": 0}
+    first_trip_charge_day_offsets: set[int] = set()
     for physical_id, chain_routes in sorted(by_vehicle.items()):
         ordered = sorted(chain_routes, key=lambda route: int(route.vehicle_id.rsplit("#T", 1)[1]))
         vehicle_type = ordered[0].vehicle_type.lower()
@@ -2102,6 +2113,11 @@ def _certificate_from_prepared_solution(
                     - timing.drive_energy_kwh
                 )
                 if depot_energy > _TOL:
+                    if position == 0:
+                        first_trip_charge_day_offsets.update(
+                            int(action.charge_day_offset)
+                            for action in depot_actions
+                        )
                     if require_explicit and len(depot_actions) != 1:
                         raise ValueError(
                             f"{NONLINEAR_CONTRACT_ID}: prepared route "
@@ -2150,6 +2166,15 @@ def _certificate_from_prepared_solution(
                 )
             previous_end = end_battery
         scheduled.extend(chain)
+    if len(first_trip_charge_day_offsets) > 1:
+        raise ValueError(
+            f"{CONTRACT_ID}: prepared first-trip depot charges use "
+            "inconsistent day offsets"
+        )
+    first_trip_charge_day_offset = next(
+        iter(first_trip_charge_day_offsets),
+        STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+    )
     certificate = MultiTripCertificate(
         (
             CONTRACT_ID
@@ -2161,7 +2186,7 @@ def _certificate_from_prepared_solution(
         tuple(scheduled),
         CHARGE_MODE_ON_DEMAND,
         power,
-        STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+        first_trip_charge_day_offset,
         charging_curve.curve_id,
         charging_curve.parameter_sha256,
         battery_cap,

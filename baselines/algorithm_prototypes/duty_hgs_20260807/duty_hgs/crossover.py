@@ -197,6 +197,10 @@ def _assert_parent_locks_compatible(
     }
     for duty_id, left in first_by_id.items():
         right = second_by_id[duty_id]
+        if left.has_dynamic_commitment != right.has_dynamic_commitment:
+            raise ValueError(
+                f"crossover parents disagree on dynamic commitment for {duty_id}"
+            )
         left_prefixes = tuple(
             (trip.trip_index, trip.locked_customer_prefix)
             for trip in left.trips

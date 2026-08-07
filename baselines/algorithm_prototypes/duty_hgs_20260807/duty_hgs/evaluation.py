@@ -14,6 +14,9 @@ slice preparation/candidate assembly separately from full truth evaluation.
 v4 2026-08-07: compare explicit charging decisions with the evaluator's
 existing numerical equivalence tolerance so IEEE-754 round-off is not
 misreported as a hidden repair; identities and material changes remain exact.
+
+v5 2026-08-07: evaluate rolling-horizon candidates through the certified
+exact-asset dynamic adapter and score the merged full-day execution history.
 """
 
 from __future__ import annotations
@@ -49,6 +52,7 @@ from setp_solver.search.multitrip_schedule import (
 )
 from setp_solver.solution import ChargingAction, Route, Solution
 
+from .dynamic import DutyDynamicState, prepare_dynamic_candidate
 from .model import DutyIndividual, PhysicalVehicleDuty
 
 _EQUIVALENCE_ABS_TOL = 1.0e-9
@@ -85,6 +89,7 @@ class DutyEvaluationContext:
     carbon_quota_kg: float
     depot_charge_window_mode: str
     incremental_full_truth_sentinel_enabled: bool = True
+    dynamic_state: DutyDynamicState | None = None
 
     def __post_init__(self) -> None:
         depots = {
@@ -127,6 +132,11 @@ class DutyEvaluationContext:
             float(self.carbon_quota_kg)
         ):
             raise ValueError("carbon_quota_kg must be finite or infinite")
+        if self.dynamic_state is not None:
+            _validate_dynamic_state_customers(
+                self.dynamic_state,
+                self.bundle,
+            )
 
 
 @dataclass(frozen=True)
@@ -170,6 +180,46 @@ def mapping_sha256(values: Mapping[str, float]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _validate_dynamic_state_customers(
+    state: DutyDynamicState,
+    bundle: China81Bundle,
+) -> None:
+    all_customers = {
+        node.node_id
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "c"
+    }
+    appearances = dict(state.customer_appearance_second)
+    if set(appearances) != all_customers:
+        raise ValueError(
+            "dynamic appearance registry must cover every active customer"
+        )
+    if any(
+        float(second) > float(state.cut.trigger_second) + 1.0e-9
+        for second in appearances.values()
+    ):
+        raise ValueError(
+            "dynamic evaluation cannot see a customer before its appearance"
+        )
+    committed_route_ids = {
+        *state.cut.completed_route_ids,
+        *state.cut.in_progress_route_ids,
+    }
+    committed_customers = {
+        node_id
+        for route in state.source_solution.routes
+        if route.vehicle_id in committed_route_ids
+        for node_id in route.node_sequence[1:-1]
+        if node_id in all_customers
+    }
+    expected_future = all_customers.difference(committed_customers)
+    if set(state.future_customer_ids) != expected_future:
+        raise ValueError(
+            "dynamic future customers must be exactly the customers outside "
+            "the committed execution history"
+        )
+
+
 class DutyFullEvaluator:
     """Evaluate a Duty individual without allowing hidden vehicle repacking."""
 
@@ -190,14 +240,24 @@ class DutyFullEvaluator:
         source: str,
     ) -> FullEvaluation:
         self._validate_customer_partition(individual)
-        decoded = individual.to_solution()
-        prepared, certificate = prepare_multitrip_solution(
-            decoded,
-            self.context.bundle.instance,
-            self.context.bundle.prices,
-            depot_charge_window_mode=self.context.depot_charge_window_mode,
-        )
-        _assert_no_hidden_repair(decoded, prepared)
+        dynamic_state = self.context.dynamic_state
+        if dynamic_state is None:
+            decoded = individual.to_solution()
+            prepared, certificate = prepare_multitrip_solution(
+                decoded,
+                self.context.bundle.instance,
+                self.context.bundle.prices,
+                depot_charge_window_mode=self.context.depot_charge_window_mode,
+            )
+            _assert_no_hidden_repair(decoded, prepared)
+        else:
+            dynamic = prepare_dynamic_candidate(
+                individual,
+                dynamic_state,
+                self.context.bundle,
+            )
+            prepared = dynamic.full_execution_solution
+            certificate = dynamic.future_certificate
         annotated = annotate_cross_site_services(
             prepared,
             self.context.bundle.customer_home_depot,
@@ -218,6 +278,10 @@ class DutyFullEvaluator:
         )
 
     def prepare_duty_slice(self, duty: PhysicalVehicleDuty) -> _DutySlice:
+        if self.context.dynamic_state is not None:
+            raise ValueError(
+                "dynamic candidates require complete exact-asset evaluation"
+            )
         individual = DutyIndividual(duties=(duty,), source="incremental-slice")
         decoded = individual.to_solution()
         prepared, _ = prepare_multitrip_solution(
@@ -322,11 +386,16 @@ class DutyFullEvaluator:
         )
 
     def _validate_customer_partition(self, individual: DutyIndividual) -> None:
-        expected = {
-            node.node_id
-            for node in self.context.bundle.instance.nodes
-            if node.node_type.lower() == "c"
-        }
+        dynamic_state = self.context.dynamic_state
+        expected = (
+            {
+                node.node_id
+                for node in self.context.bundle.instance.nodes
+                if node.node_type.lower() == "c"
+            }
+            if dynamic_state is None
+            else set(dynamic_state.future_customer_ids)
+        )
         served = {
             customer
             for duty in individual.duties
@@ -353,6 +422,10 @@ class DutyIncrementalEvaluator:
 
     def seed(self, individual: DutyIndividual) -> int:
         self.full_evaluator._validate_customer_partition(individual)
+        if self.full_evaluator.context.dynamic_state is not None:
+            self._slices = {}
+            self._individual_fingerprint = individual.fingerprint
+            return 0
         self._slices = {
             duty.physical_vehicle_id: self.full_evaluator.prepare_duty_slice(duty)
             for duty in individual.duties
@@ -377,6 +450,14 @@ class DutyIncrementalEvaluator:
                 f"actual={sorted(actual_changed)}, declared={sorted(changed_duty_ids)}"
             )
         self.full_evaluator._validate_customer_partition(candidate)
+        if self.full_evaluator.context.dynamic_state is not None:
+            result = self.full_evaluator._evaluate_full(
+                candidate,
+                source="dynamic-full",
+            )
+            if commit:
+                self._individual_fingerprint = candidate.fingerprint
+            return result
         next_slices: dict[str, _DutySlice] = {}
         recomputed = 0
         reused = 0

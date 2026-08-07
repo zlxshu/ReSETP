@@ -580,7 +580,9 @@ def _unlocked_task_chain(duty: PhysicalVehicleDuty) -> tuple[DutyTrip, ...]:
 
 
 def _duty_has_locks(duty: PhysicalVehicleDuty) -> bool:
-    return any(trip.locked_customer_prefix for trip in duty.trips) or any(
+    return duty.has_dynamic_commitment or any(
+        trip.locked_customer_prefix for trip in duty.trips
+    ) or any(
         session.locked for session in duty.charging_sessions
     )
 
