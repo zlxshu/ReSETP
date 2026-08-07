@@ -2,11 +2,11 @@
 """Evaluate the geometrically promising cross-depot moves on one China81 input.
 
 The probe is deliberately narrower than a full education round.  It reads the
-already saved opportunity table, keeps only customers whose best alternate
-depot has a shorter direct round trip than their owner depot, and sends every
-existing cross-depot move involving those customers through the same charging
-repair, incremental evaluator, and full-truth sentinel used by Duty education.
-It does not apply a move, rank instances, or select a formal experiment case.
+already saved geometric screen, keeps only customers whose selected distance
+delta is negative, and sends every existing cross-depot move involving those
+customers through the same charging repair, incremental evaluator, and
+full-truth sentinel used by Duty education.  It does not apply a move, rank
+instances, or select a formal experiment case.
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ from run_real_input_technical_trial import (
 FIELDS = (
     "action_id",
     "focus_customer_ids",
-    "focus_direct_roundtrip_advantage_km",
+    "focus_distance_advantage_km",
     "status",
     "evaluated",
     "complete_model_feasible",
@@ -65,24 +65,41 @@ FIELDS = (
 )
 
 
+FOCUS_MODES = {
+    "direct_roundtrip": {
+        "column": "best_alternate_minus_owner_roundtrip_km",
+        "description": "alternate-depot direct round trip",
+    },
+    "route_marginal_capacity": {
+        "column": "best_capacity_relocate_net_delta_km",
+        "description": "capacity-feasible route-marginal relocation",
+    },
+}
+
+
 def _focus_customers(
     opportunity_csv: Path,
     instance_id: str,
+    focus_mode: str = "direct_roundtrip",
 ) -> dict[str, float]:
+    try:
+        mode = FOCUS_MODES[focus_mode]
+    except KeyError as exc:
+        raise ValueError(f"unknown focus mode: {focus_mode}") from exc
+    column = mode["column"]
     with opportunity_csv.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
     result = {
-        row["customer_id"]: float(
-            row["best_alternate_minus_owner_roundtrip_km"]
-        )
+        row["customer_id"]: float(row[column])
         for row in rows
         if row["instance_id"] == instance_id
-        and float(row["best_alternate_minus_owner_roundtrip_km"]) < 0.0
+        and row.get(column, "") not in (None, "")
+        and float(row[column]) < 0.0
     }
     if not result:
         raise ValueError(
-            f"{instance_id} has no customer with a shorter alternate-depot "
-            "direct round trip in the saved opportunity table"
+            f"{instance_id} has no customer with a negative {column} "
+            "in the saved geometric screen"
         )
     return result
 
@@ -134,19 +151,33 @@ def main() -> int:
         type=Path,
         default=None,
     )
+    parser.add_argument(
+        "--focus-mode",
+        choices=tuple(FOCUS_MODES),
+        default="direct_roundtrip",
+    )
     parser.add_argument("--stderr-capture-state", default="caller_not_declared")
     args = parser.parse_args()
 
     repo = Path(__file__).resolve().parents[3]
     output = args.output_dir.resolve()
-    opportunity_csv = (
-        repo
-        / "baselines/algorithm_prototypes/duty_hgs_20260807/"
-        "unified_instance_scout/opportunity_27_20260807/"
-        "customer_opportunities.csv"
-        if args.opportunity_csv is None
-        else args.opportunity_csv.resolve()
-    )
+    if args.opportunity_csv is None:
+        relative_csv = (
+            "unified_instance_scout/opportunity_27_20260807/"
+            "customer_opportunities.csv"
+            if args.focus_mode == "direct_roundtrip"
+            else "unified_instance_scout/marginal_27_20260807/"
+            "customer_marginals.csv"
+        )
+        opportunity_csv = (
+            repo
+            / "baselines/algorithm_prototypes/duty_hgs_20260807"
+            / relative_csv
+        )
+    else:
+        opportunity_csv = args.opportunity_csv.resolve()
+    focus_description = FOCUS_MODES[args.focus_mode]["description"]
+    focus_column = FOCUS_MODES[args.focus_mode]["column"]
     provenance = _source_provenance(
         repo,
         output_path=output,
@@ -162,17 +193,22 @@ def main() -> int:
         {
             "status": "RUNNING",
             "purpose": (
-                "one-step cross-depot focus probe on customers whose saved "
-                "alternate-depot direct round trip is shorter"
+                "one-step cross-depot focus probe on customers with a "
+                f"negative saved {focus_description} distance delta"
             ),
             "instance_id": args.instance_id,
             "code_provenance": provenance,
             "opportunity_csv": str(opportunity_csv),
+            "focus_mode": args.focus_mode,
         },
     )
 
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
-    focus = _focus_customers(opportunity_csv, args.instance_id)
+    focus = _focus_customers(
+        opportunity_csv,
+        args.instance_id,
+        args.focus_mode,
+    )
     bundle, initial, pi0, context = _build_context(repo, args.instance_id)
     evaluator = DutyFullEvaluator(context)
     initial_evaluation = evaluator.evaluate(initial)
@@ -299,7 +335,7 @@ def main() -> int:
             row = {
                 "action_id": outcome.action_id,
                 "focus_customer_ids": "|".join(involved),
-                "focus_direct_roundtrip_advantage_km": "|".join(
+                "focus_distance_advantage_km": "|".join(
                     f"{customer}:{-focus[customer]:.12g}" for customer in involved
                 ),
                 "status": status,
@@ -448,8 +484,8 @@ def main() -> int:
             "formal_instance_selected": None,
             "probe_scope": (
                 "one-step existing depot-collaboration moves involving only "
-                "customers whose saved alternate-depot direct round trip is "
-                "strictly shorter"
+                f"customers whose saved {focus_description} distance delta "
+                "is strictly negative"
             ),
             "what_this_does_not_answer": [
                 "the value of all cross-depot moves",
@@ -463,16 +499,17 @@ def main() -> int:
     metadata = {
         "status": "COMPLETE" if not failure_reasons else "FAILED",
         "purpose": (
-            "one-step cross-depot focus probe on customers whose saved "
-            "alternate-depot direct round trip is shorter"
+            "one-step cross-depot focus probe on customers with a negative "
+            f"saved {focus_description} distance delta"
         ),
         "instance_id": args.instance_id,
         "instance_formally_selected": False,
         "code_provenance": provenance,
         "opportunity_csv": str(opportunity_csv),
+        "focus_mode": args.focus_mode,
         "focus_rule": (
-            "best_alternate_minus_owner_roundtrip_km < 0 in the already saved "
-            "opportunity table; no result-dependent threshold"
+            f"{focus_column} < 0 in the already saved geometric screen; "
+            "no result-dependent threshold"
         ),
         "focus_customers": focus,
         "truth_sentinel_enabled": context.incremental_full_truth_sentinel_enabled,
@@ -493,7 +530,7 @@ def main() -> int:
 
 ## 结论
 
-`{args.instance_id}` 共有 {len(focus)} 名客户在已保存的零搜索机会表中由其他车场直接服务更近。现有动作生成器围绕这些客户生成 {len(focused_moves)} 个跨车场候选，其中 {evaluated_count} 个进入完整评价，{feasible_count} 个通过完整模型，{improving_count} 个相对登记起点的罚后目标更优。完整真值复核执行 {accounting.sentinel_evaluations} 次，耗时 {elapsed:.3f} 秒，进程峰值内存 {raw_row['peak_rss_mb']:.3f} MB。
+`{args.instance_id}` 共有 {len(focus)} 名客户在已保存的“{focus_description}”筛查中距离变化为负。现有动作生成器围绕这些客户生成 {len(focused_moves)} 个跨车场候选，其中 {evaluated_count} 个进入完整评价，{feasible_count} 个通过完整模型，{improving_count} 个相对登记起点的罚后目标更优。完整真值复核执行 {accounting.sentinel_evaluations} 次，耗时 {elapsed:.3f} 秒，进程峰值内存 {raw_row['peak_rss_mb']:.3f} MB。
 
 本探针不应用候选，不跑完整教育，不选择正式算例。其范围只覆盖几何上已经跨场更近的客户；空结果不代表所有跨车场动作无效。
 
