@@ -385,11 +385,13 @@ def run_duty_hgs(
                 accounting=accounting,
                 penalized_cost=penalty_manager.cost,
                 initial_evaluation=child_evaluation,
+                trajectory_sink=trajectory.emit_many,
             )
         except DutySentinelMismatch as exc:
             trajectory.emit_many(exc.rows)
             return _finish_result(
                 best,
+                evaluator,
                 iterations,
                 accounting,
                 trajectory.retained,
@@ -425,6 +427,7 @@ def run_duty_hgs(
             )
             return _finish_result(
                 best,
+                evaluator,
                 iterations,
                 accounting,
                 trajectory.retained,
@@ -475,12 +478,14 @@ def run_duty_hgs(
                     accounting=accounting,
                     penalized_cost=penalty_manager.cost,
                     initial_evaluation=repaired_evaluation,
+                    trajectory_sink=trajectory.emit_many,
                 )
             )
         except DutySentinelMismatch as exc:
             trajectory.emit_many(exc.rows)
             return _finish_result(
                 best,
+                evaluator,
                 iterations,
                 accounting,
                 trajectory.retained,
@@ -516,6 +521,7 @@ def run_duty_hgs(
             )
             return _finish_result(
                 best,
+                evaluator,
                 iterations,
                 accounting,
                 trajectory.retained,
@@ -566,6 +572,7 @@ def run_duty_hgs(
     )
     return _finish_result(
         best,
+        evaluator,
         iterations,
         accounting,
         trajectory.retained,
@@ -643,6 +650,7 @@ def search_configuration_sha256(
 
 def _finish_result(
     best,
+    evaluator: DutyFullEvaluator,
     iterations: int,
     accounting: SearchAccounting,
     trajectory: list[TrajectoryRow],
@@ -652,6 +660,9 @@ def _finish_result(
     status: str,
     error: Exception | None = None,
 ) -> DutyHGSRunResult:
+    final_evaluation = evaluator.evaluate(best.individual)
+    accounting.full_evaluations += 1
+    best = EvaluatedDutyCandidate(best.individual, final_evaluation)
     accounting.run_wall_seconds = perf_counter() - started
     return DutyHGSRunResult(
         best=best.individual,

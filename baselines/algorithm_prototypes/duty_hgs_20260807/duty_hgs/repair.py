@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
+from dataclasses import replace
 
 from .charging import ChargingRepairPolicy
 from .contracts import (
@@ -44,6 +45,7 @@ def regret2_repair(
     accounting: SearchAccounting,
     penalized_cost: Callable[[FullEvaluation], float],
     initial_evaluation: FullEvaluation | None = None,
+    trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
 ) -> tuple[DutyIndividual, FullEvaluation, tuple[TrajectoryRow, ...]]:
     """Insert missing customers by lexicographic complete-model regret-2."""
 
@@ -59,72 +61,80 @@ def regret2_repair(
         current_evaluation = initial_evaluation
     rows: list[TrajectoryRow] = []
     while current.unserved_customers:
-        by_customer: dict[str, list[CandidateOutcome]] = {}
-        all_outcomes: list[CandidateOutcome] = []
+        by_customer: dict[str, list[tuple[CandidateOutcome, int]]] = {}
+        round_rows: list[TrajectoryRow] = []
+        sentinel_mismatch = False
         incremental = DutyIncrementalEvaluator(evaluator)
         accounting.record_cache_seed(incremental.seed(current))
         for customer in current.unserved_customers:
             moves = _insertion_moves(current, customer)
-            outcomes = [
-                evaluate_move(
+            ranked: list[tuple[CandidateOutcome, int]] = []
+            for move in moves:
+                outcome = evaluate_move(
                     current,
                     move,
                     evaluator=evaluator,
                     charging_policy=charging_policy,
                     incremental_evaluator=incremental,
                 )
-                for move in moves
-            ]
-            for outcome in outcomes:
                 accounting.record_outcome(outcome)
-            all_outcomes.extend(outcomes)
-            by_customer[customer] = [
-                outcome
-                for outcome in outcomes
-                if outcome.evaluated
-                and outcome.candidate is not None
-                and outcome.evaluation is not None
-            ]
+                round_rows.append(
+                    _trajectory_row(
+                        iteration=iteration,
+                        phase="regret2_repair",
+                        arm=arm,
+                        before=current,
+                        before_evaluation=current_evaluation,
+                        outcome=outcome,
+                        accepted=False,
+                    )
+                )
+                sentinel_mismatch = bool(
+                    sentinel_mismatch
+                    or outcome.status == CandidateStatus.SENTINEL_MISMATCH
+                )
+                if (
+                    outcome.evaluated
+                    and outcome.candidate is not None
+                    and outcome.evaluation is not None
+                ):
+                    ranked.append((outcome, len(round_rows) - 1))
+                    ranked.sort(
+                        key=lambda item: _repair_key(item[0], penalized_cost)
+                    )
+                    del ranked[2:]
+            by_customer[customer] = ranked
 
-        choices: list[tuple[float, str, CandidateOutcome]] = []
+        choices: list[tuple[float, str, CandidateOutcome, int]] = []
         for customer, outcomes in by_customer.items():
             if not outcomes:
                 continue
-            ordered = sorted(
-                outcomes,
-                key=lambda outcome: _repair_key(outcome, penalized_cost),
-            )
-            best = ordered[0]
-            if len(ordered) == 1:
+            best, best_row_index = outcomes[0]
+            if len(outcomes) == 1:
                 regret = math.inf
             else:
                 regret = float(
-                    penalized_cost(ordered[1].evaluation)
-                    - penalized_cost(ordered[0].evaluation)
+                    penalized_cost(outcomes[1][0].evaluation)
+                    - penalized_cost(outcomes[0][0].evaluation)
                 )
-            choices.append((regret, customer, best))
+            choices.append((regret, customer, best, best_row_index))
         chosen = max(
             choices,
             key=lambda item: (item[0], item[1]),
             default=None,
         )
         chosen_outcome = None if chosen is None else chosen[2]
-        for outcome in all_outcomes:
-            rows.append(
-                _trajectory_row(
-                    iteration=iteration,
-                    phase="regret2_repair",
-                    arm=arm,
-                    before=current,
-                    before_evaluation=current_evaluation,
-                    outcome=outcome,
-                    accepted=outcome is chosen_outcome,
-                )
+        if chosen is not None:
+            chosen_row_index = chosen[3]
+            round_rows[chosen_row_index] = replace(
+                round_rows[chosen_row_index],
+                accepted=True,
             )
-        if any(
-            outcome.status == CandidateStatus.SENTINEL_MISMATCH
-            for outcome in all_outcomes
-        ):
+        if trajectory_sink is None:
+            rows.extend(round_rows)
+        else:
+            trajectory_sink(tuple(round_rows))
+        if sentinel_mismatch:
             raise DutySentinelMismatch(tuple(rows))
         if chosen_outcome is None:
             break

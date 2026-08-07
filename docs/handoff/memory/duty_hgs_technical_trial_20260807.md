@@ -32,3 +32,15 @@ Claude Opus 5 最终意见：可以进入正式对比协议准备，当前没有
 - 最终一轮包：`baselines/algorithm_prototypes/duty_hgs_20260807/technical_trials/real_input_one_cycle_20260807_final/`
 - 多车场多 EV 动作核查：`baselines/algorithm_prototypes/duty_hgs_20260807/technical_trials/multidepot_multiev_action_scope_20260807/`
 - 真实修复核查：`baselines/algorithm_prototypes/duty_hgs_20260807/technical_trials/real_input_regret2_repair_20260807/`
+
+## 正式对比前的追加闭合
+
+用户随后批准按 Opus 验货意见补做干净提交重放和真实重启点火，并要求修完后再由 Opus 做正式开跑前的最后技术论证。这个批准没有授权直接跑正式算法对比。
+
+最终一轮、动作作用范围和漏服务修复三条链在干净提交 `79e8d67e` 上重放，关键轨迹或明细与此前有效包逐字节一致。重放汇总在 `technical_trials/preformal_provenance_reverify_20260807/`。同一提交上把重启阈值暂时缩短到 1 轮，只为点亮分支，3 轮中实际触发 1 次重启，结果仍为 10/10 客户、3196/3196 需求、完整检查可行、0 违规；证据在 `technical_trials/preformal_restart_ignition_20260807/`。
+
+Opus 进一步审查后，撤回了“技术脚本干净门会阻塞正式运行”“当前必须立即接正式对手”等不属于核心缺陷的担忧；确认唯一仍成立的代码级阻塞是每个动作的完整轨迹一直留在内存。运行器现支持分批写出和关闭内存保留，无写出接口时会拒绝关闭保留。干净提交 `c410d24b` 上的 3 轮真实输入试跑实际写出 876 行、内存不保留，并触发 1 次重启；证据在 `technical_trials/preformal_streaming_restart_20260807/`。
+
+完整真值复核现为默认开启的显式开关。关闭后的真实输入一轮试跑记录 0 次真值哨兵、3 次必要完整模型评价，结果仍为 10/10 客户、3196/3196 需求、完整检查可行、0 违规；证据在 `technical_trials/preformal_sentinel_off_20260807/`。该试跑只证明开关真实接通，不决定正式比较中是全开还是抽查。
+
+测试增至 34/34 通过，Ruff 和 `git diff --check` 通过。三项受保护文件仍未修改。工程核心已具备进入正式对比协议设计的条件，但正式停止口径、算例、Pi0、真值复核用法、算法主张大小仍须用户批准；同预算 PyVRP 0.12.2 HGS 需在正式协议中经现有适配器接入。小试里的时变碳充电动作仍全部 `NO_CHANGE`，算法对这部分问题是否真正有效尚无证据，必须由后续正式算例和消融回答。

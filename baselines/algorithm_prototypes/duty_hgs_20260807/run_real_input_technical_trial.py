@@ -15,6 +15,7 @@ import platform
 import random
 import subprocess
 import sys
+import traceback
 from dataclasses import asdict, replace
 from importlib import metadata as importlib_metadata
 from pathlib import Path
@@ -77,6 +78,76 @@ def _json(path: Path, payload: Any) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
+
+
+def _write_failure_package(output: Path, error: Exception) -> bool:
+    """Complete an output directory created by this invocation as failed."""
+
+    metadata_path = output / "metadata.json"
+    if not metadata_path.is_file():
+        return False
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if metadata.get("status") != "RUNNING":
+        return False
+    metadata["status"] = "FAILED"
+    _json(metadata_path, metadata)
+    with (output / "raw_runs.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=("verdict", "error_type", "error"),
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerow(
+            {
+                "verdict": "TECHNICAL_TRIAL_FAILED",
+                "error_type": type(error).__name__,
+                "error": str(error),
+            }
+        )
+    _json(
+        output / "decision.json",
+        {
+            "verdict": "TECHNICAL_TRIAL_FAILED",
+            "failure_reasons": [f"{type(error).__name__}: {error}"],
+            "traceback": traceback.format_exc(),
+            "user_decision_changed": False,
+        },
+    )
+    report = f"""# Duty-HGS 真实输入技术试跑失败报告
+
+## 结论
+
+本次技术试跑在生成正式结果包前失败。错误类型为 `{type(error).__name__}`，错误信息为：{error}。失败没有被改写成完成；完整调用栈保存在 `decision.json`。
+
+## 交付前九条自检
+
+1. 每个事实是否有出处？——错误类型、错误信息和调用栈来自本次异常，保存在 `decision.json`。
+2. 有没有把建议或担忧写成已决？——没有；这里只记录失败。
+3. 是否超出任务范围？——没有；只补齐本次失败现场。
+4. 是否碰受保护文件？——本失败包不修改受保护文件；实际运行前后哈希以 `metadata.json` 已保存内容为准。
+5. 是否留下新的待决选项？——没有。
+6. 是否使用自造术语？——没有。
+7. 失败、跳过、超时、异常是否如实保留？——本次异常已如实保留。
+8. 四件套是否齐全？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json` 和 `report.md` 将由本失败收口一次写齐。
+9. 交接记录是否同步？——失败包只保存现场；项目交接记录在任务收尾时统一同步。
+"""
+    (output / "report.md").write_text(report, encoding="utf-8")
+    for sidecar in output.glob("._*"):
+        sidecar.unlink()
+    hashes = {
+        path.name: _sha256(path)
+        for path in sorted(output.iterdir())
+        if (
+            path.is_file()
+            and path.name != "artifact_hashes.json"
+            and not path.name.startswith("._")
+        )
+    }
+    _json(output / "artifact_hashes.json", hashes)
+    return True
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -330,6 +401,19 @@ def main() -> int:
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
+    _json(
+        output / "metadata.json",
+        {
+            "status": "RUNNING",
+            "purpose": "bounded real-input wiring trial; not a performance experiment",
+            "code_provenance": code_provenance,
+            "requested_iterations": args.iterations,
+            "requested_restart_after": args.restart_after,
+            "requested_truth_sentinel_enabled": not args.disable_truth_sentinel,
+            "requested_trajectory_streaming": args.stream_trajectory,
+            "requested_trajectory_retention": not args.no_retain_trajectory,
+        },
+    )
 
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
     bundle, initial, pi0, context = _build_context(repo)
@@ -447,6 +531,7 @@ def main() -> int:
     )
 
     metadata = {
+        "status": "COMPLETE" if not failure_reasons else "FAILED",
         "purpose": "bounded real-input wiring trial; not a performance experiment",
         "instance_id": INSTANCE_ID,
         "instance_formally_selected": False,
@@ -466,6 +551,7 @@ def main() -> int:
         "incremental_full_truth_sentinel_enabled": (
             context.incremental_full_truth_sentinel_enabled
         ),
+        "best_evaluation_source": result.best_evaluation.source,
         "parameters": asdict(parameters),
         "charging_policy": asdict(policy),
         "pi0": {
@@ -504,7 +590,8 @@ def main() -> int:
             "customers_served", "customers_total", "demand_served",
             "demand_total", "crossover_calls", "crossover_changed_parent",
             "sentinel_evaluations", "actual_full_model_evaluations", "restarts",
-            "run_wall_seconds", "pi0_externally_frozen", "verdict",
+            "best_evaluation_source", "run_wall_seconds",
+            "pi0_externally_frozen", "verdict",
         ]
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
@@ -530,6 +617,7 @@ def main() -> int:
                 "sentinel_evaluations": result.accounting.sentinel_evaluations,
                 "actual_full_model_evaluations": result.accounting.to_dict()["actual_full_model_evaluations"],
                 "restarts": result.accounting.restarts,
+                "best_evaluation_source": result.best_evaluation.source,
                 "run_wall_seconds": result.accounting.run_wall_seconds,
                 "pi0_externally_frozen": False,
                 "verdict": verdict,
@@ -579,6 +667,7 @@ def main() -> int:
                 "feasible": result.best_evaluation.feasible,
                 "violations": [asdict(item) for item in result.best_evaluation.violations],
                 "participation_margin": dict(result.best_evaluation.participation_margin),
+                "source": result.best_evaluation.source,
             },
             "accounting": result.accounting.to_dict(),
             "provenance": asdict(result.provenance),
@@ -639,4 +728,14 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    requested_output = (
+        None
+        if len(sys.argv) < 2 or sys.argv[1].startswith("-")
+        else Path(sys.argv[1]).resolve()
+    )
+    try:
+        raise SystemExit(main())
+    except Exception as exc:
+        if requested_output is not None:
+            _write_failure_package(requested_output, exc)
+        raise

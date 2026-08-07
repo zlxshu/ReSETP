@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import random
 from dataclasses import replace
 
@@ -27,6 +29,7 @@ from duty_hgs.runner import (
     population_sha256,
     run_duty_hgs,
 )
+from run_real_input_technical_trial import _write_failure_package
 
 
 def _charging_policy(evaluator) -> ChargingRepairPolicy:
@@ -152,6 +155,51 @@ def test_best_improvement_accepts_complete_model_feasible_move(
         == accounting.sentinel_evaluations
     )
     assert accounting.cache_seedings == accounting.education_rounds
+
+
+def test_best_improvement_streaming_preserves_rows_and_choice(
+    feedback_fixture,
+) -> None:
+    overloaded, evaluator = feedback_fixture
+    penalties = AdaptivePenaltyManager(
+        PenaltyParameters(
+            initial_penalty_per_unit=100.0,
+            solutions_between_updates=50,
+            penalty_increase=1.34,
+            penalty_decrease=0.32,
+            target_feasible=0.43,
+            feasibility_tolerance=0.05,
+            minimum_penalty=0.1,
+            maximum_penalty=100_000.0,
+        )
+    )
+    penalties.register(evaluator.evaluate(overloaded))
+
+    expected, expected_evaluation, expected_rows = educate_best_improvement(
+        overloaded,
+        evaluator=evaluator,
+        charging_policy=_charging_policy(evaluator),
+        arm="technical-stream-equivalence",
+        iteration=0,
+        accounting=SearchAccounting(),
+        penalized_cost=penalties.cost,
+    )
+    streamed = []
+    actual, actual_evaluation, retained_rows = educate_best_improvement(
+        overloaded,
+        evaluator=evaluator,
+        charging_policy=_charging_policy(evaluator),
+        arm="technical-stream-equivalence",
+        iteration=0,
+        accounting=SearchAccounting(),
+        penalized_cost=penalties.cost,
+        trajectory_sink=lambda rows: streamed.extend(rows),
+    )
+
+    assert actual == expected
+    assert actual_evaluation == expected_evaluation
+    assert tuple(streamed) == expected_rows
+    assert retained_rows == ()
 
 
 def test_penalized_education_accepts_an_infeasible_intermediate(
@@ -363,6 +411,7 @@ def test_runnable_duty_hgs_streams_without_retaining_full_trajectory(
     assert result.provenance.trajectory_sink_enabled
     assert not result.provenance.trajectory_retained_in_memory
     assert result.accounting.crossover_calls == 1
+    assert result.best_evaluation.source == "full"
 
     with pytest.raises(ValueError, match="trajectory_sink is required"):
         run_duty_hgs(
@@ -404,6 +453,34 @@ def test_runnable_duty_hgs_records_a_population_restart(feedback_fixture) -> Non
     )
     assert result.termination_status == "STOPPED_BY_CALLER"
     assert result.best_evaluation.feasible
+
+
+def test_technical_runner_preserves_an_owned_failure_directory(tmp_path) -> None:
+    output = tmp_path / "failed-trial"
+    output.mkdir()
+    (output / "metadata.json").write_text(
+        json.dumps({"status": "RUNNING"}),
+        encoding="utf-8",
+    )
+
+    try:
+        raise RuntimeError("deliberate packaging test")
+    except RuntimeError as error:
+        assert _write_failure_package(output, error)
+
+    decision = json.loads((output / "decision.json").read_text())
+    assert decision["verdict"] == "TECHNICAL_TRIAL_FAILED"
+    assert "RuntimeError" in decision["failure_reasons"][0]
+    hashes = json.loads((output / "artifact_hashes.json").read_text())
+    assert set(hashes) == {
+        "decision.json",
+        "metadata.json",
+        "raw_runs.csv",
+        "report.md",
+    }
+    for name, expected in hashes.items():
+        actual = hashlib.sha256((output / name).read_bytes()).hexdigest()
+        assert actual == expected
 
 
 def test_registry_mismatch_fails_before_crossover(feedback_fixture) -> None:

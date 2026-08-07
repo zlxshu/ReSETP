@@ -160,6 +160,7 @@ def educate_best_improvement(
     accounting: SearchAccounting,
     penalized_cost: Callable[[FullEvaluation], float],
     initial_evaluation: FullEvaluation | None = None,
+    trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
 ) -> tuple[DutyIndividual, FullEvaluation, tuple[TrajectoryRow, ...]]:
     """Run best-improvement under the population's current penalty scale."""
 
@@ -183,40 +184,21 @@ def educate_best_improvement(
         )
         incremental = DutyIncrementalEvaluator(evaluator)
         accounting.record_cache_seed(incremental.seed(current))
-        outcomes = [
-            evaluate_move(
+        round_rows: list[TrajectoryRow] = []
+        best = None
+        best_key = None
+        best_row_index = None
+        sentinel_mismatch = False
+        for move in moves:
+            outcome = evaluate_move(
                 current,
                 move,
                 evaluator=evaluator,
                 charging_policy=charging_policy,
                 incremental_evaluator=incremental,
             )
-            for move in moves
-        ]
-        for outcome in outcomes:
             accounting.record_outcome(outcome)
-        evaluated = [
-            outcome
-            for outcome in outcomes
-            if outcome.evaluated
-            and outcome.evaluation is not None
-            and outcome.candidate is not None
-        ]
-        best = min(
-            evaluated,
-            key=lambda outcome: (
-                float(penalized_cost(outcome.evaluation)),
-                outcome.action_id,
-            ),
-            default=None,
-        )
-        accepted = bool(
-            best is not None
-            and float(penalized_cost(best.evaluation))
-            < float(penalized_cost(current_evaluation))
-        )
-        for outcome in outcomes:
-            rows.append(
+            round_rows.append(
                 _trajectory_row(
                     iteration=iteration,
                     phase="education",
@@ -224,13 +206,41 @@ def educate_best_improvement(
                     before=current,
                     before_evaluation=current_evaluation,
                     outcome=outcome,
-                    accepted=accepted and outcome is best,
+                    accepted=False,
                 )
             )
-        if any(
-            outcome.status == CandidateStatus.SENTINEL_MISMATCH
-            for outcome in outcomes
-        ):
+            sentinel_mismatch = bool(
+                sentinel_mismatch
+                or outcome.status == CandidateStatus.SENTINEL_MISMATCH
+            )
+            if (
+                outcome.evaluated
+                and outcome.evaluation is not None
+                and outcome.candidate is not None
+            ):
+                candidate_key = (
+                    float(penalized_cost(outcome.evaluation)),
+                    outcome.action_id,
+                )
+                if best_key is None or candidate_key < best_key:
+                    best = outcome
+                    best_key = candidate_key
+                    best_row_index = len(round_rows) - 1
+        accepted = bool(
+            best is not None
+            and float(penalized_cost(best.evaluation))
+            < float(penalized_cost(current_evaluation))
+        )
+        if accepted and best_row_index is not None:
+            round_rows[best_row_index] = replace(
+                round_rows[best_row_index],
+                accepted=True,
+            )
+        if trajectory_sink is None:
+            rows.extend(round_rows)
+        else:
+            trajectory_sink(tuple(round_rows))
+        if sentinel_mismatch:
             raise DutySentinelMismatch(tuple(rows))
         if not accepted or best is None:
             break
