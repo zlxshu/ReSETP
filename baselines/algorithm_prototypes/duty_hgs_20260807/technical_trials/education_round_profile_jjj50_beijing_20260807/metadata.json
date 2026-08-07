@@ -1,0 +1,36 @@
+{
+  "schema": "resetp.duty-hgs-education-round-profile.v1",
+  "purpose": "technical root-cause measurement only; not an algorithm result or instance selection result",
+  "git_head": "0f0ca78bbcf10941cf0661b1385ec3401451b74d",
+  "git_branch": "codex/reporting-pipeline",
+  "worktree_clean_before_run": false,
+  "worktree_status_before_run": [
+    "M baselines/algorithm_prototypes/duty_hgs_20260807/run_independent_baseline_technical_trial.py",
+    " M baselines/algorithm_prototypes/duty_hgs_20260807/run_real_input_technical_trial.py",
+    " M baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_independent.py",
+    "?? baselines/algorithm_prototypes/duty_hgs_20260807/technical_trials/pi0_wiring_jjj50_20260807/"
+  ],
+  "algorithm_source_hashes": {
+    "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/education.py": "fce7837cff00713460751608bcfbf2ba257a6b31c0ddf5d6382f740c3b25d77a",
+    "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/charging.py": "21da7656d00a54342d734fd8716e2a65570478ba874ce35ad54a312e67a0f9e9",
+    "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/operators.py": "4fb56926ca217e9fae2f9ada64e8ec18d9a3ff97f1cae06da39b7a0105bb3376",
+    "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/evaluation.py": "f779dff8a5ccdc26f9a943e731b4e01ffc9b924754476da2d309ca6eb0616e94"
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python_executable": "/opt/anaconda3/bin/python",
+  "python_version": "3.13.9",
+  "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+  "depot_id": "D_beijing",
+  "truth_sentinel_enabled": false,
+  "scope": "one complete initial best-improvement neighbourhood scan; no move accepted and no subsequent round run"
+}

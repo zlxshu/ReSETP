@@ -35,6 +35,7 @@ from ..cost import (
     charging_slot_breakdown,
     ev_instance_arc_energy_kwh,
     route_departure_second,
+    time_profile_rows_for_node,
 )
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
@@ -758,6 +759,11 @@ def select_certified_depot_charge_start(
                     "missing registered carbon/price profile for depot "
                     f"day offset {offset}"
                 ) from exc
+        profile = time_profile_rows_for_node(
+            instance,
+            action.station_id,
+            profile,
+        )
 
         if charge_timing_policy == "carbon_min" and strategy == "legacy":
             local_start, gamma = _lowest_profile_slot_start(

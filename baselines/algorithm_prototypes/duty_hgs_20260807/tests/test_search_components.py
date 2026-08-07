@@ -8,7 +8,11 @@ import random
 from dataclasses import replace
 
 import pytest
-from duty_hgs.charging import ChargingRepairPolicy
+from duty_hgs.charging import (
+    ChargingRepairCache,
+    ChargingRepairPolicy,
+    repair_changed_duties,
+)
 from duty_hgs.contracts import SearchAccounting
 from duty_hgs.crossover import (
     canonical_fleet_registry,
@@ -17,6 +21,7 @@ from duty_hgs.crossover import (
 from duty_hgs.education import educate_best_improvement
 from duty_hgs.feedback import RelocateCustomerMove
 from duty_hgs.model import DutyChargingSession, DutyIndividual
+from duty_hgs.operators import generate_problem_moves
 from duty_hgs.population import (
     AdaptivePenaltyManager,
     PenaltyParameters,
@@ -155,6 +160,65 @@ def test_best_improvement_accepts_complete_model_feasible_move(
         == accounting.sentinel_evaluations
     )
     assert accounting.cache_seedings == accounting.education_rounds
+
+
+def test_charging_repair_cache_reuses_only_the_same_round_context(
+    evaluated_fixture,
+) -> None:
+    individual, evaluator = evaluated_fixture
+    evaluation = evaluator.evaluate(individual)
+    policy = _charging_policy(evaluator)
+    successful = None
+    for move in generate_problem_moves(
+        individual,
+        evaluation,
+        evaluator.context.bundle.instance,
+    ):
+        raw = move.apply(individual)
+        changed = set(move.changed_duty_ids)
+        if not any(
+            duty.vehicle_type == "ev"
+            and duty.physical_vehicle_id in changed
+            for duty in raw.duties
+        ):
+            continue
+        try:
+            repaired = repair_changed_duties(
+                individual,
+                raw,
+                changed_duty_ids=changed,
+                context=evaluator.context,
+                policy=policy,
+            )
+        except (TypeError, ValueError):
+            continue
+        successful = (raw, changed, repaired)
+        break
+
+    assert successful is not None
+    raw, changed, expected = successful
+    cache = ChargingRepairCache(evaluator.context, policy)
+    first = repair_changed_duties(
+        individual,
+        raw,
+        changed_duty_ids=changed,
+        context=evaluator.context,
+        policy=policy,
+        cache=cache,
+    )
+    second = repair_changed_duties(
+        individual,
+        raw,
+        changed_duty_ids=changed,
+        context=evaluator.context,
+        policy=policy,
+        cache=cache,
+    )
+
+    assert first == expected
+    assert second == expected
+    assert cache.misses == 1
+    assert cache.hits == 1
 
 
 def test_best_improvement_streaming_preserves_rows_and_choice(

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
+from functools import cache
 from hashlib import sha256
 import json
 from math import isfinite
@@ -63,6 +64,7 @@ class ChargingCurveSpec:
         ).encode("utf-8")
         return sha256(payload).hexdigest()
 
+    @cache
     def scale(
         self, *, capacity_kwh: float, reference_power_kw: float
     ) -> PiecewiseChargingCurve:
@@ -120,17 +122,27 @@ def spec_from_parameters(parameters: object) -> ChargingCurveSpec:
         powers = getattr(parameters, names[2])
     if isinstance(soc, (str, bytes)) or isinstance(powers, (str, bytes)):
         raise ChargingCurveError("charging curve arrays must be numeric sequences")
-    spec = ChargingCurveSpec(
-        str(curve_id),
-        tuple(float(value) for value in soc),  # type: ignore[arg-type]
-        tuple(float(value) for value in powers),  # type: ignore[arg-type]
+    normalized_curve_id = str(curve_id).strip()
+    normalized_soc = tuple(float(value) for value in soc)  # type: ignore[arg-type]
+    normalized_powers = tuple(  # type: ignore[arg-type]
+        float(value) for value in powers
     )
-    registered = CURVE_SPECS.get(spec.curve_id)
-    if registered is not None and spec.parameter_sha256 != registered.parameter_sha256:
-        raise ChargingCurveError(
-            f"registered curve {spec.curve_id} disagrees with its frozen parameters"
-        )
-    return spec
+    registered = CURVE_SPECS.get(normalized_curve_id)
+    if registered is not None:
+        if (
+            normalized_soc != registered.soc_breakpoints
+            or normalized_powers != registered.relative_powers
+        ):
+            raise ChargingCurveError(
+                f"registered curve {normalized_curve_id} disagrees with "
+                "its frozen parameters"
+            )
+        return registered
+    return ChargingCurveSpec(
+        normalized_curve_id,
+        normalized_soc,
+        normalized_powers,
+    )
 
 
 def curve_from_parameters(
@@ -455,12 +467,13 @@ def slot_energy_kwh(
     if not isfinite(start_time):
         raise ChargingCurveError("charging start must be finite")
     _validate_slot_boundaries(slot_boundaries_seconds)
+    phases = curve.phases(start_energy_kwh, end_energy_kwh)
     output: list[float] = []
     for slot_start, slot_end in zip(
         slot_boundaries_seconds, slot_boundaries_seconds[1:]
     ):
         energy = 0.0
-        for phase in curve.phases(start_energy_kwh, end_energy_kwh):
+        for phase in phases:
             absolute_start = start_time + phase.relative_start_seconds
             absolute_end = start_time + phase.relative_end_seconds
             overlap = max(

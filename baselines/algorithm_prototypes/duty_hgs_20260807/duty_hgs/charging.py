@@ -17,7 +17,7 @@ rewriting an earlier dynamic commitment.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from setp_solver.algorithms.resetp_alns.support.charging import (
@@ -57,6 +57,47 @@ class ChargingRepairPolicy:
     ] | None
 
 
+@dataclass
+class ChargingRepairCache:
+    """Reuse deterministic EV-duty repairs within one education round."""
+
+    context: DutyEvaluationContext
+    policy: ChargingRepairPolicy
+    repaired: dict[
+        tuple[PhysicalVehicleDuty, PhysicalVehicleDuty],
+        PhysicalVehicleDuty,
+    ] = field(default_factory=dict)
+    hits: int = 0
+    misses: int = 0
+
+    def repair(
+        self,
+        reference: PhysicalVehicleDuty,
+        candidate: PhysicalVehicleDuty,
+        *,
+        context: DutyEvaluationContext,
+        policy: ChargingRepairPolicy,
+    ) -> PhysicalVehicleDuty:
+        if context is not self.context or policy is not self.policy:
+            raise ValueError(
+                "charging repair cache was reused with another context or policy"
+            )
+        key = (reference, candidate)
+        cached = self.repaired.get(key)
+        if cached is not None:
+            self.hits += 1
+            return cached
+        self.misses += 1
+        result = _repair_one_ev_duty(
+            reference,
+            candidate,
+            context=context,
+            policy=policy,
+        )
+        self.repaired[key] = result
+        return result
+
+
 def repair_changed_duties(
     reference: DutyIndividual,
     candidate: DutyIndividual,
@@ -64,6 +105,7 @@ def repair_changed_duties(
     changed_duty_ids: set[str],
     context: DutyEvaluationContext,
     policy: ChargingRepairPolicy,
+    cache: ChargingRepairCache | None = None,
 ) -> DutyIndividual:
     """Rebuild only changed EV ledgers and preserve every locked decision."""
 
@@ -100,9 +142,20 @@ def repair_changed_duties(
                 raise ValueError("CV duty cannot retain charging sessions")
             rebuilt.append(duty)
             continue
+        reference_duty = reference_by_id.get(
+            duty.physical_vehicle_id,
+            duty,
+        )
         rebuilt.append(
             _repair_one_ev_duty(
-                reference_by_id.get(duty.physical_vehicle_id, duty),
+                reference_duty,
+                duty,
+                context=context,
+                policy=policy,
+            )
+            if cache is None
+            else cache.repair(
+                reference_duty,
                 duty,
                 context=context,
                 policy=policy,

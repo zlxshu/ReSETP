@@ -1,0 +1,47 @@
+{
+  "schema": "resetp.duty-hgs-education-round-profile.v3",
+  "purpose": "exact-semantics cache speed recheck only; not an algorithm or instance result",
+  "git_head": "0f0ca78bbcf10941cf0661b1385ec3401451b74d",
+  "git_branch": "codex/reporting-pipeline",
+  "worktree_clean_before_run": false,
+  "worktree_status_before_run": [
+    "M baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/charging.py",
+    " M baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/education.py",
+    " M baselines/algorithm_prototypes/duty_hgs_20260807/run_independent_baseline_technical_trial.py",
+    " M baselines/algorithm_prototypes/duty_hgs_20260807/run_real_input_technical_trial.py",
+    " M baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_independent.py",
+    " M baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_search_components.py",
+    " M solver/src/setp_solver/charging_curve.py",
+    " M solver/src/setp_solver/search/multitrip_schedule.py",
+    "?? baselines/algorithm_prototypes/duty_hgs_20260807/technical_trials/education_round_profile_jjj50_beijing_20260807/",
+    "?? baselines/algorithm_prototypes/duty_hgs_20260807/technical_trials/education_round_profile_jjj50_beijing_after_exact_hoist_20260807/",
+    "?? baselines/algorithm_prototypes/duty_hgs_20260807/technical_trials/pi0_wiring_jjj50_20260807/"
+  ],
+  "source_hashes": {
+    "solver/src/setp_solver/charging_curve.py": "6b504462c2f0f3835b6cacd6f7b444fb091f1497e3522d608729021ad64b7656",
+    "solver/src/setp_solver/search/multitrip_schedule.py": "da0a965255cd0d84871971db42f31c9f729d6cb4f0e6e16cb611eb2a3ce8da25",
+    "solver/src/setp_solver/charge_timing.py": "c199307557494320b87bd897e0ac5d68788a12c1788349e8b5052d46124fcc42",
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/education.py": "13c2d0bad0d006a53767133a67ee506b3706b938f9a8cff49eef9057b25be72a",
+    "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/charging.py": "bd5fbc01b10401591f100820fec19fd8cef0f54a4f98fffd95cdcfdaa4490e00",
+    "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/evaluation.py": "f779dff8a5ccdc26f9a943e731b4e01ffc9b924754476da2d309ca6eb0616e94"
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python_executable": "/opt/anaconda3/bin/python",
+  "python_version": "3.13.9",
+  "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+  "depot_id": "D_beijing",
+  "truth_sentinel_enabled": false,
+  "scope": "one complete initial best-improvement neighbourhood scan; no move accepted and no subsequent round run",
+  "comparison_source": "baselines/algorithm_prototypes/duty_hgs_20260807/technical_trials/education_round_profile_jjj50_beijing_after_exact_hoist_20260807"
+}

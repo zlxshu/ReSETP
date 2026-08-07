@@ -1,0 +1,56 @@
+{
+  "verdict": "TECHNICAL_DIAGNOSTIC_COMPLETE",
+  "formal_algorithm_result": false,
+  "formal_experiment_result": false,
+  "final_instance_selected": null,
+  "customer_count": 37,
+  "move_count": 2132,
+  "round_wall_seconds": 16.6208865410008,
+  "initial_total_cost_cny": 2072.15800003201,
+  "best_candidate_total_cost_cny": 1957.3441504124146,
+  "best_action_id": "relocate:CV_D_beijing_1#T2:C037->EV_D_beijing_1#T1@5",
+  "best_single_move_improvement_percent": 5.540786446681277,
+  "status_counts": {
+    "REJECTED_INTERFACE": 1641,
+    "EVALUATED": 197,
+    "REJECTED_CHARGING": 294
+  },
+  "channel_counts": {
+    "multi_trip": 220,
+    "relocate": 1272,
+    "mixed_fleet": 542,
+    "route_order": 92,
+    "whole_duty_type_exchange": 5,
+    "time_varying_carbon_charge": 1
+  },
+  "vehicle_group_counts": {
+    "only_cv": 1564,
+    "with_ev": 568
+  },
+  "vehicle_group_wall_seconds": {
+    "only_cv": 1.0180191929393914,
+    "with_ev": 15.578491372405551
+  },
+  "full_calls": 1,
+  "sentinel_calls": 0,
+  "slice_preparation_calls": 809,
+  "candidate_assembly_calls": 197,
+  "postrun_penalized_recheck": {
+    "initial_total_cost_cny": 2072.15800003201,
+    "initial_penalized_cost_cny": 2072.15800003201,
+    "initial_feasible": true,
+    "evaluated_candidate_count": 197,
+    "recheck_wall_seconds": 15.607943749986589,
+    "best_penalized_action_id": "whole-duty-type-exchange:CV_D_beijing_1<->EV_D_beijing_1",
+    "best_penalized_total_cost_cny": 2031.0323103802593,
+    "best_penalized_cost_cny": 2031.0323103802593,
+    "best_penalized_feasible": true,
+    "best_penalized_violation_count": 0,
+    "best_penalized_improvement_percent": 1.9846792402469018,
+    "would_accept_under_initial_penalty": true,
+    "best_penalized_full_truth_equivalent": true,
+    "raw_cost_best_action_id": "relocate:CV_D_beijing_1#T2:C037->EV_D_beijing_1#T1@5",
+    "raw_cost_best_full_truth_feasible": false,
+    "raw_cost_best_full_truth_violation_count": 1
+  }
+}

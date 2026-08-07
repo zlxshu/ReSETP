@@ -19,7 +19,11 @@ from collections.abc import Callable
 from dataclasses import asdict, replace
 from time import perf_counter
 
-from .charging import ChargingRepairPolicy, repair_changed_duties
+from .charging import (
+    ChargingRepairCache,
+    ChargingRepairPolicy,
+    repair_changed_duties,
+)
 from .contracts import (
     CandidateOutcome,
     CandidateStatus,
@@ -50,6 +54,7 @@ def evaluate_move(
     evaluator: DutyFullEvaluator,
     charging_policy: ChargingRepairPolicy,
     incremental_evaluator: DutyIncrementalEvaluator | None = None,
+    charging_repair_cache: ChargingRepairCache | None = None,
 ) -> CandidateOutcome:
     """Return a typed candidate outcome; truth-sentinel failures still raise."""
 
@@ -73,6 +78,7 @@ def evaluate_move(
             changed_duty_ids=set(move.changed_duty_ids),
             context=evaluator.context,
             policy=charging_policy,
+            cache=charging_repair_cache,
         )
     except (TypeError, ValueError) as exc:
         return _rejection(
@@ -191,6 +197,10 @@ def educate_best_improvement(
         )
         incremental = DutyIncrementalEvaluator(evaluator)
         accounting.record_cache_seed(incremental.seed(current))
+        charging_repair_cache = ChargingRepairCache(
+            evaluator.context,
+            charging_policy,
+        )
         round_rows: list[TrajectoryRow] = []
         best = None
         best_key = None
@@ -203,6 +213,7 @@ def educate_best_improvement(
                 evaluator=evaluator,
                 charging_policy=charging_policy,
                 incremental_evaluator=incremental,
+                charging_repair_cache=charging_repair_cache,
             )
             accounting.record_outcome(outcome)
             round_rows.append(

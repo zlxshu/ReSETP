@@ -372,6 +372,8 @@ def _prepare_population(
     evaluator: DutyFullEvaluator,
     policy: ChargingRepairPolicy,
     parameters: DutyHGSSearchParameters | None = None,
+    *,
+    require_distinct_selection: bool = True,
 ):
     initial_evaluation = evaluator.evaluate(initial)
     first_duty = initial.duties[0]
@@ -444,7 +446,7 @@ def _prepare_population(
         "right_fingerprint": right.individual.fingerprint,
         "distinct": left.individual.fingerprint != right.individual.fingerprint,
     }
-    if not selected["distinct"]:
+    if require_distinct_selection and not selected["distinct"]:
         raise RuntimeError("seed 11 did not select structurally distinct parents")
     return candidates, initial_evaluation, reverse_record, attempts, selected
 

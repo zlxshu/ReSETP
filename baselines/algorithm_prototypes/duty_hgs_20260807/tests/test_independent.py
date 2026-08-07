@@ -12,7 +12,16 @@ from duty_hgs.independent import (
     independent_individual,
 )
 from duty_hgs.operators import RelocateMove
-from run_real_input_technical_trial import _build_context
+from run_real_input_technical_trial import (
+    _build_context,
+    _parameters,
+    _policy,
+    _prepare_population,
+)
+from setp_solver.china81_completion import annotate_cross_site_services
+from setp_solver.cost import evaluate
+from setp_solver.profit import calculate_depot_profits
+from setp_solver.search.multitrip_schedule import prepare_multitrip_solution
 
 REPO = Path(__file__).resolve().parents[4]
 
@@ -108,3 +117,100 @@ def test_independent_initial_rejects_cross_depot_contamination() -> None:
 
     with pytest.raises(ValueError, match="responsibility-pure"):
         independent_individual(contaminated, bundle, depots[0])
+
+
+@pytest.mark.parametrize(
+    "instance_id",
+    (
+        "cn-cy-50c-01-V2-LOCATIONS",
+        "cn-jjj-50c-01-V2-LOCATIONS",
+        "cn-prd-50c-01-V2-LOCATIONS",
+    ),
+)
+def test_independent_slice_matches_full_bundle_componentwise(
+    instance_id: str,
+) -> None:
+    bundle, individual, _pi0, _context = _build_context(REPO, instance_id)
+    depot_id = sorted(bundle.fleet_caps_by_depot)[0]
+    subbundle = independent_bundle(bundle, depot_id)
+    subindividual = independent_individual(individual, bundle, depot_id)
+    decoded = subindividual.to_solution()
+
+    full_prepared, _ = prepare_multitrip_solution(
+        decoded,
+        bundle.instance,
+        bundle.prices,
+    )
+    sliced_prepared, _ = prepare_multitrip_solution(
+        decoded,
+        subbundle.instance,
+        subbundle.prices,
+    )
+    full_prepared = annotate_cross_site_services(
+        full_prepared,
+        bundle.customer_home_depot,
+    )
+    sliced_prepared = annotate_cross_site_services(
+        sliced_prepared,
+        subbundle.customer_home_depot,
+    )
+    assert sliced_prepared == full_prepared
+
+    full_cost = evaluate(
+        full_prepared,
+        bundle.instance,
+        bundle.time_profile,
+        bundle.prices,
+        carbon_quota_kg=0.0,
+    )
+    sliced_cost = evaluate(
+        sliced_prepared,
+        subbundle.instance,
+        subbundle.time_profile,
+        subbundle.prices,
+        carbon_quota_kg=0.0,
+    )
+    assert sliced_cost == pytest.approx(full_cost, abs=1.0e-9)
+
+    full_profit = calculate_depot_profits(
+        full_prepared,
+        bundle.instance,
+        bundle.time_profile,
+        bundle.prices,
+        customer_home_depot=dict(bundle.customer_home_depot),
+        carbon_quota_kg=0.0,
+    )[depot_id].to_dict()
+    sliced_profit = calculate_depot_profits(
+        sliced_prepared,
+        subbundle.instance,
+        subbundle.time_profile,
+        subbundle.prices,
+        customer_home_depot=dict(subbundle.customer_home_depot),
+        carbon_quota_kg=0.0,
+    )[depot_id].to_dict()
+    assert sliced_profit.pop("depot_id") == full_profit.pop("depot_id")
+    assert sliced_profit == pytest.approx(full_profit, abs=1.0e-9)
+
+
+def test_independent_trial_can_record_same_parent_selection() -> None:
+    bundle, individual, _pi0, _context = _build_context(
+        REPO,
+        "cn-jjj-50c-01-V2-LOCATIONS",
+    )
+    depot_id = "D_tianjin"
+    subbundle = independent_bundle(bundle, depot_id)
+    initial = independent_individual(individual, bundle, depot_id)
+    evaluator = DutyFullEvaluator(independent_context(subbundle, depot_id))
+
+    candidates, _evaluation, _reverse, _attempts, selected = (
+        _prepare_population(
+            initial,
+            evaluator,
+            _policy(evaluator),
+            _parameters(),
+            require_distinct_selection=False,
+        )
+    )
+
+    assert candidates[0].fingerprint != candidates[1].fingerprint
+    assert not selected["distinct"]
