@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
+import setp_solver.algorithms.resetp_alns.support.charging as charging_module
 from setp_solver.algorithms.resetp_alns.kernel.winner import (
     WinnerOperatorAction,
     WinnerOperatorSet,
@@ -16,13 +17,18 @@ from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
     select_charge_option,
     select_integrated_carbon_start,
 )
-from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
+from setp_solver.algorithms.resetp_alns.support.charging import (
+    charge_amount_target_kwh,
+    curve_knee_strategies,
+    repair_route_charging,
+    repair_route_charging_candidates,
+)
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import PriceParameters
 from setp_solver.search.evaluation import EvalBudget, EvaluationContext
-from setp_solver.solution import Route, Solution
+from setp_solver.solution import ChargingAction, Route, Solution
 
 
 def _instance() -> Instance:
@@ -41,6 +47,30 @@ def _profile(*gammas: float) -> list[dict[str, object]]:
         }
         for index, gamma in enumerate(gammas)
     ]
+
+
+def test_curve_knee_amounts_come_from_the_input_curve() -> None:
+    prices = PriceParameters(
+        charging_curve_id="test_two_knees",
+        charging_soc_breakpoints=(0.0, 0.8, 0.9, 1.0),
+        charging_relative_powers=(1.0, 0.5, 0.25),
+    )
+
+    assert curve_knee_strategies(prices) == ("curve_knee_1", "curve_knee_2")
+    assert charge_amount_target_kwh(
+        "curve_knee_1",
+        just_enough_kwh=30.0,
+        max_coverage_kwh=60.0,
+        capacity_kwh=80.0,
+        curve_soc_breakpoints=prices.charging_soc_breakpoints,
+    ) == 64.0
+    assert charge_amount_target_kwh(
+        "curve_knee_2",
+        just_enough_kwh=75.0,
+        max_coverage_kwh=75.0,
+        capacity_kwh=80.0,
+        curve_soc_breakpoints=prices.charging_soc_breakpoints,
+    ) == 75.0
 
 
 def test_full_interval_timing_does_not_confuse_green_start_with_green_charge() -> None:
@@ -175,6 +205,104 @@ def test_integrated_route_repair_inserts_station_and_remains_fully_feasible() ->
     assert "F1" in repaired.node_sequence
     assert {action.station_id for action in actions} == {"D0", "F1"}
     assert check_solution(Solution(routes=[repaired], charging_actions=actions), instance, prices) == []
+
+
+def test_parallel_repair_keeps_equal_launch_energy_station_alternatives() -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, due_time=20_000.0),
+            Node("C1", "c", 0.0, 0.0, demand=100.0, due_time=20_000.0),
+            Node("F1", "f", 0.0, 0.0, due_time=20_000.0, charge_power_kw=60.0),
+            Node("F2", "f", 0.0, 0.0, due_time=20_000.0, charge_power_kw=60.0),
+        ],
+        distance_matrix=[
+            [0.0, 100_000.0, 20_000.0, 20_000.0],
+            [100_000.0, 0.0, 20_000.0, 20_000.0],
+            [20_000.0, 20_000.0, 0.0, 20_000.0],
+            [20_000.0, 20_000.0, 20_000.0, 0.0],
+        ],
+    )
+    profile = _profile(300.0, 250.0, 200.0, 50.0, 100.0, *([150.0] * 13))
+    prices = PriceParameters(B_battery_kwh=80.0)
+    route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
+
+    candidates = repair_route_charging_candidates(
+        route,
+        instance,
+        profile,
+        prices,
+        strategy="integrated",
+        public_station_candidate_mode="parallel",
+    )
+    by_public_station = {
+        next(
+            action.station_id
+            for action in actions
+            if action.station_id in {"F1", "F2"}
+        ): (candidate_route, actions)
+        for _, candidate_route, actions in candidates
+        if any(action.station_id in {"F1", "F2"} for action in actions)
+    }
+
+    assert set(by_public_station) == {"F1", "F2"}
+    for candidate_route, actions in by_public_station.values():
+        assert check_solution(
+            Solution(routes=[candidate_route], charging_actions=actions),
+            instance,
+            prices,
+        ) == []
+
+
+def test_parallel_repair_continues_when_default_candidate_fails(
+    monkeypatch,
+) -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, due_time=20_000.0),
+            Node("C1", "c", 0.0, 0.0, demand=1.0, due_time=20_000.0),
+            Node("F1", "f", 0.0, 0.0, due_time=20_000.0, charge_power_kw=60.0),
+        ],
+        distance_matrix=[
+            [0.0, 1_000.0, 1_000.0],
+            [1_000.0, 0.0, 1_000.0],
+            [1_000.0, 1_000.0, 0.0],
+        ],
+    )
+    route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
+
+    def fake_candidate(*args, forced_station_path=(), **kwargs):
+        del args, kwargs
+        if not forced_station_path:
+            raise ValueError("default path failed")
+        station_id = forced_station_path[0]
+        return (
+            Route("EV1", "ev", "D0", ["D0", station_id, "C1", "D0"]),
+            [
+                ChargingAction(
+                    "EV1",
+                    station_id,
+                    1.0,
+                    1.0,
+                    100.0,
+                )
+            ],
+        )
+
+    monkeypatch.setattr(
+        charging_module,
+        "_repair_route_charging_candidate",
+        fake_candidate,
+    )
+
+    candidates = repair_route_charging_candidates(
+        route,
+        instance,
+        _profile(100.0),
+        PriceParameters(initial_ev_battery_kwh=80.0),
+        public_station_candidate_mode="parallel",
+    )
+
+    assert [label for label, _, _ in candidates] == ["public_path_F1"]
 
 
 def test_refined_operator_registry_is_opt_in_and_has_safe_pairing() -> None:

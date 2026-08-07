@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import replace
 import math
 from collections.abc import Mapping
+from itertools import permutations
 from typing import Any
 
 from setp_solver.charge_timing import (
@@ -30,6 +31,7 @@ from setp_solver.cost import (
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import DEFAULT_PRICES, PriceParameters
 from setp_solver.charging_action import _curve_aware_action
+from setp_solver.charging_curve import spec_from_parameters
 from setp_solver.solution import ChargingAction, Route, Solution
 from setp_solver.station_copies import physical_station_id
 from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
@@ -55,6 +57,7 @@ CHARGE_AMOUNT_STRATEGIES = (
     "soc_95",
     "full",
 )
+CURVE_KNEE_STRATEGY_PREFIX = "curve_knee_"
 PUBLIC_STATION_CANDIDATE_MODES = frozenset({"fallback", "parallel"})
 DEFAULT_PUBLIC_STATION_CANDIDATE_MODE = "fallback"
 
@@ -79,10 +82,46 @@ def normalize_charge_amount_strategies(
     normalized = tuple(str(value).strip().lower() for value in strategies)
     if not normalized or len(set(normalized)) != len(normalized):
         raise ValueError("charge amount strategies must be non-empty and unique")
-    unknown = set(normalized) - set(CHARGE_AMOUNT_STRATEGIES)
+    unknown = {
+        value
+        for value in normalized
+        if value not in CHARGE_AMOUNT_STRATEGIES
+        and _curve_knee_index(value) is None
+    }
     if unknown:
         raise ValueError(f"unknown charge amount strategies: {sorted(unknown)}")
     return normalized
+
+
+def curve_knee_strategies(parameters: object) -> tuple[str, ...]:
+    """Name every internal breakpoint carried by the input charging curve."""
+
+    internal_count = max(
+        0,
+        len(spec_from_parameters(parameters).soc_breakpoints) - 2,
+    )
+    return tuple(
+        f"{CURVE_KNEE_STRATEGY_PREFIX}{index}"
+        for index in range(1, internal_count + 1)
+    )
+
+
+def _curve_knee_index(strategy: str) -> int | None:
+    if not strategy.startswith(CURVE_KNEE_STRATEGY_PREFIX):
+        return None
+    suffix = strategy.removeprefix(CURVE_KNEE_STRATEGY_PREFIX)
+    if not suffix.isdigit() or int(suffix) < 1:
+        return None
+    return int(suffix)
+
+
+def _curve_breakpoints_for_strategy(
+    parameters: object,
+    strategy: str,
+) -> tuple[float, ...]:
+    if _curve_knee_index(strategy) is None:
+        return ()
+    return spec_from_parameters(parameters).soc_breakpoints
 
 
 def charge_amount_target_kwh(
@@ -91,6 +130,7 @@ def charge_amount_target_kwh(
     just_enough_kwh: float,
     max_coverage_kwh: float,
     capacity_kwh: float,
+    curve_soc_breakpoints: tuple[float, ...] = (),
 ) -> float:
     """Map one shared physical charge target to an end-of-charge energy."""
 
@@ -101,6 +141,14 @@ def charge_amount_target_kwh(
         return just_enough
     if name == "max_coverage":
         return min(capacity, float(max_coverage_kwh))
+    knee_index = _curve_knee_index(name)
+    if knee_index is not None:
+        internal_breakpoints = tuple(float(value) for value in curve_soc_breakpoints[1:-1])
+        if knee_index > len(internal_breakpoints):
+            raise ValueError(
+                f"charging curve has no internal breakpoint {knee_index}"
+            )
+        return max(just_enough, internal_breakpoints[knee_index - 1] * capacity)
     if name == "soc_85":
         return max(just_enough, 0.85 * capacity)
     if name == "soc_95":
@@ -397,21 +445,29 @@ def repair_route_charging_candidates(
     """Build the legacy depot path and, when enabled, a public-only path."""
 
     validate_public_station_candidate_mode(public_station_candidate_mode)
-    fallback_route, fallback_actions = _repair_route_charging_candidate(
-        route,
-        instance,
-        gamma_profile,
-        prices,
-        strategy=strategy,
-        carbon_weight=carbon_weight,
-        depot_charge_window_mode=depot_charge_window_mode,
-        charge_timing_policy=charge_timing_policy,
-        charge_amount_strategy=charge_amount_strategy,
-        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
-        depot_precharge_target_kwh=None,
-    )
-    candidates = [("depot_fallback", fallback_route, fallback_actions)]
+    candidates: list[tuple[str, Route, list[ChargingAction]]] = []
+    fallback_error: ValueError | None = None
+    try:
+        fallback_route, fallback_actions = _repair_route_charging_candidate(
+            route,
+            instance,
+            gamma_profile,
+            prices,
+            strategy=strategy,
+            carbon_weight=carbon_weight,
+            depot_charge_window_mode=depot_charge_window_mode,
+            charge_timing_policy=charge_timing_policy,
+            charge_amount_strategy=charge_amount_strategy,
+            carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+            depot_precharge_target_kwh=None,
+        )
+    except ValueError as exc:
+        fallback_error = exc
+    else:
+        candidates.append(("depot_fallback", fallback_route, fallback_actions))
     if public_station_candidate_mode == DEFAULT_PUBLIC_STATION_CANDIDATE_MODE:
+        if fallback_error is not None:
+            raise fallback_error
         return candidates
     node_types = {node.node_id: node.node_type.lower() for node in instance.nodes}
     if route.vehicle_type.lower() != "ev" or not route.node_sequence:
@@ -432,59 +488,62 @@ def repair_route_charging_candidates(
         [],
     )
     start_node = route.node_sequence[0]
-    launch_targets: set[float] = set()
-    for station in stations:
-        launch_target = max(
-            initial_battery,
-            _ev_energy(
-                instance,
-                start_node,
-                station.node_id,
-                load_kg,
-                prices,
-            ),
-        )
-        if launch_target > battery_cap + 1e-9:
-            continue
-        rounded_target = round(float(launch_target), 12)
-        if rounded_target in launch_targets:
-            continue
-        launch_targets.add(rounded_target)
-        try:
-            public_route, public_actions = _repair_route_charging_candidate(
-                route,
-                instance,
-                gamma_profile,
-                prices,
-                strategy=strategy,
-                carbon_weight=carbon_weight,
-                depot_charge_window_mode=depot_charge_window_mode,
-                charge_timing_policy=charge_timing_policy,
-                charge_amount_strategy=charge_amount_strategy,
-                carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
-                depot_precharge_target_kwh=launch_target,
+    station_by_id = {station.node_id: station for station in stations}
+    station_ids = tuple(station_by_id)
+    for path_length in range(1, len(station_ids) + 1):
+        for station_path in permutations(station_ids, path_length):
+            station = station_by_id[station_path[0]]
+            launch_target = max(
+                initial_battery,
+                _ev_energy(
+                    instance,
+                    start_node,
+                    station.node_id,
+                    load_kg,
+                    prices,
+                ),
             )
-        except ValueError:
-            continue
-        public_station_ids = [
-            action.station_id
-            for action in public_actions
-            if node_types.get(action.station_id) == "f"
-        ]
-        if not public_station_ids:
-            continue
-        if any(
-            candidate_route == public_route and candidate_actions == public_actions
-            for _, candidate_route, candidate_actions in candidates
-        ):
-            continue
-        candidates.append(
-            (
-                f"public_station_{public_station_ids[0]}",
-                public_route,
-                public_actions,
+            if launch_target > battery_cap + 1e-9:
+                continue
+            try:
+                public_route, public_actions = _repair_route_charging_candidate(
+                    route,
+                    instance,
+                    gamma_profile,
+                    prices,
+                    strategy=strategy,
+                    carbon_weight=carbon_weight,
+                    depot_charge_window_mode=depot_charge_window_mode,
+                    charge_timing_policy=charge_timing_policy,
+                    charge_amount_strategy=charge_amount_strategy,
+                    carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+                    depot_precharge_target_kwh=launch_target,
+                    forced_station_path=station_path,
+                )
+            except ValueError:
+                continue
+            public_station_ids = [
+                action.station_id
+                for action in public_actions
+                if node_types.get(action.station_id) == "f"
+            ]
+            if not public_station_ids:
+                continue
+            if any(
+                candidate_route == public_route
+                and candidate_actions == public_actions
+                for _, candidate_route, candidate_actions in candidates
+            ):
+                continue
+            candidates.append(
+                (
+                    "public_path_" + "__".join(public_station_ids),
+                    public_route,
+                    public_actions,
+                )
             )
-        )
+    if not candidates and fallback_error is not None:
+        raise fallback_error
     return candidates
 
 
@@ -501,6 +560,7 @@ def _repair_route_charging_candidate(
     charge_amount_strategy: str,
     carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None,
     depot_precharge_target_kwh: float | None,
+    forced_station_path: tuple[str, ...] = (),
 ) -> tuple[Route, list[ChargingAction]]:
     """Build one charging path without changing any feasibility rule."""
 
@@ -554,6 +614,7 @@ def _repair_route_charging_candidate(
         # the current-day route clock used for station repair.
 
     current = route.node_sequence[0]
+    station_insertions = 0
     for target_idx, target in enumerate(original_targets):
         load_kg = sum(float(node_lookup[node_id].demand) for node_id in remaining_customers)
         needed_direct = _ev_energy(
@@ -604,12 +665,18 @@ def _repair_route_charging_candidate(
                 carbon_weight=carbon_weight,
                 charge_timing_policy=charge_timing_policy,
                 charge_amount_strategy=charge_amount_strategy,
+                forced_station_id=(
+                    forced_station_path[station_insertions]
+                    if station_insertions < len(forced_station_path)
+                    else None
+                ),
             )
             if candidate is None:
                 if battery + 1e-9 < needed_direct:
                     raise ValueError(f"No feasible charging insert between {current} and {target}")
             else:
                 station_id, action, arrive_station, depart_station, battery_after_charge = candidate
+                station_insertions += 1
                 repaired.append(station_id)
                 actions.append(action)
                 battery = battery_after_charge
@@ -634,6 +701,9 @@ def _repair_route_charging_candidate(
         if node_lookup[target].node_type.lower() == "c":
             remaining_customers.remove(target)
         current = target
+
+    if station_insertions < len(forced_station_path):
+        raise ValueError("forced public-station path was not fully used")
 
     repaired_route = replace(route, node_sequence=repaired)
     actions = _reanchor_depot_actions(
@@ -883,6 +953,10 @@ def _depot_precharge_action(
             just_enough_kwh=route_need,
             max_coverage_kwh=route_need,
             capacity_kwh=battery_cap,
+            curve_soc_breakpoints=_curve_breakpoints_for_strategy(
+                prices,
+                charge_amount_strategy,
+            ),
         )
     else:
         target_charge_level = float(target_charge_level_kwh)
@@ -1129,10 +1203,16 @@ def _best_station_insert(
     carbon_weight: float = 1.0,
     charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
     charge_amount_strategy: str = "just_enough",
+    forced_station_id: str | None = None,
 ) -> tuple[str, ChargingAction, float, float, float] | None:
     best: tuple[float, float, str, ChargingAction, float, float, float] | None = None
     refined: list[tuple[ChargeOption, float, float]] = []
     for station in stations:
+        if (
+            forced_station_id is not None
+            and station.node_id != forced_station_id
+        ):
+            continue
         to_station = _ev_distance(
             instance,
             current,
@@ -1202,6 +1282,10 @@ def _best_station_insert(
             just_enough_kwh=segment_need_from_station,
             max_coverage_kwh=max_coverage_need,
             capacity_kwh=battery_cap,
+            curve_soc_breakpoints=_curve_breakpoints_for_strategy(
+                prices,
+                charge_amount_strategy,
+            ),
         )
         energy_needed = max(0.0, target_charge_level - battery_at_station)
         if energy_needed <= 1e-9:

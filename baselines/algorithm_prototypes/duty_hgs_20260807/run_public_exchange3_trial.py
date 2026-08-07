@@ -125,9 +125,13 @@ def _write_failure_package(
         {
             path.name: _sha256(path)
             for path in sorted(output.iterdir())
-            if path.is_file() and path.name != "artifact_hashes.json"
+            if path.is_file()
+            and path.name != "artifact_hashes.json"
+            and not path.name.startswith("._")
         },
     )
+    for sidecar in output.glob("._*"):
+        sidecar.unlink()
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -498,9 +502,13 @@ def main() -> int:
         {
             path.name: _sha256(path)
             for path in sorted(output.iterdir())
-            if path.is_file() and path.name != "artifact_hashes.json"
+            if path.is_file()
+            and path.name != "artifact_hashes.json"
+            and not path.name.startswith("._")
         },
     )
+    for sidecar in output.glob("._*"):
+        sidecar.unlink()
     print(
         json.dumps(
             {

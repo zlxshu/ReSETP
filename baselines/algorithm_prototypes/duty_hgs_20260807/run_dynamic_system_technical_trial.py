@@ -515,9 +515,13 @@ def main() -> int:
         {
             path.name: _sha256(path)
             for path in sorted(output.iterdir())
-            if path.is_file() and path.name != "artifact_hashes.json"
+            if path.is_file()
+            and path.name != "artifact_hashes.json"
+            and not path.name.startswith("._")
         },
     )
+    for sidecar in output.glob("._*"):
+        sidecar.unlink()
     print(json.dumps({"output": str(output), "verdict": verdict}, ensure_ascii=False))
     return 0 if not failures else 1
 

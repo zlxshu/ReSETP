@@ -1,9 +1,9 @@
-"""Selective exchange of complete physical-vehicle daily duties.
+"""Contiguous exchange of complete physical-vehicle daily duties.
 
-v1 2026-08-07: adapt the Nagata--Kobayashi/PyVRP SREX selection pattern from
-routes to canonical physical duties.  Vehicle identity and locked commitments
-never cross registry slots; duplicate customers are removed and missing
-customers remain explicit for regret repair.
+v1 2026-08-07: exchange a random contiguous block of canonical physical-duty
+registry entries.  This is not the Nagata--Kobayashi/PyVRP SREX operator.
+Vehicle identity and locked commitments never cross registry slots; duplicate
+customers are removed and missing customers remain explicit for regret repair.
 
 v2 2026-08-07: duplicate cleanup cannot alter a trip carrying a locked charge.
 """

@@ -134,6 +134,12 @@ class MechanismProposalEngine:
                     duty,
                     context=self.context,
                     policy=self.charging_policy,
+                    other_session_end_seconds_by_station=(
+                        _other_session_end_seconds_by_station(
+                            individual,
+                            excluded_duty_id=duty.physical_vehicle_id,
+                        )
+                    ),
                 ):
                     payload = repr(
                         (
@@ -192,6 +198,28 @@ class MechanismProposalEngine:
                             right_duty_id=right.physical_vehicle_id,
                             right_trip_index=right_trip.trip_index,
                         )
+
+
+def _other_session_end_seconds_by_station(
+    individual: DutyIndividual,
+    *,
+    excluded_duty_id: str,
+) -> dict[str, tuple[float, ...]]:
+    ends: dict[str, list[float]] = {}
+    for duty in individual.duties:
+        if duty.physical_vehicle_id == excluded_duty_id:
+            continue
+        for session in duty.charging_sessions:
+            if int(session.charge_day_offset) != 0:
+                continue
+            ends.setdefault(session.station_id, []).append(
+                float(session.charge_start_second)
+                + float(session.occupancy_minutes) * 60.0
+            )
+    return {
+        station_id: tuple(sorted(set(values)))
+        for station_id, values in ends.items()
+    }
 
 
 @dataclass(frozen=True)

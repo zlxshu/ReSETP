@@ -88,6 +88,20 @@ class PenaltyParameters:
 class EvaluatedDutyCandidate:
     individual: DutyIndividual
     evaluation: FullEvaluation
+    fingerprint: str = field(init=False)
+    diversity_edges: frozenset[tuple[str, str]] = field(
+        init=False,
+        repr=False,
+        compare=False,
+    )
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "fingerprint", self.individual.fingerprint)
+        object.__setattr__(
+            self,
+            "diversity_edges",
+            frozenset(_duty_edges(self.individual)),
+        )
 
 
 @dataclass(frozen=True)
@@ -198,7 +212,7 @@ class DutyPopulation:
             (
                 item
                 for item in subpopulation
-                if item.individual.fingerprint == individual.fingerprint
+                if item.fingerprint == candidate.fingerprint
             ),
             None,
         )
@@ -227,20 +241,15 @@ class DutyPopulation:
         first = self._tournament(rng, fitness)
         second = self._tournament(rng, fitness)
         tries = 1
-        distance = broken_pairs_distance(
-            first.individual,
-            second.individual,
-        )
+        distance_cache: dict[tuple[str, str], float] = {}
+        distance = _candidate_distance(first, second, distance_cache)
         while not (
             self.params.lb_diversity
             <= distance
             <= self.params.ub_diversity
         ) and tries <= 10:
             second = self._tournament(rng, fitness)
-            distance = broken_pairs_distance(
-                first.individual,
-                second.individual,
-            )
+            distance = _candidate_distance(first, second, distance_cache)
             tries += 1
         return first, second
 
@@ -249,7 +258,7 @@ class DutyPopulation:
             self._feasible,
             key=lambda item: (
                 float(item.evaluation.total_cost),
-                item.individual.fingerprint,
+                item.fingerprint,
             ),
             default=None,
         )
@@ -259,7 +268,7 @@ class DutyPopulation:
             self._feasible + self._infeasible,
             key=lambda item: (
                 self.penalty_manager.cost(item.evaluation),
-                item.individual.fingerprint,
+                item.fingerprint,
             ),
             default=None,
         )
@@ -280,12 +289,16 @@ class DutyPopulation:
         return min(
             sampled,
             key=lambda item: (
-                fitness[item.individual.fingerprint],
-                item.individual.fingerprint,
+                fitness[item.fingerprint],
+                item.fingerprint,
             ),
         )
 
-    def _fitness(self) -> dict[str, float]:
+    def _fitness(
+        self,
+        distance_cache: dict[tuple[str, str], float] | None = None,
+    ) -> dict[str, float]:
+        distances = {} if distance_cache is None else distance_cache
         fitness: dict[str, float] = {}
         for subpopulation in (self._feasible, self._infeasible):
             if not subpopulation:
@@ -294,11 +307,11 @@ class DutyPopulation:
                 subpopulation,
                 key=lambda item: (
                     self.penalty_manager.cost(item.evaluation),
-                    item.individual.fingerprint,
+                    item.fingerprint,
                 ),
             )
             cost_rank = {
-                item.individual.fingerprint: rank
+                item.fingerprint: rank
                 for rank, item in enumerate(cost_order, start=1)
             }
             diversity_order = sorted(
@@ -308,12 +321,13 @@ class DutyPopulation:
                         item,
                         subpopulation,
                         self.params.num_close,
+                        distances,
                     ),
-                    item.individual.fingerprint,
+                    item.fingerprint,
                 ),
             )
             diversity_rank = {
-                item.individual.fingerprint: rank
+                item.fingerprint: rank
                 for rank, item in enumerate(diversity_order, start=1)
             }
             diversity_weight = 1.0 - min(
@@ -321,37 +335,38 @@ class DutyPopulation:
                 len(subpopulation),
             ) / len(subpopulation)
             for item in subpopulation:
-                fingerprint = item.individual.fingerprint
+                fingerprint = item.fingerprint
                 fitness[fingerprint] = float(cost_rank[fingerprint]) + (
                     diversity_weight * float(diversity_rank[fingerprint])
                 )
         return fitness
 
     def _purge(self, subpopulation: list[EvaluatedDutyCandidate]) -> None:
+        distance_cache: dict[tuple[str, str], float] = {}
         while len(subpopulation) > self.params.min_pop_size:
-            fitness = self._fitness()
+            fitness = self._fitness(distance_cache)
             elite = {
-                item.individual.fingerprint
+                item.fingerprint
                 for item in sorted(
                     subpopulation,
                     key=lambda item: (
                         self.penalty_manager.cost(item.evaluation),
-                        item.individual.fingerprint,
+                        item.fingerprint,
                     ),
                 )[: self.params.num_elite]
             }
             removable = [
                 item
                 for item in subpopulation
-                if item.individual.fingerprint not in elite
+                if item.fingerprint not in elite
             ]
             if not removable:
                 break
             worst = max(
                 removable,
                 key=lambda item: (
-                    fitness[item.individual.fingerprint],
-                    item.individual.fingerprint,
+                    fitness[item.fingerprint],
+                    item.fingerprint,
                 ),
             )
             subpopulation.remove(worst)
@@ -363,8 +378,13 @@ def broken_pairs_distance(
 ) -> float:
     """Vidal broken-pairs distance with duty/trip boundaries kept explicit."""
 
-    left_edges = _duty_edges(left)
-    right_edges = _duty_edges(right)
+    return _edge_distance(_duty_edges(left), _duty_edges(right))
+
+
+def _edge_distance(
+    left_edges: set[tuple[str, str]] | frozenset[tuple[str, str]],
+    right_edges: set[tuple[str, str]] | frozenset[tuple[str, str]],
+) -> float:
     union = left_edges.union(right_edges)
     if not union:
         return 0.0
@@ -430,9 +450,11 @@ def _average_close_distance(
     candidate: EvaluatedDutyCandidate,
     population: list[EvaluatedDutyCandidate],
     num_close: int,
+    distance_cache: dict[tuple[str, str], float] | None = None,
 ) -> float:
+    cache = {} if distance_cache is None else distance_cache
     distances = sorted(
-        broken_pairs_distance(candidate.individual, other.individual)
+        _candidate_distance(candidate, other, cache)
         for other in population
         if other is not candidate
     )
@@ -440,6 +462,20 @@ def _average_close_distance(
         return 0.0
     selected = distances[: min(num_close, len(distances))]
     return sum(selected) / len(selected)
+
+
+def _candidate_distance(
+    left: EvaluatedDutyCandidate,
+    right: EvaluatedDutyCandidate,
+    cache: dict[tuple[str, str], float],
+) -> float:
+    key = tuple(sorted((left.fingerprint, right.fingerprint)))
+    if key not in cache:
+        cache[key] = _edge_distance(
+            left.diversity_edges,
+            right.diversity_edges,
+        )
+    return cache[key]
 
 
 def _clip(value: float, lower: float, upper: float) -> float:

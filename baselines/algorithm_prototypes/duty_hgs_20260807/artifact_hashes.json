@@ -1,6 +1,7 @@
 {
   "schema": "resetp.duty_hgs.artifact_hashes.v3",
-  "status": "TECHNICAL_ARTIFACT_MANIFEST_CURRENT",
+  "status": "TECHNICAL_ARTIFACT_MANIFEST_LISTED_FILES_CURRENT",
+  "scope_note": "Only the files listed below are bound here; every technical-trial package carries its own manifest.",
   "excluded": [
     "artifact_hashes.json",
     "technical_trials/*/ (each package has its own artifact_hashes.json)",
@@ -11,38 +12,38 @@
   "files": [
     {
       "path": "PROVENANCE.md",
-      "sha256": "a8cb893f8f0c7877f01df88bed33b2e40e4ca386a5fd72c5e84d07cf9d47faeb",
-      "size_bytes": 2532
+      "sha256": "c50012ef7ce4ca73d277d3bfce82c1597ed3f21faf6532dbbf024ff3539b6670",
+      "size_bytes": 5103
     },
     {
       "path": "duty_hgs/__init__.py",
-      "sha256": "ed0da4ef481556302af69313e97505983c2867db4b5693585e1bd84aaf671c0e",
-      "size_bytes": 1087
+      "sha256": "8560c7b584db713d12334fe20cb76cbdd1781c278ae4bf425e329e1593728a54",
+      "size_bytes": 1350
     },
     {
       "path": "duty_hgs/charging.py",
-      "sha256": "2ddad53994ef3cd22f74f5cb7b60b0e0f3b78a65d47848e0b4033df58a206e99",
-      "size_bytes": 18380
+      "sha256": "36d9c5a1678023d03409f0b119234feb5cad1e40b13695912761a994bd1b348b",
+      "size_bytes": 31921
     },
     {
       "path": "duty_hgs/contracts.py",
-      "sha256": "b265be652bb85b89be1f16fc2d02ea7ab0bb91e6ef33736c95b9a39366ebec38",
-      "size_bytes": 6800
+      "sha256": "9f33be82f658f7cdc547761359dcd3d22aba88da62f2479668d133602290e53f",
+      "size_bytes": 7315
     },
     {
       "path": "duty_hgs/crossover.py",
-      "sha256": "a47bf527b56261912d9eb5565e5b0fab85720bc16aba2e3cb480b2f2889f0c43",
-      "size_bytes": 7642
+      "sha256": "44c1c9e45374ef53c1fee2e16faa5c08f14d3648fd30eec5f6e3572288294341",
+      "size_bytes": 7877
     },
     {
       "path": "duty_hgs/education.py",
-      "sha256": "312f18b2d60d4907c0ec0f382c15665f33b6fb8892522d800bf643dbee9bc592",
-      "size_bytes": 11050
+      "sha256": "1ffe60fbd2973b010cd878afad529f4ee19950bc4a2a095ad0b772dd28c28ff5",
+      "size_bytes": 13547
     },
     {
       "path": "duty_hgs/evaluation.py",
-      "sha256": "c9dfbe2a60b083d896132aa49ec9807d5920f3b06af57a9b58d276c117edd2eb",
-      "size_bytes": 24831
+      "sha256": "81cdb15f3d4b3abc7c8c669581a49d1a375b99ba8c0c643caa2bd42c3550ebf4",
+      "size_bytes": 33311
     },
     {
       "path": "duty_hgs/feedback.py",
@@ -51,18 +52,18 @@
     },
     {
       "path": "duty_hgs/model.py",
-      "sha256": "ab83c5667efe41627a8be17e0c9d9ad6351f6dbac6fd0112a84306aeb94c2c54",
-      "size_bytes": 16814
+      "sha256": "a5fadc20847c190816b6387003cb4b16a2d334f7922a97fd0b3e3e295cd054f4",
+      "size_bytes": 17523
     },
     {
       "path": "duty_hgs/operators.py",
-      "sha256": "296b995c7639aabd4b8ac7c4b45577f74a4e75c76ebc2bcc0c5ff9be5a2db222",
-      "size_bytes": 22310
+      "sha256": "c2777ce965692fbe3119a5c399440f13f56ec8bf2d469d362b284b46368cd95a",
+      "size_bytes": 42181
     },
     {
       "path": "duty_hgs/population.py",
-      "sha256": "17738a6e920d6cbec11d7c20f3dc207d39511e845aaa735fb7fd2c80de6d844c",
-      "size_bytes": 15150
+      "sha256": "dadd4d10b4f0872d33721dc8dbe4db0f05874bb85e324674b6d403e4bf5e2129",
+      "size_bytes": 17025
     },
     {
       "path": "duty_hgs/repair.py",
@@ -71,13 +72,13 @@
     },
     {
       "path": "duty_hgs/runner.py",
-      "sha256": "c04c7d5e88ad2918dd2d855e0ddff71fc31680ce6d1bac9ed30c48cc857c5776",
-      "size_bytes": 23041
+      "sha256": "01108de1918a8dee8887ccf37570a45844b73c31613efbac173102801f75065a",
+      "size_bytes": 26792
     },
     {
       "path": "report.md",
-      "sha256": "f3688f9736acff3ef9169a3c57ac437797d0888f6887f9329994b5afcc6ac522",
-      "size_bytes": 13857
+      "sha256": "b434581ff4d0827e3870864a9f140d4ac8c6c38a4ba3ab588a7322c9e75b76b8",
+      "size_bytes": 14098
     },
     {
       "path": "run_real_input_action_scope_smoke.py",
@@ -86,13 +87,13 @@
     },
     {
       "path": "run_real_input_repair_smoke.py",
-      "sha256": "1a783a58a398e8a237f8ee6e99e3a109ab21df3631c19eacbd33169611c06252",
-      "size_bytes": 9824
+      "sha256": "cefd44b89095279e93ec6e62ace4e5856945840ec68e8e1026388c8efefab41e",
+      "size_bytes": 9838
     },
     {
       "path": "run_real_input_technical_trial.py",
-      "sha256": "39ed4c1efd62b5f99f26ebf905b02fab54a786c935087d6fc83db37c4bc04e2b",
-      "size_bytes": 30674
+      "sha256": "24d2be2c71a990ada222556ec5d64658fa04028d6aefb2212b2ba70eb3a8e5e9",
+      "size_bytes": 37468
     },
     {
       "path": "technical_feedback_probe.json",
@@ -106,13 +107,13 @@
     },
     {
       "path": "tests/conftest.py",
-      "sha256": "415900b4c1336154e2045af637cc581b28a0c60b8ab366c958b53b69d7602ddd",
-      "size_bytes": 8399
+      "sha256": "188a08294f64c5188c3e1495081a28c05d3b71aae03349fe0ed0b90138f3d16a",
+      "size_bytes": 7067
     },
     {
       "path": "tests/test_evaluation.py",
-      "sha256": "5734f56a91b9c6cd5320f976594422de3893b9b68fd135d238796104f828bfb1",
-      "size_bytes": 10253
+      "sha256": "0f2d025f47d244dbdf25ccc45c1560622ef4ce6675dbdf0ee3e8f6a5ee15c687",
+      "size_bytes": 12130
     },
     {
       "path": "tests/test_feedback.py",
@@ -126,13 +127,13 @@
     },
     {
       "path": "tests/test_review_regressions.py",
-      "sha256": "6ee8cd665fb54a954cb19a8a80a90aea1c28980bcedd03dae6f185a882b49724",
-      "size_bytes": 13500
+      "sha256": "c776572cd1f0a22c64f6a0684f4e7fda929a213f09bfb3102251a0c43200e70d",
+      "size_bytes": 20451
     },
     {
       "path": "tests/test_search_components.py",
-      "sha256": "7a95bd95a981cd631f582a5dad036739d948ed08b30a92544f6d4f271b8e74d3",
-      "size_bytes": 17280
+      "sha256": "18f70205a713b55ec3e69694c8854a5f0d2ae0315a0b1328b0091373e25ae113",
+      "size_bytes": 23321
     },
     {
       "path": "upstream/PyVRP-0.12.2/GeneticAlgorithm.py",

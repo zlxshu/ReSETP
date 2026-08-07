@@ -440,9 +440,30 @@ def route_timing(
     # could push an early-due customer past its deadline on mixed-shift routes.
     if public_actions:
         # Existing public-charge clocks are part of the solution witness.
-        # Keep the canonical earliest depot departure and verify those clocks;
-        # do not move or recreate a station action inside the certificate.
-        depart = float(origin.ready_time) + float(origin.service_time)
+        # Keep their clocks fixed and verify them; do not move or recreate a
+        # station action inside the certificate.  A same-day depot charge is
+        # also part of that witness, so the route cannot depart before it ends.
+        first_public_start = min(
+            float(action.charge_start_second)
+            for actions in public_actions.values()
+            for action in actions
+        )
+        depot_charge_ends = [
+            float(action.charge_start_second)
+            + float(action.occupancy_minutes) * 60.0
+            for action in route_actions
+            if action.station_id == route.home_depot_id
+            and int(action.charge_day_offset) == 0
+            and float(action.charge_start_second)
+            + float(action.occupancy_minutes) * 60.0
+            <= first_public_start + _TOL
+        ]
+        depart = max(
+            [
+                float(origin.ready_time) + float(origin.service_time),
+                *depot_charge_ends,
+            ]
+        )
     else:
         elapsed = float(origin.service_time)
         departure_candidates = [

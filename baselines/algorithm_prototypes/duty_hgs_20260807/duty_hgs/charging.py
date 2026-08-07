@@ -16,12 +16,15 @@ rewriting an earlier dynamic commitment.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field, replace
+from itertools import chain, product
 from typing import Any
 
 from setp_solver.algorithms.resetp_alns.support.charging import (
+    curve_knee_strategies,
     repair_route_charging,
+    repair_route_charging_candidates,
 )
 from setp_solver.charge_timing import _timing_candidates
 from setp_solver.charging_action import _curve_aware_action
@@ -182,11 +185,14 @@ def build_ev_duty_charging_candidates(
     context: DutyEvaluationContext,
     policy: ChargingRepairPolicy,
     reference: PhysicalVehicleDuty | None = None,
-) -> tuple[PhysicalVehicleDuty, ...]:
+    other_session_end_seconds_by_station: Mapping[
+        str, tuple[float, ...]
+    ] | None = None,
+) -> Iterator[PhysicalVehicleDuty]:
     """Build exact whole-duty amount and timing alternatives for one EV."""
 
     if duty.vehicle_type != "ev" or not duty.trips:
-        return ()
+        return
     reference_duty = duty if reference is None else reference
     amount_strategies = tuple(
         dict.fromkeys(
@@ -194,45 +200,170 @@ def build_ev_duty_charging_candidates(
                 policy.charge_amount_strategy,
                 "just_enough",
                 "max_coverage",
+                *curve_knee_strategies(context.bundle.prices),
                 "full",
             )
         )
     )
-    candidates: list[PhysicalVehicleDuty] = []
     seen = {duty}
-    for amount_strategy in amount_strategies:
-        try:
-            repaired = _repair_one_ev_duty(
-                reference_duty,
-                duty,
+    for repaired in _repair_one_ev_duty_candidates(
+        reference_duty,
+        duty,
+        context=context,
+        policy=policy,
+        amount_strategies=amount_strategies,
+    ):
+        for candidate in chain(
+            (repaired,),
+            _static_timing_variants(
+                repaired,
                 context=context,
-                policy=replace(
-                    policy,
-                    charge_amount_strategy=amount_strategy,
+                other_session_end_seconds_by_station=(
+                    other_session_end_seconds_by_station
                 ),
-            )
-        except (TypeError, ValueError):
-            continue
-        for candidate in (repaired, *_same_day_depot_timing_variants(
-            repaired,
-            context=context,
-        )):
+            ),
+        ):
             if candidate in seen:
                 continue
             seen.add(candidate)
-            candidates.append(candidate)
-    return tuple(candidates)
+            yield candidate
 
 
-def _same_day_depot_timing_variants(
+def _repair_one_ev_duty_candidates(
+    reference: PhysicalVehicleDuty,
     duty: PhysicalVehicleDuty,
     *,
     context: DutyEvaluationContext,
-) -> tuple[PhysicalVehicleDuty, ...]:
-    """Enumerate exact slot/curve breakpoints for current same-day depot use."""
+    policy: ChargingRepairPolicy,
+    amount_strategies: tuple[str, ...],
+) -> Iterator[PhysicalVehicleDuty]:
+    """Expose route/site/amount alternatives to the whole-duty evaluator."""
+
+    if not duty.trips:
+        return
+    bundle = context.bundle
+    node_lookup = {node.node_id: node for node in bundle.instance.nodes}
+    reference_sessions_by_trip: dict[int, list[DutyChargingSession]] = {}
+    for session in reference.charging_sessions:
+        reference_sessions_by_trip.setdefault(
+            int(session.trip_index), []
+        ).append(session)
+    locked_trip_indices = reference.locked_charging_trip_indices
+    for trip_index in locked_trip_indices:
+        sessions = reference_sessions_by_trip.get(trip_index, [])
+        if any(not session.locked for session in sessions):
+            raise ValueError(
+                "one trip cannot mix locked and unlocked charging sessions"
+            )
+
+    route_repair_window_mode = "same_day_predeparture"
+    options_by_trip: list[
+        tuple[tuple[Route, tuple[ChargingAction, ...]], ...]
+    ] = []
+    for trip in duty.trips:
+        temporary_id = duty.route_id(trip.trip_index)
+        route = Route(
+            vehicle_id=temporary_id,
+            vehicle_type="ev",
+            home_depot_id=duty.home_depot_id,
+            node_sequence=[
+                duty.home_depot_id,
+                *trip.effective_route_visits,
+                duty.home_depot_id,
+            ],
+        )
+        if int(trip.trip_index) in locked_trip_indices:
+            options_by_trip.append(
+                ((
+                    route,
+                    tuple(
+                        _session_to_action(session, temporary_id)
+                        for session in reference_sessions_by_trip[trip.trip_index]
+                    ),
+                ),)
+            )
+            continue
+
+        trip_options: list[tuple[Route, tuple[ChargingAction, ...]]] = []
+        for amount_strategy in amount_strategies:
+            try:
+                route_candidates = repair_route_charging_candidates(
+                    route,
+                    bundle.instance,
+                    bundle.time_profile,
+                    bundle.prices,
+                    strategy=policy.strategy,
+                    carbon_weight=float(policy.carbon_weight),
+                    depot_charge_window_mode=route_repair_window_mode,
+                    charge_timing_policy=policy.charge_timing_policy,
+                    charge_amount_strategy=amount_strategy,
+                    carbon_profiles_by_day_offset=(
+                        policy.carbon_profiles_by_day_offset
+                    ),
+                    public_station_candidate_mode=(
+                        policy.public_station_candidate_mode
+                    ),
+                )
+            except (TypeError, ValueError):
+                continue
+            for _label, repaired_route, repaired_actions in route_candidates:
+                _assert_customer_order(
+                    trip.customer_ids,
+                    repaired_route,
+                    node_lookup,
+                )
+                normalized_actions = tuple(repaired_actions)
+                if any(
+                    existing_route == repaired_route
+                    and existing_actions == normalized_actions
+                    for existing_route, existing_actions in trip_options
+                ):
+                    continue
+                trip_options.append(
+                    (repaired_route, normalized_actions)
+                )
+        if not trip_options:
+            return
+        options_by_trip.append(tuple(trip_options))
+
+    seen_duties: set[PhysicalVehicleDuty] = set()
+    for combination in product(*options_by_trip):
+        routes = [route for route, _ in combination]
+        actions = [
+            action
+            for _, route_actions in combination
+            for action in route_actions
+        ]
+        try:
+            rebuilt = _rebuild_ev_duty(
+                reference,
+                duty,
+                routes,
+                actions,
+                locked_trip_indices=locked_trip_indices,
+                context=context,
+                policy=policy,
+            )
+        except (TypeError, ValueError):
+            continue
+        if rebuilt in seen_duties:
+            continue
+        seen_duties.add(rebuilt)
+        yield rebuilt
+
+
+def _static_timing_variants(
+    duty: PhysicalVehicleDuty,
+    *,
+    context: DutyEvaluationContext,
+    other_session_end_seconds_by_station: Mapping[
+        str, tuple[float, ...]
+    ] | None = None,
+) -> Iterator[PhysicalVehicleDuty]:
+    """Expose depot breakpoints and shared-charger release instants."""
 
     if context.depot_charge_window_mode != "same_day_predeparture":
-        return ()
+        return
     solution = DutyIndividual(
         duties=(duty,),
         source="charging-timing-candidates",
@@ -245,7 +376,7 @@ def _same_day_depot_timing_variants(
     for action in solution.charging_actions:
         trip_index = int(action.vehicle_id.rsplit("#T", 1)[1])
         actions_by_trip.setdefault(trip_index, []).append(action)
-    variants: list[PhysicalVehicleDuty] = []
+    start_options: list[tuple[int, tuple[float, ...]]] = []
     previous_return: float | None = None
     for trip in duty.trips:
         route = route_by_trip[trip.trip_index]
@@ -260,10 +391,27 @@ def _same_day_depot_timing_variants(
         for session_index, session in enumerate(duty.charging_sessions):
             if (
                 session.trip_index != trip.trip_index
-                or session.station_id != duty.home_depot_id
                 or session.locked
                 or int(session.charge_day_offset) != 0
             ):
+                continue
+            external_starts = tuple(
+                float(start)
+                for start in (
+                    other_session_end_seconds_by_station or {}
+                ).get(session.station_id, ())
+            )
+            if session.station_id != duty.home_depot_id:
+                all_starts = tuple(
+                    dict.fromkeys(
+                        (
+                            float(session.charge_start_second),
+                            *external_starts,
+                        )
+                    )
+                )
+                if len(all_starts) > 1:
+                    start_options.append((session_index, all_starts))
                 continue
             action = _session_to_action(session, route.vehicle_id)
             duration = float(action.occupancy_minutes) * 60.0
@@ -279,22 +427,51 @@ def _same_day_depot_timing_variants(
                 )
             except ValueError:
                 continue
-            for start in starts:
-                if abs(float(start) - float(session.charge_start_second)) <= 1e-9:
-                    continue
-                sessions = list(duty.charging_sessions)
-                sessions[session_index] = replace(
-                    session,
-                    charge_start_second=float(start),
+            all_starts = tuple(
+                dict.fromkeys(
+                    (
+                        float(session.charge_start_second),
+                        *(float(start) for start in starts),
+                        *(
+                            float(start)
+                            for start in external_starts
+                            if earliest - 1e-9
+                            <= float(start)
+                            <= latest + 1e-9
+                        ),
+                    )
                 )
-                candidate = replace(duty, charging_sessions=tuple(sessions))
-                try:
-                    _verify_prepared_ledger(candidate, context)
-                except (TypeError, ValueError):
-                    continue
-                variants.append(candidate)
+            )
+            start_options.append((session_index, all_starts))
         previous_return = float(timing.return_second)
-    return tuple(variants)
+    if not start_options:
+        return
+
+    original_starts = tuple(
+        float(duty.charging_sessions[index].charge_start_second)
+        for index, _ in start_options
+    )
+    for selected_starts in product(
+        *(starts for _, starts in start_options)
+    ):
+        if selected_starts == original_starts:
+            continue
+        sessions = list(duty.charging_sessions)
+        for (session_index, _), start in zip(
+            start_options,
+            selected_starts,
+            strict=True,
+        ):
+            sessions[session_index] = replace(
+                sessions[session_index],
+                charge_start_second=float(start),
+            )
+        candidate = replace(duty, charging_sessions=tuple(sessions))
+        try:
+            _verify_prepared_ledger(candidate, context)
+        except (TypeError, ValueError):
+            continue
+        yield candidate
 
 
 def _repair_one_ev_duty(
@@ -374,6 +551,31 @@ def _repair_one_ev_duty(
         routes.append(repaired_route)
         actions.extend(repaired_actions)
 
+    return _rebuild_ev_duty(
+        reference,
+        duty,
+        routes,
+        actions,
+        locked_trip_indices=locked_trip_indices,
+        context=context,
+        policy=policy,
+    )
+
+
+def _rebuild_ev_duty(
+    reference: PhysicalVehicleDuty,
+    duty: PhysicalVehicleDuty,
+    routes: list[Route],
+    actions: list[ChargingAction],
+    *,
+    locked_trip_indices: frozenset[int],
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+) -> PhysicalVehicleDuty:
+    """Close one route-option combination on the exact whole-day ledger."""
+
+    bundle = context.bundle
+    node_lookup = {node.node_id: node for node in bundle.instance.nodes}
     anchored = _anchor_duty_depot_actions(
         routes,
         actions,
