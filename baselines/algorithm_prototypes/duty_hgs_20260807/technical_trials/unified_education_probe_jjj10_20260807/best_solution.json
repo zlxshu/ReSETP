@@ -1,0 +1,219 @@
+{
+  "individual": {
+    "duties": [
+      {
+        "physical_vehicle_id": "CV_D_beijing_1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_beijing",
+        "trips": [
+          {
+            "trip_index": 1,
+            "customer_ids": [
+              "C001",
+              "C010",
+              "C007",
+              "C008",
+              "C003"
+            ],
+            "locked_customer_prefix": [],
+            "route_visits": []
+          }
+        ],
+        "charging_sessions": [],
+        "has_dynamic_commitment": false
+      },
+      {
+        "physical_vehicle_id": "EV_D_beijing_1",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_beijing",
+        "trips": [
+          {
+            "trip_index": 1,
+            "customer_ids": [
+              "C006",
+              "C004",
+              "C002",
+              "C009",
+              "C005"
+            ],
+            "locked_customer_prefix": [],
+            "route_visits": []
+          }
+        ],
+        "charging_sessions": [
+          {
+            "trip_index": 1,
+            "station_id": "D_beijing",
+            "energy_kwh": 33.998846421960906,
+            "occupancy_minutes": 92.72412660534792,
+            "charge_start_second": 19636.552403679,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 33.998846421960906,
+            "charging_curve_id": "NL90_mild",
+            "locked": false
+          }
+        ],
+        "has_dynamic_commitment": false
+      }
+    ],
+    "unserved_customers": [],
+    "version": 1,
+    "source": "route_order:2opt:EV_D_beijing_1#T1@0:2"
+  },
+  "evaluation": {
+    "total_cost": 561.1475064958792,
+    "breakdown": {
+      "total_cost": 561.1475064958792,
+      "cost_fix": 340.0,
+      "cost_km": 125.49936939105712,
+      "cost_fuel": 73.01654386471355,
+      "cost_elec": 19.151065705929064,
+      "cost_occ": 0.0,
+      "cost_time": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 3.4805275341793647,
+      "E_total": 46.39466187922373,
+      "E_cv_direct": 26.403146758505542,
+      "E_ev_indirect": 19.991515120718194,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "distance_total": 175218.421712733,
+      "distance_cv": 73663.880395691,
+      "distance_ev": 101554.54131704199,
+      "fuel_liters": 9.761570035389513,
+      "electricity_kwh": 33.998846421960906,
+      "route_time_hours": 2.7261944444444444,
+      "depot_charging_kwh": 33.998846421960906,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 33.998846421960906
+    },
+    "violations": [],
+    "participation_margin": {
+      "D_beijing": 38.6231511286569
+    },
+    "prepared_solution": {
+      "routes": [
+        {
+          "vehicle_id": "CV_D_beijing_1#T1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C001",
+            "C010",
+            "C007",
+            "C008",
+            "C003",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "EV_D_beijing_1#T1",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C006",
+            "C004",
+            "C002",
+            "C009",
+            "C005",
+            "D_beijing"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "EV_D_beijing_1#T1",
+          "station_id": "D_beijing",
+          "energy_kwh": 33.998846421960906,
+          "occupancy_minutes": 92.72412660534792,
+          "charge_start_second": 19636.552403679,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 33.998846421960906,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    }
+  },
+  "accounting": {
+    "proposed_actions": {
+      "mixed_fleet": 340,
+      "multi_trip": 80,
+      "route_order": 80,
+      "time_varying_carbon_charge": 4,
+      "whole_duty_type_exchange": 4
+    },
+    "evaluated_actions": {
+      "mixed_fleet": 68,
+      "multi_trip": 4,
+      "route_order": 12,
+      "time_varying_carbon_charge": 1,
+      "whole_duty_type_exchange": 4
+    },
+    "accepted_actions": {
+      "mixed_fleet": 1,
+      "route_order": 2
+    },
+    "rejected_actions": {
+      "mixed_fleet:REJECTED_CHARGING": 168,
+      "mixed_fleet:REJECTED_INTERFACE": 104,
+      "multi_trip:REJECTED_CHARGING": 40,
+      "multi_trip:REJECTED_INTERFACE": 36,
+      "route_order:REJECTED_CHARGING": 32,
+      "route_order:REJECTED_INTERFACE": 36
+    },
+    "no_change_actions": {
+      "time_varying_carbon_charge": 3
+    },
+    "full_evaluations": 0,
+    "incremental_evaluations": 89,
+    "sentinel_evaluations": 89,
+    "actual_full_model_evaluations": 89,
+    "cache_seedings": 4,
+    "duty_slice_preparations": 169,
+    "candidate_assemblies": 89,
+    "crossover_calls": 0,
+    "repair_calls": 0,
+    "education_rounds": 4,
+    "population_admission_attempts": 0,
+    "population_admissions": 0,
+    "restarts": 0,
+    "wall_seconds": 2.87497654397157,
+    "run_wall_seconds": 0.0
+  },
+  "initial_observations": {
+    "used_cv": 1,
+    "used_ev": 1,
+    "used_physical_vehicles": 2,
+    "trip_count": 2,
+    "multi_trip_vehicle_count": 0,
+    "maximum_trips_per_vehicle": 1,
+    "charging_action_count": 1,
+    "charging_energy_kwh": 37.55539081832851,
+    "charging_actions_with_known_end_energy": 1,
+    "charging_actions_entering_taper_region": 0,
+    "charging_curve_id": "NL90_mild",
+    "taper_start_soc": 0.9,
+    "cross_site_service_count": 0
+  },
+  "final_observations": {
+    "used_cv": 1,
+    "used_ev": 1,
+    "used_physical_vehicles": 2,
+    "trip_count": 2,
+    "multi_trip_vehicle_count": 0,
+    "maximum_trips_per_vehicle": 1,
+    "charging_action_count": 1,
+    "charging_energy_kwh": 33.998846421960906,
+    "charging_actions_with_known_end_energy": 1,
+    "charging_actions_entering_taper_region": 0,
+    "charging_curve_id": "NL90_mild",
+    "taper_start_soc": 0.9,
+    "cross_site_service_count": 0
+  }
+}
