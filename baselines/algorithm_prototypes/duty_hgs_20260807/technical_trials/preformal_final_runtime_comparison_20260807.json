@@ -1,0 +1,23 @@
+{
+  "comparison_method": "parse each trajectory row as JSON, remove only the intentionally changed arm label, serialize with sorted keys and compact separators, then compare bytes",
+  "sentinel_off": {
+    "before_package": "preformal_sentinel_off_20260807",
+    "after_package": "preformal_final_sentinel_off_20260807",
+    "before_rows": 368,
+    "after_rows": 368,
+    "all_non_arm_fields_equal": true,
+    "normalized_sha256": "0dcb8765a3e6875380a5a8e29c66231032ffda40bbb5fa16fb1549730118dfc0",
+    "before_arm": "preformal-sentinel-off-wiring",
+    "after_arm": "preformal-final-sentinel-off-wiring"
+  },
+  "streaming_restart": {
+    "before_package": "preformal_streaming_restart_20260807",
+    "after_package": "preformal_final_streaming_restart_20260807",
+    "before_rows": 876,
+    "after_rows": 876,
+    "all_non_arm_fields_equal": true,
+    "normalized_sha256": "5c88e321117ec968664dbe373d55887991792e7e9df6ba50aba46d883bcacf84",
+    "before_arm": "preformal-streaming-restart-wiring",
+    "after_arm": "preformal-final-streaming-restart-wiring"
+  }
+}

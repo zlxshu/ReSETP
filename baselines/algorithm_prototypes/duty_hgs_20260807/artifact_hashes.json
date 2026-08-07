@@ -1,8 +1,9 @@
 {
-  "schema": "resetp.duty_hgs.artifact_hashes.v2",
-  "status": "READY_FOR_STATIC_TECHNICAL_TRIAL",
+  "schema": "resetp.duty_hgs.artifact_hashes.v3",
+  "status": "TECHNICAL_ARTIFACT_MANIFEST_CURRENT",
   "excluded": [
     "artifact_hashes.json",
+    "technical_trials/*/ (each package has its own artifact_hashes.json)",
     "._*",
     "__pycache__",
     ".pytest_cache"
@@ -30,18 +31,18 @@
     },
     {
       "path": "duty_hgs/crossover.py",
-      "sha256": "8ff2663cd38b1a71c58690dd748becbe5938a0eb75501f23034e8269ff3544b0",
-      "size_bytes": 7509
+      "sha256": "a47bf527b56261912d9eb5565e5b0fab85720bc16aba2e3cb480b2f2889f0c43",
+      "size_bytes": 7642
     },
     {
       "path": "duty_hgs/education.py",
-      "sha256": "6be3459cac06993fd4984f334e727009af8deb0e4b5fc527ca5f6585ba0a7f9a",
-      "size_bytes": 10453
+      "sha256": "312f18b2d60d4907c0ec0f382c15665f33b6fb8892522d800bf643dbee9bc592",
+      "size_bytes": 11050
     },
     {
       "path": "duty_hgs/evaluation.py",
-      "sha256": "3e5be9a70abf0a8e1b298a4ad8ca00431f756bdc0d8aadf78575e943c56bb4a3",
-      "size_bytes": 24460
+      "sha256": "c9dfbe2a60b083d896132aa49ec9807d5920f3b06af57a9b58d276c117edd2eb",
+      "size_bytes": 24831
     },
     {
       "path": "duty_hgs/feedback.py",
@@ -55,8 +56,8 @@
     },
     {
       "path": "duty_hgs/operators.py",
-      "sha256": "4601b59b3fcb1b91778a272d60321721e53658f92cbf85e6fdad698af3e8c7f8",
-      "size_bytes": 21911
+      "sha256": "296b995c7639aabd4b8ac7c4b45577f74a4e75c76ebc2bcc0c5ff9be5a2db222",
+      "size_bytes": 22310
     },
     {
       "path": "duty_hgs/population.py",
@@ -65,23 +66,43 @@
     },
     {
       "path": "duty_hgs/repair.py",
-      "sha256": "f6101850f6e7ba87e13ce54d2e98cb08f64c2c9152946eb9338ce8818ad01951",
-      "size_bytes": 6531
+      "sha256": "6404bba2f7fa653da31623b0ca8e8b65705cd2fdd239fdaf82ebd64ffef8c71e",
+      "size_bytes": 7159
     },
     {
       "path": "duty_hgs/runner.py",
-      "sha256": "73e68173bb87236cc3b3b515801db02f13244e985c8bc6c50ee6283092b3652a",
-      "size_bytes": 21271
+      "sha256": "c04c7d5e88ad2918dd2d855e0ddff71fc31680ce6d1bac9ed30c48cc857c5776",
+      "size_bytes": 23041
     },
     {
       "path": "report.md",
-      "sha256": "9b9f20b07359891851cf5643de6ffed7a49e6ffe0292b5197c96d9223973c7e7",
-      "size_bytes": 11036
+      "sha256": "f3688f9736acff3ef9169a3c57ac437797d0888f6887f9329994b5afcc6ac522",
+      "size_bytes": 13857
+    },
+    {
+      "path": "run_real_input_action_scope_smoke.py",
+      "sha256": "53719a9625ae2dd5b6da1371941d7ca7599a2bd536b473e4b098616b39348e3b",
+      "size_bytes": 12955
+    },
+    {
+      "path": "run_real_input_repair_smoke.py",
+      "sha256": "1a783a58a398e8a237f8ee6e99e3a109ab21df3631c19eacbd33169611c06252",
+      "size_bytes": 9824
+    },
+    {
+      "path": "run_real_input_technical_trial.py",
+      "sha256": "39ed4c1efd62b5f99f26ebf905b02fab54a786c935087d6fc83db37c4bc04e2b",
+      "size_bytes": 30674
     },
     {
       "path": "technical_feedback_probe.json",
       "sha256": "eb1d611ca4c99cd629c1d89bee38e468be66646b2a02a6e5f6b975ec2a03ac0c",
       "size_bytes": 4048
+    },
+    {
+      "path": "technical_trials/preformal_final_runtime_comparison_20260807.json",
+      "sha256": "5f992b7b0b3ac0ecf94ea1413054db04f82cceb5b96491ac2c3c66271ec97783",
+      "size_bytes": 1064
     },
     {
       "path": "tests/conftest.py",
@@ -90,8 +111,8 @@
     },
     {
       "path": "tests/test_evaluation.py",
-      "sha256": "fd7185015d7f3fcc981783108238ad894b12b00fd843e2b61dd4c4f7bdda7fe0",
-      "size_bytes": 9056
+      "sha256": "5734f56a91b9c6cd5320f976594422de3893b9b68fd135d238796104f828bfb1",
+      "size_bytes": 10253
     },
     {
       "path": "tests/test_feedback.py",
@@ -105,13 +126,13 @@
     },
     {
       "path": "tests/test_review_regressions.py",
-      "sha256": "d954e6ead9b222d553a5d1a0ceeef9a7fc2fd26bb5b68794ae0bb241b9d4bbf8",
-      "size_bytes": 11488
+      "sha256": "6ee8cd665fb54a954cb19a8a80a90aea1c28980bcedd03dae6f185a882b49724",
+      "size_bytes": 13500
     },
     {
       "path": "tests/test_search_components.py",
-      "sha256": "28f6ee55529e9e027f20bdbc0b700c8fa3e1b67f07d9d0f2254847fd81293c6a",
-      "size_bytes": 11382
+      "sha256": "7a95bd95a981cd631f582a5dad036739d948ed08b30a92544f6d4f271b8e74d3",
+      "size_bytes": 17280
     },
     {
       "path": "upstream/PyVRP-0.12.2/GeneticAlgorithm.py",
