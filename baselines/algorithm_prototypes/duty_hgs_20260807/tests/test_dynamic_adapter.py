@@ -15,12 +15,14 @@ from duty_hgs.dynamic import (
 from duty_hgs.evaluation import DutyFullEvaluator
 from duty_hgs.operators import generate_problem_moves
 from run_real_input_technical_trial import _build_context
+from setp_solver.check import check_solution
 from setp_solver.cost import route_departure_second
 from setp_solver.search.dynamic_multitrip_schedule import (
     DynamicAssetState,
     _route_profile,
     cut_certificate_at_trigger,
 )
+from setp_solver.search.multitrip_schedule import reschedule_between_trip_charging
 
 REPO = Path(__file__).resolve().parents[4]
 INSTANCE_ID = "cn-jjj-50c-01-V2-LOCATIONS"
@@ -317,6 +319,50 @@ def test_dynamic_departure_and_physical_vehicle_count_survive_full_evaluation(
         + int(evaluation.breakdown["n_veh_ev"])
         == len(used_physical_ids)
     )
+
+
+def test_real_same_day_carbon_reschedule_obeys_both_departure_clocks() -> None:
+    bundle, _context, _state, _future, static_evaluation = _dynamic_case(
+        TRIGGER_SECOND
+    )
+    aware = reschedule_between_trip_charging(
+        static_evaluation.prepared_solution,
+        static_evaluation.certificate,
+        bundle.instance,
+        bundle.time_profile,
+        strategy="aware",
+        prices=bundle.prices,
+    )
+    routes = {route.vehicle_id: route for route in aware.routes}
+    first_trips = {
+        trip.route_id: trip
+        for trip in static_evaluation.certificate.trips
+        if trip.vehicle_type == "ev" and trip.trip_index == 1
+    }
+    distinct_departure_clocks = 0
+    for action in aware.charging_actions:
+        trip = first_trips.get(action.vehicle_id)
+        if trip is None:
+            continue
+        natural_departure = route_departure_second(
+            routes[action.vehicle_id],
+            bundle.instance,
+            bundle.prices,
+        )
+        if abs(float(trip.departure_second) - natural_departure) > 1.0e-6:
+            distinct_departure_clocks += 1
+        absolute_end = (
+            int(action.charge_day_offset) * 86_400.0
+            + float(action.charge_start_second)
+            + float(action.occupancy_minutes) * 60.0
+        )
+        assert absolute_end <= min(
+            float(trip.departure_second),
+            natural_departure,
+        ) + 1.0e-6
+
+    assert distinct_departure_clocks > 0
+    assert check_solution(aware, bundle.instance, bundle.prices) == []
 
 
 def _replace_asset_state(

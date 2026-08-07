@@ -34,6 +34,7 @@ from ..cost import (
     charging_curve_for_action,
     charging_slot_breakdown,
     ev_instance_arc_energy_kwh,
+    route_departure_second,
 )
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
@@ -2312,6 +2313,7 @@ def reschedule_between_trip_charging(
     by_vehicle: dict[str, list[ScheduledTrip]] = {}
     for trip in certificate.trips:
         by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
+    routes_by_id = {route.vehicle_id: route for route in solution.routes}
     selected_starts: dict[str, float] = {}
     for trips in by_vehicle.values():
         ordered = sorted(trips, key=lambda item: item.trip_index)
@@ -2324,11 +2326,32 @@ def reschedule_between_trip_charging(
             ]
             if len(first_actions) == 1 and float(first_actions[0].energy_kwh) > _TOL:
                 action = first_actions[0]
+                first_route = routes_by_id.get(first.route_id)
+                if first_route is None:
+                    raise ValueError(
+                        f"{CONTRACT_ID}: certificate references a missing route"
+                    )
                 duration = float(action.occupancy_minutes) * 60.0
                 earliest = 0.0
-                latest = STATIC_PREHORIZON_SECONDS - duration
+                day_offset = int(action.charge_day_offset)
+                latest = min(
+                    STATIC_PREHORIZON_SECONDS - duration,
+                    float(first.departure_second)
+                    - day_offset * STATIC_PREHORIZON_SECONDS
+                    - duration,
+                    route_departure_second(
+                        first_route,
+                        instance,
+                        prices,
+                    )
+                    - day_offset * STATIC_PREHORIZON_SECONDS
+                    - duration,
+                )
                 if latest < earliest - _TOL:
-                    raise ValueError(f"{CONTRACT_ID}: first-trip depot precharge exceeds the pre-horizon day")
+                    raise ValueError(
+                        f"{CONTRACT_ID}: first-trip depot precharge has no "
+                        "legal predeparture window"
+                    )
                 selected_starts[first.route_id] = (
                     earliest
                     if strategy == "naive"
@@ -2338,7 +2361,7 @@ def reschedule_between_trip_charging(
                         latest_start_second=latest,
                         instance=instance,
                         carbon_profile=profile_for(
-                            int(action.charge_day_offset)
+                            day_offset
                         ),
                         prices=prices,
                         intensity_field=intensity_field,

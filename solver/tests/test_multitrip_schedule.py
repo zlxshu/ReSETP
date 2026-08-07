@@ -397,6 +397,58 @@ def test_first_trip_aware_replay_uses_only_the_pre_horizon_day(monkeypatch: pyte
     assert e3_hard_violations(aware, context) == []
 
 
+def test_same_day_first_trip_aware_replay_cannot_charge_after_departure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    prepared, certificate = prepare_multitrip_solution(
+        solution,
+        _instance(),
+        prices,
+        depot_charge_window_mode="same_day_predeparture",
+    )
+    profile = [
+        {
+            "slot_index": i,
+            "horizon_second_start": i * 1800.0,
+            "actual_gco2_per_kwh": 1.0 if i == 47 else 300.0,
+        }
+        for i in range(48)
+    ]
+
+    aware = reschedule_between_trip_charging(
+        prepared,
+        certificate,
+        _instance(),
+        profile,
+        strategy="aware",
+        prices=prices,
+    )
+
+    first_trip = min(certificate.trips, key=lambda trip: trip.trip_index)
+    first_action = next(
+        action
+        for action in aware.charging_actions
+        if action.vehicle_id == first_trip.route_id
+    )
+    assert first_action.charge_day_offset == 0
+    assert (
+        first_action.charge_start_second
+        + first_action.occupancy_minutes * 60.0
+        <= first_trip.departure_second + 1.0e-6
+    )
+    source = _instance()
+    instance = Instance(
+        source.nodes[:4],
+        [row[:4] for row in source.distance_matrix[:4]],
+        num_cv=14,
+        num_ev=14,
+    )
+    context = EvaluationContext(instance, profile, prices=prices)
+    monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
+    assert e3_hard_violations(aware, context) == []
+
+
 def test_calendar_aware_replay_uses_previous_day_forecast_for_first_trip() -> None:
     solution, prices = _two_trip_solution_and_prices()
     prepared, certificate = prepare_multitrip_solution(solution, _instance(), prices)
