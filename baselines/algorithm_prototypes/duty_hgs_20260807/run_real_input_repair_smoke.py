@@ -23,6 +23,7 @@ from run_real_input_technical_trial import (
     _parameters,
     _policy,
     _prepare_population,
+    _source_provenance,
 )
 
 
@@ -53,12 +54,17 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
     args = parser.parse_args()
+    repo = Path(__file__).resolve().parents[3]
+    code_provenance = _source_provenance(repo)
+    if not code_provenance["worktree_clean_before_run"]:
+        raise RuntimeError(
+            "technical provenance run requires a clean worktree before output creation"
+        )
     output = args.output_dir.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
 
-    repo = Path(__file__).resolve().parents[3]
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
     bundle, initial, _pi0, context = _build_context(repo)
     evaluator = DutyFullEvaluator(context)
@@ -124,6 +130,7 @@ def main() -> int:
         output / "metadata.json",
         {
             "purpose": "real-input missing-customer repair wiring smoke; not a performance experiment",
+            "code_provenance": code_provenance,
             "instance_id": INSTANCE_ID,
             "instance_formally_selected": False,
             "parent_rule": "same deterministic first fully evaluated distinct move as the one-cycle trial",

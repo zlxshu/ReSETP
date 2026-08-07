@@ -14,7 +14,7 @@ from duty_hgs.crossover import canonical_fleet_registry, selective_duty_exchange
 from duty_hgs.evaluation import DutyFullEvaluator
 from duty_hgs.model import DutyIndividual
 from duty_hgs.operators import generate_problem_moves
-from run_real_input_technical_trial import _build_context
+from run_real_input_technical_trial import _build_context, _source_provenance
 
 
 INSTANCE_ID = "cn-cy-50c-01-V2-LOCATIONS"
@@ -104,12 +104,17 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
     args = parser.parse_args()
+    repo = Path(__file__).resolve().parents[3]
+    code_provenance = _source_provenance(repo)
+    if not code_provenance["worktree_clean_before_run"]:
+        raise RuntimeError(
+            "technical provenance run requires a clean worktree before output creation"
+        )
     output = args.output_dir.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
 
-    repo = Path(__file__).resolve().parents[3]
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
     bundle, initial, _pi0, context = _build_context(repo, INSTANCE_ID)
     evaluator = DutyFullEvaluator(context)
@@ -177,6 +182,7 @@ def main() -> int:
 
     metadata = {
         "purpose": "real-input action-scope smoke; no candidate evaluation or performance comparison",
+        "code_provenance": code_provenance,
         "instance_id": INSTANCE_ID,
         "instance_selection_rule": (
             "first inspected size/region input with at least two depots, two EV duties, and one CV duty; "

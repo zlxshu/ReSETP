@@ -98,7 +98,10 @@ def _policy(evaluator: DutyFullEvaluator) -> ChargingRepairPolicy:
     )
 
 
-def _parameters() -> DutyHGSSearchParameters:
+def _parameters(
+    *,
+    restart_after_iterations_without_improvement: int = 20_000,
+) -> DutyHGSSearchParameters:
     return DutyHGSSearchParameters(
         random_seed=SEED,
         population=PopulationParameters(
@@ -120,8 +123,37 @@ def _parameters() -> DutyHGSSearchParameters:
             minimum_penalty=0.1,
             maximum_penalty=100_000.0,
         ),
-        restart_after_iterations_without_improvement=20_000,
+        restart_after_iterations_without_improvement=(
+            restart_after_iterations_without_improvement
+        ),
     )
+
+
+def _source_provenance(repo: Path) -> dict[str, Any]:
+    prototype = repo / "baselines/algorithm_prototypes/duty_hgs_20260807"
+    files = sorted(
+        path
+        for path in prototype.rglob("*.py")
+        if "__pycache__" not in path.parts
+    )
+    manifest = {
+        str(path.relative_to(repo)): _sha256(path)
+        for path in files
+    }
+    manifest_payload = json.dumps(
+        manifest,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    status = _git(repo, "status", "--porcelain")
+    return {
+        "git_head": _git(repo, "rev-parse", "HEAD"),
+        "worktree_clean_before_run": not bool(status),
+        "worktree_status_before_run": status,
+        "python_source_sha256": hashlib.sha256(manifest_payload).hexdigest(),
+        "python_source_files": manifest,
+    }
 
 
 def _build_context(repo: Path, instance_id: str = INSTANCE_ID):
@@ -162,6 +194,7 @@ def _prepare_population(
     initial: DutyIndividual,
     evaluator: DutyFullEvaluator,
     policy: ChargingRepairPolicy,
+    parameters: DutyHGSSearchParameters | None = None,
 ):
     initial_evaluation = evaluator.evaluate(initial)
     first_duty = initial.duties[0]
@@ -223,7 +256,7 @@ def _prepare_population(
         raise RuntimeError("no deterministic, fully evaluated distinct second parent")
 
     candidates = (initial, second)
-    parameters = _parameters()
+    parameters = parameters or _parameters()
     penalties = AdaptivePenaltyManager(parameters.penalties)
     population = DutyPopulation(parameters.population, penalties)
     population.add(initial, initial_evaluation)
@@ -242,21 +275,37 @@ def _prepare_population(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--iterations", type=int, default=1)
+    parser.add_argument("--restart-after", type=int, default=20_000)
+    parser.add_argument("--require-restart", action="store_true")
+    parser.add_argument("--arm", default=ARM)
     args = parser.parse_args()
+    if args.iterations < 1:
+        raise ValueError("technical iteration count must be positive")
+    if args.restart_after < 1:
+        raise ValueError("technical restart interval must be positive")
+
+    repo = Path(__file__).resolve().parents[3]
+    code_provenance = _source_provenance(repo)
+    if not code_provenance["worktree_clean_before_run"]:
+        raise RuntimeError(
+            "technical provenance run requires a clean worktree before output creation"
+        )
     output = args.output_dir.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
 
-    repo = Path(__file__).resolve().parents[3]
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
     bundle, initial, pi0, context = _build_context(repo)
     evaluator = DutyFullEvaluator(context)
     policy = _policy(evaluator)
-    candidates, initial_evaluation, reverse_record, attempts, selected = (
-        _prepare_population(initial, evaluator, policy)
+    parameters = _parameters(
+        restart_after_iterations_without_improvement=args.restart_after
     )
-    parameters = _parameters()
+    candidates, initial_evaluation, reverse_record, attempts, selected = (
+        _prepare_population(initial, evaluator, policy, parameters)
+    )
     identity = FrozenPopulationIdentity(
         source_id="technical-real-input-two-parent-population",
         value_sha256=population_sha256(candidates),
@@ -267,8 +316,8 @@ def main() -> int:
         charging_policy=policy,
         parameters=parameters,
         initial_population_identity=identity,
-        stop=lambda state: state.iterations >= 1,
-        arm=ARM,
+        stop=lambda state: state.iterations >= args.iterations,
+        arm=args.arm,
     )
     trajectory = [asdict(row) for row in result.trajectory]
     crossover_rows = [row for row in trajectory if row["phase"] == "crossover"]
@@ -305,6 +354,8 @@ def main() -> int:
         failure_reasons.append("crossover did not change the selected right parent")
     if result.accounting.sentinel_evaluations <= 0:
         failure_reasons.append("full-truth sentinel was not exercised")
+    if args.require_restart and result.accounting.restarts < 1:
+        failure_reasons.append("required restart path was not exercised")
     if protected_before != protected_after:
         failure_reasons.append("a protected evaluator file changed during the run")
     verdict = (
@@ -313,16 +364,19 @@ def main() -> int:
     )
 
     metadata = {
-        "purpose": "one-cycle real-input wiring trial; not a performance experiment",
+        "purpose": "bounded real-input wiring trial; not a performance experiment",
         "instance_id": INSTANCE_ID,
         "instance_formally_selected": False,
         "formal_search_allowed": bool(bundle.formal_search_allowed),
         "machine": "M1 formal-number machine, but this output is diagnostic only",
-        "git_head": _git(repo, "rev-parse", "HEAD"),
+        "code_provenance": code_provenance,
         "random_seed": SEED,
-        "iterations": 1,
-        "stop_semantics": "technical single-cycle wiring stop; not P20",
-        "restart_path_covered": False,
+        "iterations": args.iterations,
+        "stop_semantics": (
+            "technical fixed-iteration wiring stop; not P20 or a formal budget"
+        ),
+        "restart_path_covered": result.accounting.restarts > 0,
+        "restart_required": args.require_restart,
         "parameters": asdict(parameters),
         "charging_policy": asdict(policy),
         "pi0": {
@@ -360,7 +414,7 @@ def main() -> int:
             "best_feasible", "best_violations", "best_cost", "cost_delta",
             "customers_served", "customers_total", "demand_served",
             "demand_total", "crossover_calls", "crossover_changed_parent",
-            "sentinel_evaluations", "actual_full_model_evaluations",
+            "sentinel_evaluations", "actual_full_model_evaluations", "restarts",
             "run_wall_seconds", "pi0_externally_frozen", "verdict",
         ]
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
@@ -386,6 +440,7 @@ def main() -> int:
                 "crossover_changed_parent": crossover_changed,
                 "sentinel_evaluations": result.accounting.sentinel_evaluations,
                 "actual_full_model_evaluations": result.accounting.to_dict()["actual_full_model_evaluations"],
+                "restarts": result.accounting.restarts,
                 "run_wall_seconds": result.accounting.run_wall_seconds,
                 "pi0_externally_frozen": False,
                 "verdict": verdict,
@@ -409,6 +464,13 @@ def main() -> int:
         ],
         "user_decision_changed": False,
     }
+    if result.accounting.restarts > 0:
+        decision["what_this_answers"].append(
+            "the real-input population restart path is exercised without an internal error"
+        )
+        decision["what_this_does_not_decide"].remove(
+            "restart correctness on this real input"
+        )
     _json(output / "decision.json", decision)
     (output / "trajectory.jsonl").write_text(
         "".join(
@@ -438,7 +500,7 @@ def main() -> int:
 
 本轮判定：`{verdict}`。这是一轮接线和内部一致性检查，不是算法对比实验，也没有替用户确定正式算例、正式预算或论文结论。
 
-真实输入 `{INSTANCE_ID}` 完成了 {result.iterations} 个搜索循环。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；完整评价判定可行，违规数为 {len(result.best_evaluation.violations)}。完整真值哨兵实际调用 {result.accounting.sentinel_evaluations} 次。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
+真实输入 `{INSTANCE_ID}` 完成了 {result.iterations} 个搜索循环，并触发 {result.accounting.restarts} 次种群重启。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；完整评价判定可行，违规数为 {len(result.best_evaluation.violations)}。完整真值哨兵实际调用 {result.accounting.sentinel_evaluations} 次。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
 
 初始成本为 {initial_evaluation.total_cost:.12f}，本轮保存解成本为 {result.best_evaluation.total_cost:.12f}。这个差值只用于排查运行过程，不能据此宣称 Duty-HGS 更优，因为本轮只有一个种子、一个循环，也没有同预算强基线。
 
@@ -448,7 +510,7 @@ def main() -> int:
 
 ## 本轮没有解决的事
 
-本轮没有覆盖重启分支；技术用 Pi0 来自本轮初始解，`externally_frozen=False`，不得带入正式比较；单轮停止不是 P20；该算例没有因此被选定为正式代表算例。算法优越性、公开算例竞争力、私有算例三大实验与五大因素效应仍需后续正式实验回答。
+重启分支覆盖状态为 `{result.accounting.restarts > 0}`；技术用 Pi0 来自本轮初始解，`externally_frozen=False`，不得带入正式比较；本轮固定迭代停止不是 P20；该算例没有因此被选定为正式代表算例。算法优越性、公开算例竞争力、私有算例三大实验与五大因素效应仍需后续正式实验回答。
 
 ## 交付前九条自检
 
@@ -458,7 +520,7 @@ def main() -> int:
 4. 有没有碰受保护文件？——未碰；三个受保护文件运行前后哈希一致，具体值见 `metadata.json`。
 5. 待决事项是否转成了 2–4 个具体候选并写清代价？——本轮没有新增需要用户拍板的选择；P20、正式算例和正式 Pi0 保持未决。
 6. 有没有用自造词或内部任务号跟用户说话？——报告仅使用项目已有术语；“单轮技术试跑”已解释为接线和一致性检查。
-7. 失败、跳过、超时、异常结果有没有如实保留？——已保留反转前两个客户导致时间窗失败；没有超时，重启分支明确记为未覆盖。
+7. 失败、跳过、超时、异常结果有没有如实保留？——已保留反转前两个客户导致时间窗失败；没有超时；重启次数按实际结果记录。
 8. 四件套齐了吗？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json`、`report.md` 齐全，另附 `trajectory.jsonl` 和 `best_solution.json`。
 9. `HANDOFF.md` 变更日志和 `docs/handoff/memory/` 同步了吗？——试跑产物生成后将在本任务收尾时同步，最终提交前复核。
 """
