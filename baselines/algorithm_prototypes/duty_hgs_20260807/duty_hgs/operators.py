@@ -507,30 +507,38 @@ def _replace_trip_customers(
     *,
     source: str,
 ) -> DutyIndividual:
-    duties = tuple(
-        compact_empty_trips(
-            replace(
-                duty,
-                trips=tuple(
-                    replace(
-                        trip,
-                        customer_ids=replacements.get(
-                            (duty.physical_vehicle_id, trip.trip_index),
-                            trip.customer_ids,
-                        ),
-                        route_visits=(
-                            ()
-                            if (duty.physical_vehicle_id, trip.trip_index)
-                            in replacements
-                            else trip.route_visits
-                        ),
-                    )
-                    for trip in duty.trips
-                ),
+    changed_duty_ids = {duty_id for duty_id, _trip_index in replacements}
+    duties = []
+    for duty in individual.duties:
+        if duty.physical_vehicle_id not in changed_duty_ids:
+            duties.append(duty)
+            continue
+        duties.append(
+            compact_empty_trips(
+                replace(
+                    duty,
+                    trips=tuple(
+                        replace(
+                            trip,
+                            customer_ids=replacements.get(
+                                (duty.physical_vehicle_id, trip.trip_index),
+                                trip.customer_ids,
+                            ),
+                            route_visits=(
+                                ()
+                                if (
+                                    duty.physical_vehicle_id,
+                                    trip.trip_index,
+                                )
+                                in replacements
+                                else trip.route_visits
+                            ),
+                        )
+                        for trip in duty.trips
+                    ),
+                )
             )
         )
-        for duty in individual.duties
-    )
     return replace(individual, duties=duties, source=source)
 
 

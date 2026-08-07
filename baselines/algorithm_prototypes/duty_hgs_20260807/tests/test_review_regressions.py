@@ -69,6 +69,36 @@ def test_charging_retime_is_not_misreported_as_interface_failure(
     assert outcome.error_type is None
 
 
+def test_cv_reverse_does_not_erase_untouched_ev_charging(
+    evaluated_fixture,
+) -> None:
+    individual, evaluator = evaluated_fixture
+    cv_duty = next(duty for duty in individual.duties if duty.vehicle_type == "cv")
+    ev_before = next(
+        duty for duty in individual.duties if duty.vehicle_type == "ev"
+    )
+    move = ReverseSegmentMove(
+        action_id="reverse-cv-with-untouched-ev",
+        channel="route_order",
+        duty_id=cv_duty.physical_vehicle_id,
+        trip_index=cv_duty.trips[0].trip_index,
+        start=0,
+        stop=2,
+    )
+
+    changed = move.apply(individual)
+    ev_after = next(duty for duty in changed.duties if duty.vehicle_type == "ev")
+    outcome = evaluate_move(
+        individual,
+        move,
+        evaluator=evaluator,
+        charging_policy=_policy(evaluator),
+    )
+
+    assert ev_after == ev_before
+    assert "changed duty scope" not in (outcome.error or "")
+
+
 def test_full_gap_first_charge_uses_a_real_prehorizon_day(evaluated_fixture) -> None:
     individual, base = evaluated_fixture
     evaluator = type(base)(
@@ -168,6 +198,41 @@ def test_crossover_duplicate_cleanup_removes_an_empty_trip() -> None:
     )
     assert emptied.trips == ()
     assert crossed.child.unserved_customers == ("C2",)
+
+
+def test_crossover_preserves_untouched_non_donor_ev_charging() -> None:
+    unlocked = DutyChargingSession(
+        trip_index=1,
+        station_id="D0",
+        energy_kwh=2.0,
+        occupancy_minutes=6.0,
+        charge_start_second=300.0,
+        locked=False,
+    )
+    parent = DutyIndividual(
+        duties=(
+            PhysicalVehicleDuty(
+                "CV_D0_1", "cv", "D0", (DutyTrip(1, ("C1",)),)
+            ),
+            PhysicalVehicleDuty(
+                "EV_D0_1", "ev", "D0", (DutyTrip(1, ("C2",)),), (unlocked,)
+            ),
+            PhysicalVehicleDuty(
+                "EV_D0_2", "ev", "D0", (DutyTrip(1, ("C3",)),), (unlocked,)
+            ),
+        )
+    )
+
+    crossed = selective_duty_exchange((parent, parent), _OneDutyFromFirst())
+
+    child_by_id = {
+        duty.physical_vehicle_id: duty for duty in crossed.child.duties
+    }
+    parent_by_id = {
+        duty.physical_vehicle_id: duty for duty in parent.duties
+    }
+    assert child_by_id["EV_D0_1"] == parent_by_id["EV_D0_1"]
+    assert child_by_id["EV_D0_2"] == parent_by_id["EV_D0_2"]
 
 
 def test_solution_adapter_requires_customer_identity_for_station_routes() -> None:

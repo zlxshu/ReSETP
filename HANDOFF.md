@@ -8664,3 +8664,17 @@ C3b 报告用 `DECISION` 表示自身判定）。新版 AGENTS.md 已写明：
 `FACT`（保护与清理）：三个受保护文件仍为开工哈希：cost.py=e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d；check.py=1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072；search/evaluation.py=c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3。旧 control.py、旧测试、四份无用本轮备份及可重建缓存已移除；正式 solver、模型和论文未改。
 
 `BOUNDARY`：这次闭合只证明可以进入静态技术试跑，不证明优于母体或具备论文创新。P20 的正式收敛口径、真值哨兵在正式比较中的用法和算法主张大小仍待用户决定；P21 继续未决。原型目前保护动态锁定前缀，但事件时刻、车辆实时位置、载重、剩余电量和已承诺客户的完整动态状态尚未接入；该项不阻碍静态比较，但必须在动态需求实验前闭合。
+
+### 2026-08-07（Duty-HGS 真实输入技术试跑完成）
+
+`USER DECISION`：用户明确允许开始试跑。本次授权只覆盖真实输入的小规模技术试跑及其直接暴露缺陷的修复，不等于批准正式算法对比、统一算例、三大实验或论文回填。
+
+`FACT`：首次一轮试跑发现普通路线动作会压缩未参与动作的 EV 班表并擦除未锁定充电；修复后又发现交叉重复清理有同类问题。两处均已最小修复并新增回归测试。首次原始包保留并更正为 `TECHNICAL_TRIAL_INVALIDATED_BY_POSTRUN_SCOPE_DEFECT`，中间包保留并标为 `TECHNICAL_TRIAL_SUPERSEDED_BY_FINAL`，没有覆盖失败证据。
+
+`FACT`：最终 `cn-jjj-10c-01-V2-LOCATIONS` 单种子单轮技术试跑完成 10/10 客户和 3196/3196 需求量，完整检查可行、0 违规，70 次真值哨兵核对；多车场多 EV 动作核查在 `cn-cy-50c-01-V2-LOCATIONS` 实际应用 7854 个动作，作用范围不一致为 0；真实输入 regret-2 修复把漏服务客户从 1 降到 0。完整测试 31/31 通过，`git diff --check` 通过，Ruff 对本轮新增和修改的 Python 文件复验通过。
+
+`FACT`：三个受保护文件未修改，SHA-256 仍为 cost.py=`e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d`，check.py=`1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072`，search/evaluation.py=`c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3`。
+
+`ADVISORY`：Claude Opus 5 最终同意进入正式对比协议准备，认为当前没有代码级阻塞；Codex Luna Max 同意准备协议，但明确反对把技术试跑直接升级为正式运行。两者均不替代用户拍板。
+
+`BOUNDARY`：本轮没有产生性能、创新或三大实验/五因素效应证据。正式对比仍须用户决定 P20 收敛口径、正式算例、正式 Pi0 和真值哨兵用法；真实输入重启分支尚未单独触发，完整动态状态仍须在动态需求实验前接入。结构扫描时 `cn-prd-10c-01-V2-LOCATIONS` 初始构造超过深圳车场车辆上限，已登记意外台账，本轮未扩线修复。

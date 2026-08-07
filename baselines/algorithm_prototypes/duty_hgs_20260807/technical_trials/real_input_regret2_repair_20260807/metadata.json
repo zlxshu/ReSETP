@@ -1,0 +1,39 @@
+{
+  "purpose": "real-input missing-customer repair wiring smoke; not a performance experiment",
+  "instance_id": "cn-jjj-10c-01-V2-LOCATIONS",
+  "instance_formally_selected": false,
+  "parent_rule": "same deterministic first fully evaluated distinct move as the one-cycle trial",
+  "second_parent_attempts": [
+    {
+      "index": 1,
+      "action_id": "relocate:CV_D_beijing_1#T1:C004->EV_D_beijing_1#T1@0",
+      "channel": "mixed_fleet",
+      "status": "EVALUATED",
+      "error_type": null,
+      "error": null
+    }
+  ],
+  "preflight_reverse_attempt": {
+    "action_id": "preflight-reverse-first-two",
+    "status": "REJECTED_INTERFACE",
+    "error_type": "ValueError",
+    "error": "E3_STRICT_MULTITRIP_V2: route CV_D_beijing_1#T1 misses C004's time window"
+  },
+  "crossover_rule": "one EV duty from the first parent, fixed structural choice; no cost inspection",
+  "donor_duty_ids": [
+    "EV_D_beijing_1"
+  ],
+  "missing_customers_before_repair": [
+    "C004"
+  ],
+  "protected_hashes_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  }
+}

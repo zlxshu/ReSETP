@@ -158,11 +158,13 @@ def _remove_duplicates(
     rebuilt: list[PhysicalVehicleDuty] = []
     for duty_index, duty in enumerate(duties):
         trips = []
+        duty_changed = False
         for trip_index, trip in enumerate(duty.trips):
             positions = removals.get((duty_index, trip_index), set())
             if not positions:
                 trips.append(trip)
                 continue
+            duty_changed = True
             changed.add(duty.physical_vehicle_id)
             trips.append(
                 replace(
@@ -175,7 +177,11 @@ def _remove_duplicates(
                     route_visits=(),
                 )
             )
-        rebuilt.append(compact_empty_trips(replace(duty, trips=tuple(trips))))
+        rebuilt.append(
+            compact_empty_trips(replace(duty, trips=tuple(trips)))
+            if duty_changed
+            else duty
+        )
     return rebuilt, duplicates, changed
 
 

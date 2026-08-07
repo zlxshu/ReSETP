@@ -1,0 +1,23 @@
+{
+  "verdict": "TECHNICAL_TRIAL_INVALIDATED_BY_POSTRUN_SCOPE_DEFECT",
+  "original_runtime_verdict": "TECHNICAL_TRIAL_COMPLETE",
+  "correction": "Post-run review found 15 action-scope mismatches caused by untouched EV charging sessions being erased. The raw run is preserved, but its original wiring-pass verdict is superseded.",
+  "superseded_by": "../real_input_one_cycle_20260807_after_scope_fix",
+  "failure_reasons": [
+    "15 changed-duty scope mismatches were found in the saved trajectory"
+  ],
+  "what_this_answers": [
+    "the real input can or cannot complete one Duty-HGS cycle",
+    "whole-duty crossover and the full-truth sentinel are or are not exercised",
+    "the required evidence package is or is not complete"
+  ],
+  "what_this_does_not_decide": [
+    "algorithm superiority",
+    "formal stopping budget P20",
+    "formal comparison instance",
+    "formal Pi0",
+    "restart correctness on this real input",
+    "dynamic-demand effectiveness"
+  ],
+  "user_decision_changed": false
+}
