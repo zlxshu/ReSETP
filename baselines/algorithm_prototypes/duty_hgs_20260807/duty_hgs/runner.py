@@ -172,12 +172,17 @@ def run_duty_hgs(
     trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
     retain_trajectory: bool = True,
     proposal_engine: DutyProposalEngine | None = None,
+    initial_evaluations: tuple[FullEvaluation, ...] | None = None,
+    initialization_full_evaluation_count: int | None = None,
+    initialization_wall_seconds: float = 0.0,
 ) -> DutyHGSRunResult:
     """Run Duty-HGS until the external, user-approved stop callable fires."""
 
     started = perf_counter()
     if not initial_candidates:
         raise ValueError("Duty-HGS requires at least one initial candidate")
+    if float(initialization_wall_seconds) < 0.0:
+        raise ValueError("initialization wall time cannot be negative")
     if initial_population_identity.value_sha256.lower() != population_sha256(
         initial_candidates
     ):
@@ -222,12 +227,59 @@ def run_duty_hgs(
     )
     rng = random.Random(int(parameters.random_seed))
     accounting = SearchAccounting()
+    accounting.initialization_wall_seconds = float(
+        initialization_wall_seconds
+    )
     penalty_manager = AdaptivePenaltyManager(parameters.penalties)
     population = DutyPopulation(parameters.population, penalty_manager)
     initial_records = []
-    for candidate in initial_candidates:
-        evaluation = evaluator.evaluate(candidate)
-        accounting.full_evaluations += 1
+    if initial_evaluations is not None:
+        if len(initial_evaluations) != len(initial_candidates):
+            raise ValueError(
+                "initial evaluations must match the initial candidate count"
+            )
+        for candidate, evaluation in zip(
+            initial_candidates,
+            initial_evaluations,
+            strict=True,
+        ):
+            if evaluation.individual_fingerprint != candidate.fingerprint:
+                raise ValueError(
+                    "an initial evaluation belongs to another candidate"
+                )
+            if evaluation.evaluation_context_sha256 != evaluator.context_sha256:
+                raise ValueError(
+                    "an initial evaluation belongs to another evaluator context"
+                )
+            if evaluation.source == "incremental_unverified":
+                raise ValueError(
+                    "an unverified incremental evaluation cannot seed the population"
+                )
+        evaluated_initial = zip(
+            initial_candidates,
+            initial_evaluations,
+            strict=True,
+        )
+        counted = (
+            len(initial_evaluations)
+            if initialization_full_evaluation_count is None
+            else int(initialization_full_evaluation_count)
+        )
+        if counted < len(initial_evaluations):
+            raise ValueError(
+                "initialization evaluation count cannot be below retained evaluations"
+            )
+        accounting.full_evaluations += counted
+        accounting.initialization_full_evaluations += counted
+    else:
+        evaluated_rows = []
+        for candidate in initial_candidates:
+            evaluation = evaluator.evaluate(candidate)
+            accounting.full_evaluations += 1
+            accounting.initialization_full_evaluations += 1
+            evaluated_rows.append((candidate, evaluation))
+        evaluated_initial = iter(evaluated_rows)
+    for candidate, evaluation in evaluated_initial:
         initial_records.append(population.add(candidate, evaluation).candidate)
     best = population.best_feasible() or population.best_penalized()
     if best is None:

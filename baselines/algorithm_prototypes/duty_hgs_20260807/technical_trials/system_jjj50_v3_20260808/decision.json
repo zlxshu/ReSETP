@@ -1,0 +1,8 @@
+{
+  "verdict": "TECHNICAL_TRIAL_FAILED",
+  "failure_reasons": [
+    "RuntimeError: seed 11 did not select structurally distinct parents"
+  ],
+  "traceback": "Traceback (most recent call last):\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/duty_hgs_20260807/run_real_input_technical_trial.py\", line 845, in <module>\n    raise SystemExit(main())\n                     ~~~~^^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/duty_hgs_20260807/run_real_input_technical_trial.py\", line 525, in main\n    _prepare_population(initial, evaluator, policy, parameters)\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/duty_hgs_20260807/run_real_input_technical_trial.py\", line 455, in _prepare_population\n    raise RuntimeError(\"seed 11 did not select structurally distinct parents\")\nRuntimeError: seed 11 did not select structurally distinct parents\n",
+  "user_decision_changed": false
+}

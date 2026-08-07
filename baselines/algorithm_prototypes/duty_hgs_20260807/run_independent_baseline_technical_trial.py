@@ -87,7 +87,14 @@ def _run_depot(bundle, full_individual, depot_id: str, iterations: int):
     evaluator = DutyFullEvaluator(context)
     policy = _policy(evaluator)
     parameters = _parameters()
-    candidates, initial_evaluation, _reverse, attempts, selected = (
+    (
+        candidates,
+        initial_evaluation,
+        _reverse,
+        attempts,
+        selected,
+        initial_evaluations,
+    ) = (
         _prepare_population(
             initial,
             evaluator,
@@ -108,6 +115,7 @@ def _run_depot(bundle, full_individual, depot_id: str, iterations: int):
         initial_population_identity=identity,
         stop=lambda state: state.iterations >= iterations,
         arm=f"technical-independent-baseline:{depot_id}",
+        initial_evaluations=initial_evaluations,
     )
     profits = calculate_depot_profits(
         result.best_evaluation.prepared_solution,

@@ -68,6 +68,7 @@ class SearchAccounting:
     rejected_actions: Counter[str] = field(default_factory=Counter)
     no_change_actions: Counter[str] = field(default_factory=Counter)
     full_evaluations: int = 0
+    initialization_full_evaluations: int = 0
     incremental_evaluations: int = 0
     sentinel_evaluations: int = 0
     cache_seedings: int = 0
@@ -81,6 +82,7 @@ class SearchAccounting:
     restarts: int = 0
     wall_seconds: float = 0.0
     run_wall_seconds: float = 0.0
+    initialization_wall_seconds: float = 0.0
 
     def record_outcome(self, outcome: CandidateOutcome) -> None:
         self.proposed_actions[outcome.channel] += 1
@@ -138,6 +140,9 @@ class SearchAccounting:
             "rejected_actions": dict(sorted(self.rejected_actions.items())),
             "no_change_actions": dict(sorted(self.no_change_actions.items())),
             "full_evaluations": int(self.full_evaluations),
+            "initialization_full_evaluations": int(
+                self.initialization_full_evaluations
+            ),
             "incremental_evaluations": int(self.incremental_evaluations),
             "sentinel_evaluations": int(self.sentinel_evaluations),
             "actual_full_model_evaluations": int(
@@ -158,6 +163,12 @@ class SearchAccounting:
             "restarts": int(self.restarts),
             "wall_seconds": float(self.wall_seconds),
             "run_wall_seconds": float(self.run_wall_seconds),
+            "initialization_wall_seconds": float(
+                self.initialization_wall_seconds
+            ),
+            "total_algorithm_wall_seconds": float(
+                self.initialization_wall_seconds + self.run_wall_seconds
+            ),
         }
 
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import importlib
 import json
 import platform
 import random
@@ -19,6 +20,7 @@ import traceback
 from dataclasses import asdict, replace
 from importlib import metadata as importlib_metadata
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from duty_hgs.charging import ChargingRepairPolicy
@@ -212,6 +214,37 @@ def _installed_version(distribution: str) -> str | None:
         return None
 
 
+def _installed_distribution_identity(distribution: str) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "version": _installed_version(distribution),
+        "modules": {},
+        "distribution_records": {},
+    }
+    for module_name in (
+        "pyvrp",
+        "pyvrp.search",
+        "pyvrp._pyvrp",
+        "pyvrp.search._search",
+    ):
+        module = importlib.import_module(module_name)
+        module_path = Path(module.__file__).resolve()
+        result["modules"][module_name] = {
+            "path": str(module_path),
+            "sha256": _sha256(module_path),
+        }
+    dist = importlib_metadata.distribution(distribution)
+    for relative in dist.files or ():
+        name = str(relative)
+        if not name.endswith((".dist-info/METADATA", ".dist-info/RECORD")):
+            continue
+        path = Path(dist.locate_file(relative)).resolve()
+        result["distribution_records"][name] = {
+            "path": str(path),
+            "sha256": _sha256(path),
+        }
+    return result
+
+
 def _source_provenance(
     repo: Path,
     *,
@@ -249,6 +282,7 @@ def _source_provenance(
             name: _installed_version(name)
             for name in ("numpy", "scipy", "pyvrp")
         },
+        "pyvrp_runtime_identity": _installed_distribution_identity("pyvrp"),
         "cwd": str(Path.cwd().resolve()),
         "command_argv": list(sys.argv),
         "output_path": str(output_path),
@@ -381,28 +415,44 @@ def _prepare_population(
     require_distinct_selection: bool = True,
 ):
     initial_evaluation = evaluator.evaluate(initial)
-    first_duty = initial.duties[0]
-    first_trip = first_duty.trips[0]
-    reverse = ReverseSegmentMove(
-        action_id="preflight-reverse-first-two",
-        channel="technical_preflight",
-        duty_id=first_duty.physical_vehicle_id,
-        trip_index=first_trip.trip_index,
-        start=0,
-        stop=2,
+    reversible = next(
+        (
+            (duty, trip)
+            for duty in initial.duties
+            for trip in duty.trips
+            if len(trip.customer_ids) >= 2
+        ),
+        None,
     )
-    reverse_outcome = evaluate_move(
-        initial,
-        reverse,
-        evaluator=evaluator,
-        charging_policy=policy,
-    )
-    reverse_record = {
-        "action_id": reverse_outcome.action_id,
-        "status": str(reverse_outcome.status),
-        "error_type": reverse_outcome.error_type,
-        "error": reverse_outcome.error,
-    }
+    if reversible is None:
+        reverse_record = {
+            "action_id": "preflight-reverse-first-two",
+            "status": "SKIPPED_NO_REVERSIBLE_TRIP",
+            "error_type": None,
+            "error": None,
+        }
+    else:
+        first_duty, first_trip = reversible
+        reverse = ReverseSegmentMove(
+            action_id="preflight-reverse-first-two",
+            channel="technical_preflight",
+            duty_id=first_duty.physical_vehicle_id,
+            trip_index=first_trip.trip_index,
+            start=0,
+            stop=2,
+        )
+        reverse_outcome = evaluate_move(
+            initial,
+            reverse,
+            evaluator=evaluator,
+            charging_policy=policy,
+        )
+        reverse_record = {
+            "action_id": reverse_outcome.action_id,
+            "status": str(reverse_outcome.status),
+            "error_type": reverse_outcome.error_type,
+            "error": reverse_outcome.error,
+        }
 
     attempts = []
     second = None
@@ -453,7 +503,14 @@ def _prepare_population(
     }
     if require_distinct_selection and not selected["distinct"]:
         raise RuntimeError("seed 11 did not select structurally distinct parents")
-    return candidates, initial_evaluation, reverse_record, attempts, selected
+    return (
+        candidates,
+        initial_evaluation,
+        reverse_record,
+        attempts,
+        selected,
+        (initial_evaluation, second_evaluation),
+    )
 
 
 def main() -> int:
@@ -521,8 +578,27 @@ def main() -> int:
     parameters = _parameters(
         restart_after_iterations_without_improvement=args.restart_after
     )
-    candidates, initial_evaluation, reverse_record, attempts, selected = (
-        _prepare_population(initial, evaluator, policy, parameters)
+    initialization_started = perf_counter()
+    initialization_full_calls_before = evaluator.full_calls
+    (
+        candidates,
+        initial_evaluation,
+        reverse_record,
+        attempts,
+        selected,
+        initial_evaluations,
+    ) = (
+        _prepare_population(
+            initial,
+            evaluator,
+            policy,
+            parameters,
+            require_distinct_selection=False,
+        )
+    )
+    initialization_wall_seconds = perf_counter() - initialization_started
+    initialization_full_evaluations = (
+        evaluator.full_calls - initialization_full_calls_before
     )
     proposal_engine = None
     if args.proposal_mode == "system":
@@ -581,6 +657,11 @@ def main() -> int:
             trajectory_sink=trajectory_sink,
             retain_trajectory=not args.no_retain_trajectory,
             proposal_engine=proposal_engine,
+            initial_evaluations=initial_evaluations,
+            initialization_full_evaluation_count=(
+                initialization_full_evaluations
+            ),
+            initialization_wall_seconds=initialization_wall_seconds,
         )
     finally:
         if trajectory_handle is not None:

@@ -74,7 +74,7 @@ def main() -> int:
     bundle, initial, _pi0, context = _build_context(repo)
     evaluator = DutyFullEvaluator(context)
     policy = _policy(evaluator)
-    parents, _initial_evaluation, reverse_record, attempts, _selected = (
+    parents, _initial_evaluation, reverse_record, attempts, _selected, _evaluations = (
         _prepare_population(initial, evaluator, policy)
     )
     right = parents[1]

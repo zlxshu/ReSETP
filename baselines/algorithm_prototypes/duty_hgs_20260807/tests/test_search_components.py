@@ -165,6 +165,40 @@ def test_best_improvement_accepts_complete_model_feasible_move(
     assert accounting.cache_seedings == accounting.education_rounds
 
 
+def test_penalty_manager_uses_independent_native_unit_scales(
+    multi_step_infeasible_fixture,
+) -> None:
+    individual, evaluator = multi_step_infeasible_fixture
+    evaluation = evaluator.evaluate(individual)
+    manager = AdaptivePenaltyManager(
+        PenaltyParameters(
+            initial_penalty_per_unit=7.0,
+            solutions_between_updates=50,
+            penalty_increase=1.34,
+            penalty_decrease=0.32,
+            target_feasible=0.43,
+            feasibility_tolerance=0.05,
+            minimum_penalty=0.1,
+            maximum_penalty=100_000.0,
+            initial_penalty_by_type=(("CAPACITY", 11.0),),
+        )
+    )
+
+    manager.register(evaluation)
+
+    assert manager.penalties["CAPACITY"] == 11.0
+    expected = evaluation.total_cost + 11.0 * sum(
+        magnitude
+        for violation, magnitude in zip(
+            evaluation.violations,
+            evaluation.violation_magnitudes,
+            strict=True,
+        )
+        if violation.type == "CAPACITY"
+    )
+    assert manager.cost(evaluation) == expected
+
+
 def test_charging_repair_cache_reuses_only_the_same_round_context(
     evaluated_fixture,
 ) -> None:
@@ -404,6 +438,87 @@ def test_runnable_duty_hgs_executes_crossover_repair_and_education(
             arm="tampered-provenance",
         )
 
+
+def test_runner_reuses_precomputed_initial_evaluations_without_repeating_truth(
+    feedback_fixture,
+) -> None:
+    individual, evaluator = feedback_fixture
+    parameters = _search_parameters()
+    before = evaluator.full_calls
+    evaluation = evaluator.evaluate(individual)
+    after_initialization = evaluator.full_calls
+
+    result = run_duty_hgs(
+        (individual,),
+        evaluator=evaluator,
+        charging_policy=_charging_policy(evaluator),
+        parameters=parameters,
+        initial_population_identity=FrozenPopulationIdentity(
+            source_id="precomputed-initial-evaluation-test",
+            value_sha256=population_sha256((individual,)),
+        ),
+        stop=lambda state: True,
+        arm="precomputed-initial-evaluation-test",
+        initial_evaluations=(evaluation,),
+        initialization_full_evaluation_count=3,
+        initialization_wall_seconds=1.25,
+    )
+
+    assert after_initialization == before + 1
+    assert evaluator.full_calls == after_initialization + 1
+    assert result.accounting.full_evaluations == 4
+    assert result.accounting.initialization_full_evaluations == 3
+    assert result.accounting.initialization_wall_seconds == 1.25
+    assert result.accounting.to_dict()["total_algorithm_wall_seconds"] >= 1.25
+
+
+def test_runner_rejects_precomputed_evaluation_from_another_context(
+    feedback_fixture,
+) -> None:
+    individual, evaluator = feedback_fixture
+    evaluation = evaluator.evaluate(individual)
+
+    with pytest.raises(ValueError, match="another evaluator context"):
+        run_duty_hgs(
+            (individual,),
+            evaluator=evaluator,
+            charging_policy=_charging_policy(evaluator),
+            parameters=_search_parameters(),
+            initial_population_identity=FrozenPopulationIdentity(
+                source_id="wrong-context-evaluation-test",
+                value_sha256=population_sha256((individual,)),
+            ),
+            stop=lambda state: True,
+            arm="wrong-context-evaluation-test",
+            initial_evaluations=(
+                replace(evaluation, evaluation_context_sha256="0" * 64),
+            ),
+        )
+
+
+def test_runner_rejects_unverified_incremental_population_seed(
+    feedback_fixture,
+) -> None:
+    individual, evaluator = feedback_fixture
+    evaluation = replace(
+        evaluator.evaluate(individual),
+        source="incremental_unverified",
+    )
+
+    with pytest.raises(ValueError, match="unverified incremental"):
+        run_duty_hgs(
+            (individual,),
+            evaluator=evaluator,
+            charging_policy=_charging_policy(evaluator),
+            parameters=_search_parameters(),
+            initial_population_identity=FrozenPopulationIdentity(
+                source_id="unverified-incremental-evaluation-test",
+                value_sha256=population_sha256((individual,)),
+            ),
+            stop=lambda state: True,
+            arm="unverified-incremental-evaluation-test",
+            initial_evaluations=(evaluation,),
+        )
 
 def test_runnable_duty_hgs_reports_an_all_infeasible_initial_population(
     multi_step_infeasible_fixture,

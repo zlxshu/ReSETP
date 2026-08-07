@@ -55,6 +55,7 @@ class PenaltyParameters:
     feasibility_tolerance: float
     minimum_penalty: float
     maximum_penalty: float
+    initial_penalty_by_type: tuple[tuple[str, float], ...] = ()
 
     def __post_init__(self) -> None:
         if self.initial_penalty_per_unit < 0.0:
@@ -73,6 +74,14 @@ class PenaltyParameters:
             raise ValueError("minimum penalty must be non-negative")
         if self.maximum_penalty < self.minimum_penalty:
             raise ValueError("maximum penalty must not be below minimum")
+        keys = [str(key) for key, _value in self.initial_penalty_by_type]
+        if len(keys) != len(set(keys)):
+            raise ValueError("initial penalty types must be unique")
+        if any(
+            not str(key) or float(value) < 0.0
+            for key, value in self.initial_penalty_by_type
+        ):
+            raise ValueError("typed initial penalties must be named and non-negative")
 
 
 @dataclass(frozen=True)
@@ -93,6 +102,15 @@ class AdaptivePenaltyManager:
     penalties: dict[str, float] = field(default_factory=dict)
     _history: dict[str, deque[bool]] = field(default_factory=dict)
 
+    def _initial_penalty(self, violation_type: str) -> float:
+        configured = dict(self.params.initial_penalty_by_type)
+        return float(
+            configured.get(
+                violation_type,
+                self.params.initial_penalty_per_unit,
+            )
+        )
+
     def register(self, evaluation: FullEvaluation) -> None:
         counts = Counter(violation.type for violation in evaluation.violations)
         known = set(self.penalties).union(counts)
@@ -100,7 +118,7 @@ class AdaptivePenaltyManager:
             self.penalties.setdefault(
                 violation_type,
                 _clip(
-                    self.params.initial_penalty_per_unit,
+                    self._initial_penalty(violation_type),
                     self.params.minimum_penalty,
                     self.params.maximum_penalty,
                 ),
@@ -137,7 +155,7 @@ class AdaptivePenaltyManager:
         return float(evaluation.total_cost) + sum(
             float(magnitude) * self.penalties.get(
                 violation_type,
-                self.params.initial_penalty_per_unit,
+                self._initial_penalty(violation_type),
             )
             for violation_type, magnitude in magnitude_by_type.items()
         )

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from duty_hgs.model import DutyIndividual, DutyTrip, PhysicalVehicleDuty
 from duty_hgs.charging import ChargingRepairPolicy
 from duty_hgs.education import evaluate_move
+from duty_hgs.initialization import build_initial_population
 from duty_hgs.operators import (
     RelocateSegmentMove,
     ReverseSegmentMove,
@@ -135,6 +136,61 @@ def test_route_kernel_uses_one_currency_scale_for_fixed_and_distance_costs() -> 
     assert _money_units(170.0) == 17_000_000
     assert _distance_cost_units(1_000.0, 0.78) == 78_000
     assert _distance_cost_units(1_000.0, 0.67) == 67_000
+
+
+def test_random_route_skeletons_seed_distinct_evaluated_population(
+    evaluated_fixture,
+) -> None:
+    individual, evaluator = evaluated_fixture
+    policy = ChargingRepairPolicy(
+        strategy="integrated",
+        carbon_weight=1.0,
+        depot_charge_window_mode=evaluator.context.depot_charge_window_mode,
+        charge_timing_policy="cost_plus_carbon",
+        charge_amount_strategy="just_enough",
+        public_station_candidate_mode="parallel",
+        carbon_profiles_by_day_offset=None,
+    )
+    engine = PyVRPDutyRouteProposalEngine(
+        evaluator.context,
+        individual,
+        random_seed=11,
+    )
+
+    result = build_initial_population(
+        individual,
+        evaluator=evaluator,
+        charging_policy=policy,
+        route_engine=engine,
+        requested_size=3,
+        random_seed=101,
+        max_random_attempts=20,
+    )
+
+    assert len(result.candidates) == 3
+    assert result.actual_size == 3
+    assert not result.attempts_exhausted
+    assert result.full_evaluation_count >= 3
+    assert result.wall_seconds >= 0.0
+    assert len({candidate.fingerprint for candidate in result.candidates}) == 3
+    assert len(result.evaluations) == 3
+    assert all(evaluation.individual_fingerprint == candidate.fingerprint
+               for candidate, evaluation in zip(
+                   result.candidates, result.evaluations, strict=True
+               ))
+    assert sum(row.status == "ADMITTED" for row in result.attempts) == 2
+
+    exhausted = build_initial_population(
+        individual,
+        evaluator=evaluator,
+        charging_policy=policy,
+        route_engine=engine,
+        requested_size=3,
+        random_seed=101,
+        max_random_attempts=0,
+    )
+    assert exhausted.actual_size == 1
+    assert exhausted.attempts_exhausted
 
 
 @dataclass(frozen=True)

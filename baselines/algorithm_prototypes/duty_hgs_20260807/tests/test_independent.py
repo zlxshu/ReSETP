@@ -202,7 +202,7 @@ def test_independent_trial_can_record_same_parent_selection() -> None:
     initial = independent_individual(individual, bundle, depot_id)
     evaluator = DutyFullEvaluator(independent_context(subbundle, depot_id))
 
-    candidates, _evaluation, _reverse, _attempts, selected = (
+    candidates, _evaluation, _reverse, _attempts, selected, _evaluations = (
         _prepare_population(
             initial,
             evaluator,

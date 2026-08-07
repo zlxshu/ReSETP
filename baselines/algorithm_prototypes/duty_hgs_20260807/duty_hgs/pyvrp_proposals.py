@@ -179,6 +179,34 @@ class PyVRPDutyRouteProposalEngine:
             for component in proposal_sets
         )
 
+    def random_skeleton_move(
+        self,
+        individual: DutyIndividual,
+        *,
+        random_seed: int,
+    ) -> DutySkeletonMove | None:
+        """Draw one PyVRP random route skeleton for population seeding."""
+
+        if _fleet_registry(individual) != self._fleet_registry:
+            raise ValueError("route proposal fleet registry changed")
+        random_solution = PyVRPSolution.make_random(
+            self._data,
+            RandomNumberGenerator(seed=int(random_seed)),
+        )
+        educated_solution = self._local_search(
+            random_solution,
+            self._cost_evaluator,
+        )
+        replacements = self._decode_changes(individual, educated_solution)
+        if not replacements:
+            return None
+        return DutySkeletonMove(
+            action_id=f"pyvrp-random-educated-skeleton:{int(random_seed)}",
+            channel="initial_population",
+            replacements=replacements,
+            dynamic_future_only=self._context.dynamic_state is not None,
+        )
+
     def _project(self, individual: DutyIndividual) -> PyVRPSolution:
         routes: list[PyVRPRoute] = []
         for duty in individual.duties:

@@ -30,7 +30,9 @@ import json
 import math
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, is_dataclass
+from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from setp_solver.check import (
@@ -157,6 +159,7 @@ class FullEvaluation:
     prepared_solution: Solution
     certificate: MultiTripCertificate
     individual_fingerprint: str
+    evaluation_context_sha256: str
     source: str
     accounting: Mapping[str, int]
 
@@ -180,6 +183,76 @@ def mapping_sha256(values: Mapping[str, float]) -> str:
     encoded = json.dumps(
         payload,
         ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _canonical_identity_value(value: Any) -> Any:
+    """Convert an evaluation input into deterministic JSON identity data."""
+
+    if value is None or isinstance(value, (bool, str, int)):
+        return value
+    if isinstance(value, float):
+        return {"float_hex": value.hex()}
+    if isinstance(value, Path):
+        return {"path": str(value)}
+    if isinstance(value, Enum):
+        return {
+            "enum": f"{type(value).__module__}.{type(value).__qualname__}",
+            "value": _canonical_identity_value(value.value),
+        }
+    if is_dataclass(value) and not isinstance(value, type):
+        return {
+            "dataclass": f"{type(value).__module__}.{type(value).__qualname__}",
+            "fields": {
+                field.name: _canonical_identity_value(getattr(value, field.name))
+                for field in fields(value)
+            },
+        }
+    if isinstance(value, Mapping):
+        rows = [
+            (
+                _canonical_identity_value(key),
+                _canonical_identity_value(item),
+            )
+            for key, item in value.items()
+        ]
+        rows.sort(
+            key=lambda row: json.dumps(
+                row[0],
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return {"mapping": rows}
+    if isinstance(value, (set, frozenset)):
+        rows = [_canonical_identity_value(item) for item in value]
+        rows.sort(
+            key=lambda row: json.dumps(
+                row,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return {"set": rows}
+    if isinstance(value, (list, tuple)):
+        return [_canonical_identity_value(item) for item in value]
+    return {
+        "object": f"{type(value).__module__}.{type(value).__qualname__}",
+        "repr": repr(value),
+    }
+
+
+def evaluation_context_sha256(context: DutyEvaluationContext) -> str:
+    """Bind cached evaluations to every input used by the full evaluator."""
+
+    encoded = json.dumps(
+        _canonical_identity_value(context),
+        ensure_ascii=False,
+        sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
@@ -230,6 +303,7 @@ class DutyFullEvaluator:
 
     def __init__(self, context: DutyEvaluationContext):
         self.context = context
+        self.context_sha256 = evaluation_context_sha256(context)
         self.full_calls = 0
         self.sentinel_calls = 0
         self.slice_preparation_calls = 0
@@ -386,6 +460,7 @@ class DutyFullEvaluator:
             prepared_solution=prepared,
             certificate=certificate,
             individual_fingerprint=individual_fingerprint,
+            evaluation_context_sha256=self.context_sha256,
             source=source,
             accounting=dict(accounting),
         )
