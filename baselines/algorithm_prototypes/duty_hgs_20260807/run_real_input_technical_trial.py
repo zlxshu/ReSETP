@@ -38,6 +38,11 @@ from duty_hgs.population import (
     PenaltyParameters,
     PopulationParameters,
 )
+from duty_hgs.proposals import (
+    InterleavedProposalEngine,
+    MechanismProposalEngine,
+)
+from duty_hgs.pyvrp_proposals import PyVRPDutyRouteProposalEngine
 from duty_hgs.runner import (
     DutyHGSSearchParameters,
     FrozenPopulationIdentity,
@@ -454,6 +459,7 @@ def _prepare_population(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--instance-id", default=INSTANCE_ID)
     parser.add_argument("--iterations", type=int, default=1)
     parser.add_argument("--restart-after", type=int, default=20_000)
     parser.add_argument("--require-restart", action="store_true")
@@ -462,6 +468,11 @@ def main() -> int:
     parser.add_argument("--stream-trajectory", action="store_true")
     parser.add_argument("--no-retain-trajectory", action="store_true")
     parser.add_argument("--stderr-capture-state", default="caller_not_declared")
+    parser.add_argument(
+        "--proposal-mode",
+        choices=("legacy", "system"),
+        default="legacy",
+    )
     args = parser.parse_args()
     if args.iterations < 1:
         raise ValueError("technical iteration count must be positive")
@@ -488,6 +499,8 @@ def main() -> int:
             "status": "RUNNING",
             "purpose": "bounded real-input wiring trial; not a performance experiment",
             "code_provenance": code_provenance,
+            "requested_instance_id": args.instance_id,
+            "requested_proposal_mode": args.proposal_mode,
             "requested_iterations": args.iterations,
             "requested_restart_after": args.restart_after,
             "requested_truth_sentinel_enabled": not args.disable_truth_sentinel,
@@ -497,7 +510,7 @@ def main() -> int:
     )
 
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
-    bundle, initial, pi0, context = _build_context(repo)
+    bundle, initial, pi0, context = _build_context(repo, args.instance_id)
     if args.disable_truth_sentinel:
         context = replace(
             context,
@@ -511,6 +524,18 @@ def main() -> int:
     candidates, initial_evaluation, reverse_record, attempts, selected = (
         _prepare_population(initial, evaluator, policy, parameters)
     )
+    proposal_engine = None
+    if args.proposal_mode == "system":
+        proposal_engine = InterleavedProposalEngine(
+            (
+                PyVRPDutyRouteProposalEngine(
+                    evaluator.context,
+                    initial,
+                    random_seed=SEED,
+                ),
+                MechanismProposalEngine(evaluator.context, policy),
+            )
+        )
     identity = FrozenPopulationIdentity(
         source_id="technical-real-input-two-parent-population",
         value_sha256=population_sha256(candidates),
@@ -555,6 +580,7 @@ def main() -> int:
             arm=args.arm,
             trajectory_sink=trajectory_sink,
             retain_trajectory=not args.no_retain_trajectory,
+            proposal_engine=proposal_engine,
         )
     finally:
         if trajectory_handle is not None:
@@ -614,7 +640,7 @@ def main() -> int:
     metadata = {
         "status": "COMPLETE" if not failure_reasons else "FAILED",
         "purpose": "bounded real-input wiring trial; not a performance experiment",
-        "instance_id": INSTANCE_ID,
+        "instance_id": args.instance_id,
         "instance_formally_selected": False,
         "formal_search_allowed": bool(bundle.formal_search_allowed),
         "machine": "M1 formal-number machine, but this output is diagnostic only",
@@ -635,6 +661,7 @@ def main() -> int:
         "best_evaluation_source": result.best_evaluation.source,
         "parameters": asdict(parameters),
         "charging_policy": asdict(policy),
+        "proposal_mode": args.proposal_mode,
         "pi0": {
             "values": pi0,
             "sha256": mapping_sha256(pi0),
@@ -678,7 +705,7 @@ def main() -> int:
         writer.writeheader()
         writer.writerow(
             {
-                "instance_id": INSTANCE_ID,
+                "instance_id": args.instance_id,
                 "seed": SEED,
                 "iterations": result.iterations,
                 "termination_status": result.termination_status,
@@ -760,7 +787,7 @@ def main() -> int:
 
 本轮判定：`{verdict}`。这是一轮接线和内部一致性检查，不是算法对比实验，也没有替用户确定正式算例、正式预算或论文结论。
 
-真实输入 `{INSTANCE_ID}` 完成了 {result.iterations} 个搜索循环，并触发 {result.accounting.restarts} 次种群重启。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；完整评价判定可行，违规数为 {len(result.best_evaluation.violations)}。完整真值哨兵开关为 `{context.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹增量写盘为 `{args.stream_trajectory}`，内存保留为 `{not args.no_retain_trajectory}`。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
+真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，并触发 {result.accounting.restarts} 次种群重启。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；完整评价判定可行，违规数为 {len(result.best_evaluation.violations)}。本轮候选方式为 `{args.proposal_mode}`。完整真值哨兵开关为 `{context.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹增量写盘为 `{args.stream_trajectory}`，内存保留为 `{not args.no_retain_trajectory}`。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
 
 初始成本为 {initial_evaluation.total_cost:.12f}，本轮保存解成本为 {result.best_evaluation.total_cost:.12f}。这个差值只用于排查运行过程，不能据此宣称 Duty-HGS 更优，因为本轮只有一个种子、一个循环，也没有同预算强基线。
 
