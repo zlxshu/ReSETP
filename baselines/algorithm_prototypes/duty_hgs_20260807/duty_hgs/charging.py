@@ -23,6 +23,7 @@ from typing import Any
 from setp_solver.algorithms.resetp_alns.support.charging import (
     repair_route_charging,
 )
+from setp_solver.charge_timing import _timing_candidates
 from setp_solver.charging_action import _curve_aware_action
 from setp_solver.search.multitrip_schedule import (
     STATIC_PREHORIZON_SECONDS,
@@ -106,6 +107,7 @@ def repair_changed_duties(
     context: DutyEvaluationContext,
     policy: ChargingRepairPolicy,
     cache: ChargingRepairCache | None = None,
+    preserve_explicit_charging_duty_ids: set[str] | None = None,
 ) -> DutyIndividual:
     """Rebuild only changed EV ledgers and preserve every locked decision."""
 
@@ -132,6 +134,9 @@ def repair_changed_duties(
     if unknown:
         raise ValueError(f"charging repair received unknown duties: {sorted(unknown)}")
 
+    preserved_ids = set(preserve_explicit_charging_duty_ids or ())
+    if not preserved_ids.issubset(changed_duty_ids):
+        raise ValueError("explicit charging scope must be part of changed duties")
     rebuilt: list[PhysicalVehicleDuty] = []
     for duty in candidate.duties:
         if duty.physical_vehicle_id not in changed_duty_ids:
@@ -140,6 +145,10 @@ def repair_changed_duties(
         if duty.vehicle_type == "cv":
             if duty.charging_sessions:
                 raise ValueError("CV duty cannot retain charging sessions")
+            rebuilt.append(duty)
+            continue
+        if duty.physical_vehicle_id in preserved_ids:
+            _verify_prepared_ledger(duty, context)
             rebuilt.append(duty)
             continue
         reference_duty = reference_by_id.get(
@@ -165,6 +174,127 @@ def repair_changed_duties(
     result = replace(candidate, duties=tuple(rebuilt))
     assert_locks_preserved(reference, result)
     return result
+
+
+def build_ev_duty_charging_candidates(
+    duty: PhysicalVehicleDuty,
+    *,
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+    reference: PhysicalVehicleDuty | None = None,
+) -> tuple[PhysicalVehicleDuty, ...]:
+    """Build exact whole-duty amount and timing alternatives for one EV."""
+
+    if duty.vehicle_type != "ev" or not duty.trips:
+        return ()
+    reference_duty = duty if reference is None else reference
+    amount_strategies = tuple(
+        dict.fromkeys(
+            (
+                policy.charge_amount_strategy,
+                "just_enough",
+                "max_coverage",
+                "full",
+            )
+        )
+    )
+    candidates: list[PhysicalVehicleDuty] = []
+    seen = {duty}
+    for amount_strategy in amount_strategies:
+        try:
+            repaired = _repair_one_ev_duty(
+                reference_duty,
+                duty,
+                context=context,
+                policy=replace(
+                    policy,
+                    charge_amount_strategy=amount_strategy,
+                ),
+            )
+        except (TypeError, ValueError):
+            continue
+        for candidate in (repaired, *_same_day_depot_timing_variants(
+            repaired,
+            context=context,
+        )):
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            candidates.append(candidate)
+    return tuple(candidates)
+
+
+def _same_day_depot_timing_variants(
+    duty: PhysicalVehicleDuty,
+    *,
+    context: DutyEvaluationContext,
+) -> tuple[PhysicalVehicleDuty, ...]:
+    """Enumerate exact slot/curve breakpoints for current same-day depot use."""
+
+    if context.depot_charge_window_mode != "same_day_predeparture":
+        return ()
+    solution = DutyIndividual(
+        duties=(duty,),
+        source="charging-timing-candidates",
+    ).to_solution()
+    route_by_trip = {
+        int(route.vehicle_id.rsplit("#T", 1)[1]): route
+        for route in solution.routes
+    }
+    actions_by_trip: dict[int, list[ChargingAction]] = {}
+    for action in solution.charging_actions:
+        trip_index = int(action.vehicle_id.rsplit("#T", 1)[1])
+        actions_by_trip.setdefault(trip_index, []).append(action)
+    variants: list[PhysicalVehicleDuty] = []
+    previous_return: float | None = None
+    for trip in duty.trips:
+        route = route_by_trip[trip.trip_index]
+        route_actions = actions_by_trip.get(trip.trip_index, [])
+        timing = route_timing(
+            route,
+            context.bundle.instance,
+            context.bundle.prices,
+            charging_actions=route_actions,
+            validate_battery=False,
+        )
+        for session_index, session in enumerate(duty.charging_sessions):
+            if (
+                session.trip_index != trip.trip_index
+                or session.station_id != duty.home_depot_id
+                or session.locked
+                or int(session.charge_day_offset) != 0
+            ):
+                continue
+            action = _session_to_action(session, route.vehicle_id)
+            duration = float(action.occupancy_minutes) * 60.0
+            earliest = 0.0 if previous_return is None else previous_return
+            latest = float(timing.earliest_departure_second) - duration
+            try:
+                starts = _timing_candidates(
+                    action,
+                    earliest,
+                    latest,
+                    context.bundle.instance,
+                    context.bundle.prices,
+                )
+            except ValueError:
+                continue
+            for start in starts:
+                if abs(float(start) - float(session.charge_start_second)) <= 1e-9:
+                    continue
+                sessions = list(duty.charging_sessions)
+                sessions[session_index] = replace(
+                    session,
+                    charge_start_second=float(start),
+                )
+                candidate = replace(duty, charging_sessions=tuple(sessions))
+                try:
+                    _verify_prepared_ledger(candidate, context)
+                except (TypeError, ValueError):
+                    continue
+                variants.append(candidate)
+        previous_return = float(timing.return_second)
+    return tuple(variants)
 
 
 def _repair_one_ev_duty(

@@ -7,6 +7,16 @@ No proxy score accepts a move; the full evaluator decides every comparison.
 v2 2026-08-07: add the user-approved whole-duty EV/CV task exchange.  Vehicle
 identity, type, depot, fleet registration, and dynamic commitments stay fixed;
 the existing nonlinear charging repair rebuilds the exchanged EV duty.
+
+v3 2026-08-08: add the route operators missing from the first prototype:
+Or-opt segment relocation, cross-route tail exchange (2-opt*), and whole-trip
+two-way exchange.  They still modify the canonical physical-vehicle Duty and
+remain subject to the same charging rebuild and complete-model acceptance.
+
+v4 2026-08-08: add the fixed-fleet analogue of Hiermann et al.'s
+ShiftAndResize neighbourhood: shift one customer within an EV/CV pair, exchange
+the resulting task chains between the two physical vehicle slots, and let the
+existing exact charging reconstruction rebuild the new EV duty.
 """
 
 from __future__ import annotations
@@ -17,7 +27,12 @@ from typing import Protocol
 from setp_solver.instance_loader import Instance
 
 from .evaluation import FullEvaluation
-from .model import DutyIndividual, DutyTrip, PhysicalVehicleDuty
+from .model import (
+    DutyChargingSession,
+    DutyIndividual,
+    DutyTrip,
+    PhysicalVehicleDuty,
+)
 
 
 class DutyMove(Protocol):
@@ -171,6 +186,218 @@ class ReverseSegmentMove:
 
 
 @dataclass(frozen=True)
+class RelocateSegmentMove:
+    """Move one consecutive customer segment between two distinct trips."""
+
+    action_id: str
+    channel: str
+    source_duty_id: str
+    source_trip_index: int
+    start: int
+    stop: int
+    target_duty_id: str
+    target_trip_index: int
+    target_position: int
+
+    @property
+    def changed_duty_ids(self) -> frozenset[str]:
+        return frozenset({self.source_duty_id, self.target_duty_id})
+
+    def apply(self, individual: DutyIndividual) -> DutyIndividual:
+        source_duty, source_trip = _duty_trip(
+            individual,
+            self.source_duty_id,
+            self.source_trip_index,
+        )
+        target_duty, target_trip = _duty_trip(
+            individual,
+            self.target_duty_id,
+            self.target_trip_index,
+        )
+        if (self.source_duty_id, self.source_trip_index) == (
+            self.target_duty_id,
+            self.target_trip_index,
+        ):
+            raise ValueError("segment relocation requires two distinct trips")
+        if self.stop - self.start < 2:
+            raise ValueError("Or-opt segment must contain at least two customers")
+        if self.start < 0 or self.stop > len(source_trip.customer_ids):
+            raise ValueError("Or-opt source segment is outside the trip")
+        _assert_position_unlocked(source_duty, source_trip, self.start)
+        if source_trip.trip_index in source_duty.locked_charging_trip_indices:
+            raise ValueError("Or-opt cannot change a trip with locked charging")
+        _assert_insert_unlocked(target_duty, target_trip, self.target_position)
+        source = list(source_trip.customer_ids)
+        segment = source[self.start : self.stop]
+        del source[self.start : self.stop]
+        target = list(target_trip.customer_ids)
+        target[self.target_position : self.target_position] = segment
+        return _replace_trip_customers(
+            individual,
+            {
+                (self.source_duty_id, self.source_trip_index): tuple(source),
+                (self.target_duty_id, self.target_trip_index): tuple(target),
+            },
+            source=f"{self.channel}:{self.action_id}",
+        )
+
+
+@dataclass(frozen=True)
+class SwapTailsMove:
+    """Exchange two unlocked route suffixes (the standard 2-opt* action)."""
+
+    action_id: str
+    channel: str
+    left_duty_id: str
+    left_trip_index: int
+    left_cut: int
+    right_duty_id: str
+    right_trip_index: int
+    right_cut: int
+
+    @property
+    def changed_duty_ids(self) -> frozenset[str]:
+        return frozenset({self.left_duty_id, self.right_duty_id})
+
+    def apply(self, individual: DutyIndividual) -> DutyIndividual:
+        left_duty, left_trip = _duty_trip(
+            individual,
+            self.left_duty_id,
+            self.left_trip_index,
+        )
+        right_duty, right_trip = _duty_trip(
+            individual,
+            self.right_duty_id,
+            self.right_trip_index,
+        )
+        if (self.left_duty_id, self.left_trip_index) == (
+            self.right_duty_id,
+            self.right_trip_index,
+        ):
+            raise ValueError("2-opt* requires two distinct trips")
+        _assert_insert_unlocked(left_duty, left_trip, self.left_cut)
+        _assert_insert_unlocked(right_duty, right_trip, self.right_cut)
+        left_prefix = left_trip.customer_ids[: self.left_cut]
+        right_prefix = right_trip.customer_ids[: self.right_cut]
+        left = left_prefix + right_trip.customer_ids[self.right_cut :]
+        right = right_prefix + left_trip.customer_ids[self.left_cut :]
+        if left == left_trip.customer_ids and right == right_trip.customer_ids:
+            raise ValueError("2-opt* must change at least one route")
+        return _replace_trip_customers(
+            individual,
+            {
+                (self.left_duty_id, self.left_trip_index): tuple(left),
+                (self.right_duty_id, self.right_trip_index): tuple(right),
+            },
+            source=f"{self.channel}:{self.action_id}",
+        )
+
+
+@dataclass(frozen=True)
+class WholeTripExchangeMove:
+    """Exchange complete unlocked trips while preserving both vehicle slots."""
+
+    action_id: str
+    channel: str
+    left_duty_id: str
+    left_trip_index: int
+    right_duty_id: str
+    right_trip_index: int
+
+    @property
+    def changed_duty_ids(self) -> frozenset[str]:
+        return frozenset({self.left_duty_id, self.right_duty_id})
+
+    def apply(self, individual: DutyIndividual) -> DutyIndividual:
+        left_duty, left_trip = _duty_trip(
+            individual,
+            self.left_duty_id,
+            self.left_trip_index,
+        )
+        right_duty, right_trip = _duty_trip(
+            individual,
+            self.right_duty_id,
+            self.right_trip_index,
+        )
+        if (self.left_duty_id, self.left_trip_index) == (
+            self.right_duty_id,
+            self.right_trip_index,
+        ):
+            raise ValueError("whole-trip exchange requires two distinct trips")
+        if left_trip.customer_ids == right_trip.customer_ids:
+            raise ValueError("whole-trip exchange requires different trips")
+        _assert_trip_fully_unlocked(left_duty, left_trip)
+        _assert_trip_fully_unlocked(right_duty, right_trip)
+        return _replace_trip_customers(
+            individual,
+            {
+                (self.left_duty_id, self.left_trip_index): right_trip.customer_ids,
+                (self.right_duty_id, self.right_trip_index): left_trip.customer_ids,
+            },
+            source=f"{self.channel}:{self.action_id}",
+        )
+
+
+@dataclass(frozen=True)
+class DutySkeletonMove:
+    """Replace complete task chains while preserving physical-asset slots."""
+
+    action_id: str
+    channel: str
+    replacements: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
+    dynamic_future_only: bool = False
+
+    @property
+    def changed_duty_ids(self) -> frozenset[str]:
+        return frozenset(duty_id for duty_id, _chain in self.replacements)
+
+    def apply(self, individual: DutyIndividual) -> DutyIndividual:
+        replacement_by_id = dict(self.replacements)
+        if len(replacement_by_id) != len(self.replacements):
+            raise ValueError("Duty skeleton replacement repeats a vehicle id")
+        unknown = self.changed_duty_ids.difference(
+            duty.physical_vehicle_id for duty in individual.duties
+        )
+        if unknown:
+            raise ValueError(
+                f"Duty skeleton replacement has unknown assets {sorted(unknown)}"
+            )
+        rebuilt = []
+        for duty in individual.duties:
+            chain = replacement_by_id.get(duty.physical_vehicle_id)
+            if chain is None:
+                rebuilt.append(duty)
+                continue
+            if _duty_has_locks(duty) and not (
+                self.dynamic_future_only
+                and duty.has_dynamic_commitment
+                and not any(
+                    trip.locked_customer_prefix for trip in duty.trips
+                )
+                and not any(
+                    session.locked for session in duty.charging_sessions
+                )
+            ):
+                raise ValueError("Duty skeleton cannot change a locked duty")
+            rebuilt.append(
+                replace(
+                    duty,
+                    trips=tuple(
+                        DutyTrip(index, tuple(customers))
+                        for index, customers in enumerate(chain, start=1)
+                        if customers
+                    ),
+                    charging_sessions=(),
+                )
+            )
+        return replace(
+            individual,
+            duties=tuple(rebuilt),
+            source=f"{self.channel}:{self.action_id}",
+        )
+
+
+@dataclass(frozen=True)
 class OpenTripMove:
     action_id: str
     channel: str
@@ -268,6 +495,49 @@ class ChargingRetimeMove:
             session for session in duty.charging_sessions if session.locked
         )
         rebuilt = replace(duty, charging_sessions=retained)
+        return replace(
+            individual,
+            duties=tuple(
+                rebuilt if item.physical_vehicle_id == self.duty_id else item
+                for item in individual.duties
+            ),
+            source=f"{self.channel}:{self.action_id}",
+        )
+
+
+@dataclass(frozen=True)
+class ChargingScheduleMove:
+    """Install one explicit, already certified whole-duty charging schedule."""
+
+    action_id: str
+    channel: str
+    duty_id: str
+    charging_sessions: tuple[DutyChargingSession, ...]
+    route_visits_by_trip: tuple[tuple[int, tuple[str, ...]], ...]
+
+    @property
+    def changed_duty_ids(self) -> frozenset[str]:
+        return frozenset({self.duty_id})
+
+    @property
+    def explicit_charging_duty_ids(self) -> frozenset[str]:
+        return self.changed_duty_ids
+
+    def apply(self, individual: DutyIndividual) -> DutyIndividual:
+        duty = _duty(individual, self.duty_id)
+        if duty.vehicle_type != "ev":
+            raise ValueError("explicit charging schedule requires an EV duty")
+        visits = dict(self.route_visits_by_trip)
+        if set(visits) != {trip.trip_index for trip in duty.trips}:
+            raise ValueError("charging schedule must cover every duty trip")
+        rebuilt = replace(
+            duty,
+            trips=tuple(
+                replace(trip, route_visits=visits[trip.trip_index])
+                for trip in duty.trips
+            ),
+            charging_sessions=tuple(self.charging_sessions),
+        )
         return replace(
             individual,
             duties=tuple(
@@ -405,8 +675,14 @@ def generate_problem_moves(
     instance: Instance,
     *,
     include_whole_duty_type_exchange: bool = True,
+    include_exhaustive_strong_route_moves: bool = False,
 ) -> tuple[DutyMove, ...]:
-    """Generate the complete approved neighbourhood without proxy acceptance."""
+    """Generate the legacy neighbourhood and optional strong route actions.
+
+    The stronger route actions are available here for equivalence tests and
+    small technical probes.  Production search supplies them through a route
+    proposal engine instead of multiplying the Python full-model enumeration.
+    """
 
     del instance  # Full evaluation, not a local proxy, compares the candidates.
     deficient_depots = {
@@ -512,6 +788,119 @@ def generate_problem_moves(
                             right_customer_id=right_customer,
                         )
                     )
+
+            if include_exhaustive_strong_route_moves and (
+                left_trip.customer_ids
+                and right_trip.customer_ids
+                and not left_trip.locked_customer_prefix
+                and not right_trip.locked_customer_prefix
+                and left_trip.trip_index
+                not in left_duty.locked_charging_trip_indices
+                and right_trip.trip_index
+                not in right_duty.locked_charging_trip_indices
+            ):
+                moves.append(
+                    WholeTripExchangeMove(
+                        action_id=(
+                            f"whole-trip-exchange:"
+                            f"{left_duty.physical_vehicle_id}#T{left_trip.trip_index}<->"
+                            f"{right_duty.physical_vehicle_id}#T{right_trip.trip_index}"
+                        ),
+                        channel=(
+                            "fairness_cross_depot"
+                            if left_duty.home_depot_id != right_duty.home_depot_id
+                            else "multi_trip"
+                        ),
+                        left_duty_id=left_duty.physical_vehicle_id,
+                        left_trip_index=left_trip.trip_index,
+                        right_duty_id=right_duty.physical_vehicle_id,
+                        right_trip_index=right_trip.trip_index,
+                    )
+                )
+
+            for left_cut in (
+                range(
+                    len(left_trip.locked_customer_prefix),
+                    len(left_trip.customer_ids) + 1,
+                )
+                if include_exhaustive_strong_route_moves
+                else ()
+            ):
+                for right_cut in range(
+                    len(right_trip.locked_customer_prefix),
+                    len(right_trip.customer_ids) + 1,
+                ):
+                    left_after = (
+                        left_trip.customer_ids[:left_cut]
+                        + right_trip.customer_ids[right_cut:]
+                    )
+                    right_after = (
+                        right_trip.customer_ids[:right_cut]
+                        + left_trip.customer_ids[left_cut:]
+                    )
+                    if (
+                        left_after == left_trip.customer_ids
+                        and right_after == right_trip.customer_ids
+                    ):
+                        continue
+                    moves.append(
+                        SwapTailsMove(
+                            action_id=(
+                                f"2opt-star:{left_duty.physical_vehicle_id}"
+                                f"#T{left_trip.trip_index}@{left_cut}<->"
+                                f"{right_duty.physical_vehicle_id}"
+                                f"#T{right_trip.trip_index}@{right_cut}"
+                            ),
+                            channel=channel,
+                            left_duty_id=left_duty.physical_vehicle_id,
+                            left_trip_index=left_trip.trip_index,
+                            left_cut=left_cut,
+                            right_duty_id=right_duty.physical_vehicle_id,
+                            right_trip_index=right_trip.trip_index,
+                            right_cut=right_cut,
+                        )
+                    )
+
+    for source_duty, source_trip in (
+        trip_rows if include_exhaustive_strong_route_moves else ()
+    ):
+        start_min = len(source_trip.locked_customer_prefix)
+        for start in range(start_min, len(source_trip.customer_ids) - 1):
+            for stop in range(start + 2, len(source_trip.customer_ids) + 1):
+                for target_duty, target_trip in trip_rows:
+                    if (
+                        source_duty.physical_vehicle_id
+                        == target_duty.physical_vehicle_id
+                        and source_trip.trip_index == target_trip.trip_index
+                    ):
+                        continue
+                    channel = _relation_channel(
+                        source_duty,
+                        target_duty,
+                        deficient_depots,
+                    )
+                    for position in range(
+                        len(target_trip.locked_customer_prefix),
+                        len(target_trip.customer_ids) + 1,
+                    ):
+                        moves.append(
+                            RelocateSegmentMove(
+                                action_id=(
+                                    f"or-opt:{source_duty.physical_vehicle_id}"
+                                    f"#T{source_trip.trip_index}@{start}:{stop}->"
+                                    f"{target_duty.physical_vehicle_id}"
+                                    f"#T{target_trip.trip_index}@{position}"
+                                ),
+                                channel=channel,
+                                source_duty_id=source_duty.physical_vehicle_id,
+                                source_trip_index=source_trip.trip_index,
+                                start=start,
+                                stop=stop,
+                                target_duty_id=target_duty.physical_vehicle_id,
+                                target_trip_index=target_trip.trip_index,
+                                target_position=position,
+                            )
+                        )
 
     for duty, trip in trip_rows:
         start_min = len(trip.locked_customer_prefix)
@@ -693,6 +1082,16 @@ def _assert_insert_unlocked(
         raise ValueError("move insertion position is outside the trip")
     if trip.trip_index in duty.locked_charging_trip_indices:
         raise ValueError("move cannot change a trip with locked charging")
+
+
+def _assert_trip_fully_unlocked(
+    duty: PhysicalVehicleDuty,
+    trip: DutyTrip,
+) -> None:
+    if trip.locked_customer_prefix:
+        raise ValueError("whole-trip action cannot change a locked prefix")
+    if trip.trip_index in duty.locked_charging_trip_indices:
+        raise ValueError("whole-trip action cannot change locked charging")
 
 
 def _duty_trip(

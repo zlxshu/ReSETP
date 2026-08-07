@@ -11,6 +11,13 @@ reuse an already verified input evaluation supplied by the repair phase.
 
 v4 2026-08-07: expose the approved whole-duty type-exchange switch so its
 contribution can be measured without changing any other search setting.
+
+v5 2026-08-08: accept an explicit system proposal engine.  The engine orders
+candidate actions only; charging repair and complete-model evaluation remain
+the sole construction and acceptance path.
+
+v6 2026-08-08: cold-replay only the selected improving action during search;
+tests may still request a sentinel for every candidate through ``evaluate_move``.
 """
 
 from __future__ import annotations
@@ -36,7 +43,8 @@ from .evaluation import (
     FullEvaluation,
 )
 from .model import DutyIndividual, assert_locks_preserved
-from .operators import DutyMove, generate_problem_moves
+from .operators import DutyMove
+from .proposals import DutyProposalEngine, LegacyCompleteProposalEngine
 
 
 class DutySentinelMismatch(RuntimeError):
@@ -55,6 +63,8 @@ def evaluate_move(
     charging_policy: ChargingRepairPolicy,
     incremental_evaluator: DutyIncrementalEvaluator | None = None,
     charging_repair_cache: ChargingRepairCache | None = None,
+    verify_full_truth: bool | None = None,
+    penalized_cost: Callable[[FullEvaluation], float] | None = None,
 ) -> CandidateOutcome:
     """Return a typed candidate outcome; truth-sentinel failures still raise."""
 
@@ -79,6 +89,9 @@ def evaluate_move(
             context=evaluator.context,
             policy=charging_policy,
             cache=charging_repair_cache,
+            preserve_explicit_charging_duty_ids=set(
+                getattr(move, "explicit_charging_duty_ids", ())
+            ),
         )
     except (TypeError, ValueError) as exc:
         return _rejection(
@@ -106,6 +119,7 @@ def evaluate_move(
             current,
             candidate,
             changed_duty_ids=set(move.changed_duty_ids),
+            verify_full_truth=verify_full_truth,
         )
         if local_seed_count:
             result = replace(
@@ -171,6 +185,7 @@ def educate_best_improvement(
     initial_evaluation: FullEvaluation | None = None,
     trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
     include_whole_duty_type_exchange: bool = True,
+    proposal_engine: DutyProposalEngine | None = None,
 ) -> tuple[DutyIndividual, FullEvaluation, tuple[TrajectoryRow, ...]]:
     """Run best-improvement under the population's current penalty scale."""
 
@@ -187,7 +202,8 @@ def educate_best_improvement(
     rows: list[TrajectoryRow] = []
     while True:
         accounting.education_rounds += 1
-        moves = generate_problem_moves(
+        engine = proposal_engine or LegacyCompleteProposalEngine()
+        moves = engine.propose(
             current,
             current_evaluation,
             evaluator.context.bundle.instance,
@@ -214,6 +230,8 @@ def educate_best_improvement(
                 charging_policy=charging_policy,
                 incremental_evaluator=incremental,
                 charging_repair_cache=charging_repair_cache,
+                verify_full_truth=False,
+                penalized_cost=penalized_cost,
             )
             accounting.record_outcome(outcome)
             round_rows.append(
@@ -249,7 +267,30 @@ def educate_best_improvement(
             and float(penalized_cost(best.evaluation))
             < float(penalized_cost(current_evaluation))
         )
-        if accepted and best_row_index is not None:
+        if (
+            accepted
+            and best is not None
+            and evaluator.context.incremental_full_truth_sentinel_enabled
+            and evaluator.context.dynamic_state is None
+        ):
+            try:
+                truth = incremental.verify_against_full_truth(
+                    best.candidate,
+                    best.evaluation,
+                )
+            except AssertionError as exc:
+                if best_row_index is not None:
+                    round_rows[best_row_index] = replace(
+                        round_rows[best_row_index],
+                        status=CandidateStatus.SENTINEL_MISMATCH.value,
+                        error_type=type(exc).__name__,
+                        error=str(exc),
+                    )
+                sentinel_mismatch = True
+            else:
+                accounting.sentinel_evaluations += 1
+                best = replace(best, evaluation=truth)
+        if accepted and not sentinel_mismatch and best_row_index is not None:
             round_rows[best_row_index] = replace(
                 round_rows[best_row_index],
                 accepted=True,
@@ -272,6 +313,8 @@ def trajectory_dicts(
     rows: tuple[TrajectoryRow, ...],
 ) -> list[dict[str, object]]:
     return [asdict(row) for row in rows]
+
+
 
 
 def _trajectory_row(

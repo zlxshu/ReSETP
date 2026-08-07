@@ -155,9 +155,12 @@ def test_best_improvement_accepts_complete_model_feasible_move(
     assert educated != overloaded
     assert any(row.accepted for row in rows)
     assert accounting.incremental_evaluations > 0
+    assert accounting.sentinel_evaluations == sum(
+        row.accepted for row in rows
+    )
     assert (
         accounting.incremental_evaluations
-        == accounting.sentinel_evaluations
+        >= accounting.sentinel_evaluations
     )
     assert accounting.cache_seedings == accounting.education_rounds
 

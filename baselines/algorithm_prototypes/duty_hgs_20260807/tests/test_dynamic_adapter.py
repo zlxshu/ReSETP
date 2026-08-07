@@ -14,6 +14,7 @@ from duty_hgs.dynamic import (
 )
 from duty_hgs.evaluation import DutyFullEvaluator
 from duty_hgs.operators import generate_problem_moves
+from duty_hgs.pyvrp_proposals import PyVRPDutyRouteProposalEngine
 from run_real_input_technical_trial import _build_context
 from setp_solver.check import check_solution
 from setp_solver.cost import route_departure_second
@@ -140,6 +141,56 @@ def test_committed_asset_is_excluded_from_whole_duty_exchange(
     ]
     assert committed
     assert all(not committed.intersection(move.changed_duty_ids) for move in exchange_moves)
+
+
+def test_dynamic_route_kernel_changes_only_the_future_skeleton(
+    dynamic_fixture,
+) -> None:
+    bundle, static_context, state, future = dynamic_fixture
+    evaluator = DutyFullEvaluator(
+        replace(static_context, dynamic_state=state)
+    )
+    before = evaluator.evaluate(future)
+    engine = PyVRPDutyRouteProposalEngine(
+        evaluator.context,
+        future,
+        random_seed=11,
+    )
+
+    moves = tuple(
+        engine.propose(
+            future,
+            before,
+            bundle.instance,
+            include_whole_duty_type_exchange=False,
+        )
+    )
+
+    assert moves
+    candidate = moves[0].apply(future)
+    assert tuple(
+        (
+            duty.physical_vehicle_id,
+            duty.vehicle_type,
+            duty.home_depot_id,
+            duty.has_dynamic_commitment,
+        )
+        for duty in candidate.duties
+    ) == tuple(
+        (
+            duty.physical_vehicle_id,
+            duty.vehicle_type,
+            duty.home_depot_id,
+            duty.has_dynamic_commitment,
+        )
+        for duty in future.duties
+    )
+    assert {
+        customer
+        for duty in candidate.duties
+        for trip in duty.trips
+        for customer in trip.customer_ids
+    } == set(state.future_customer_ids)
 
 
 def test_late_asset_is_rejected_instead_of_silently_reassigned(

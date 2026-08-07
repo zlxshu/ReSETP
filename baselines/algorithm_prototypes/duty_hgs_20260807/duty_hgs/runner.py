@@ -10,6 +10,9 @@ starts, so the same child is not fully evaluated twice without disclosure.
 
 v3 2026-08-07: carry the whole-duty EV/CV exchange switch in the hashed run
 configuration and pass it unchanged into education for paired ablation.
+
+v4 2026-08-08: record and use the system proposal-engine identity so a strong
+route kernel and the problem-mechanism channels cannot be silently confused.
 """
 
 from __future__ import annotations
@@ -43,6 +46,7 @@ from .population import (
     PenaltyParameters,
     PopulationParameters,
 )
+from .proposals import DutyProposalEngine, LegacyCompleteProposalEngine
 from .repair import regret2_repair
 
 
@@ -122,6 +126,8 @@ class DutyHGSRunProvenance:
     incremental_full_truth_sentinel_enabled: bool
     trajectory_sink_enabled: bool
     trajectory_retained_in_memory: bool
+    proposal_engine_source_id: str
+    proposal_engine_sha256: str
 
 
 class _TrajectoryRecorder:
@@ -165,6 +171,7 @@ def run_duty_hgs(
     arm: str,
     trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
     retain_trajectory: bool = True,
+    proposal_engine: DutyProposalEngine | None = None,
 ) -> DutyHGSRunResult:
     """Run Duty-HGS until the external, user-approved stop callable fires."""
 
@@ -177,6 +184,7 @@ def run_duty_hgs(
         raise ValueError(
             "initial candidates disagree with their frozen population identity"
         )
+    active_proposal_engine = proposal_engine or LegacyCompleteProposalEngine()
     trajectory = _TrajectoryRecorder(
         trajectory_sink,
         retain=retain_trajectory,
@@ -189,6 +197,7 @@ def run_duty_hgs(
             parameters,
             charging_policy,
             arm=arm,
+            proposal_engine=active_proposal_engine,
         ),
         initial_population_source_id=initial_population_identity.source_id,
         initial_population_sha256=initial_population_identity.value_sha256.lower(),
@@ -208,6 +217,8 @@ def run_duty_hgs(
         ),
         trajectory_sink_enabled=trajectory_sink is not None,
         trajectory_retained_in_memory=retain_trajectory,
+        proposal_engine_source_id=active_proposal_engine.source_id,
+        proposal_engine_sha256=active_proposal_engine.identity_sha256,
     )
     rng = random.Random(int(parameters.random_seed))
     accounting = SearchAccounting()
@@ -490,6 +501,7 @@ def run_duty_hgs(
                     include_whole_duty_type_exchange=(
                         parameters.include_whole_duty_type_exchange
                     ),
+                    proposal_engine=active_proposal_engine,
                 )
             )
         except DutySentinelMismatch as exc:
@@ -641,13 +653,19 @@ def search_configuration_sha256(
     charging_policy: ChargingRepairPolicy,
     *,
     arm: str,
+    proposal_engine: DutyProposalEngine | None = None,
 ) -> str:
     """Hash only the runner, charging-policy, and arm configuration."""
 
+    active_proposal_engine = proposal_engine or LegacyCompleteProposalEngine()
     payload = {
         "arm": str(arm),
         "parameters": asdict(parameters),
         "charging_policy": asdict(charging_policy),
+        "proposal_engine": {
+            "source_id": active_proposal_engine.source_id,
+            "identity_sha256": active_proposal_engine.identity_sha256,
+        },
     }
     encoded = json.dumps(
         payload,

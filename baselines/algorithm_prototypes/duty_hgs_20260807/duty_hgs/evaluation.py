@@ -17,6 +17,10 @@ misreported as a hidden repair; identities and material changes remain exact.
 
 v5 2026-08-07: evaluate rolling-horizon candidates through the certified
 exact-asset dynamic adapter and score the merged full-day execution history.
+
+v6 2026-08-08: allow the caller to defer the full-truth sentinel until an
+action is selected.  The incremental result is unchanged; selected actions,
+population entries, and final solutions can still be verified by cold truth.
 """
 
 from __future__ import annotations
@@ -441,6 +445,7 @@ class DutyIncrementalEvaluator:
         *,
         changed_duty_ids: set[str],
         commit: bool = False,
+        verify_full_truth: bool | None = None,
     ) -> FullEvaluation:
         if self._individual_fingerprint != previous.fingerprint:
             raise ValueError("incremental cache is not seeded for previous individual")
@@ -499,6 +504,8 @@ class DutyIncrementalEvaluator:
         )
         sentinel_enabled = bool(
             self.full_evaluator.context.incremental_full_truth_sentinel_enabled
+            if verify_full_truth is None
+            else verify_full_truth
         )
         incremental = self.full_evaluator._evaluate_prepared(
             combined,
@@ -531,6 +538,22 @@ class DutyIncrementalEvaluator:
             self._slices = next_slices
             self._individual_fingerprint = candidate.fingerprint
         return incremental
+
+    def verify_against_full_truth(
+        self,
+        candidate: DutyIndividual,
+        incremental: FullEvaluation,
+    ) -> FullEvaluation:
+        """Cold-replay one selected incremental candidate and return truth."""
+
+        if incremental.individual_fingerprint != candidate.fingerprint:
+            raise ValueError("sentinel received another candidate evaluation")
+        truth = self.full_evaluator._evaluate_full(
+            candidate,
+            source="sentinel",
+        )
+        assert_evaluations_equivalent(incremental, truth)
+        return truth
 
 
 def assert_evaluations_equivalent(
