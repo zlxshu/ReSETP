@@ -1,0 +1,144 @@
+{
+  "schema_version": "resetp.effect-oriented-design-probe.v1",
+  "created_at": "2026-08-07",
+  "status": "DESIGN_TRIAGE_ONLY_NOT_FORMAL_EXPERIMENT",
+  "purpose": "在算法施工前排除没有真实作用机会的候选动作；不用于论文结论、地区选择或算法优越性主张。",
+  "source": {
+    "path": "docs/handoff/charging_timing_three_arms_uncapped_20260806/solution_witnesses.json",
+    "sha256": "e6239f423eb847fe76b4d596dbb075659bd0d20e818ecb17d34dfedc359da9d8",
+    "witness_count": 73,
+    "paper_claim_allowed": false,
+    "current_evaluator_loadable_count": 61,
+    "current_evaluator_loadable_by_region": {
+      "CY": 29,
+      "JJJ": 21,
+      "PRD": 11
+    },
+    "load_failure_note": "其余12份旧见证在当前评价链冷载时触发 multi-trip preparation changed an explicit charging decision；本探针没有修补、删除或把它们算作通过。"
+  },
+  "common_probe_semantics": {
+    "search_iterations": 0,
+    "pi0": "每个车场暂置1.0，仅用于避免尚未冻结的正式独立经营基准妨碍物理机会筛查；不得据此作公平结论。",
+    "fleet_composition_changed": false,
+    "customer_service_set_changed": false,
+    "charging_repair": "候选电动车班表使用当前 nonlinear just_enough 充电重建；燃油车班表不得保留充电动作。",
+    "candidate_judgement": "当前完整评价器检查多趟时序、电量、时间窗、容量、车队和服务完整性。"
+  },
+  "failed_probe_invocations_preserved": [
+    {
+      "attempt": 1,
+      "failure": "zsh: command not found: python",
+      "scientific_result_produced": false,
+      "correction": "改用当前环境存在的 python3。"
+    },
+    {
+      "attempt": 2,
+      "failure": "AttributeError: Violation object has no attribute kind",
+      "scientific_result_produced": false,
+      "correction": "按 solver/src/setp_solver/check.py 的数据结构改读 Violation.type。"
+    }
+  ],
+  "probes": {
+    "whole_trip_relocation": {
+      "description": "把一条完整配送趟插入同车场另一辆实体车的多趟班表，再尝试重建充电。",
+      "candidate_insertions_checked": 541,
+      "temporal_overlap_before_charging_repair": 541,
+      "charging_repair_succeeded": 0,
+      "triage_reading": "当前旧见证中的候选位置全部先发生多趟时序重叠，随后也没有找到可行车场充电窗口；本轮不提交施工。"
+    },
+    "single_trip_ev_cv_exchange": {
+      "description": "同车场一条EV配送趟与一条CV配送趟双向交换，实体车身份和车型不变，再重建EV充电。",
+      "by_region": {
+        "CY": {
+          "pairs": 881,
+          "charging_repair_succeeded": 718,
+          "full_evaluated": 179,
+          "full_feasible": 150,
+          "full_feasible_cost_improving": 1,
+          "full_feasible_emissions_improving": 3
+        },
+        "JJJ": {
+          "pairs": 702,
+          "charging_repair_succeeded": 491,
+          "full_evaluated": 128,
+          "full_feasible": 83,
+          "full_feasible_cost_improving": 4,
+          "full_feasible_emissions_improving": 7
+        },
+        "PRD": {
+          "pairs": 252,
+          "charging_repair_succeeded": 189,
+          "full_evaluated": 54,
+          "full_feasible": 37,
+          "full_feasible_cost_improving": 0,
+          "full_feasible_emissions_improving": 0
+        }
+      },
+      "triage_reading": "动作真实可行，但降成本机会稀少且幅度小；不足以单独支持施工。"
+    },
+    "whole_duty_ev_cv_exchange": {
+      "description": "同车场EV与CV交换完整整日多趟任务内容，保留各自实体车身份、车型、所属车场和车队构成，随后重建EV整日非线性充电链。",
+      "by_region": {
+        "CY": {
+          "pairs": 434,
+          "charging_repair_succeeded": 130,
+          "full_evaluated": 130,
+          "full_feasible": 102,
+          "full_feasible_cost_improving": 5,
+          "full_feasible_emissions_improving": 7
+        },
+        "JJJ": {
+          "pairs": 334,
+          "charging_repair_succeeded": 126,
+          "full_evaluated": 126,
+          "full_feasible": 78,
+          "full_feasible_cost_improving": 5,
+          "full_feasible_emissions_improving": 7
+        },
+        "PRD": {
+          "pairs": 112,
+          "charging_repair_succeeded": 46,
+          "full_evaluated": 46,
+          "full_feasible": 34,
+          "full_feasible_cost_improving": 0,
+          "full_feasible_emissions_improving": 0
+        }
+      },
+      "strong_cy_examples": [
+        {
+          "task_id": "T26__CY__ASAP__S2026080208",
+          "base_total_cost": 4160.2787609152365,
+          "delta_total_cost": -43.51402026097185,
+          "relative_cost_change": -0.010459400141590277,
+          "delta_total_emissions_kg": -20.0178516647926
+        },
+        {
+          "task_id": "T26__CY__ASAP__S2026080208",
+          "base_total_cost": 4160.2787609152365,
+          "delta_total_cost": -45.8426530548204,
+          "relative_cost_change": -0.011019130132696996,
+          "delta_total_emissions_kg": -20.64265859475546
+        },
+        {
+          "task_id": "T26__CY__COST_CARBON__S2026080201",
+          "base_total_cost": 4125.792036251524,
+          "delta_total_cost": -52.59958919236442,
+          "relative_cost_change": -0.012748967647955812,
+          "delta_total_emissions_kg": -22.252306952149354
+        },
+        {
+          "task_id": "T26__CY__COST_CARBON__S2026080201",
+          "base_total_cost": 4125.792036251524,
+          "delta_total_cost": -46.084453628879146,
+          "relative_cost_change": -0.011169844050295138,
+          "delta_total_emissions_kg": -19.96418883199067
+        }
+      ],
+      "triage_reading": "在当前能冷载的旧见证中存在约1.05%至1.27%的零搜索成本头房，并伴随约20至22千克排放下降；足以把该动作提交用户审批做最小施工，但不是正式算法效果证据。"
+    }
+  },
+  "region_selection": {
+    "selected": null,
+    "reason": "本探针只检查一个算法动作的作用机会，不能代替三大实验和五因素的统一算例筛选；成渝出现动作头房不等于其时变碳主效应最强。"
+  }
+}
