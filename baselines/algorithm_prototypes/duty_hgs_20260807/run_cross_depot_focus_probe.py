@@ -49,6 +49,7 @@ FIELDS = (
     "evaluated",
     "complete_model_feasible",
     "violation_count",
+    "violations_json",
     "cross_site_service_count",
     "after_cost_cny",
     "cost_change_cny",
@@ -254,6 +255,7 @@ def main() -> int:
             improves = False
             feasible = False
             violations = None
+            violation_rows: list[dict[str, Any]] = []
             cross_site_count = None
             maximum_charge_end_soc = None
             taper_actions = None
@@ -270,6 +272,9 @@ def main() -> int:
                 penalized_change = candidate_penalized - initial_penalized
                 feasible = bool(evaluation.feasible)
                 violations = len(evaluation.violations)
+                violation_rows = [
+                    asdict(item) for item in evaluation.violations
+                ]
                 cross_site_count = len(
                     evaluation.prepared_solution.cross_site_services
                 )
@@ -301,6 +306,11 @@ def main() -> int:
                 "evaluated": evaluation is not None,
                 "complete_model_feasible": feasible if evaluation is not None else "",
                 "violation_count": "" if violations is None else violations,
+                "violations_json": json.dumps(
+                    violation_rows,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
                 "cross_site_service_count": (
                     "" if cross_site_count is None else cross_site_count
                 ),
