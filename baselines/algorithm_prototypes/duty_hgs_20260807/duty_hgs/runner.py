@@ -117,6 +117,8 @@ class DutyHGSRunProvenance:
     independent_profit_source_id: str
     independent_profit_sha256: str
     independent_profit_externally_frozen: bool
+    fairness_enabled: bool
+    fairness_theta: float
     incremental_full_truth_sentinel_enabled: bool
     trajectory_sink_enabled: bool
     trajectory_retained_in_memory: bool
@@ -199,6 +201,8 @@ def run_duty_hgs(
         independent_profit_externally_frozen=(
             evaluator.context.independent_profit_identity.externally_frozen
         ),
+        fairness_enabled=bool(evaluator.context.fairness_enabled),
+        fairness_theta=float(evaluator.context.theta),
         incremental_full_truth_sentinel_enabled=(
             evaluator.context.incremental_full_truth_sentinel_enabled
         ),

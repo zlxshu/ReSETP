@@ -88,6 +88,7 @@ class DutyEvaluationContext:
     theta: float
     carbon_quota_kg: float
     depot_charge_window_mode: str
+    fairness_enabled: bool = True
     incremental_full_truth_sentinel_enabled: bool = True
     dynamic_state: DutyDynamicState | None = None
 
@@ -340,7 +341,7 @@ class DutyFullEvaluator:
             bundle.instance,
             bundle.prices,
             fairness_context=fairness_context,
-            fairness_enabled=True,
+            fairness_enabled=bool(self.context.fairness_enabled),
         )
         violations.extend(
             _depot_fleet_violations(

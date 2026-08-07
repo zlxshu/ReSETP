@@ -15,7 +15,13 @@ from duty_hgs.evaluation import (
 )
 from duty_hgs.feedback import RelocateCustomerMove
 from duty_hgs.model import DutyIndividual, DutyTrip, PhysicalVehicleDuty
-from setp_solver.check import BATTERY, FLEET_SIZE, TIME_WINDOW, Violation
+from setp_solver.check import (
+    BATTERY,
+    FLEET_SIZE,
+    PROFIT_FAIRNESS,
+    TIME_WINDOW,
+    Violation,
+)
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import PriceParameters
 from setp_solver.search.multitrip_schedule import (
@@ -34,6 +40,28 @@ def test_full_evaluator_preserves_explicit_physical_assignment(evaluated_fixture
     assert result.source == "full"
     assert set(result.participation_margin) == set(evaluator.context.independent_profit)
     assert all(abs(value) <= 1.0e-7 for value in result.participation_margin.values())
+
+
+def test_fairness_can_be_disabled_without_changing_profit_accounting(
+    evaluated_fixture,
+) -> None:
+    individual, evaluator = evaluated_fixture
+    strict_context = replace(evaluator.context, theta=2.0)
+    constrained = DutyFullEvaluator(strict_context).evaluate(individual)
+    unconstrained = DutyFullEvaluator(
+        replace(strict_context, fairness_enabled=False)
+    ).evaluate(individual)
+
+    assert any(
+        violation.type == PROFIT_FAIRNESS
+        for violation in constrained.violations
+    )
+    assert not any(
+        violation.type == PROFIT_FAIRNESS
+        for violation in unconstrained.violations
+    )
+    assert unconstrained.depot_profit == constrained.depot_profit
+    assert unconstrained.participation_margin == constrained.participation_margin
 
 
 def test_valid_first_and_between_trip_depot_charges_survive_duty_round_trip() -> None:

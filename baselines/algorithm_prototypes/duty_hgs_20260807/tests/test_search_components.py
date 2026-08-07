@@ -318,6 +318,8 @@ def test_runnable_duty_hgs_executes_crossover_repair_and_education(
     assert result.provenance.independent_profit_sha256 == (
         evaluator.context.independent_profit_identity.value_sha256
     )
+    assert result.provenance.fairness_enabled
+    assert result.provenance.fairness_theta == evaluator.context.theta
     assert len(result.provenance.search_configuration_sha256) == 64
     assert result.trajectory
 
