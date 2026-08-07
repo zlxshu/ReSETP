@@ -61,6 +61,14 @@
   },
   "truth_sentinel_enabled": true,
   "technical_stop": "repeat the approved complete best-improvement neighbourhood until it accepts no penalized improvement; not the formal P20 stop",
+  "candidate_trajectory_retained": false,
+  "candidate_trajectory_removed_after_run": true,
+  "retained_search_records": [
+    "round_summaries.csv",
+    "rejection_summary.csv",
+    "accepted_by_channel_json in raw_runs.csv",
+    "status_by_channel_json in raw_runs.csv"
+  ],
   "penalty_parameters": {
     "initial_penalty_per_unit": 100.0,
     "solutions_between_updates": 50,

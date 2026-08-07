@@ -8,12 +8,12 @@
 
 ## 交付前九条自检
 
-1. 每个事实是否有出处？——逐轮结果在 `round_summaries.csv`，逐动作记录在 `trajectory.jsonl`，完整解和计数在 `best_solution.json`，汇总在 `raw_runs.csv`。
+1. 每个事实是否有出处？——逐轮结果在 `round_summaries.csv`，拒绝原因在 `rejection_summary.csv`，完整解和计数在 `best_solution.json`，汇总在 `raw_runs.csv`。
 2. 有没有把建议或担忧写成已决或状态？——没有；正式算例、预算、利润基准和效应口径均未替用户决定。
 3. 是否超出任务范围？——没有；只做已批准的统一算例技术探路，没有启动正式实验或修改论文。
 4. 是否碰受保护文件？——未碰；三个文件前后哈希一致并保存在 `metadata.json`。
 5. 待决事项是否给了选项和代价？——本包不新增用户决策；效果识别选项在三地区探路完成后统一提交。
 6. 是否使用自造词或内部任务号？——没有。
-7. 失败、跳过、超时和异常是否如实保留？——所有候选状态和错误逐行保存在 `trajectory.jsonl`，本轮失败原因写入 `decision.json`。
-8. 四件套是否齐全？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json`、`report.md` 齐全，另附逐轮、逐动作和完整解。
+7. 失败、跳过、超时和异常是否如实保留？——候选状态按通道汇总，拒绝错误逐类保存在 `rejection_summary.csv`，本轮失败原因写入 `decision.json`。
+8. 四件套是否齐全？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json`、`report.md` 齐全，另附逐轮、拒绝汇总和完整解。
 9. 交接记录是否同步？——三地区探路完成并复核后统一同步项目交接和记忆。

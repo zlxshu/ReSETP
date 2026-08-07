@@ -161,81 +161,80 @@ def main() -> int:
     penalty_manager.register(initial_evaluation)
     accounting = SearchAccounting()
 
-    trajectory_path = output / "trajectory.jsonl"
     round_rows: list[dict[str, Any]] = []
     accepted_by_channel: Counter[str] = Counter()
     status_by_channel: Counter[str] = Counter()
-    with trajectory_path.open("w", encoding="utf-8") as trajectory_handle:
+    rejection_reasons: Counter[tuple[str, str, str, str]] = Counter()
 
-        def trajectory_sink(rows) -> None:
-            round_index = len(round_rows) + 1
-            accepted = [row for row in rows if row.accepted]
-            for row in rows:
-                trajectory_handle.write(
-                    json.dumps(
-                        asdict(row),
-                        ensure_ascii=False,
-                        allow_nan=False,
+    def trajectory_sink(rows) -> None:
+        round_index = len(round_rows) + 1
+        accepted = [row for row in rows if row.accepted]
+        for row in rows:
+            status_by_channel[f"{row.channel}:{row.status}"] += 1
+            if row.accepted:
+                accepted_by_channel[row.channel] += 1
+            if row.status.startswith("REJECTED"):
+                rejection_reasons[
+                    (
+                        row.status,
+                        row.channel,
+                        row.error_type or "",
+                        row.error or "",
                     )
-                    + "\n"
-                )
-                status_by_channel[f"{row.channel}:{row.status}"] += 1
-                if row.accepted:
-                    accepted_by_channel[row.channel] += 1
-            trajectory_handle.flush()
-            selected = accepted[0] if accepted else None
-            round_rows.append(
-                {
-                    "education_round": round_index,
-                    "candidate_count": len(rows),
-                    "accepted": bool(selected),
-                    "accepted_action_id": (
-                        selected.action_id if selected is not None else ""
-                    ),
-                    "accepted_channel": (
-                        selected.channel if selected is not None else ""
-                    ),
-                    "before_cost_cny": (
-                        selected.before_cost if selected is not None else ""
-                    ),
-                    "after_cost_cny": (
-                        selected.after_cost if selected is not None else ""
-                    ),
-                    "before_emissions_kg": (
-                        selected.before_emissions_kg
-                        if selected is not None
-                        else ""
-                    ),
-                    "after_emissions_kg": (
-                        selected.after_emissions_kg
-                        if selected is not None
-                        else ""
-                    ),
-                    "minimum_participation_margin_before": (
-                        selected.minimum_participation_margin_before
-                        if selected is not None
-                        else ""
-                    ),
-                    "minimum_participation_margin_after": (
-                        selected.minimum_participation_margin_after
-                        if selected is not None
-                        else ""
-                    ),
-                }
-            )
-            _write_csv(output / "round_summaries.csv", round_rows)
-
-        final, final_incremental, _rows = educate_best_improvement(
-            initial,
-            evaluator=evaluator,
-            charging_policy=policy,
-            arm="unified-instance-education-scout",
-            iteration=0,
-            accounting=accounting,
-            penalized_cost=penalty_manager.cost,
-            initial_evaluation=initial_evaluation,
-            trajectory_sink=trajectory_sink,
+                ] += 1
+        selected = accepted[0] if accepted else None
+        round_rows.append(
+            {
+                "education_round": round_index,
+                "candidate_count": len(rows),
+                "accepted": bool(selected),
+                "accepted_action_id": (
+                    selected.action_id if selected is not None else ""
+                ),
+                "accepted_channel": (
+                    selected.channel if selected is not None else ""
+                ),
+                "before_cost_cny": (
+                    selected.before_cost if selected is not None else ""
+                ),
+                "after_cost_cny": (
+                    selected.after_cost if selected is not None else ""
+                ),
+                "before_emissions_kg": (
+                    selected.before_emissions_kg
+                    if selected is not None
+                    else ""
+                ),
+                "after_emissions_kg": (
+                    selected.after_emissions_kg
+                    if selected is not None
+                    else ""
+                ),
+                "minimum_participation_margin_before": (
+                    selected.minimum_participation_margin_before
+                    if selected is not None
+                    else ""
+                ),
+                "minimum_participation_margin_after": (
+                    selected.minimum_participation_margin_after
+                    if selected is not None
+                    else ""
+                ),
+            }
         )
+        _write_csv(output / "round_summaries.csv", round_rows)
+
+    final, final_incremental, _rows = educate_best_improvement(
+        initial,
+        evaluator=evaluator,
+        charging_policy=policy,
+        arm="unified-instance-education-scout",
+        iteration=0,
+        accounting=accounting,
+        penalized_cost=penalty_manager.cost,
+        initial_evaluation=initial_evaluation,
+        trajectory_sink=trajectory_sink,
+    )
 
     final_truth = evaluator.evaluate(final)
     assert_evaluations_equivalent(final_incremental, final_truth)
@@ -339,6 +338,20 @@ def main() -> int:
         "failure_reason": "; ".join(failure_reasons),
     }
     _write_csv(output / "raw_runs.csv", [raw_row])
+    rejection_rows = [
+        {
+            "status": status,
+            "channel": channel,
+            "error_type": error_type,
+            "error": error,
+            "count": count,
+        }
+        for (status, channel, error_type, error), count in sorted(
+            rejection_reasons.items()
+        )
+    ]
+    if rejection_rows:
+        _write_csv(output / "rejection_summary.csv", rejection_rows)
     _json(
         output / "best_solution.json",
         {
@@ -398,6 +411,13 @@ def main() -> int:
             "repeat the approved complete best-improvement neighbourhood "
             "until it accepts no penalized improvement; not the formal P20 stop"
         ),
+        "candidate_trajectory_retained": False,
+        "retained_search_records": [
+            "round_summaries.csv",
+            "rejection_summary.csv",
+            "accepted_by_channel_json in raw_runs.csv",
+            "status_by_channel_json in raw_runs.csv",
+        ],
         "penalty_parameters": asdict(parameters.penalties),
         "charging_policy": asdict(policy),
         "pi0": {
@@ -419,14 +439,14 @@ def main() -> int:
 
 ## 交付前九条自检
 
-1. 每个事实是否有出处？——逐轮结果在 `round_summaries.csv`，逐动作记录在 `trajectory.jsonl`，完整解和计数在 `best_solution.json`，汇总在 `raw_runs.csv`。
+1. 每个事实是否有出处？——逐轮结果在 `round_summaries.csv`，拒绝原因在 `rejection_summary.csv`，完整解和计数在 `best_solution.json`，汇总在 `raw_runs.csv`。
 2. 有没有把建议或担忧写成已决或状态？——没有；正式算例、预算、利润基准和效应口径均未替用户决定。
 3. 是否超出任务范围？——没有；只做已批准的统一算例技术探路，没有启动正式实验或修改论文。
 4. 是否碰受保护文件？——未碰；三个文件前后哈希一致并保存在 `metadata.json`。
 5. 待决事项是否给了选项和代价？——本包不新增用户决策；效果识别选项在三地区探路完成后统一提交。
 6. 是否使用自造词或内部任务号？——没有。
-7. 失败、跳过、超时和异常是否如实保留？——所有候选状态和错误逐行保存在 `trajectory.jsonl`，本轮失败原因写入 `decision.json`。
-8. 四件套是否齐全？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json`、`report.md` 齐全，另附逐轮、逐动作和完整解。
+7. 失败、跳过、超时和异常是否如实保留？——候选状态按通道汇总，拒绝错误逐类保存在 `rejection_summary.csv`，本轮失败原因写入 `decision.json`。
+8. 四件套是否齐全？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json`、`report.md` 齐全，另附逐轮、拒绝汇总和完整解。
 9. 交接记录是否同步？——三地区探路完成并复核后统一同步项目交接和记忆。
 """
     (output / "report.md").write_text(report, encoding="utf-8")
