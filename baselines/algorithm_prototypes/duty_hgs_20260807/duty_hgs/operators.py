@@ -3,6 +3,10 @@
 v1 2026-08-07: implement the approved relocate, swap, 2-opt, cross-trip,
 mixed-fleet, cross-depot/fairness, trip-opening, and charging-retiming channels.
 No proxy score accepts a move; the full evaluator decides every comparison.
+
+v2 2026-08-07: add the user-approved whole-duty EV/CV task exchange.  Vehicle
+identity, type, depot, fleet registration, and dynamic commitments stay fixed;
+the existing nonlinear charging repair rebuilds the exchanged EV duty.
 """
 
 from __future__ import annotations
@@ -275,6 +279,57 @@ class ChargingRetimeMove:
 
 
 @dataclass(frozen=True)
+class WholeDutyTypeExchangeMove:
+    """Exchange complete unlocked task chains between same-depot EV/CV duties."""
+
+    action_id: str
+    channel: str
+    left_duty_id: str
+    right_duty_id: str
+
+    @property
+    def changed_duty_ids(self) -> frozenset[str]:
+        return frozenset({self.left_duty_id, self.right_duty_id})
+
+    def apply(self, individual: DutyIndividual) -> DutyIndividual:
+        if self.left_duty_id == self.right_duty_id:
+            raise ValueError("whole-duty exchange requires two distinct duties")
+        left = _duty(individual, self.left_duty_id)
+        right = _duty(individual, self.right_duty_id)
+        if left.home_depot_id != right.home_depot_id:
+            raise ValueError("whole-duty exchange requires one home depot")
+        if {left.vehicle_type, right.vehicle_type} != {"ev", "cv"}:
+            raise ValueError("whole-duty exchange requires one EV and one CV")
+        if _duty_has_locks(left) or _duty_has_locks(right):
+            raise ValueError("whole-duty exchange cannot change a locked duty")
+        if _task_chain(left) == _task_chain(right):
+            raise ValueError("whole-duty exchange requires different task chains")
+
+        rebuilt_left = replace(
+            left,
+            trips=_unlocked_task_chain(right),
+            charging_sessions=(),
+        )
+        rebuilt_right = replace(
+            right,
+            trips=_unlocked_task_chain(left),
+            charging_sessions=(),
+        )
+        return replace(
+            individual,
+            duties=tuple(
+                rebuilt_left
+                if duty.physical_vehicle_id == self.left_duty_id
+                else rebuilt_right
+                if duty.physical_vehicle_id == self.right_duty_id
+                else duty
+                for duty in individual.duties
+            ),
+            source=f"{self.channel}:{self.action_id}",
+        )
+
+
+@dataclass(frozen=True)
 class InsertUnservedMove:
     action_id: str
     channel: str
@@ -342,10 +397,14 @@ class InsertUnservedMove:
             ),
             source=f"{self.channel}:{self.action_id}",
         )
+
+
 def generate_problem_moves(
     individual: DutyIndividual,
     evaluation: FullEvaluation,
     instance: Instance,
+    *,
+    include_whole_duty_type_exchange: bool = True,
 ) -> tuple[DutyMove, ...]:
     """Generate the complete approved neighbourhood without proxy acceptance."""
 
@@ -471,6 +530,29 @@ def generate_problem_moves(
                         stop=stop,
                     )
                 )
+    if include_whole_duty_type_exchange:
+        for left_index, left in enumerate(individual.duties):
+            for right in individual.duties[left_index + 1 :]:
+                if left.home_depot_id != right.home_depot_id:
+                    continue
+                if {left.vehicle_type, right.vehicle_type} != {"ev", "cv"}:
+                    continue
+                if _duty_has_locks(left) or _duty_has_locks(right):
+                    continue
+                if _task_chain(left) == _task_chain(right):
+                    continue
+                moves.append(
+                    WholeDutyTypeExchangeMove(
+                        action_id=(
+                            f"whole-duty-type-exchange:"
+                            f"{left.physical_vehicle_id}<->"
+                            f"{right.physical_vehicle_id}"
+                        ),
+                        channel="whole_duty_type_exchange",
+                        left_duty_id=left.physical_vehicle_id,
+                        right_duty_id=right.physical_vehicle_id,
+                    )
+                )
     for duty in individual.duties:
         if duty.vehicle_type == "ev":
             moves.append(
@@ -481,6 +563,26 @@ def generate_problem_moves(
                 )
             )
     return tuple(moves)
+
+
+def _task_chain(duty: PhysicalVehicleDuty) -> tuple[tuple[str, ...], ...]:
+    return tuple(tuple(trip.customer_ids) for trip in duty.trips)
+
+
+def _unlocked_task_chain(duty: PhysicalVehicleDuty) -> tuple[DutyTrip, ...]:
+    return tuple(
+        DutyTrip(
+            trip_index=index,
+            customer_ids=tuple(trip.customer_ids),
+        )
+        for index, trip in enumerate(duty.trips, start=1)
+    )
+
+
+def _duty_has_locks(duty: PhysicalVehicleDuty) -> bool:
+    return any(trip.locked_customer_prefix for trip in duty.trips) or any(
+        session.locked for session in duty.charging_sessions
+    )
 
 
 def _relation_channel(

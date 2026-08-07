@@ -7,6 +7,9 @@ The caller supplies every numerical parameter and the stopping policy.
 
 v2 2026-08-07: reuse the repair phase's verified evaluation when education
 starts, so the same child is not fully evaluated twice without disclosure.
+
+v3 2026-08-07: carry the whole-duty EV/CV exchange switch in the hashed run
+configuration and pass it unchanged into education for paired ablation.
 """
 
 from __future__ import annotations
@@ -49,6 +52,7 @@ class DutyHGSSearchParameters:
     population: PopulationParameters
     penalties: PenaltyParameters
     restart_after_iterations_without_improvement: int
+    include_whole_duty_type_exchange: bool = True
 
     def __post_init__(self) -> None:
         if self.restart_after_iterations_without_improvement < 1:
@@ -479,6 +483,9 @@ def run_duty_hgs(
                     penalized_cost=penalty_manager.cost,
                     initial_evaluation=repaired_evaluation,
                     trajectory_sink=trajectory.emit_many,
+                    include_whole_duty_type_exchange=(
+                        parameters.include_whole_duty_type_exchange
+                    ),
                 )
             )
         except DutySentinelMismatch as exc:

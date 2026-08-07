@@ -8,6 +8,9 @@ v2 2026-08-07: distinguish a deterministic no-op from an interface rejection.
 
 v3 2026-08-07: seed one immutable incremental cache per education round and
 reuse an already verified input evaluation supplied by the repair phase.
+
+v4 2026-08-07: expose the approved whole-duty type-exchange switch so its
+contribution can be measured without changing any other search setting.
 """
 
 from __future__ import annotations
@@ -161,6 +164,7 @@ def educate_best_improvement(
     penalized_cost: Callable[[FullEvaluation], float],
     initial_evaluation: FullEvaluation | None = None,
     trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
+    include_whole_duty_type_exchange: bool = True,
 ) -> tuple[DutyIndividual, FullEvaluation, tuple[TrajectoryRow, ...]]:
     """Run best-improvement under the population's current penalty scale."""
 
@@ -181,6 +185,9 @@ def educate_best_improvement(
             current,
             current_evaluation,
             evaluator.context.bundle.instance,
+            include_whole_duty_type_exchange=(
+                include_whole_duty_type_exchange
+            ),
         )
         incremental = DutyIncrementalEvaluator(evaluator)
         accounting.record_cache_seed(incremental.seed(current))

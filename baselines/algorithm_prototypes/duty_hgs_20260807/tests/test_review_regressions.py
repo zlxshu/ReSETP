@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 from duty_hgs.charging import ChargingRepairPolicy, repair_changed_duties
@@ -11,6 +12,7 @@ from duty_hgs.crossover import selective_duty_exchange
 from duty_hgs.education import evaluate_move
 from duty_hgs.evaluation import (
     DutyEvaluationContext,
+    DutyFullEvaluator,
     FrozenMappingIdentity,
     mapping_sha256,
 )
@@ -25,12 +27,17 @@ from duty_hgs.operators import (
     OpenTripMove,
     RelocateMove,
     ReverseSegmentMove,
+    WholeDutyTypeExchangeMove,
+    generate_problem_moves,
 )
+from run_real_input_technical_trial import _build_context
 from setp_solver.china81 import China81Bundle
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import PriceParameters
 from setp_solver.search.multitrip_schedule import prepare_multitrip_solution
 from setp_solver.solution import ChargingAction, Route, Solution
+
+REPO = Path(__file__).resolve().parents[4]
 
 
 def _policy(evaluator, mode: str | None = None) -> ChargingRepairPolicy:
@@ -44,6 +51,218 @@ def _policy(evaluator, mode: str | None = None) -> ChargingRepairPolicy:
         charge_amount_strategy="just_enough",
         public_station_candidate_mode="parallel",
         carbon_profiles_by_day_offset=None,
+    )
+
+
+def _task_chain(duty: PhysicalVehicleDuty) -> tuple[tuple[str, ...], ...]:
+    return tuple(tuple(trip.customer_ids) for trip in duty.trips)
+
+
+def _same_depot_mixed_pair(
+    individual: DutyIndividual,
+) -> tuple[PhysicalVehicleDuty, PhysicalVehicleDuty]:
+    for left_index, left in enumerate(individual.duties):
+        for right in individual.duties[left_index + 1 :]:
+            if (
+                left.home_depot_id == right.home_depot_id
+                and {left.vehicle_type, right.vehicle_type} == {"ev", "cv"}
+                and _task_chain(left) != _task_chain(right)
+            ):
+                return left, right
+    raise AssertionError("fixture has no same-depot EV/CV pair")
+
+
+@pytest.mark.parametrize(
+    "instance_id",
+    (
+        "cn-cy-50c-01-V2-LOCATIONS",
+        "cn-jjj-50c-01-V2-LOCATIONS",
+        "cn-prd-50c-01-V2-LOCATIONS",
+    ),
+)
+def test_registered_mixed_fleet_initializes_all_three_regions(
+    instance_id: str,
+) -> None:
+    bundle, individual, _pi0, context = _build_context(REPO, instance_id)
+    evaluator = DutyFullEvaluator(context)
+    evaluation = evaluator.evaluate(individual)
+
+    assert evaluation.feasible
+    assert sum(
+        len(trip.customer_ids)
+        for duty in individual.duties
+        for trip in duty.trips
+    ) == len(bundle.customer_home_depot)
+    assert any(duty.vehicle_type == "ev" for duty in individual.duties)
+    assert any(duty.vehicle_type == "cv" for duty in individual.duties)
+    assert len(individual.duties) == sum(
+        int(caps["total_fleet_cap"])
+        for caps in bundle.fleet_caps_by_depot.values()
+    )
+    assert any(not duty.trips for duty in individual.duties)
+
+    duties_by_id = {
+        duty.physical_vehicle_id: duty for duty in individual.duties
+    }
+    idle_exchange = next(
+        move
+        for move in generate_problem_moves(
+            individual,
+            evaluation,
+            bundle.instance,
+        )
+        if move.channel == "whole_duty_type_exchange"
+        and (
+            bool(duties_by_id[move.left_duty_id].trips)
+            != bool(duties_by_id[move.right_duty_id].trips)
+        )
+    )
+    left_before = duties_by_id[idle_exchange.left_duty_id]
+    right_before = duties_by_id[idle_exchange.right_duty_id]
+    changed = idle_exchange.apply(individual)
+    changed_by_id = {
+        duty.physical_vehicle_id: duty for duty in changed.duties
+    }
+    assert _task_chain(changed_by_id[idle_exchange.left_duty_id]) == _task_chain(
+        right_before
+    )
+    assert _task_chain(changed_by_id[idle_exchange.right_duty_id]) == _task_chain(
+        left_before
+    )
+    assert {
+        (
+            duty.physical_vehicle_id,
+            duty.vehicle_type,
+            duty.home_depot_id,
+        )
+        for duty in changed.duties
+    } == {
+        (
+            duty.physical_vehicle_id,
+            duty.vehicle_type,
+            duty.home_depot_id,
+        )
+        for duty in individual.duties
+    }
+
+
+def test_whole_duty_type_exchange_preserves_registry_and_swaps_tasks(
+    evaluated_fixture,
+) -> None:
+    individual, _evaluator = evaluated_fixture
+    left, right = _same_depot_mixed_pair(individual)
+    move = WholeDutyTypeExchangeMove(
+        action_id="whole-duty-registry-regression",
+        channel="whole_duty_type_exchange",
+        left_duty_id=left.physical_vehicle_id,
+        right_duty_id=right.physical_vehicle_id,
+    )
+
+    changed = move.apply(individual)
+    changed_by_id = {
+        duty.physical_vehicle_id: duty for duty in changed.duties
+    }
+    left_after = changed_by_id[left.physical_vehicle_id]
+    right_after = changed_by_id[right.physical_vehicle_id]
+
+    assert (
+        left_after.vehicle_type,
+        left_after.home_depot_id,
+    ) == (left.vehicle_type, left.home_depot_id)
+    assert (
+        right_after.vehicle_type,
+        right_after.home_depot_id,
+    ) == (right.vehicle_type, right.home_depot_id)
+    assert _task_chain(left_after) == _task_chain(right)
+    assert _task_chain(right_after) == _task_chain(left)
+    assert left_after.charging_sessions == ()
+    assert right_after.charging_sessions == ()
+    assert all(not trip.route_visits for trip in left_after.trips)
+    assert all(not trip.route_visits for trip in right_after.trips)
+
+
+def test_whole_duty_type_exchange_generation_is_switchable_and_lock_safe(
+    evaluated_fixture,
+) -> None:
+    individual, evaluator = evaluated_fixture
+    evaluation = evaluator.evaluate(individual)
+    enabled = generate_problem_moves(
+        individual,
+        evaluation,
+        evaluator.context.bundle.instance,
+    )
+    disabled = generate_problem_moves(
+        individual,
+        evaluation,
+        evaluator.context.bundle.instance,
+        include_whole_duty_type_exchange=False,
+    )
+    enabled_exchange = [
+        move
+        for move in enabled
+        if move.channel == "whole_duty_type_exchange"
+    ]
+
+    assert enabled_exchange
+    assert not any(
+        move.channel == "whole_duty_type_exchange" for move in disabled
+    )
+    for move in enabled_exchange:
+        left = next(
+            duty
+            for duty in individual.duties
+            if duty.physical_vehicle_id == move.left_duty_id
+        )
+        right = next(
+            duty
+            for duty in individual.duties
+            if duty.physical_vehicle_id == move.right_duty_id
+        )
+        assert left.home_depot_id == right.home_depot_id
+        assert {left.vehicle_type, right.vehicle_type} == {"ev", "cv"}
+
+    duties_by_id = {
+        duty.physical_vehicle_id: duty for duty in individual.duties
+    }
+    locked_id = next(
+        duty_id
+        for move in enabled_exchange
+        for duty_id in move.changed_duty_ids
+        if duties_by_id[duty_id].trips
+        and duties_by_id[duty_id].trips[0].customer_ids
+    )
+    locked_duty = next(
+        duty
+        for duty in individual.duties
+        if duty.physical_vehicle_id == locked_id
+    )
+    first_trip = locked_duty.trips[0]
+    locked = replace(
+        locked_duty,
+        trips=(
+            replace(
+                first_trip,
+                locked_customer_prefix=(first_trip.customer_ids[0],),
+            ),
+            *locked_duty.trips[1:],
+        ),
+    )
+    locked_individual = replace(
+        individual,
+        duties=tuple(
+            locked if duty.physical_vehicle_id == locked_id else duty
+            for duty in individual.duties
+        ),
+    )
+    locked_moves = generate_problem_moves(
+        locked_individual,
+        evaluator.evaluate(locked_individual),
+        evaluator.context.bundle.instance,
+    )
+    assert not any(
+        move.channel == "whole_duty_type_exchange"
+        and locked_id in move.changed_duty_ids
+        for move in locked_moves
     )
 
 

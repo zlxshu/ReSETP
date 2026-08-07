@@ -7,8 +7,8 @@ from dataclasses import replace
 import pytest
 from duty_hgs.charging import ChargingRepairPolicy, repair_changed_duties
 from duty_hgs.evaluation import (
-    DutyIncrementalEvaluator,
     DutyFullEvaluator,
+    DutyIncrementalEvaluator,
     _assert_no_hidden_repair,
     _measure_violations,
     assert_evaluations_equivalent,
@@ -23,7 +23,7 @@ from setp_solver.search.multitrip_schedule import (
     prepare_multitrip_solution,
     route_timing,
 )
-from setp_solver.solution import Route, Solution
+from setp_solver.solution import ChargingAction, Route, Solution
 
 
 def test_full_evaluator_preserves_explicit_physical_assignment(evaluated_fixture) -> None:
@@ -91,6 +91,39 @@ def test_valid_first_and_between_trip_depot_charges_survive_duty_round_trip() ->
         "EV_D0_1#T1",
         "EV_D0_1#T2",
     }
+
+
+def test_hidden_repair_check_tolerates_only_float_roundoff() -> None:
+    route = Route("EV_D0_1#T1", "ev", "D0", ["D0", "C1", "D0"])
+    action = ChargingAction(
+        vehicle_id="EV_D0_1#T1",
+        station_id="D0",
+        energy_kwh=16.0,
+        occupancy_minutes=43.0,
+        charge_start_second=56_000.0,
+        start_energy_kwh=0.0,
+        end_energy_kwh=16.0,
+        charging_curve_id="NL90_mild",
+    )
+    before = Solution(routes=[route], charging_actions=[action])
+    roundoff = Solution(
+        routes=[route],
+        charging_actions=[
+            replace(
+                action,
+                start_energy_kwh=-3.552713678800501e-15,
+                end_energy_kwh=15.999999999999996,
+            )
+        ],
+    )
+    changed = Solution(
+        routes=[route],
+        charging_actions=[replace(action, energy_kwh=16.001)],
+    )
+
+    _assert_no_hidden_repair(before, roundoff)
+    with pytest.raises(ValueError, match="explicit charging decision"):
+        _assert_no_hidden_repair(before, changed)
 
 
 def test_incremental_cache_is_scope_checked_and_full_truth_equivalent(evaluated_fixture) -> None:
@@ -260,10 +293,10 @@ def test_customer_added_to_ev_rebuilds_battery_ledger_before_full_evaluation(
         action_id="add-customer-to-ev-ledger-regression",
         source_duty_id="CV_D_beijing_1",
         source_trip_index=1,
-        customer_id="C004",
+        customer_id="C009",
         target_duty_id="EV_D_beijing_1",
         target_trip_index=1,
-        target_position=0,
+        target_position=3,
         predicted_remaining_overflow_kg=0.0,
         predicted_relief_kg=0.0,
     )

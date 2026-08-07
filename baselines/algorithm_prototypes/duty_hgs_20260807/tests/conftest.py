@@ -12,11 +12,8 @@ from duty_hgs.evaluation import (
     mapping_sha256,
 )
 from duty_hgs.model import DutyIndividual, DutyTrip, PhysicalVehicleDuty
-from setp_solver.algorithms.resetp_alns.support.construction import (
-    build_initial_solution,
-)
-from setp_solver.china81 import China81Bundle, load_china81_bundle
-from setp_solver.china81_completion import complete_china81_route_skeleton
+from run_real_input_technical_trial import _build_context
+from setp_solver.china81 import China81Bundle
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import PriceParameters
 from setp_solver.profit import calculate_depot_profits
@@ -28,41 +25,8 @@ INSTANCE_ID = "cn-jjj-10c-01-V2-LOCATIONS"
 
 @pytest.fixture(scope="session")
 def evaluated_fixture():
-    bundle = load_china81_bundle(REPO, INSTANCE_ID)
-    skeleton = build_initial_solution(
-        bundle.instance,
-        bundle.time_profile,
-        bundle.prices,
-        introduce_ev=False,
-        require_charging_signal=False,
-    )
-    completed = complete_china81_route_skeleton(skeleton, bundle).solution
-    profits = calculate_depot_profits(
-        completed,
-        bundle.instance,
-        bundle.time_profile,
-        bundle.prices,
-        customer_home_depot=dict(bundle.customer_home_depot),
-    )
-    independent_profit = {
-        depot_id: row.profit
-        for depot_id, row in profits.items()
-    }
-    assert all(value > 0.0 for value in independent_profit.values())
-    context = DutyEvaluationContext(
-        bundle=bundle,
-        independent_profit=independent_profit,
-        independent_profit_identity=FrozenMappingIdentity(
-            source_id="technical-real-input-fixture-derived-before-search",
-            value_sha256=mapping_sha256(independent_profit),
-            externally_frozen=False,
-        ),
-        prior_profit={depot_id: 0.0 for depot_id in independent_profit},
-        theta=1.0,
-        carbon_quota_kg=0.0,
-        depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
-    )
-    return DutyIndividual.from_solution(completed), DutyFullEvaluator(context)
+    _bundle, individual, _pi0, context = _build_context(REPO, INSTANCE_ID)
+    return individual, DutyFullEvaluator(context)
 
 
 @pytest.fixture(scope="session")

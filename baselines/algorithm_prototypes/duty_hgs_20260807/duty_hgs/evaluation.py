@@ -10,6 +10,10 @@ incremental, and sentinel evaluations separately.
 
 v3 2026-08-07: expose the evaluated individual fingerprint and count duty
 slice preparation/candidate assembly separately from full truth evaluation.
+
+v4 2026-08-07: compare explicit charging decisions with the evaluator's
+existing numerical equivalence tolerance so IEEE-754 round-off is not
+misreported as a hidden repair; identities and material changes remain exact.
 """
 
 from __future__ import annotations
@@ -575,8 +579,9 @@ def _assert_no_hidden_repair(before: Solution, after: Solution) -> None:
         raise ValueError(
             "multi-trip preparation changed the explicit vehicle-to-trip mapping"
         )
-    if _action_keys(before.charging_actions) != _action_keys(
-        after.charging_actions
+    if not _actions_equivalent(
+        before.charging_actions,
+        after.charging_actions,
     ):
         raise ValueError(
             "multi-trip preparation changed an explicit charging decision"
@@ -597,25 +602,76 @@ def _route_keys(routes: list[Route]) -> tuple[tuple[object, ...], ...]:
     )
 
 
-def _action_keys(
-    actions: list[ChargingAction],
-) -> tuple[tuple[object, ...], ...]:
-    return tuple(
-        sorted(
-            (
-                action.vehicle_id,
-                action.station_id,
-                float(action.energy_kwh),
-                float(action.occupancy_minutes),
-                float(action.charge_start_second),
-                int(action.charge_day_offset),
-                action.start_energy_kwh,
-                action.end_energy_kwh,
-                action.charging_curve_id,
+def _actions_equivalent(
+    before: list[ChargingAction],
+    after: list[ChargingAction],
+) -> bool:
+    left = sorted(before, key=_action_sort_key)
+    right = sorted(after, key=_action_sort_key)
+    if len(left) != len(right):
+        return False
+    for earlier, later in zip(left, right, strict=True):
+        if (
+            earlier.vehicle_id != later.vehicle_id
+            or earlier.station_id != later.station_id
+            or int(earlier.charge_day_offset) != int(later.charge_day_offset)
+            or earlier.charging_curve_id != later.charging_curve_id
+        ):
+            return False
+        if not all(
+            _float_equivalent(left_value, right_value)
+            for left_value, right_value in (
+                (earlier.energy_kwh, later.energy_kwh),
+                (earlier.occupancy_minutes, later.occupancy_minutes),
+                (earlier.charge_start_second, later.charge_start_second),
             )
-            for action in actions
-        )
+        ):
+            return False
+        if not _optional_float_equivalent(
+            earlier.start_energy_kwh,
+            later.start_energy_kwh,
+        ) or not _optional_float_equivalent(
+            earlier.end_energy_kwh,
+            later.end_energy_kwh,
+        ):
+            return False
+    return True
+
+
+def _action_sort_key(action: ChargingAction) -> tuple[object, ...]:
+    return (
+        action.vehicle_id,
+        action.station_id,
+        int(action.charge_day_offset),
+        "" if action.charging_curve_id is None else action.charging_curve_id,
+        float(action.charge_start_second),
+        float(action.energy_kwh),
+        float(action.occupancy_minutes),
+        float("-inf")
+        if action.start_energy_kwh is None
+        else float(action.start_energy_kwh),
+        float("-inf")
+        if action.end_energy_kwh is None
+        else float(action.end_energy_kwh),
     )
+
+
+def _float_equivalent(left: float, right: float) -> bool:
+    return math.isclose(
+        float(left),
+        float(right),
+        rel_tol=_EQUIVALENCE_REL_TOL,
+        abs_tol=_EQUIVALENCE_ABS_TOL,
+    )
+
+
+def _optional_float_equivalent(
+    left: float | None,
+    right: float | None,
+) -> bool:
+    if left is None or right is None:
+        return left is None and right is None
+    return _float_equivalent(left, right)
 
 
 def _duty_fingerprint(duty: PhysicalVehicleDuty) -> str:

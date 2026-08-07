@@ -30,7 +30,7 @@ from duty_hgs.evaluation import (
     FrozenMappingIdentity,
     mapping_sha256,
 )
-from duty_hgs.model import DutyIndividual
+from duty_hgs.model import DutyIndividual, PhysicalVehicleDuty
 from duty_hgs.operators import ReverseSegmentMove, generate_problem_moves
 from duty_hgs.population import (
     AdaptivePenaltyManager,
@@ -44,16 +44,13 @@ from duty_hgs.runner import (
     population_sha256,
     run_duty_hgs,
 )
-from setp_solver.algorithms.resetp_alns.support.construction import (
-    build_initial_solution,
-)
 from setp_solver.china81 import load_china81_bundle
 from setp_solver.china81_completion import complete_china81_route_skeleton
 from setp_solver.profit import calculate_depot_profits
 from setp_solver.search.multitrip_schedule import (
     DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
 )
-
+from setp_solver.solution import Route, Solution
 
 INSTANCE_ID = "cn-jjj-10c-01-V2-LOCATIONS"
 SEED = 11
@@ -256,14 +253,12 @@ def _source_provenance(
 
 def _build_context(repo: Path, instance_id: str = INSTANCE_ID):
     bundle = load_china81_bundle(repo, instance_id)
-    skeleton = build_initial_solution(
-        bundle.instance,
-        bundle.time_profile,
-        bundle.prices,
-        introduce_ev=False,
-        require_charging_signal=False,
-    )
+    skeleton = _registered_finite_fleet_initial(repo, bundle)
     completed = complete_china81_route_skeleton(skeleton, bundle).solution
+    individual = _with_registered_idle_duties(
+        DutyIndividual.from_solution(completed),
+        bundle,
+    )
     profits = calculate_depot_profits(
         completed,
         bundle.instance,
@@ -285,7 +280,91 @@ def _build_context(repo: Path, instance_id: str = INSTANCE_ID):
         carbon_quota_kg=0.0,
         depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
     )
-    return bundle, DutyIndividual.from_solution(completed), pi0, context
+    return bundle, individual, pi0, context
+
+
+def _registered_finite_fleet_initial(repo: Path, bundle) -> Solution:
+    """Load the certified mixed-fleet route skeleton for one China81 input."""
+
+    witness_path = (
+        repo
+        / bundle.fleet_authority
+        / "witnesses"
+        / f"{bundle.instance_id}.json"
+    )
+    witness = json.loads(witness_path.read_text(encoding="utf-8"))
+    if str(witness.get("instance_id")) != bundle.instance_id:
+        raise RuntimeError("finite-fleet witness belongs to another instance")
+    level = witness.get("levels", {}).get("25")
+    if not isinstance(level, dict):
+        raise TypeError("finite-fleet witness has no registered level 25")
+    if level.get("status") != "CERTIFIED" or level.get("violations"):
+        raise RuntimeError("finite-fleet level 25 is not certified")
+
+    routes: list[Route] = []
+    for depot_id, depot in sorted(level["depots"].items()):
+        for vehicle_type in ("cv", "ev"):
+            for index, timed in enumerate(
+                depot[f"{vehicle_type}_routes"],
+                start=1,
+            ):
+                routes.append(
+                    Route(
+                        vehicle_id=(
+                            f"REGISTERED-INITIAL-{depot_id}-"
+                            f"{vehicle_type.upper()}-{index:03d}"
+                        ),
+                        vehicle_type=vehicle_type,
+                        home_depot_id=depot_id,
+                        node_sequence=[
+                            depot_id,
+                            *[str(customer) for customer in timed["customers"]],
+                            depot_id,
+                        ],
+                    )
+                )
+    return Solution(routes=routes)
+
+
+def _with_registered_idle_duties(
+    individual: DutyIndividual,
+    bundle,
+) -> DutyIndividual:
+    """Represent every registered vehicle, including currently idle assets."""
+
+    by_id = {
+        duty.physical_vehicle_id: duty for duty in individual.duties
+    }
+    for depot_id, caps in sorted(bundle.fleet_caps_by_depot.items()):
+        expected_ids = set()
+        for vehicle_type, cap_field in (("cv", "num_cv"), ("ev", "num_ev")):
+            for index in range(1, int(caps[cap_field]) + 1):
+                vehicle_id = f"{vehicle_type.upper()}_{depot_id}_{index}"
+                expected_ids.add(vehicle_id)
+                if vehicle_id not in by_id:
+                    by_id[vehicle_id] = PhysicalVehicleDuty(
+                        physical_vehicle_id=vehicle_id,
+                        vehicle_type=vehicle_type,
+                        home_depot_id=depot_id,
+                        trips=(),
+                    )
+        actual_ids = {
+            duty.physical_vehicle_id
+            for duty in individual.duties
+            if duty.home_depot_id == depot_id
+        }
+        unexpected = actual_ids.difference(expected_ids)
+        if unexpected:
+            raise RuntimeError(
+                "completed solution uses unregistered physical vehicles: "
+                + ", ".join(sorted(unexpected))
+            )
+        if len(expected_ids) > int(caps["total_fleet_cap"]):
+            raise RuntimeError("typed fleet caps exceed the total fleet cap")
+    return replace(
+        individual,
+        duties=tuple(by_id[duty_id] for duty_id in sorted(by_id)),
+    )
 
 
 def _prepare_population(
