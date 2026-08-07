@@ -80,6 +80,7 @@ class DutyEvaluationContext:
     theta: float
     carbon_quota_kg: float
     depot_charge_window_mode: str
+    incremental_full_truth_sentinel_enabled: bool = True
 
     def __post_init__(self) -> None:
         depots = {
@@ -410,15 +411,22 @@ class DutyIncrementalEvaluator:
             next_slices,
             self.full_evaluator.context,
         )
+        sentinel_enabled = bool(
+            self.full_evaluator.context.incremental_full_truth_sentinel_enabled
+        )
         incremental = self.full_evaluator._evaluate_prepared(
             combined,
             certificate,
             individual_fingerprint=candidate.fingerprint,
-            source="incremental_verified",
+            source=(
+                "incremental_verified"
+                if sentinel_enabled
+                else "incremental_unverified"
+            ),
             accounting={
                 "full_evaluations": 0,
                 "incremental_evaluations": 1,
-                "sentinel_evaluations": 1,
+                "sentinel_evaluations": int(sentinel_enabled),
                 "candidate_assemblies": 1,
                 "duty_slice_preparations": recomputed,
                 "recomputed_duties": recomputed,
@@ -427,11 +435,12 @@ class DutyIncrementalEvaluator:
             breakdown=breakdown,
         )
 
-        truth = self.full_evaluator._evaluate_full(
-            candidate,
-            source="sentinel",
-        )
-        assert_evaluations_equivalent(incremental, truth)
+        if sentinel_enabled:
+            truth = self.full_evaluator._evaluate_full(
+                candidate,
+                source="sentinel",
+            )
+            assert_evaluations_equivalent(incremental, truth)
         if commit:
             self._slices = next_slices
             self._individual_fingerprint = candidate.fingerprint
@@ -667,7 +676,7 @@ def _aggregate_breakdowns(
     excluded = {"total_cost", "cost_carbon", "carbon_quota_kg"}
     out = {
         key: sum(float(row[key]) for row in rows)
-        for key in keys.difference(excluded)
+        for key in sorted(keys.difference(excluded))
     }
     quota = float(context.carbon_quota_kg)
     out["cost_carbon"] = (

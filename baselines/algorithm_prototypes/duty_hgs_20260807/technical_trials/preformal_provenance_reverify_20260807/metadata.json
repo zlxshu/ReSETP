@@ -1,0 +1,24 @@
+{
+  "purpose": "clean-commit provenance replay of the three current authoritative technical trials; not a performance experiment",
+  "git_head": "79e8d67efad3d9efca6b3f7d364cf434cc53d778",
+  "worktree_clean_before_each_replay": true,
+  "python_source_sha256": "f9ab08337a37d1e0eaeaa1921854e029c18e0da0b2c3d8dc64dbcfe301515382",
+  "instance_formally_selected": false,
+  "formal_search_allowed_by_this_package": false,
+  "pi0_formally_reusable": false,
+  "comparison_rule_frozen_before_run": {
+    "final_replay": "trajectory.jsonl byte-identical to the current final one-cycle package",
+    "action_scope_replay": "action_scope_rows.csv and raw_runs.csv byte-identical to the current action-scope package",
+    "repair_replay": "trajectory.jsonl and raw_runs.csv byte-identical to the current repair package"
+  },
+  "execution_anomaly": {
+    "first_combined_restart_attempt": "an empty output directory was created, with no package, error text, or surviving process",
+    "classification": "UNKNOWN_EXTERNAL_OR_EXECUTION_INTERRUPTION",
+    "handling": "preserved in the report; the identical restart command was then rerun separately and completed"
+  },
+  "protected_hashes": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  }
+}

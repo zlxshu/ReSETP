@@ -103,14 +103,19 @@ def _move_rows(individual, moves, *, scenario: str):
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--stderr-capture-state", default="caller_not_declared")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[3]
-    code_provenance = _source_provenance(repo)
+    output = args.output_dir.resolve()
+    code_provenance = _source_provenance(
+        repo,
+        output_path=output,
+        stderr_capture_state=args.stderr_capture_state,
+    )
     if not code_provenance["worktree_clean_before_run"]:
         raise RuntimeError(
             "technical provenance run requires a clean worktree before output creation"
         )
-    output = args.output_dir.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)

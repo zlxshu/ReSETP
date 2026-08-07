@@ -67,6 +67,32 @@ def _feasible_parents(individual: DutyIndividual) -> tuple[DutyIndividual, ...]:
     return first, second
 
 
+def _search_parameters(*, restart_after: int = 20_000) -> DutyHGSSearchParameters:
+    return DutyHGSSearchParameters(
+        random_seed=11,
+        population=PopulationParameters(
+            min_pop_size=2,
+            generation_size=2,
+            num_elite=1,
+            num_close=1,
+            tournament_size=2,
+            lb_diversity=0.0,
+            ub_diversity=1.0,
+        ),
+        penalties=PenaltyParameters(
+            initial_penalty_per_unit=100.0,
+            solutions_between_updates=50,
+            penalty_increase=1.34,
+            penalty_decrease=0.32,
+            target_feasible=0.43,
+            feasibility_tolerance=0.05,
+            minimum_penalty=0.1,
+            maximum_penalty=100_000.0,
+        ),
+        restart_after_iterations_without_improvement=restart_after,
+    )
+
+
 def test_selective_duty_exchange_preserves_registry_and_partition(
     feedback_fixture,
 ) -> None:
@@ -307,6 +333,77 @@ def test_runnable_duty_hgs_reports_an_all_infeasible_initial_population(
     assert result.termination_status == "NO_FEASIBLE_SOLUTION"
     assert not result.best_evaluation.feasible
     assert result.provenance.incremental_full_truth_sentinel_enabled
+
+
+def test_runnable_duty_hgs_streams_without_retaining_full_trajectory(
+    feedback_fixture,
+) -> None:
+    overloaded, evaluator = feedback_fixture
+    parents = _feasible_parents(overloaded)
+    streamed = []
+
+    result = run_duty_hgs(
+        parents,
+        evaluator=evaluator,
+        charging_policy=_charging_policy(evaluator),
+        parameters=_search_parameters(),
+        initial_population_identity=FrozenPopulationIdentity(
+            source_id="technical-streaming-parents",
+            value_sha256=population_sha256(parents),
+        ),
+        stop=lambda state: state.iterations >= 1,
+        arm="streaming-wiring-trial",
+        trajectory_sink=lambda rows: streamed.extend(rows),
+        retain_trajectory=False,
+    )
+
+    assert result.trajectory == ()
+    assert streamed
+    assert any(row.phase == "population" for row in streamed)
+    assert result.provenance.trajectory_sink_enabled
+    assert not result.provenance.trajectory_retained_in_memory
+    assert result.accounting.crossover_calls == 1
+
+    with pytest.raises(ValueError, match="trajectory_sink is required"):
+        run_duty_hgs(
+            parents,
+            evaluator=evaluator,
+            charging_policy=_charging_policy(evaluator),
+            parameters=_search_parameters(),
+            initial_population_identity=FrozenPopulationIdentity(
+                source_id="technical-invalid-streaming-parents",
+                value_sha256=population_sha256(parents),
+            ),
+            stop=lambda state: True,
+            arm="invalid-streaming-wiring-trial",
+            retain_trajectory=False,
+        )
+
+
+def test_runnable_duty_hgs_records_a_population_restart(feedback_fixture) -> None:
+    overloaded, evaluator = feedback_fixture
+    parents = _feasible_parents(overloaded)
+
+    result = run_duty_hgs(
+        parents,
+        evaluator=evaluator,
+        charging_policy=_charging_policy(evaluator),
+        parameters=_search_parameters(restart_after=1),
+        initial_population_identity=FrozenPopulationIdentity(
+            source_id="technical-restart-parents",
+            value_sha256=population_sha256(parents),
+        ),
+        stop=lambda state: state.iterations >= 3,
+        arm="restart-wiring-trial",
+    )
+
+    assert result.accounting.restarts >= 1
+    assert any(
+        row.phase == "control" and row.status == "RESTARTED"
+        for row in result.trajectory
+    )
+    assert result.termination_status == "STOPPED_BY_CALLER"
+    assert result.best_evaluation.feasible
 
 
 def test_registry_mismatch_fails_before_crossover(feedback_fixture) -> None:

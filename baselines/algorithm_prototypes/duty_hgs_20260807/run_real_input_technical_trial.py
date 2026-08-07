@@ -11,9 +11,12 @@ import argparse
 import csv
 import hashlib
 import json
+import platform
 import random
 import subprocess
-from dataclasses import asdict
+import sys
+from dataclasses import asdict, replace
+from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
@@ -129,12 +132,24 @@ def _parameters(
     )
 
 
-def _source_provenance(repo: Path) -> dict[str, Any]:
+def _installed_version(distribution: str) -> str | None:
+    try:
+        return importlib_metadata.version(distribution)
+    except importlib_metadata.PackageNotFoundError:
+        return None
+
+
+def _source_provenance(
+    repo: Path,
+    *,
+    output_path: Path,
+    stderr_capture_state: str,
+) -> dict[str, Any]:
     prototype = repo / "baselines/algorithm_prototypes/duty_hgs_20260807"
     files = sorted(
         path
         for path in prototype.rglob("*.py")
-        if "__pycache__" not in path.parts
+        if "__pycache__" not in path.parts and not path.name.startswith("._")
     )
     manifest = {
         str(path.relative_to(repo)): _sha256(path)
@@ -153,6 +168,18 @@ def _source_provenance(repo: Path) -> dict[str, Any]:
         "worktree_status_before_run": status,
         "python_source_sha256": hashlib.sha256(manifest_payload).hexdigest(),
         "python_source_files": manifest,
+        "python_executable": sys.executable,
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "dependency_versions": {
+            name: _installed_version(name)
+            for name in ("numpy", "scipy", "pyvrp")
+        },
+        "cwd": str(Path.cwd().resolve()),
+        "command_argv": list(sys.argv),
+        "output_path": str(output_path),
+        "stderr_capture_state": stderr_capture_state,
     }
 
 
@@ -279,6 +306,10 @@ def main() -> int:
     parser.add_argument("--restart-after", type=int, default=20_000)
     parser.add_argument("--require-restart", action="store_true")
     parser.add_argument("--arm", default=ARM)
+    parser.add_argument("--disable-truth-sentinel", action="store_true")
+    parser.add_argument("--stream-trajectory", action="store_true")
+    parser.add_argument("--no-retain-trajectory", action="store_true")
+    parser.add_argument("--stderr-capture-state", default="caller_not_declared")
     args = parser.parse_args()
     if args.iterations < 1:
         raise ValueError("technical iteration count must be positive")
@@ -286,18 +317,27 @@ def main() -> int:
         raise ValueError("technical restart interval must be positive")
 
     repo = Path(__file__).resolve().parents[3]
-    code_provenance = _source_provenance(repo)
+    output = args.output_dir.resolve()
+    code_provenance = _source_provenance(
+        repo,
+        output_path=output,
+        stderr_capture_state=args.stderr_capture_state,
+    )
     if not code_provenance["worktree_clean_before_run"]:
         raise RuntimeError(
             "technical provenance run requires a clean worktree before output creation"
         )
-    output = args.output_dir.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
 
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
     bundle, initial, pi0, context = _build_context(repo)
+    if args.disable_truth_sentinel:
+        context = replace(
+            context,
+            incremental_full_truth_sentinel_enabled=False,
+        )
     evaluator = DutyFullEvaluator(context)
     policy = _policy(evaluator)
     parameters = _parameters(
@@ -310,18 +350,53 @@ def main() -> int:
         source_id="technical-real-input-two-parent-population",
         value_sha256=population_sha256(candidates),
     )
-    result = run_duty_hgs(
-        candidates,
-        evaluator=evaluator,
-        charging_policy=policy,
-        parameters=parameters,
-        initial_population_identity=identity,
-        stop=lambda state: state.iterations >= args.iterations,
-        arm=args.arm,
-    )
+    trajectory_path = output / "trajectory.jsonl"
+    stream_summary = {
+        "rows": 0,
+        "crossover_changed": False,
+        "restarts": 0,
+    }
+    trajectory_handle = None
+    trajectory_sink = None
+    if args.stream_trajectory:
+        trajectory_handle = trajectory_path.open("w", encoding="utf-8")
+
+        def trajectory_sink(rows) -> None:
+            for row in rows:
+                trajectory_handle.write(
+                    json.dumps(asdict(row), ensure_ascii=False, allow_nan=False)
+                    + "\n"
+                )
+                stream_summary["rows"] += 1
+                stream_summary["crossover_changed"] = bool(
+                    stream_summary["crossover_changed"]
+                    or (
+                        row.phase == "crossover"
+                        and row.after_fingerprint is not None
+                        and row.before_fingerprint != row.after_fingerprint
+                    )
+                )
+                stream_summary["restarts"] += int(row.status == "RESTARTED")
+            trajectory_handle.flush()
+
+    try:
+        result = run_duty_hgs(
+            candidates,
+            evaluator=evaluator,
+            charging_policy=policy,
+            parameters=parameters,
+            initial_population_identity=identity,
+            stop=lambda state: state.iterations >= args.iterations,
+            arm=args.arm,
+            trajectory_sink=trajectory_sink,
+            retain_trajectory=not args.no_retain_trajectory,
+        )
+    finally:
+        if trajectory_handle is not None:
+            trajectory_handle.close()
     trajectory = [asdict(row) for row in result.trajectory]
     crossover_rows = [row for row in trajectory if row["phase"] == "crossover"]
-    crossover_changed = any(
+    crossover_changed = bool(stream_summary["crossover_changed"]) or any(
         row["after_fingerprint"] is not None
         and row["before_fingerprint"] != row["after_fingerprint"]
         for row in crossover_rows
@@ -352,8 +427,16 @@ def main() -> int:
         failure_reasons.append("not all customers are served")
     if not crossover_changed:
         failure_reasons.append("crossover did not change the selected right parent")
-    if result.accounting.sentinel_evaluations <= 0:
+    if (
+        context.incremental_full_truth_sentinel_enabled
+        and result.accounting.sentinel_evaluations <= 0
+    ):
         failure_reasons.append("full-truth sentinel was not exercised")
+    if (
+        not context.incremental_full_truth_sentinel_enabled
+        and result.accounting.sentinel_evaluations != 0
+    ):
+        failure_reasons.append("disabled full-truth sentinel was still exercised")
     if args.require_restart and result.accounting.restarts < 1:
         failure_reasons.append("required restart path was not exercised")
     if protected_before != protected_after:
@@ -377,6 +460,12 @@ def main() -> int:
         ),
         "restart_path_covered": result.accounting.restarts > 0,
         "restart_required": args.require_restart,
+        "trajectory_streamed_incrementally": args.stream_trajectory,
+        "trajectory_retained_in_memory": not args.no_retain_trajectory,
+        "trajectory_rows_streamed": stream_summary["rows"],
+        "incremental_full_truth_sentinel_enabled": (
+            context.incremental_full_truth_sentinel_enabled
+        ),
         "parameters": asdict(parameters),
         "charging_policy": asdict(policy),
         "pi0": {
@@ -472,13 +561,14 @@ def main() -> int:
             "restart correctness on this real input"
         )
     _json(output / "decision.json", decision)
-    (output / "trajectory.jsonl").write_text(
-        "".join(
-            json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n"
-            for row in trajectory
-        ),
-        encoding="utf-8",
-    )
+    if not args.stream_trajectory:
+        trajectory_path.write_text(
+            "".join(
+                json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n"
+                for row in trajectory
+            ),
+            encoding="utf-8",
+        )
     _json(
         output / "best_solution.json",
         {
@@ -500,7 +590,7 @@ def main() -> int:
 
 本轮判定：`{verdict}`。这是一轮接线和内部一致性检查，不是算法对比实验，也没有替用户确定正式算例、正式预算或论文结论。
 
-真实输入 `{INSTANCE_ID}` 完成了 {result.iterations} 个搜索循环，并触发 {result.accounting.restarts} 次种群重启。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；完整评价判定可行，违规数为 {len(result.best_evaluation.violations)}。完整真值哨兵实际调用 {result.accounting.sentinel_evaluations} 次。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
+真实输入 `{INSTANCE_ID}` 完成了 {result.iterations} 个搜索循环，并触发 {result.accounting.restarts} 次种群重启。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；完整评价判定可行，违规数为 {len(result.best_evaluation.violations)}。完整真值哨兵开关为 `{context.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹增量写盘为 `{args.stream_trajectory}`，内存保留为 `{not args.no_retain_trajectory}`。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
 
 初始成本为 {initial_evaluation.total_cost:.12f}，本轮保存解成本为 {result.best_evaluation.total_cost:.12f}。这个差值只用于排查运行过程，不能据此宣称 Duty-HGS 更优，因为本轮只有一个种子、一个循环，也没有同预算强基线。
 

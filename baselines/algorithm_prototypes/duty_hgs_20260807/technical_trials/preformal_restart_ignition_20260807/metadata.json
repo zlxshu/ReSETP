@@ -1,0 +1,125 @@
+{
+  "purpose": "bounded real-input wiring trial; not a performance experiment",
+  "instance_id": "cn-jjj-10c-01-V2-LOCATIONS",
+  "instance_formally_selected": false,
+  "formal_search_allowed": false,
+  "machine": "M1 formal-number machine, but this output is diagnostic only",
+  "code_provenance": {
+    "git_head": "79e8d67efad3d9efca6b3f7d364cf434cc53d778",
+    "worktree_clean_before_run": true,
+    "worktree_status_before_run": "",
+    "python_source_sha256": "f9ab08337a37d1e0eaeaa1921854e029c18e0da0b2c3d8dc64dbcfe301515382",
+    "python_source_files": {
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/__init__.py": "ed0da4ef481556302af69313e97505983c2867db4b5693585e1bd84aaf671c0e",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/charging.py": "2ddad53994ef3cd22f74f5cb7b60b0e0f3b78a65d47848e0b4033df58a206e99",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/contracts.py": "b265be652bb85b89be1f16fc2d02ea7ab0bb91e6ef33736c95b9a39366ebec38",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/crossover.py": "a47bf527b56261912d9eb5565e5b0fab85720bc16aba2e3cb480b2f2889f0c43",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/education.py": "6be3459cac06993fd4984f334e727009af8deb0e4b5fc527ca5f6585ba0a7f9a",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/evaluation.py": "3e5be9a70abf0a8e1b298a4ad8ca00431f756bdc0d8aadf78575e943c56bb4a3",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/feedback.py": "29a582f94aadd642882a097d4917f6df6ef15b5f131d37032e9c602471543dc9",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/model.py": "ab83c5667efe41627a8be17e0c9d9ad6351f6dbac6fd0112a84306aeb94c2c54",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/operators.py": "296b995c7639aabd4b8ac7c4b45577f74a4e75c76ebc2bcc0c5ff9be5a2db222",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/population.py": "17738a6e920d6cbec11d7c20f3dc207d39511e845aaa735fb7fd2c80de6d844c",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/repair.py": "f6101850f6e7ba87e13ce54d2e98cb08f64c2c9152946eb9338ce8818ad01951",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/duty_hgs/runner.py": "73e68173bb87236cc3b3b515801db02f13244e985c8bc6c50ee6283092b3652a",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/run_real_input_action_scope_smoke.py": "fddfd77d73ddd03c97951c015d3c6d8219422e3f8779632c1bb6b17202cc20ab",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/run_real_input_repair_smoke.py": "854e3e1a74604d90e4cdb70744a00cf4abbc90a3135f8c809125db73712a81dd",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/run_real_input_technical_trial.py": "feb42b34cc73d7149fda40cc9824528f9e82767244df8c409c9c3cd50f36a96e",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/tests/conftest.py": "415900b4c1336154e2045af637cc581b28a0c60b8ab366c958b53b69d7602ddd",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_evaluation.py": "fd7185015d7f3fcc981783108238ad894b12b00fd843e2b61dd4c4f7bdda7fe0",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_feedback.py": "157690fe93ea975c6bf6ba0744de939cb24d10aaa33a3da10277129843ea0bc2",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_model.py": "7bf557044b733ab8852322a1a7f26e6c3ff48f1ef184ba65abd87dcd206ab59e",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_review_regressions.py": "6ee8cd665fb54a954cb19a8a80a90aea1c28980bcedd03dae6f185a882b49724",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_search_components.py": "28f6ee55529e9e027f20bdbc0b700c8fa3e1b67f07d9d0f2254847fd81293c6a",
+      "baselines/algorithm_prototypes/duty_hgs_20260807/upstream/PyVRP-0.12.2/GeneticAlgorithm.py": "c7c8c068a1fbd42d341e3dddda66b703a8d99ea9236a19ad5fd300d8963470fe"
+    }
+  },
+  "random_seed": 11,
+  "iterations": 3,
+  "stop_semantics": "technical fixed-iteration wiring stop; not P20 or a formal budget",
+  "restart_path_covered": true,
+  "restart_required": true,
+  "parameters": {
+    "random_seed": 11,
+    "population": {
+      "min_pop_size": 2,
+      "generation_size": 2,
+      "num_elite": 1,
+      "num_close": 1,
+      "tournament_size": 2,
+      "lb_diversity": 0.0,
+      "ub_diversity": 1.0
+    },
+    "penalties": {
+      "initial_penalty_per_unit": 100.0,
+      "solutions_between_updates": 50,
+      "penalty_increase": 1.34,
+      "penalty_decrease": 0.32,
+      "target_feasible": 0.43,
+      "feasibility_tolerance": 0.05,
+      "minimum_penalty": 0.1,
+      "maximum_penalty": 100000.0
+    },
+    "restart_after_iterations_without_improvement": 1
+  },
+  "charging_policy": {
+    "strategy": "integrated",
+    "carbon_weight": 1.0,
+    "depot_charge_window_mode": "same_day_predeparture",
+    "charge_timing_policy": "cost_plus_carbon",
+    "charge_amount_strategy": "just_enough",
+    "public_station_candidate_mode": "parallel",
+    "carbon_profiles_by_day_offset": null
+  },
+  "pi0": {
+    "values": {
+      "D_beijing": 4216.468912404428
+    },
+    "sha256": "e704bf4d6bb02751ae766c0a8c77f81650fc05fbf147834ab8a7f14080d39088",
+    "externally_frozen": false,
+    "formal_reuse_allowed": false
+  },
+  "initial_population_sha256": "bde3cc40831fc0ed009718db606a67f2544f295cb844e01185d84d8542909361",
+  "preflight_reverse_attempt": {
+    "action_id": "preflight-reverse-first-two",
+    "status": "REJECTED_INTERFACE",
+    "error_type": "ValueError",
+    "error": "E3_STRICT_MULTITRIP_V2: route CV_D_beijing_1#T1 misses C004's time window"
+  },
+  "second_parent_attempts": [
+    {
+      "index": 1,
+      "action_id": "relocate:CV_D_beijing_1#T1:C004->EV_D_beijing_1#T1@0",
+      "channel": "mixed_fleet",
+      "status": "EVALUATED",
+      "error_type": null,
+      "error": null
+    }
+  ],
+  "second_parent_rule": "first generated move with EVALUATED status and a distinct fingerprint; cost and direction were ignored",
+  "parent_selection_precheck": {
+    "left_fingerprint": "61ec180b1fd1cd8d4e2775b599748577ee133682b4420ed7bef3e4bfd2906b48",
+    "right_fingerprint": "5702d0badfb9f272ca785273a3811cf80aa9e11c748f8d7cc35166349559e079",
+    "distinct": true
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/cost.py": "e7ea406da87a3172cd1ff7dc87fe7def536e74f197f6c67b29da2394fe42b00d",
+    "solver/src/setp_solver/check.py": "1cdb6236a662eec7363dfdf99c0c0df287b32aeffbc7bd48572320696c0b1072",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "failure_conditions": [
+    "input or initial construction failure",
+    "initial solution incomplete or infeasible",
+    "parents not structurally distinct",
+    "crossover does not structurally change the selected right parent",
+    "truth-sentinel mismatch or internal error",
+    "abnormal termination",
+    "missing customers or demand",
+    "incomplete experiment package"
+  ]
+}

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 from duty_hgs.charging import ChargingRepairPolicy, repair_changed_duties
 from duty_hgs.evaluation import (
     DutyIncrementalEvaluator,
+    DutyFullEvaluator,
     _assert_no_hidden_repair,
     _measure_violations,
     assert_evaluations_equivalent,
@@ -175,6 +178,43 @@ def test_incremental_cost_changes_remain_equal_to_full_truth(
 
     assert_evaluations_equivalent(cached, truth)
     assert cached.total_cost != full.evaluate(individual).total_cost
+
+
+def test_incremental_truth_sentinel_can_be_explicitly_disabled(
+    feedback_fixture,
+) -> None:
+    individual, full = feedback_fixture
+    context = replace(
+        full.context,
+        incremental_full_truth_sentinel_enabled=False,
+    )
+    evaluator = DutyFullEvaluator(context)
+    move = RelocateCustomerMove(
+        action_id="technical-sentinel-off",
+        source_duty_id="CV_D0_1",
+        source_trip_index=1,
+        customer_id="C1",
+        target_duty_id="CV_D0_2",
+        target_trip_index=1,
+        target_position=0,
+        predicted_remaining_overflow_kg=0.0,
+        predicted_relief_kg=2.0,
+    )
+    candidate = move.apply(individual)
+    incremental = DutyIncrementalEvaluator(evaluator)
+    incremental.seed(individual)
+
+    cached = incremental.evaluate_after_change(
+        individual,
+        candidate,
+        changed_duty_ids={"CV_D0_1", "CV_D0_2"},
+    )
+    truth = evaluator.evaluate(candidate)
+
+    assert_evaluations_equivalent(cached, truth)
+    assert cached.source == "incremental_unverified"
+    assert cached.accounting["sentinel_evaluations"] == 0
+    assert evaluator.sentinel_calls == 0
 
 
 def test_native_violation_magnitudes_are_not_reduced_to_counts(

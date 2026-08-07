@@ -114,6 +114,38 @@ class DutyHGSRunProvenance:
     independent_profit_sha256: str
     independent_profit_externally_frozen: bool
     incremental_full_truth_sentinel_enabled: bool
+    trajectory_sink_enabled: bool
+    trajectory_retained_in_memory: bool
+
+
+class _TrajectoryRecorder:
+    """Optionally stream trajectory batches without retaining the full run."""
+
+    def __init__(
+        self,
+        sink: Callable[[tuple[TrajectoryRow, ...]], None] | None,
+        *,
+        retain: bool,
+    ) -> None:
+        if sink is None and not retain:
+            raise ValueError(
+                "trajectory_sink is required when retain_trajectory is false"
+            )
+        self._sink = sink
+        self._retain = bool(retain)
+        self.retained: list[TrajectoryRow] = []
+
+    def emit(self, row: TrajectoryRow) -> None:
+        self.emit_many((row,))
+
+    def emit_many(self, rows) -> None:
+        batch = tuple(rows)
+        if not batch:
+            return
+        if self._sink is not None:
+            self._sink(batch)
+        if self._retain:
+            self.retained.extend(batch)
 
 
 def run_duty_hgs(
@@ -125,6 +157,8 @@ def run_duty_hgs(
     initial_population_identity: FrozenPopulationIdentity,
     stop: Callable[[DutyHGSSearchState], bool],
     arm: str,
+    trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
+    retain_trajectory: bool = True,
 ) -> DutyHGSRunResult:
     """Run Duty-HGS until the external, user-approved stop callable fires."""
 
@@ -137,6 +171,10 @@ def run_duty_hgs(
         raise ValueError(
             "initial candidates disagree with their frozen population identity"
         )
+    trajectory = _TrajectoryRecorder(
+        trajectory_sink,
+        retain=retain_trajectory,
+    )
     provenance = DutyHGSRunProvenance(
         arm=str(arm),
         instance_id=str(evaluator.context.bundle.instance_id),
@@ -157,7 +195,11 @@ def run_duty_hgs(
         independent_profit_externally_frozen=(
             evaluator.context.independent_profit_identity.externally_frozen
         ),
-        incremental_full_truth_sentinel_enabled=True,
+        incremental_full_truth_sentinel_enabled=(
+            evaluator.context.incremental_full_truth_sentinel_enabled
+        ),
+        trajectory_sink_enabled=trajectory_sink is not None,
+        trajectory_retained_in_memory=retain_trajectory,
     )
     rng = random.Random(int(parameters.random_seed))
     accounting = SearchAccounting()
@@ -172,7 +214,6 @@ def run_duty_hgs(
     if best is None:
         raise AssertionError("non-empty initial population was not retained")
 
-    trajectory: list[TrajectoryRow] = []
     iterations = 0
     no_improvement = 0
     while not stop(
@@ -209,7 +250,7 @@ def run_duty_hgs(
                 candidate=best.individual,
                 evaluation=best.evaluation,
             )
-            trajectory.append(
+            trajectory.emit(
                 _trajectory_row(
                     iteration=iterations,
                     phase="control",
@@ -240,7 +281,7 @@ def run_duty_hgs(
                 error=str(exc),
             )
             accounting.record_outcome(rejected)
-            trajectory.append(
+            trajectory.emit(
                 _trajectory_row(
                     iteration=iterations,
                     phase="crossover",
@@ -272,7 +313,7 @@ def run_duty_hgs(
                 error=str(exc),
             )
             accounting.record_outcome(rejected)
-            trajectory.append(
+            trajectory.emit(
                 _trajectory_row(
                     iteration=iterations,
                     phase="crossover",
@@ -300,7 +341,7 @@ def run_duty_hgs(
                 error=str(exc),
             )
             accounting.record_outcome(rejected)
-            trajectory.append(
+            trajectory.emit(
                 _trajectory_row(
                     iteration=iterations,
                     phase="crossover",
@@ -323,7 +364,7 @@ def run_duty_hgs(
             evaluation=child_evaluation,
         )
         accounting.record_outcome(constructed)
-        trajectory.append(
+        trajectory.emit(
             _trajectory_row(
                 iteration=iterations,
                 phase="crossover",
@@ -346,12 +387,12 @@ def run_duty_hgs(
                 initial_evaluation=child_evaluation,
             )
         except DutySentinelMismatch as exc:
-            trajectory.extend(exc.rows)
+            trajectory.emit_many(exc.rows)
             return _finish_result(
                 best,
                 iterations,
                 accounting,
-                trajectory,
+                trajectory.retained,
                 started,
                 provenance,
                 status=CandidateStatus.SENTINEL_MISMATCH.value,
@@ -371,7 +412,7 @@ def run_duty_hgs(
                 error=str(exc),
             )
             accounting.record_outcome(failed)
-            trajectory.append(
+            trajectory.emit(
                 _trajectory_row(
                     iteration=iterations,
                     phase="regret2_repair",
@@ -386,13 +427,13 @@ def run_duty_hgs(
                 best,
                 iterations,
                 accounting,
-                trajectory,
+                trajectory.retained,
                 started,
                 provenance,
                 status=CandidateStatus.INTERNAL_ERROR.value,
                 error=exc,
             )
-        trajectory.extend(repair_rows)
+        trajectory.emit_many(repair_rows)
         if repaired.unserved_customers:
             incomplete = CandidateOutcome(
                 action_id="regret2-repair-incomplete",
@@ -409,7 +450,7 @@ def run_duty_hgs(
                 ),
             )
             accounting.record_outcome(incomplete)
-            trajectory.append(
+            trajectory.emit(
                 _trajectory_row(
                     iteration=iterations,
                     phase="regret2_repair",
@@ -437,12 +478,12 @@ def run_duty_hgs(
                 )
             )
         except DutySentinelMismatch as exc:
-            trajectory.extend(exc.rows)
+            trajectory.emit_many(exc.rows)
             return _finish_result(
                 best,
                 iterations,
                 accounting,
-                trajectory,
+                trajectory.retained,
                 started,
                 provenance,
                 status=CandidateStatus.SENTINEL_MISMATCH.value,
@@ -462,7 +503,7 @@ def run_duty_hgs(
                 error=str(exc),
             )
             accounting.record_outcome(failed)
-            trajectory.append(
+            trajectory.emit(
                 _trajectory_row(
                     iteration=iterations,
                     phase="education",
@@ -477,13 +518,13 @@ def run_duty_hgs(
                 best,
                 iterations,
                 accounting,
-                trajectory,
+                trajectory.retained,
                 started,
                 provenance,
                 status=CandidateStatus.INTERNAL_ERROR.value,
                 error=exc,
             )
-        trajectory.extend(education_rows)
+        trajectory.emit_many(education_rows)
         admission = population.add(educated, educated_evaluation)
         accounting.record_population_admission(inserted=admission.inserted)
         admitted = CandidateOutcome(
@@ -496,7 +537,7 @@ def run_duty_hgs(
             candidate=educated,
             evaluation=educated_evaluation,
         )
-        trajectory.append(
+        trajectory.emit(
             _trajectory_row(
                 iteration=iterations,
                 phase="population",
@@ -527,7 +568,7 @@ def run_duty_hgs(
         best,
         iterations,
         accounting,
-        trajectory,
+        trajectory.retained,
         started,
         provenance,
         status=termination_status,
