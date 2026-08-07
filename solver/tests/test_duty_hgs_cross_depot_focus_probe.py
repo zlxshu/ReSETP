@@ -1,10 +1,10 @@
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import csv
 import importlib.util
-from pathlib import Path
 import sys
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = (
@@ -48,3 +48,17 @@ def test_focus_customers_supports_route_marginal_screen(tmp_path: Path) -> None:
         "case-a",
         "route_marginal_capacity",
     ) == {"C1": -2.5}
+
+
+def test_all_cross_depot_mode_rejects_geometric_screen_reader(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "unused.csv"
+    source.write_text("instance_id,customer_id\n", encoding="utf-8")
+
+    try:
+        MODULE._focus_customers(source, "case-a", "all_cross_depot")
+    except ValueError as exc:
+        assert "does not use a geometric screen" in str(exc)
+    else:
+        raise AssertionError("all-cross-depot mode unexpectedly read a screen")

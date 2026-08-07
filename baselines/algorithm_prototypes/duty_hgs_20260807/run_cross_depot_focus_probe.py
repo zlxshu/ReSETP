@@ -40,7 +40,6 @@ from run_real_input_technical_trial import (
     _write_failure_package,
 )
 
-
 FIELDS = (
     "action_id",
     "focus_customer_ids",
@@ -66,6 +65,10 @@ FIELDS = (
 
 
 FOCUS_MODES = {
+    "all_cross_depot": {
+        "column": None,
+        "description": "all generated cross-depot moves",
+    },
     "direct_roundtrip": {
         "column": "best_alternate_minus_owner_roundtrip_km",
         "description": "alternate-depot direct round trip",
@@ -87,6 +90,8 @@ def _focus_customers(
     except KeyError as exc:
         raise ValueError(f"unknown focus mode: {focus_mode}") from exc
     column = mode["column"]
+    if column is None:
+        raise ValueError("all-cross-depot mode does not use a geometric screen")
     with opportunity_csv.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
     result = {
@@ -161,7 +166,13 @@ def main() -> int:
 
     repo = Path(__file__).resolve().parents[3]
     output = args.output_dir.resolve()
-    if args.opportunity_csv is None:
+    if args.focus_mode == "all_cross_depot":
+        if args.opportunity_csv is not None:
+            raise ValueError(
+                "all-cross-depot mode does not accept an opportunity CSV"
+            )
+        opportunity_csv = None
+    elif args.opportunity_csv is None:
         relative_csv = (
             "unified_instance_scout/opportunity_27_20260807/"
             "customer_opportunities.csv"
@@ -198,17 +209,14 @@ def main() -> int:
             ),
             "instance_id": args.instance_id,
             "code_provenance": provenance,
-            "opportunity_csv": str(opportunity_csv),
+            "opportunity_csv": (
+                None if opportunity_csv is None else str(opportunity_csv)
+            ),
             "focus_mode": args.focus_mode,
         },
     )
 
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
-    focus = _focus_customers(
-        opportunity_csv,
-        args.instance_id,
-        args.focus_mode,
-    )
     bundle, initial, pi0, context = _build_context(repo, args.instance_id)
     evaluator = DutyFullEvaluator(context)
     initial_evaluation = evaluator.evaluate(initial)
@@ -235,23 +243,42 @@ def main() -> int:
     cross_moves = tuple(
         move for move in all_moves if move.channel == "depot_collaboration"
     )
-    focused_moves = tuple(
-        sorted(
-            (
-                move
-                for move in cross_moves
-                if _move_customers(move).intersection(focus)
-            ),
-            key=lambda move: move.action_id,
+    if args.focus_mode == "all_cross_depot":
+        focused_moves = tuple(sorted(cross_moves, key=lambda move: move.action_id))
+        focus = {
+            customer_id: 0.0
+            for move in focused_moves
+            for customer_id in _move_customers(move)
+        }
+    else:
+        if opportunity_csv is None:
+            raise AssertionError("geometric focus mode requires an input CSV")
+        focus = _focus_customers(
+            opportunity_csv,
+            args.instance_id,
+            args.focus_mode,
         )
-    )
+        focused_moves = tuple(
+            sorted(
+                (
+                    move
+                    for move in cross_moves
+                    if _move_customers(move).intersection(focus)
+                ),
+                key=lambda move: move.action_id,
+            )
+        )
     if not focused_moves:
         raise ValueError("no generated cross-depot move involves a focus customer")
 
     accounting = SearchAccounting()
     incremental = DutyIncrementalEvaluator(evaluator)
     accounting.record_cache_seed(incremental.seed(initial))
-    repair_cache = ChargingRepairCache(context, policy)
+    repair_cache = (
+        None
+        if args.focus_mode == "all_cross_depot"
+        else ChargingRepairCache(context, policy)
+    )
     status_counts: Counter[str] = Counter()
     error_counts: Counter[tuple[str, str, str]] = Counter()
     evaluated_count = 0
@@ -337,7 +364,7 @@ def main() -> int:
                 "focus_customer_ids": "|".join(involved),
                 "focus_distance_advantage_km": "|".join(
                     f"{customer}:{-focus[customer]:.12g}" for customer in involved
-                ),
+                ) if args.focus_mode != "all_cross_depot" else "",
                 "status": status,
                 "evaluated": evaluation is not None,
                 "complete_model_feasible": feasible if evaluation is not None else "",
@@ -505,10 +532,14 @@ def main() -> int:
         "instance_id": args.instance_id,
         "instance_formally_selected": False,
         "code_provenance": provenance,
-        "opportunity_csv": str(opportunity_csv),
+        "opportunity_csv": (
+            None if opportunity_csv is None else str(opportunity_csv)
+        ),
         "focus_mode": args.focus_mode,
         "focus_rule": (
-            f"{focus_column} < 0 in the already saved geometric screen; "
+            "all generated depot-collaboration moves; no geometric filter"
+            if focus_column is None
+            else f"{focus_column} < 0 in the already saved geometric screen; "
             "no result-dependent threshold"
         ),
         "focus_customers": focus,
