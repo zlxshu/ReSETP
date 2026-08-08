@@ -124,6 +124,11 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=11)
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--stagnation-patience", type=int, default=500)
+    parser.add_argument(
+        "--crossover-mode",
+        choices=("hybrid", "fast_only"),
+        default="hybrid",
+    )
     args = parser.parse_args()
     if args.iterations < 1:
         raise ValueError("technical iterations must be positive")
@@ -151,6 +156,7 @@ def main() -> int:
             "seed": args.seed,
             "iterations": args.iterations,
             "stagnation_patience": args.stagnation_patience,
+            "crossover_mode": args.crossover_mode,
             "stopping": (
                 "bounded calibration iterations plus a no-improvement window; "
                 "not a frozen formal limit"
@@ -167,6 +173,7 @@ def main() -> int:
             seed=args.seed,
             max_iterations=args.iterations,
             stagnation_patience=args.stagnation_patience,
+            crossover_mode=args.crossover_mode,
         )
         result = algorithm.run()
         visits = [

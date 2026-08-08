@@ -13,6 +13,7 @@ import random
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from time import perf_counter
+from typing import Literal
 
 from pyvrp import CostEvaluator, ProblemData, RandomNumberGenerator, Route, Solution
 from pyvrp.diversity import broken_pairs_distance
@@ -46,6 +47,7 @@ class PublicDCREXParameters:
     stagnation_patience: int = 500
     repair_probability: float = 0.8
     dcrex_discount_factor: float = DISCOUNT_FACTOR
+    crossover_mode: Literal["hybrid", "fast_only"] = "hybrid"
 
     def __post_init__(self) -> None:
         if int(self.max_iterations) < 1:
@@ -56,6 +58,8 @@ class PublicDCREXParameters:
             raise ValueError("public DCREX repair_probability must be in [0, 1]")
         if not 0.0 < float(self.dcrex_discount_factor) <= 1.0:
             raise ValueError("public DCREX discount factor must be in (0, 1]")
+        if self.crossover_mode not in {"hybrid", "fast_only"}:
+            raise ValueError("public crossover mode must be hybrid or fast_only")
 
 
 @dataclass(frozen=True)
@@ -261,7 +265,11 @@ class PublicDCREXHGS:
                 for solution in self.initial_solutions:
                     self.population.add(solution, self.cost_evaluator)
                 parent_solutions = tuple(self.population)
-            crossover_action = self.crossover_controller.select(self.rng)
+            crossover_action = (
+                CrossoverAction.FAST
+                if self.parameters.crossover_mode == "fast_only"
+                else self.crossover_controller.select(self.rng)
+            )
             crossed = None
             if crossover_action == CrossoverAction.FAST:
                 selected = self.population.select(
@@ -385,6 +393,7 @@ def build_public_dcrex_hgs(
     max_iterations: int,
     stagnation_patience: int = 500,
     solve_parameters: SolveParams | None = None,
+    crossover_mode: Literal["hybrid", "fast_only"] = "hybrid",
 ) -> PublicDCREXHGS:
     """Build the project algorithm from the same PyVRP 0.12.2 components."""
 
@@ -422,6 +431,7 @@ def build_public_dcrex_hgs(
             max_iterations=max_iterations,
             stagnation_patience=stagnation_patience,
             repair_probability=solve_parameters.genetic.repair_probability,
+            crossover_mode=crossover_mode,
         ),
     )
 

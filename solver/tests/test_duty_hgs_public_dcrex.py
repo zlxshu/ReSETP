@@ -65,6 +65,25 @@ def test_public_dcrex_stops_instead_of_restarting_after_stagnation() -> None:
     )
 
 
+def test_public_fast_only_attribution_arm_never_calls_dcrex() -> None:
+    repo = Path(__file__).resolve().parents[2]
+    instance = (
+        repo
+        / "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719"
+        / "sources/normalised_instances/PR17A.vrp"
+    )
+    data = read(instance, round_func="round")
+    result = build_public_dcrex_hgs(
+        data,
+        seed=11,
+        max_iterations=4,
+        crossover_mode="fast_only",
+    ).run()
+    assert result.iterations == 4
+    assert {row.crossover_action for row in result.trajectory} == {"SREX"}
+    assert all(row.insertion_operator is None for row in result.trajectory)
+
+
 def test_compiled_public_insertion_delta_matches_full_route_rebuild() -> None:
     repo = Path(__file__).resolve().parents[2]
     instance = (
