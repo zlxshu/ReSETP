@@ -1,0 +1,23 @@
+{
+  "verdict": "TRIAL_COMPLETE_REPORT_BEFORE_ANY_ALGORITHM_CHANGE",
+  "formal_experiment": false,
+  "paired_instances": 28,
+  "own_wins_under_runner_rounding": 12,
+  "own_losses_under_runner_rounding": 16,
+  "ties": 0,
+  "mean_own_cost": 8763.571429,
+  "mean_baseline_cost": 8729.035714,
+  "mean_paired_delta_pct": 0.179779,
+  "aggregate_total_cost_delta_pct": 0.39564,
+  "own_max_runtime_stops": 19,
+  "baseline_max_runtime_stops": 13,
+  "all_runner_service_complete": true,
+  "exact_precision_feasible_solutions": {
+    "own": 1,
+    "baseline": 1
+  },
+  "strong_opponent_comparison_status": "NOT_VALID_YET",
+  "reason": "当前两臂按round整数化数据求解；v2强对手目标按exact原始精度。重新检查时，除各1个解外均有轻微时间窗越界，不能直接与文献目标比较。",
+  "algorithm_disposition": "AWAIT_USER_DECISION",
+  "algorithm_modified_after_trial": false
+}
