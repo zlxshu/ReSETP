@@ -1,0 +1,7 @@
+component,stage,parent_cost,parent_violations,after_component_cost,after_component_violations,after_same_route_search_cost,after_same_route_search_violations,direct_parent_route_search_best_cost,direct_parent_route_search_best_violations,feasible_increment_observed,note
+DCREX,crossover,2665.688573241056,1,2609.6280845238766,3,2246.3463498858337,1,2366.5537365384885,1,false,"DCREX repair reduced three violations to two; route search still ended with one violation"
+TRIP_ASSIGNMENT,crossover,2675.9848129663887,0,2845.9848129663887,1,2431.2175370626283,0,2348.5052795789634,1,true,"direct parent route search produced no feasible candidate; trip assignment plus the same route search produced a feasible lower-cost solution"
+TIME_VARYING_CARBON_CHARGE,education,2431.2175370626283,0,2446.7734995161572,0,,,,true,"best feasible emissions change was -11.02176438071072 kg while total cost changed by +15.5559624535289; no feasible total-cost improvement"
+DEPOT_COLLABORATION,education,,,,,,,,false,"33 evaluated candidates and no feasible candidate in this two-iteration trial"
+WHOLE_DUTY_TYPE_EXCHANGE,education,2431.2175370626283,0,2443.440092592666,0,,,,false,"6 feasible candidates; best total-cost change was +12.22255553003788"
+ROUTE_KERNEL,education,2845.9848129663887,1,2431.2175370626283,0,,,,true,"6 evaluated candidates, 2 feasible improving candidates, and 2 accepted route moves"
