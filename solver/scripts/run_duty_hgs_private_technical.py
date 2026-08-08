@@ -46,6 +46,7 @@ from setp_solver.algorithms.duty_hgs.population import (
 )
 from setp_solver.algorithms.duty_hgs.proposals import (
     InterleavedProposalEngine,
+    LegacyCompleteProposalEngine,
     MechanismProposalEngine,
 )
 from setp_solver.algorithms.duty_hgs.pyvrp_proposals import PyVRPDutyRouteProposalEngine
@@ -535,7 +536,7 @@ def main() -> int:
     parser.add_argument("--stderr-capture-state", default="caller_not_declared")
     parser.add_argument(
         "--proposal-mode",
-        choices=("legacy", "system"),
+        choices=("legacy", "system", "route_only", "mechanism_only"),
         default="system",
     )
     args = parser.parse_args()
@@ -604,17 +605,21 @@ def main() -> int:
     initialization_full_evaluations = (
         evaluator.full_calls - initialization_full_calls_before
     )
-    proposal_engine = None
-    if args.proposal_mode == "system":
+    mechanism_engine = MechanismProposalEngine(evaluator.context, policy)
+    route_engine = PyVRPDutyRouteProposalEngine(
+        evaluator.context,
+        initial,
+        random_seed=SEED,
+    )
+    if args.proposal_mode == "legacy":
+        proposal_engine = LegacyCompleteProposalEngine()
+    elif args.proposal_mode == "route_only":
+        proposal_engine = InterleavedProposalEngine((route_engine,))
+    elif args.proposal_mode == "mechanism_only":
+        proposal_engine = InterleavedProposalEngine((mechanism_engine,))
+    else:
         proposal_engine = InterleavedProposalEngine(
-            (
-                PyVRPDutyRouteProposalEngine(
-                    evaluator.context,
-                    initial,
-                    random_seed=SEED,
-                ),
-                MechanismProposalEngine(evaluator.context, policy),
-            )
+            (route_engine, mechanism_engine)
         )
     identity = FrozenPopulationIdentity(
         source_id="technical-real-input-two-parent-population",

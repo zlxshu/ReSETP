@@ -41,6 +41,7 @@ from setp_solver.algorithms.duty_hgs.evaluation import DutyFullEvaluator
 from setp_solver.algorithms.duty_hgs.model import DutyIndividual
 from setp_solver.algorithms.duty_hgs.proposals import (
     InterleavedProposalEngine,
+    LegacyCompleteProposalEngine,
     MechanismProposalEngine,
 )
 from setp_solver.algorithms.duty_hgs.pyvrp_proposals import PyVRPDutyRouteProposalEngine
@@ -201,6 +202,11 @@ def main() -> int:
     parser.add_argument("--trigger-second", type=float, default=43_200.0)
     parser.add_argument("--iterations", type=int, default=1)
     parser.add_argument(
+        "--proposal-mode",
+        choices=("system", "route_only", "mechanism_only", "legacy"),
+        default="system",
+    )
+    parser.add_argument(
         "--source-best-solution",
         type=Path,
         default=Path(
@@ -233,6 +239,7 @@ def main() -> int:
             "requested_instance_id": args.instance_id,
             "requested_trigger_second": float(args.trigger_second),
             "requested_iterations": int(args.iterations),
+            "requested_proposal_mode": args.proposal_mode,
         },
     )
 
@@ -311,16 +318,22 @@ def main() -> int:
     initialization_full_evaluations = (
         evaluator.full_calls - initialization_full_calls_before
     )
-    proposal_engine = InterleavedProposalEngine(
-        (
-            PyVRPDutyRouteProposalEngine(
-                evaluator.context,
-                future,
-                random_seed=SEED,
-            ),
-            MechanismProposalEngine(evaluator.context, policy),
-        )
+    route_engine = PyVRPDutyRouteProposalEngine(
+        evaluator.context,
+        future,
+        random_seed=SEED,
     )
+    mechanism_engine = MechanismProposalEngine(evaluator.context, policy)
+    if args.proposal_mode == "legacy":
+        proposal_engine = LegacyCompleteProposalEngine()
+    elif args.proposal_mode == "route_only":
+        proposal_engine = InterleavedProposalEngine((route_engine,))
+    elif args.proposal_mode == "mechanism_only":
+        proposal_engine = InterleavedProposalEngine((mechanism_engine,))
+    else:
+        proposal_engine = InterleavedProposalEngine(
+            (route_engine, mechanism_engine)
+        )
     identity = FrozenPopulationIdentity(
         source_id="technical-dynamic-future-two-parent-population",
         value_sha256=population_sha256(candidates),
@@ -409,6 +422,7 @@ def main() -> int:
         "source_recomputed_cost": static_evaluation.total_cost,
         "instance_id": args.instance_id,
         "instance_formally_selected": False,
+        "proposal_mode": args.proposal_mode,
         "trigger_second": float(args.trigger_second),
         "iterations": int(args.iterations),
         "stop_semantics": "technical fixed-iteration stop; not the formal internal stop",

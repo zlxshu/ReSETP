@@ -1,0 +1,47 @@
+{
+  "verdict": "TRIAL_COMPLETE_WITH_LIMITATIONS",
+  "formal_experiment": false,
+  "algorithm_core_modified": false,
+  "public": {
+    "result": "在当前 runner 的整数化口径下，自研 12 胜 16 负，无平局；平均配对成本高 0.179779%，合计成本高 0.395640%",
+    "service": "28 个算例两臂均完整服务",
+    "interpretation": "当前自研算法还没有在 20 分钟单例口径下显示出稳定的公开路由优势；大算例的单位时间搜索轮数不足是主要反例",
+    "precision_boundary": "保存路线按 v2 exact 原始精度复核时，两臂各只有 1/28 完全可行，暂不能声称超过 v2 强对手"
+  },
+  "private_static": {
+    "instances": "三个 50 客户探路样本各一例，seed 11，system/route_only/mechanism_only 各 5 轮",
+    "service": "三个地区所有已完成静态包均服务 50/50 客户和全部需求",
+    "system_best_cost_delta": {
+      "chengyu": -110.30216359686756,
+      "jingjinji": -244.7672759037605,
+      "pearl_river_delta": -109.58949768504226
+    },
+    "system_vs_route_only": {
+      "chengyu": "相同最优成本",
+      "jingjinji": "相同最优成本",
+      "pearl_river_delta": "system 额外低 109.58949768504226，且排放额外低 56.201317891808685 kg"
+    },
+    "mechanism_only_final": "三个样本都没有把全局保存最好成本从初始值继续降低；但三地轨迹都出现过可行的局部机制动作，不能写成机制完全没有作用",
+    "emissions": "system 最终排放相对初始分别下降 49.27017046823329 kg、85.77075923215415 kg、56.201317891808685 kg；这只是单种子短试跑读数"
+  },
+  "private_dynamic": {
+    "service_and_history": "三个动态包均完整服务 50/50 客户和全部需求，执行历史保持不变",
+    "cost_delta": {
+      "chengyu": -21.407252907869406,
+      "jingjinji": -59.42356890654992,
+      "pearl_river_delta": 0.0
+    },
+    "emissions_delta_kg": {
+      "chengyu": -2.9743128158458774,
+      "jingjinji": 4.350562040105956,
+      "pearl_river_delta": 0.0
+    },
+    "interpretation": "动态成本改善在成渝和京津冀出现、珠三角未出现；排放方向不一致，不能写成三地稳定减排效应"
+  },
+  "algorithm_readout": {
+    "positive": "完整系统和路线通道在三个静态样本都能找到可行且完整服务的改善；珠三角的系统轨迹显示机制动作在本轮确实带来路线通道之外的额外全局最好解",
+    "negative": "公开 28 例没有稳定胜母体；机制通道在三个静态样本的短试跑中没有单独把最终全局最好值推低；成渝完整系统曾进入极慢机制枚举",
+    "not_proven": "尚不能据一枚种子、五轮技术试跑决定最终统一算例、正式消融结论或算法去留"
+  },
+  "next_action": "先把本报告和全部原始子包交用户审阅；不自动改算法、不自动选统一算例、不把探路结果写入论文正文"
+}
