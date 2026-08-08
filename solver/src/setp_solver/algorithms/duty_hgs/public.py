@@ -45,6 +45,7 @@ from .srex import PUBLIC_SREX_WORK_UNITS, public_srex
 class PublicDCREXParameters:
     max_iterations: int
     stagnation_patience: int = 500
+    max_runtime_seconds: float | None = None
     repair_probability: float = 0.8
     dcrex_discount_factor: float = DISCOUNT_FACTOR
     crossover_mode: Literal["hybrid", "fast_only"] = "hybrid"
@@ -54,6 +55,11 @@ class PublicDCREXParameters:
             raise ValueError("public DCREX max_iterations must be positive")
         if int(self.stagnation_patience) < 1:
             raise ValueError("public DCREX stagnation patience must be positive")
+        if (
+            self.max_runtime_seconds is not None
+            and float(self.max_runtime_seconds) <= 0
+        ):
+            raise ValueError("public DCREX max runtime must be positive")
         if not 0.0 <= float(self.repair_probability) <= 1.0:
             raise ValueError("public DCREX repair_probability must be in [0, 1]")
         if not 0.0 < float(self.dcrex_discount_factor) <= 1.0:
@@ -256,6 +262,13 @@ class PublicDCREXHGS:
 
         termination_status = "MAX_ITERATIONS"
         for iteration in range(1, self.parameters.max_iterations + 1):
+            if (
+                self.parameters.max_runtime_seconds is not None
+                and perf_counter() - started
+                >= self.parameters.max_runtime_seconds
+            ):
+                termination_status = "MAX_RUNTIME"
+                break
             if no_improvement > self.parameters.stagnation_patience:
                 termination_status = "CONVERGED_NO_IMPROVEMENT"
                 break
@@ -392,6 +405,7 @@ def build_public_dcrex_hgs(
     seed: int,
     max_iterations: int,
     stagnation_patience: int = 500,
+    max_runtime_seconds: float | None = None,
     solve_parameters: SolveParams | None = None,
     crossover_mode: Literal["hybrid", "fast_only"] = "hybrid",
 ) -> PublicDCREXHGS:
@@ -430,6 +444,7 @@ def build_public_dcrex_hgs(
         parameters=PublicDCREXParameters(
             max_iterations=max_iterations,
             stagnation_patience=stagnation_patience,
+            max_runtime_seconds=max_runtime_seconds,
             repair_probability=solve_parameters.genetic.repair_probability,
             crossover_mode=crossover_mode,
         ),

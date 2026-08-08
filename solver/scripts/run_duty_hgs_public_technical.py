@@ -10,12 +10,15 @@ import json
 import subprocess
 import sys
 import traceback
-from dataclasses import asdict
+from dataclasses import asdict, fields
 from importlib import metadata as importlib_metadata
 from pathlib import Path
 
 from pyvrp import read
-from setp_solver.algorithms.duty_hgs.public import build_public_dcrex_hgs
+from setp_solver.algorithms.duty_hgs.public import (
+    PublicDCREXTrajectoryRow,
+    build_public_dcrex_hgs,
+)
 
 
 def _sha256(path: Path) -> str:
@@ -124,6 +127,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=11)
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--stagnation-patience", type=int, default=500)
+    parser.add_argument("--max-runtime-seconds", type=float)
     parser.add_argument(
         "--crossover-mode",
         choices=("hybrid", "fast_only"),
@@ -134,6 +138,8 @@ def main() -> int:
         raise ValueError("technical iterations must be positive")
     if args.stagnation_patience < 1:
         raise ValueError("stagnation patience must be positive")
+    if args.max_runtime_seconds is not None and args.max_runtime_seconds <= 0:
+        raise ValueError("max runtime seconds must be positive")
 
     repo = Path(__file__).resolve().parents[2]
     output = args.output_dir.resolve()
@@ -156,6 +162,7 @@ def main() -> int:
             "seed": args.seed,
             "iterations": args.iterations,
             "stagnation_patience": args.stagnation_patience,
+            "max_runtime_seconds": args.max_runtime_seconds,
             "crossover_mode": args.crossover_mode,
             "stopping": (
                 "bounded calibration iterations plus a no-improvement window; "
@@ -173,6 +180,7 @@ def main() -> int:
             seed=args.seed,
             max_iterations=args.iterations,
             stagnation_patience=args.stagnation_patience,
+            max_runtime_seconds=args.max_runtime_seconds,
             crossover_mode=args.crossover_mode,
         )
         result = algorithm.run()
@@ -205,7 +213,9 @@ def main() -> int:
         with (output / "raw_runs.csv").open(
             "w", encoding="utf-8", newline=""
         ) as handle:
-            fieldnames = tuple(asdict(result.trajectory[0]))
+            fieldnames = tuple(
+                field.name for field in fields(PublicDCREXTrajectoryRow)
+            )
             writer = csv.DictWriter(handle, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(asdict(row) for row in result.trajectory)

@@ -65,6 +65,26 @@ def test_public_dcrex_stops_instead_of_restarting_after_stagnation() -> None:
     )
 
 
+def test_public_dcrex_can_stop_on_total_runtime() -> None:
+    repo = Path(__file__).resolve().parents[2]
+    instance = (
+        repo
+        / "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719"
+        / "sources/normalised_instances/PR17A.vrp"
+    )
+    data = read(instance, round_func="round")
+    result = build_public_dcrex_hgs(
+        data,
+        seed=11,
+        max_iterations=100,
+        max_runtime_seconds=1e-9,
+    ).run()
+    assert result.termination_status == "MAX_RUNTIME"
+    assert result.iterations == 0
+    assert result.best.is_complete()
+    assert result.best.is_feasible()
+
+
 def test_public_fast_only_attribution_arm_never_calls_dcrex() -> None:
     repo = Path(__file__).resolve().parents[2]
     instance = (

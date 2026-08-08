@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from pyvrp import read, solve
-from pyvrp.stop import NoImprovement
+from pyvrp.stop import MaxRuntime, MultipleCriteria, NoImprovement
 
 
 def _sha256(path: Path) -> str:
@@ -54,9 +54,12 @@ def main() -> int:
     parser.add_argument("--instance", default="PR17A")
     parser.add_argument("--seed", type=int, default=11)
     parser.add_argument("--stagnation-patience", type=int, default=5_000)
+    parser.add_argument("--max-runtime-seconds", type=float)
     args = parser.parse_args()
     if args.stagnation_patience < 1:
         raise ValueError("stagnation patience must be positive")
+    if args.max_runtime_seconds is not None and args.max_runtime_seconds <= 0:
+        raise ValueError("max runtime seconds must be positive")
     version = importlib.metadata.version("pyvrp")
     if version != "0.12.2":
         raise RuntimeError(f"frozen baseline requires PyVRP 0.12.2, got {version}")
@@ -89,7 +92,11 @@ def main() -> int:
             "instance": args.instance,
             "seed": args.seed,
             "stagnation_patience": args.stagnation_patience,
-            "stop": "PyVRP NoImprovement; no baseline code or operators changed",
+            "max_runtime_seconds": args.max_runtime_seconds,
+            "stop": (
+                "PyVRP NoImprovement plus MaxRuntime when supplied; "
+                "no baseline code or operators changed"
+            ),
             "git_head": git_head,
             "runner_sha256": _sha256(Path(__file__).resolve()),
             "instance_sha256": _sha256(instance_path),
@@ -102,9 +109,12 @@ def main() -> int:
     )
 
     data = read(instance_path, round_func="round")
+    criteria = [NoImprovement(args.stagnation_patience)]
+    if args.max_runtime_seconds is not None:
+        criteria.append(MaxRuntime(args.max_runtime_seconds))
     result = solve(
         data,
-        NoImprovement(args.stagnation_patience),
+        MultipleCriteria(criteria),
         seed=args.seed,
         display=False,
     )
@@ -160,6 +170,12 @@ def main() -> int:
             )
 
     cost = int(result.cost())
+    termination_status = (
+        "MAX_RUNTIME"
+        if args.max_runtime_seconds is not None
+        and float(result.runtime) >= args.max_runtime_seconds
+        else "CONVERGED_NO_IMPROVEMENT"
+    )
     verdict = (
         "TECHNICAL_TRIAL_COMPLETE"
         if service_ok
@@ -195,6 +211,7 @@ def main() -> int:
             "cost": cost,
             "iterations": int(result.num_iterations),
             "runtime_seconds": float(result.runtime),
+            "termination_status": termination_status,
             "completed_clients": len(set(visits)),
             "total_clients": len(clients),
             "completed_delivery": served_delivery,
