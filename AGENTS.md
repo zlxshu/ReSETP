@@ -8,7 +8,7 @@
 上一版本是一份误粘贴进来的 Claude 系统提示词（1585 行，与本项目无关），
 已备份到 `AGENTS_bak_pasted_claude_prompt_20260806.md`，**不要读它**。
 
-**与全局规范的关系**：`/Users/zhouleixishu/.codex/AGENTS.md`（全局 AI 通用工作规范 v2）
+**与全局规范的关系**：`/Users/zhouleixishu/.codex/AGENTS.md`（全局 AI 通用工作规范 v3）
 效力高于本文件，是所有项目共用的正文。本文件**不替代它**，只做两件事：
 把最常被违反的几条用本项目的真实反例钉死，加上本项目独有的硬约束。
 两份冲突时以全局为准；本文件下面的内容与全局并无冲突，是同一套规矩的项目落地版。
@@ -233,45 +233,32 @@ M1 是 **8 GB 内存**，跑实验必须控制并发，已经跑死过机器两�
 6. 有没有用自造词或内部任务号跟用户说话？
 7. 失败、跳过、超时、异常结果有没有如实保留？——列出来，不许省略。
 8. 四件套齐了吗？——逐个报文件名（无实验则写"本任务不产生实验包"）。
-9. `HANDOFF.md` 变更日志和 `docs/handoff/memory/` 同步了吗？——报写入位置。
+9. `CURRENT_PROJECT_CONTEXT.md`、必要的 `pending_decisions.md`、`HANDOFF.md` 变更日志和
+   `docs/handoff/memory/MEMORY.md` 是否按各自职责同步？——报写入位置。
 
 ---
 
 ## 九、项目事实去哪查（这部分会变，所以用指针）
 
-**冷启动按这个顺序读，不要跳：**
+**冷启动只读少量当前事实，不再通读历史库：**
 
-1. `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md` —— 仓库级启动门，
-   里面的编号清单从 0-A 开始，**其中 0-A00 是最新的状态差，冲突时它优先**。
-2. `docs/paper_gci_dmm_vrp_20260804/pending_decisions.md` ——
-   **"已决 vs 未决"的唯一权威表。** 任何叙述性文档与它冲突，以它为准。
-   判断某事是否已决，只查这张表，不靠印象、不靠别的文档的转述。
-3. `HANDOFF.md` —— 项目主事实源，文末「变更日志」是时间线。
-4. `docs/handoff/memory/MEMORY.md` —— 记忆索引。
-5. `docs/handoff/memory/user_operating_principles.md` —— 用户长期工作方法正文。
-6. `docs/handoff/memory/project-prd-execution-v2.md` —— PRD v2 记忆条目。
+1. `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md` —— 一页式导航和当前停止边界；
+2. `docs/handoff/CURRENT_PROJECT_CONTEXT.md` —— 当前目标、来时路、完成度、病灶和证据地图；
+3. `docs/paper_gci_dmm_vrp_20260804/pending_decisions.md` ——
+   **"已决 vs 未决"的唯一权威表。** 判断用户是否拍板，只查这张表，不靠印象或代理转述。
 
-以下三份 `CLAUDE.md` 也点名要读，**但 `READ_ME_FIRST` 已把它们标为
-"⚠️ 历史，非当前入口"——正文主体是已退役的英国轨，照单全读会形成过时的项目理解**。
-读它们只为取下面括号里那几样，不要据其规划当前工作：
+`HANDOFF.md` 从 2026-08-10 起只承担历史时间线；`docs/handoff/memory/MEMORY.md`
+只承担历史主题索引。旧 PRD、旧计划、MASTER 提示词和 `docs/handoff/` 下的专题报告全部保留，
+但只在核某个数字、决定来源、失败条件、文献页码或代码时代时，按
+`CURRENT_PROJECT_CONTEXT.md` 的证据地图定点读取。不得全文通读后让旧状态重新覆盖当前现场。
 
-7. `docs/handoff/project_prd_execution_map_v2_20260702.md`
-   （**只取 §Phase2 的已关闭路线台账**——提任何方案前必查，
-   重提其中任一条前须书面说明"与当时失败条件有何不同"并经用户明示同意）。
-8. `docs/handoff/project_planning_map_20260701.md`（只取 §9 的不要做清单）。
-9. `docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`
-   （只取历史决策链；该文第 5 行自陈已被 2026-07-11 用户决定覆盖）。
+提任何算法或算例方案前，先查 `CURRENT_PROJECT_CONTEXT.md` 的“不得从历史材料复活的做法”。
+若需要核已关闭路线的完整原因，再定点查旧路线台账；已经试尽的路线不得换名复活。
 
-第 6–9 条与 `CLAUDE.md` 强制清单是同一份名单，两处必须一致；
-不得因为 `READ_ME_FIRST` 能间接带到就从本表删掉——
-**"顺着指针总能找到"这个理由已经失败过一次，本文件重写就是为了修它。**
-当前权威链见 `READ_ME_FIRST` §1 末尾那张链条图。
-
-**每次重大决策 / 任务 / 对话之后**，把变化追加到 `HANDOFF.md` 文末变更日志，
-并同步 `docs/handoff/memory/`。跨机器迁移、防偏差全靠这个。
-
-**提任何方案之前，先查已关闭路线台账**（在 PRD v2 与 MASTER 计划里），
-已经试尽的路线不得换个名字复活。
+每次重大决定、任务、状态变化或纠错之后：当前事实更新
+`CURRENT_PROJECT_CONTEXT.md`；只有用户决定变化时更新 `pending_decisions.md`；
+同时在 `HANDOFF.md` 文末追加时间线，并在 `docs/handoff/memory/MEMORY.md` 登记证据入口。
+不得再为同一现场新增另一份“最新总交接”。
 
 ---
 
@@ -363,19 +350,21 @@ M1 是 **8 GB 内存**，跑实验必须控制并发，已经跑死过机器两�
 
 ---
 
-## 十二、规矩的完整清单在哪——**这六处都是必读，不是参考**
+## 十二、规矩和事实分别去哪查
 
-本文件只写最高频、最常被违反的部分。**完整规矩分散在下面六处，缺一不可。**
+规矩按任务加载，事实按当前入口读取；不再要求每次把全部历史材料通读一遍。
 
 | 位置 | 有什么 | 什么时候必须读 |
 |---|---|---|
-| `/Users/zhouleixishu/.codex/AGENTS.md` | 全局 AI 通用工作规范 v2，159 行，效力最高。含效力顺序、角色责任、说话汇报、决策边界、`FACT`/`INFERENCE`/`DECISION`/`USER DECISION`/`UNKNOWN`/`HALT`/`CORRECTION` 七标签、证据与科研诚信 | **每次冷启动** |
-| 本文件 `AGENTS.md` | 本项目的行为规矩与硬约束 | **每次冷启动** |
+| `/Users/zhouleixishu/.codex/AGENTS.md` | 全局 AI 通用工作规范 v3，效力最高 | 支持自动加载的代理每次任务生效；人工环境需冷启动读取 |
+| 本文件 `AGENTS.md` | 本项目的行为规矩与硬约束 | 每次 ReSETP 任务生效 |
+| `docs/handoff/CURRENT_PROJECT_CONTEXT.md` 与 `pending_decisions.md` | 当前项目事实和精确用户决定 | **非平凡项目任务的两份事实入口** |
 | `/Users/zhouleixishu/Desktop/AI规矩原话全集_20260806.md` | **用户原话证据册，65 条，十一编。** 判断"用户到底说没说过某句话"的唯一权威。含第八编的历史冲突原话与第十一编的四条待裁决冲突 | **凡涉及"用户是不是这么要求的"、"这条规矩还算不算数"** |
 | `docs/handoff/memory/user_operating_principles.md` | 长期工作方法正文，§1–§13 规定该做什么，§14–§20 规定怎么判断。本文件第十一节只是它的速查 | **做实验设计、读数归因、故障排查、写正文之前** |
-| `/Users/zhouleixishu/.codex/skills/global-ai-*/SKILL.md` | 四份通用技能：communication / decision-boundary / evidence-integrity / execution-handoff | **任务确实需要时才读，不为形式全部加载** |
-| `docs/handoff/memory/` 全目录 | 109 个记忆条目，含各条教训的原话与代价 | **按 `MEMORY.md` 索引按需展开** |
+| `/Users/zhouleixishu/.codex/skills/global-ai-*/SKILL.md`、`global-academic-*/SKILL.md` 和 `paper-formula-symbol-audit/SKILL.md` | 十六份跨项目通用技能：六份负责沟通、决策、证据、执行、项目和代理协作；九份负责研究定题、文献、模型、数据仿真、根因、实验、算法、复现和论文投稿；一份负责复杂公式与符号审计 | **任务确实需要时才读，不为形式全部加载** |
+| `HANDOFF.md`、`docs/handoff/memory/` 和旧计划／旧报告 | 历史时间线、主题证据和原始来路 | 只按当前事实源的证据地图定点展开 |
 
 ⚠️ **本文件不是规矩的全集，也不许被当成全集。**
 本文件与上表任何一处冲突时，按 `/Users/zhouleixishu/.codex/AGENTS.md` 第 0 条的效力顺序判断。
-在本文件里查不到某条规矩，**不等于那条规矩不存在**——去上表对应位置找。
+在本文件里查不到某条规矩，**不等于那条规矩不存在**；按任务到上表的规矩源查。
+在当前事实入口里查不到历史细节，也不等于历史被删除；按证据地图定点追溯即可。

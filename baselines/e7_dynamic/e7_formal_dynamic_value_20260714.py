@@ -701,7 +701,14 @@ def _project_asset_chain(
         )
         if not candidates:
             return None
-        returned, departure, _ = candidates[0]
+        (
+            returned,
+            departure,
+            _asset_id,
+            _departure_battery,
+            return_battery,
+            _public_charging_actions,
+        ) = candidates[0]
         minimum_slack = min(
             minimum_slack,
             float(profile.latest_departure_second) - float(departure),
@@ -709,11 +716,9 @@ def _project_asset_chain(
         working.available_second = float(returned)
         working.next_trip_index += 1
         if route.vehicle_type.lower() == "ev":
-            departure_battery = max(
-                float(working.battery_kwh),
-                float(profile.drive_energy_kwh),
-            )
-            working.battery_kwh = departure_battery - float(profile.drive_energy_kwh)
+            if return_battery is None:
+                return None
+            working.battery_kwh = float(return_battery)
     return minimum_slack, float(working.available_second)
 
 

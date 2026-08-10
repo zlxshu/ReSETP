@@ -10,14 +10,17 @@ bounds, and every source/scenario boundary stays visible in the bundle.
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
 import json
 import math
+from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping
 
-from .charging_curve import NL90_MILD
+from .charging_curve import (
+    M17_22KW_NORMAL_PWL,
+    M17_FAST_SHAPE_SCALED_60KW_PWL,
+)
 from .instance_loader import (
     Instance,
     Node,
@@ -30,7 +33,6 @@ from .model_config import (
     ModelConfig,
 )
 from .prices import PriceParameters
-
 
 DEFAULT_CHINA81_DATE = "2025-02-12"
 CHINA81_HORIZON_START_SECOND = 6 * 60 * 60
@@ -955,9 +957,24 @@ def _china_prices(
         revenue_per_kg=1.5,
         fairness_theta=1.0,
         c_km=0.78,
-        charging_curve_id=NL90_MILD.curve_id,
-        charging_soc_breakpoints=NL90_MILD.soc_breakpoints,
-        charging_relative_powers=NL90_MILD.relative_powers,
+        # Compatibility triple for code that only ever constructs depot
+        # charging.  New charging code resolves the explicit technology
+        # triples below.  Montoya et al. (2017), Fig. 8, p. 13 supplies both
+        # normalized shapes; the public fast shape is transparently scaled
+        # from its 44 kW source to the preserved China81 60 kW station power.
+        charging_curve_id=M17_22KW_NORMAL_PWL.curve_id,
+        charging_soc_breakpoints=M17_22KW_NORMAL_PWL.soc_breakpoints,
+        charging_relative_powers=M17_22KW_NORMAL_PWL.relative_powers,
+        depot_charging_curve_id=M17_22KW_NORMAL_PWL.curve_id,
+        depot_charging_soc_breakpoints=M17_22KW_NORMAL_PWL.soc_breakpoints,
+        depot_charging_relative_powers=M17_22KW_NORMAL_PWL.relative_powers,
+        public_charging_curve_id=M17_FAST_SHAPE_SCALED_60KW_PWL.curve_id,
+        public_charging_soc_breakpoints=(
+            M17_FAST_SHAPE_SCALED_60KW_PWL.soc_breakpoints
+        ),
+        public_charging_relative_powers=(
+            M17_FAST_SHAPE_SCALED_60KW_PWL.relative_powers
+        ),
     )
 
 

@@ -8,23 +8,24 @@ non-overlapping trips to real vehicles, and carries battery between trips.
 
 from __future__ import annotations
 
+import heapq
+import math
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
-import heapq
 from typing import Any
 
-from ..charging_curve import (
-    ChargingCurveError,
-    L100_CONTROL,
-    PiecewiseChargingCurve,
-    curve_from_parameters,
-    pack_trip_chain,
-)
 from ..charge_timing import (
     DEFAULT_CHARGE_TIMING_POLICY,
     charge_timing_objective_value,
     select_charge_timing_start,
     validate_charge_timing_policy,
+)
+from ..charging_curve import (
+    L100_CONTROL,
+    ChargingCurveError,
+    PiecewiseChargingCurve,
+    curve_for_charging_node,
+    pack_trip_chain,
 )
 from ..cost import (
     _arc_loads,
@@ -39,8 +40,13 @@ from ..cost import (
 )
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, route_trip_vehicle_id
-
+from ..solution import (
+    ChargingAction,
+    Route,
+    Solution,
+    physical_vehicle_id,
+    route_trip_vehicle_id,
+)
 
 LEGACY_CONTRACT_ID = "E3_STRICT_MULTITRIP_V1"
 CONTRACT_ID = "E3_STRICT_MULTITRIP_V2"
@@ -237,8 +243,9 @@ def _curve_for_prices(
     instance: Instance | None = None,
 ) -> PiecewiseChargingCurve:
     try:
-        return curve_from_parameters(
+        return curve_for_charging_node(
             prices,
+            node_type="d",
             capacity_kwh=(
                 _price(prices, "B_battery_kwh")
                 if instance is None
@@ -385,6 +392,7 @@ def route_timing(
     *,
     charging_actions: list[ChargingAction] | None = None,
     validate_battery: bool = True,
+    forced_departure_second: float | None = None,
 ) -> TripTiming:
     """Compute one legal route-to-trip interval without changing route schema.
 
@@ -438,7 +446,34 @@ def route_timing(
     # latest feasible origin service time by the standard backward time-window
     # recursion, then replay forward. The former "remove all waiting" shortcut
     # could push an early-due customer past its deadline on mixed-shift routes.
-    if public_actions:
+    if forced_departure_second is not None:
+        depart = float(forced_departure_second)
+        if not math.isfinite(depart):
+            raise ValueError(
+                f"{CONTRACT_ID}: route {route.vehicle_id} has a non-finite "
+                "forced departure"
+            )
+        earliest_origin_departure = (
+            float(origin.ready_time) + float(origin.service_time)
+        )
+        if depart < earliest_origin_departure - _TOL:
+            raise ValueError(
+                f"{CONTRACT_ID}: route {route.vehicle_id} departs before its "
+                "home depot is ready"
+            )
+        depot_charge_ends = [
+            float(action.charge_start_second)
+            + float(action.occupancy_minutes) * 60.0
+            for action in route_actions
+            if action.station_id == route.home_depot_id
+            and int(action.charge_day_offset) == 0
+        ]
+        if depot_charge_ends and max(depot_charge_ends) > depart + _TOL:
+            raise ValueError(
+                f"{CONTRACT_ID}: route {route.vehicle_id} departs before its "
+                "depot charge ends"
+            )
+    elif public_actions:
         # Existing public-charge clocks are part of the solution witness.
         # Keep their clocks fixed and verify them; do not move or recreate a
         # station action inside the certificate.  A same-day depot charge is

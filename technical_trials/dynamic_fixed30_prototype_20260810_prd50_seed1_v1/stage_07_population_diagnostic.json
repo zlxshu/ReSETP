@@ -1,0 +1,362 @@
+{
+  "stage": 7,
+  "trigger_second": 48600.0,
+  "active_customers": 49,
+  "future_customers": 25,
+  "requested_size": 25,
+  "actual_size": 25,
+  "initialization_mode": "current-plan-exact-regret2-insertion-then-random-skeleton-fill",
+  "attempts_exhausted": false,
+  "complete_feasible_candidates": 22,
+  "wall_seconds": 0.9995133329648525,
+  "attempts": {
+    "attempt_count": 142,
+    "status_counts": {
+      "ADMITTED": 49,
+      "DUPLICATE_CANDIDATE": 7,
+      "REJECTED": 42,
+      "REJECTED_INTERFACE": 44
+    },
+    "error_counts": {
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_guangzhou_1-1": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_guangzhou_2-1": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_shenzhen_1-2": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_shenzhen_3-2": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-EV_D_shenzhen_1-2": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_1-1 misses C038": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_1-1 misses C040": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_1-1 misses C049": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_2-1 exceeds capacity": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 exceeds capacity": 10,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 misses C030": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 misses C044": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 misses C045": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_guangzhou_1-1 exceeds capacity": 9,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_guangzhou_1-1 exceeds one battery": 45,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_guangzhou_1-2 exceeds one battery": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_shenzhen_1-1 misses C029": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_shenzhen_1-1 misses C034": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_shenzhen_1-1 misses C042": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_shenzhen_1-1 misses C048": 2
+    },
+    "violation_counts": {
+      "CHARGING_START": 5
+    },
+    "total_attempt_wall_seconds": 0.9884081236086786,
+    "max_attempt_wall_seconds": 0.08135000005131587,
+    "sample": [
+      {
+        "action_id": "regret2-baseline",
+        "status": "ADMITTED",
+        "fingerprint": "345acc4e4d7f02280af42611034ccc1deed35e7aea8ed05d850a345608dd840c",
+        "feasible": true,
+        "violation_types": [],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.05960116698406637
+      },
+      {
+        "action_id": "regret-new-trip:C042->CV_D_guangzhou_1",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_guangzhou_1-1",
+        "wall_seconds": 0.0003980420297011733
+      },
+      {
+        "action_id": "regret-new-trip:C042->CV_D_guangzhou_2",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_guangzhou_2-1",
+        "wall_seconds": 0.00038233300438150764
+      },
+      {
+        "action_id": "regret-new-trip:C042->CV_D_guangzhou_3",
+        "status": "ADMITTED",
+        "fingerprint": "22158d16b3213706ea3540538cd96a0bc9101e55b62e37497b7762a3563f3365",
+        "feasible": true,
+        "violation_types": [],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.005350374965928495
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_1#T1@0",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_1-1 misses C040",
+        "wall_seconds": 0.0005089169717393816
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_1#T1@1",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_1-1 misses C038",
+        "wall_seconds": 0.00039724999805912375
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_1#T1@2",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_1-1 misses C049",
+        "wall_seconds": 0.000382583006285131
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_1#T1@3",
+        "status": "ADMITTED",
+        "fingerprint": "73a73a34eca91439cc41d857f26fd2fa04bdfcc9ac3ea14f8cd153701e3c0368",
+        "feasible": true,
+        "violation_types": [],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.006724499980919063
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_1#T1@4",
+        "status": "ADMITTED",
+        "fingerprint": "e37d3914db3364b1f02a26e94a7a78b74f065f07359c8db78863f32ccef94d86",
+        "feasible": true,
+        "violation_types": [],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.005626416997984052
+      },
+      {
+        "action_id": "regret-new-trip:C042->CV_D_shenzhen_1",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_shenzhen_1-2",
+        "wall_seconds": 0.00046395795652642846
+      },
+      {
+        "action_id": "regret-new-trip:C042->CV_D_shenzhen_2",
+        "status": "ADMITTED",
+        "fingerprint": "8d03ade19e5be154f37b0a6404f1b4e5d059164b9d257edcac7e04a599a4ab63",
+        "feasible": true,
+        "violation_types": [],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.005641208961606026
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_3#T1@0",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 exceeds capacity",
+        "wall_seconds": 0.0005656669964082539
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_3#T1@1",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 exceeds capacity",
+        "wall_seconds": 0.0005039999959990382
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_3#T1@2",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 exceeds capacity",
+        "wall_seconds": 0.00048533297376707196
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_3#T1@3",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 exceeds capacity",
+        "wall_seconds": 0.0004928330308757722
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_3#T1@4",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 exceeds capacity",
+        "wall_seconds": 0.0004788339720107615
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_3#T1@5",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 exceeds capacity",
+        "wall_seconds": 0.0014603330055251718
+      },
+      {
+        "action_id": "regret-insert:C042->CV_D_shenzhen_3#T1@6",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_shenzhen_3-1 exceeds capacity",
+        "wall_seconds": 0.0013722919975407422
+      },
+      {
+        "action_id": "regret-new-trip:C042->CV_D_shenzhen_3",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_shenzhen_3-2",
+        "wall_seconds": 0.000548791023902595
+      },
+      {
+        "action_id": "regret-insert:C042->EV_D_guangzhou_1#T1@0",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_guangzhou_1-1 exceeds capacity",
+        "wall_seconds": 0.0006100420141592622
+      }
+    ],
+    "sample_limit": 20
+  },
+  "asset_states": {
+    "CV_D_guangzhou_1": {
+      "physical_vehicle_id": "CV_D_guangzhou_1",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_guangzhou",
+      "available_second": 61992.899280000005,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 2
+    },
+    "CV_D_guangzhou_2": {
+      "physical_vehicle_id": "CV_D_guangzhou_2",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_guangzhou",
+      "available_second": 64803.549680000004,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 2
+    },
+    "CV_D_guangzhou_3": {
+      "physical_vehicle_id": "CV_D_guangzhou_3",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_guangzhou",
+      "available_second": 48600.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_shenzhen_1": {
+      "physical_vehicle_id": "CV_D_shenzhen_1",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_shenzhen",
+      "available_second": 51985.7,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 2
+    },
+    "CV_D_shenzhen_2": {
+      "physical_vehicle_id": "CV_D_shenzhen_2",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_shenzhen",
+      "available_second": 48600.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_shenzhen_3": {
+      "physical_vehicle_id": "CV_D_shenzhen_3",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_shenzhen",
+      "available_second": 48600.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "EV_D_guangzhou_1": {
+      "physical_vehicle_id": "EV_D_guangzhou_1",
+      "vehicle_type": "ev",
+      "home_depot_id": "D_guangzhou",
+      "available_second": 48600.0,
+      "remaining_battery_kwh": 30.83650812327102,
+      "next_trip_index": 1
+    },
+    "EV_D_shenzhen_1": {
+      "physical_vehicle_id": "EV_D_shenzhen_1",
+      "vehicle_type": "ev",
+      "home_depot_id": "D_shenzhen",
+      "available_second": 51571.9468,
+      "remaining_battery_kwh": 2.9042068865664454,
+      "next_trip_index": 2
+    }
+  },
+  "unserved_customers": [
+    "C042"
+  ],
+  "readiness_progress": [],
+  "search_accounting": {
+    "proposed_actions": {
+      "depot_collaboration": 30
+    },
+    "evaluated_actions": {},
+    "accepted_actions": {},
+    "rejected_actions": {
+      "depot_collaboration:REJECTED_INTERFACE": 30
+    },
+    "no_change_actions": {},
+    "full_evaluations": 146,
+    "initialization_full_evaluations": 146,
+    "incremental_evaluations": 0,
+    "sentinel_evaluations": 0,
+    "actual_full_model_evaluations": 146,
+    "cache_seedings": 0,
+    "duty_slice_preparations": 0,
+    "candidate_assemblies": 0,
+    "crossover_calls": 11,
+    "crossover_actions": {},
+    "crossover_work_units": {},
+    "repair_calls": 6,
+    "education_rounds": 10,
+    "population_admission_attempts": 0,
+    "population_admissions": 0,
+    "restarts": 0,
+    "wall_seconds": 0.02408145909430459,
+    "run_wall_seconds": 4.610207499994431,
+    "initialization_wall_seconds": 0.9995133329648525,
+    "total_algorithm_wall_seconds": 5.609720832959283
+  },
+  "proposal_engine": {
+    "source_id": "integrated-private-hgs-dynamic",
+    "identity_sha256": "4a6f11538a820fd914649df1a74867721a9e8368db5af055e319c3e0848a7f30",
+    "providers": [
+      {
+        "source_id": "setp_hgs_kernel-0.12.2-local-search-unique-duty-slots-v3:dynamic_stage_7_route",
+        "identity_sha256": "4a6f11538a820fd914649df1a74867721a9e8368db5af055e319c3e0848a7f30"
+      }
+    ]
+  }
+}

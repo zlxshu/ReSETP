@@ -1,0 +1,332 @@
+{
+  "stage": 7,
+  "trigger_second": 45000.0,
+  "active_customers": 50,
+  "future_customers": 14,
+  "requested_size": 25,
+  "actual_size": 2,
+  "initialization_mode": "current-plan-exact-regret2-insertion-then-random-skeleton-fill",
+  "attempts_exhausted": false,
+  "complete_feasible_candidates": 0,
+  "wall_seconds": 10.000386332976632,
+  "attempts": {
+    "attempt_count": 22935,
+    "status_counts": {
+      "REJECTED": 22864,
+      "REJECTED_INTERFACE": 61,
+      "REPAIR_INCOMPLETE": 10
+    },
+    "error_counts": {
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_1-1": 22864,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_2-1": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_3-1": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_4-1": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_4-2": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_5-1": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_tianjin_1-2": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_tianjin_2-1": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-EV_D_beijing_1-1": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-EV_D_tianjin_1-1": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity": 23,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 misses C029": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 misses C030": 3,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 misses C044": 2,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C030": 9,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C041": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C044": 3,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C047": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_beijing_1-1 exceeds one battery": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_beijing_1-1 misses C030": 1,
+      "ValueError: E7_DYNAMIC_MULTITRIP_V1: route open-EV_D_tianjin_1-1 exceeds one battery": 2
+    },
+    "violation_counts": {
+      "CUSTOMER_COVERAGE": 10
+    },
+    "total_attempt_wall_seconds": 9.901409053185489,
+    "max_attempt_wall_seconds": 0.04283366701565683,
+    "sample": [
+      {
+        "action_id": "regret2-baseline",
+        "status": "REPAIR_INCOMPLETE",
+        "fingerprint": "142aae1661397cfecbaaff3b775adbec45fc23095cd5ad088a1a8c7b9bd73d34",
+        "feasible": false,
+        "violation_types": [
+          "CUSTOMER_COVERAGE"
+        ],
+        "error_type": null,
+        "error": "unserved customers remain: C030",
+        "wall_seconds": 0.040282542002387345
+      },
+      {
+        "action_id": "regret-new-trip:C030->CV_D_beijing_1",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_1-1",
+        "wall_seconds": 0.0003381669521331787
+      },
+      {
+        "action_id": "regret-new-trip:C030->CV_D_beijing_2",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_2-1",
+        "wall_seconds": 0.0003370419726707041
+      },
+      {
+        "action_id": "regret-new-trip:C030->CV_D_beijing_3",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_3-1",
+        "wall_seconds": 0.00032604101579636335
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_beijing_4#T1@0",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity",
+        "wall_seconds": 0.0003180829808115959
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_beijing_4#T1@1",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity",
+        "wall_seconds": 0.00031916704028844833
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_beijing_4#T1@2",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity",
+        "wall_seconds": 0.00031945796217769384
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_beijing_4#T1@3",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity",
+        "wall_seconds": 0.0003166249953210354
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_beijing_4#T1@4",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity",
+        "wall_seconds": 0.00031287502497434616
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_beijing_4#T1@5",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity",
+        "wall_seconds": 0.00031645799754187465
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_beijing_4#T1@6",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity",
+        "wall_seconds": 0.00032637501135468483
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_beijing_4#T1@7",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_beijing_4-1 exceeds capacity",
+        "wall_seconds": 0.0003137909807264805
+      },
+      {
+        "action_id": "regret-new-trip:C030->CV_D_beijing_4",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_4-2",
+        "wall_seconds": 0.00036204204661771655
+      },
+      {
+        "action_id": "regret-new-trip:C030->CV_D_beijing_5",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route open-CV_D_beijing_5-1",
+        "wall_seconds": 0.000458291033282876
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_tianjin_1#T1@0",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C041",
+        "wall_seconds": 0.00045300001511350274
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_tianjin_1#T1@1",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C030",
+        "wall_seconds": 0.0004523330135270953
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_tianjin_1#T1@2",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C030",
+        "wall_seconds": 0.00045204104389995337
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_tianjin_1#T1@3",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C030",
+        "wall_seconds": 0.00046137499157339334
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_tianjin_1#T1@4",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C030",
+        "wall_seconds": 0.0004487080150283873
+      },
+      {
+        "action_id": "regret-insert:C030->CV_D_tianjin_1#T1@5",
+        "status": "REJECTED_INTERFACE",
+        "fingerprint": null,
+        "feasible": null,
+        "violation_types": [],
+        "error_type": "ValueError",
+        "error": "E7_DYNAMIC_MULTITRIP_V1: route open-CV_D_tianjin_1-1 misses C030",
+        "wall_seconds": 0.0004498329944908619
+      }
+    ],
+    "sample_limit": 20
+  },
+  "asset_states": {
+    "CV_D_beijing_1": {
+      "physical_vehicle_id": "CV_D_beijing_1",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_beijing",
+      "available_second": 45000.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_beijing_2": {
+      "physical_vehicle_id": "CV_D_beijing_2",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_beijing",
+      "available_second": 65625.15032,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 2
+    },
+    "CV_D_beijing_3": {
+      "physical_vehicle_id": "CV_D_beijing_3",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_beijing",
+      "available_second": 61657.178139999996,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 2
+    },
+    "CV_D_beijing_4": {
+      "physical_vehicle_id": "CV_D_beijing_4",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_beijing",
+      "available_second": 48304.52744000001,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 2
+    },
+    "CV_D_beijing_5": {
+      "physical_vehicle_id": "CV_D_beijing_5",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_beijing",
+      "available_second": 52742.44978000001,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 2
+    },
+    "CV_D_tianjin_1": {
+      "physical_vehicle_id": "CV_D_tianjin_1",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_tianjin",
+      "available_second": 45000.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_tianjin_2": {
+      "physical_vehicle_id": "CV_D_tianjin_2",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_tianjin",
+      "available_second": 45000.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "EV_D_beijing_1": {
+      "physical_vehicle_id": "EV_D_beijing_1",
+      "vehicle_type": "ev",
+      "home_depot_id": "D_beijing",
+      "available_second": 65437.994,
+      "remaining_battery_kwh": 1.6063879820545353,
+      "next_trip_index": 2
+    },
+    "EV_D_tianjin_1": {
+      "physical_vehicle_id": "EV_D_tianjin_1",
+      "vehicle_type": "ev",
+      "home_depot_id": "D_tianjin",
+      "available_second": 61171.54214,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 2
+    }
+  },
+  "unserved_customers": [
+    "C030",
+    "C044"
+  ],
+  "readiness_progress": []
+}

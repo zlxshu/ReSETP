@@ -1,0 +1,137 @@
+{
+  "stage": 5,
+  "trigger_second": 43200.0,
+  "active_customers": 47,
+  "future_customers": 47,
+  "requested_size": 2,
+  "actual_size": 2,
+  "initialization_mode": "current-plan-exact-regret2-insertion",
+  "attempts_exhausted": false,
+  "complete_feasible_candidates": 1,
+  "wall_seconds": 0.06332337501225993,
+  "attempts": {
+    "attempt_count": 1,
+    "status_counts": {
+      "ADMITTED": 1
+    },
+    "error_counts": {},
+    "violation_counts": {},
+    "total_attempt_wall_seconds": 0.05913479102309793,
+    "max_attempt_wall_seconds": 0.05913479102309793,
+    "sample": [
+      {
+        "action_id": "regret2-baseline",
+        "status": "ADMITTED",
+        "fingerprint": "5799f700645a7733589b26bcf93547b3c8a345f2444a8437581d0064f95273b6",
+        "feasible": true,
+        "violation_types": [],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.05913479102309793
+      }
+    ],
+    "sample_limit": 20
+  },
+  "asset_states": {
+    "CV_D_guangzhou_1": {
+      "physical_vehicle_id": "CV_D_guangzhou_1",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_guangzhou",
+      "available_second": 43200.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_guangzhou_2": {
+      "physical_vehicle_id": "CV_D_guangzhou_2",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_guangzhou",
+      "available_second": 43200.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_guangzhou_3": {
+      "physical_vehicle_id": "CV_D_guangzhou_3",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_guangzhou",
+      "available_second": 43200.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_shenzhen_1": {
+      "physical_vehicle_id": "CV_D_shenzhen_1",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_shenzhen",
+      "available_second": 43200.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_shenzhen_2": {
+      "physical_vehicle_id": "CV_D_shenzhen_2",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_shenzhen",
+      "available_second": 43200.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_shenzhen_3": {
+      "physical_vehicle_id": "CV_D_shenzhen_3",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_shenzhen",
+      "available_second": 43200.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "EV_D_guangzhou_1": {
+      "physical_vehicle_id": "EV_D_guangzhou_1",
+      "vehicle_type": "ev",
+      "home_depot_id": "D_guangzhou",
+      "available_second": 43200.0,
+      "remaining_battery_kwh": 28.744337986128677,
+      "next_trip_index": 1
+    },
+    "EV_D_shenzhen_1": {
+      "physical_vehicle_id": "EV_D_shenzhen_1",
+      "vehicle_type": "ev",
+      "home_depot_id": "D_shenzhen",
+      "available_second": 44074.391585198726,
+      "remaining_battery_kwh": 23.92591380949268,
+      "next_trip_index": 1
+    }
+  },
+  "unserved_customers": [
+    "C018"
+  ],
+  "readiness_progress": [],
+  "search_accounting": {
+    "proposed_actions": {},
+    "evaluated_actions": {},
+    "accepted_actions": {},
+    "rejected_actions": {},
+    "no_change_actions": {},
+    "full_evaluations": 3,
+    "initialization_full_evaluations": 3,
+    "incremental_evaluations": 0,
+    "sentinel_evaluations": 0,
+    "actual_full_model_evaluations": 3,
+    "cache_seedings": 0,
+    "duty_slice_preparations": 0,
+    "candidate_assemblies": 0,
+    "crossover_calls": 0,
+    "crossover_actions": {},
+    "crossover_work_units": {},
+    "repair_calls": 0,
+    "education_rounds": 0,
+    "population_admission_attempts": 0,
+    "population_admissions": 0,
+    "restarts": 0,
+    "wall_seconds": 0.0,
+    "run_wall_seconds": 0.0,
+    "initialization_wall_seconds": 0.06332337501225993,
+    "total_algorithm_wall_seconds": 0.06332337501225993
+  },
+  "proposal_engine": {
+    "source_id": "mechanical-regret2-insertion-control",
+    "identity_sha256": null,
+    "providers": []
+  }
+}

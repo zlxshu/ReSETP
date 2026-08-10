@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from setp_solver.instance_loader import Instance, Node
+from setp_solver.charging_curve import L100_CONTROL
 from setp_solver.cost import evaluate
 from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
@@ -20,7 +21,11 @@ from setp_solver.search.dynamic_multitrip_schedule import (
     reschedule_dynamic_charging,
 )
 from setp_solver.search.metaheuristic_baselines import solution_from_dict
-from setp_solver.search.multitrip_schedule import MultiTripCertificate, ScheduledTrip
+from setp_solver.search.multitrip_schedule import (
+    MultiTripCertificate,
+    ScheduledTrip,
+    route_timing,
+)
 from setp_solver.solution import ChargingAction, Route, Solution, physical_vehicle_id
 
 
@@ -125,6 +130,171 @@ def test_exact_asset_scheduler_reuses_inherited_id_and_trip_sequence() -> None:
     assert all(action.charge_day_offset == 0 for action in prepared.charging_actions)
     assert all(action.charge_start_second >= 100.0 for action in prepared.charging_actions)
     ordered = sorted(certificate.trips, key=lambda trip: trip.trip_index)
+    assert ordered[1].departure_second >= ordered[0].return_second
+
+
+def test_dynamic_ev_route_keeps_public_station_charge_in_exact_ledger() -> None:
+    instance = Instance(
+        nodes=[
+            Node(
+                "D0",
+                "d",
+                0.0,
+                0.0,
+                ready_time=0.0,
+                due_time=10_000.0,
+                charge_power_kw=22.0,
+            ),
+            Node(
+                "F1",
+                "f",
+                1.0,
+                0.0,
+                ready_time=0.0,
+                due_time=10_000.0,
+                charge_power_kw=60.0,
+                station_chargers=1,
+            ),
+            Node(
+                "C1",
+                "c",
+                2.0,
+                0.0,
+                demand=1.0,
+                ready_time=0.0,
+                due_time=10_000.0,
+            ),
+        ],
+        distance_matrix=[
+            [0.0, 100.0, 200.0],
+            [100.0, 0.0, 100.0],
+            [200.0, 100.0, 0.0],
+        ],
+        ev_kwh_per_meter=0.01,
+        num_cv=0,
+        num_ev=1,
+    )
+    public = ChargingAction(
+        vehicle_id="open-public",
+        station_id="F1",
+        energy_kwh=2.0,
+        occupancy_minutes=2.0,
+        charge_start_second=1_000.0,
+        start_energy_kwh=1.0,
+        end_energy_kwh=3.0,
+        charging_curve_id=L100_CONTROL.curve_id,
+    )
+    source = Solution(
+        routes=[
+            Route(
+                "open-public",
+                "ev",
+                "D0",
+                ["D0", "F1", "C1", "D0"],
+            )
+        ],
+        charging_actions=[public],
+    )
+    prices = replace(
+        DEFAULT_PRICES,
+        B_battery_kwh=10.0,
+        initial_ev_battery_kwh=0.0,
+        depot_charge_power_kw=22.0,
+    )
+    state = DynamicAssetState("EV_D0_1", "ev", "D0", 100.0, 0.0, 1)
+
+    prepared, certificate = prepare_dynamic_multitrip_solution(
+        source,
+        instance,
+        prices,
+        asset_states={state.physical_vehicle_id: state},
+        stage_start_second=100.0,
+    )
+
+    assert {action.station_id for action in prepared.charging_actions} == {
+        "D0",
+        "F1",
+    }
+    public_action = next(
+        action
+        for action in prepared.charging_actions
+        if action.station_id == "F1"
+    )
+    assert public_action.vehicle_id == "EV_D0_1#T1"
+    trip = certificate.trips[0]
+    timing = route_timing(
+        prepared.routes[0],
+        instance,
+        prices,
+        charging_actions=prepared.charging_actions,
+        forced_departure_second=trip.departure_second,
+    )
+    assert trip.fixed_departure_battery_kwh == pytest.approx(
+        timing.required_departure_battery_kwh
+    )
+    assert trip.in_route_charge_energy_kwh == pytest.approx(2.0)
+    assert trip.end_battery_kwh == pytest.approx(
+        float(trip.start_battery_kwh)
+        + timing.public_charge_energy_kwh
+        - timing.drive_energy_kwh
+    )
+
+
+def test_explicit_duty_precedence_prevents_later_trip_from_running_first() -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, ready_time=0.0, due_time=10_000.0),
+            Node(
+                "C_FIRST",
+                "c",
+                1.0,
+                0.0,
+                demand=1.0,
+                ready_time=1_000.0,
+                due_time=2_000.0,
+            ),
+            Node(
+                "C_SECOND",
+                "c",
+                2.0,
+                0.0,
+                demand=1.0,
+                ready_time=1_900.0,
+                due_time=1_950.0,
+            ),
+        ],
+        distance_matrix=[
+            [0.0, 1_000.0, 1_000.0],
+            [1_000.0, 0.0, 1_000.0],
+            [1_000.0, 1_000.0, 0.0],
+        ],
+        num_cv=1,
+        num_ev=0,
+    )
+    source = Solution(
+        routes=[
+            Route("open-first", "cv", "D0", ["D0", "C_FIRST", "D0"]),
+            Route("open-second", "cv", "D0", ["D0", "C_SECOND", "D0"]),
+        ]
+    )
+    state = DynamicAssetState("CV_D0_1", "cv", "D0", 0.0, 0.0, 1)
+
+    prepared, certificate = prepare_dynamic_multitrip_solution(
+        source,
+        instance,
+        DEFAULT_PRICES,
+        asset_states={state.physical_vehicle_id: state},
+        stage_start_second=0.0,
+        ordered_route_ids=("open-first", "open-second"),
+    )
+
+    ordered = sorted(certificate.trips, key=lambda trip: trip.trip_index)
+    assert [trip.route_id for trip in ordered] == [
+        "CV_D0_1#T1",
+        "CV_D0_1#T2",
+    ]
+    route_customers = [route.node_sequence[1] for route in prepared.routes]
+    assert route_customers == ["C_FIRST", "C_SECOND"]
     assert ordered[1].departure_second >= ordered[0].return_second
 
 

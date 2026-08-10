@@ -1,0 +1,692 @@
+{
+  "BOTH_TYPES_AVAILABLE": {
+    "individual": {
+      "duties": [
+        {
+          "physical_vehicle_id": "CV_D_chengdu_1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_chengdu_2",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_chengdu_3",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_chengdu_4",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_chongqing_1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C050",
+                "C042",
+                "C043",
+                "C022",
+                "C046",
+                "C028",
+                "C045"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            },
+            {
+              "trip_index": 2,
+              "customer_ids": [
+                "C029",
+                "C037",
+                "C026",
+                "C033"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_chongqing_2",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_chongqing_3",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_chongqing_4",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_chongqing_5",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chengdu_1",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chengdu",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C013",
+                "C006",
+                "C021",
+                "C008"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_chengdu",
+              "energy_kwh": 15.024826355955547,
+              "occupancy_minutes": 41.0973191501137,
+              "charge_start_second": 21600.0,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 15.024826355955547,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chengdu_2",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chengdu",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C014",
+                "C017",
+                "C003",
+                "C010",
+                "C001"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            },
+            {
+              "trip_index": 2,
+              "customer_ids": [
+                "C002",
+                "C012",
+                "C011",
+                "C018",
+                "C004",
+                "C019"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_chengdu",
+              "energy_kwh": 16.987529407213007,
+              "occupancy_minutes": 46.46588926090617,
+              "charge_start_second": 21600.0,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 16.987529407213007,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            },
+            {
+              "trip_index": 2,
+              "station_id": "D_chengdu",
+              "energy_kwh": 19.973290104403613,
+              "occupancy_minutes": 54.6328229326334,
+              "charge_start_second": 51128.96644,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 19.973290104403613,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chengdu_3",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chengdu",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chengdu_4",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chengdu",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C009",
+                "C016",
+                "C005",
+                "C015",
+                "C007",
+                "C020"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_chengdu",
+              "energy_kwh": 21.133368198060754,
+              "occupancy_minutes": 57.80597771822501,
+              "charge_start_second": 21731.641336906,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 21.133368198060754,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chongqing_1",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chongqing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C049",
+                "C035",
+                "C038",
+                "C024",
+                "C041",
+                "C039",
+                "C032"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_chongqing",
+              "energy_kwh": 29.048738343026326,
+              "occupancy_minutes": 79.45684311474848,
+              "charge_start_second": 24032.589413115,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 29.048738343026326,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chongqing_2",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chongqing",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chongqing_3",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chongqing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C048",
+                "C023",
+                "C025",
+                "C027",
+                "C047",
+                "C030"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_chongqing",
+              "energy_kwh": 26.838826347456198,
+              "occupancy_minutes": 73.41208383274784,
+              "charge_start_second": 24395.274970035,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 26.838826347456198,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chongqing_4",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chongqing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C034",
+                "C036",
+                "C044",
+                "C040",
+                "C031"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_chongqing",
+              "energy_kwh": 29.2088385508307,
+              "occupancy_minutes": 79.89476427138986,
+              "charge_start_second": 24006.314143717,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 29.2088385508307,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_chongqing_5",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chongqing",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        }
+      ],
+      "unserved_customers": [],
+      "version": 1,
+      "source": "whole_duty_type_exchange:whole-duty-type-exchange:CV_D_chengdu_1<->EV_D_chengdu_1"
+    },
+    "evaluation": {
+      "total_cost": 1929.2940511336446,
+      "breakdown": {
+        "total_cost": 1929.2940511336446,
+        "cost_fix": 1190.0,
+        "cost_km": 480.67029283889934,
+        "cost_fuel": 180.74492801738592,
+        "cost_elec": 71.17507716872562,
+        "cost_occ": 0.0,
+        "cost_time": 0.0,
+        "cost_transship": 0.0,
+        "cost_carbon": 6.703753108633588,
+        "E_total": 89.35954556962928,
+        "E_cv_direct": 65.1839795305788,
+        "E_ev_indirect": 24.17556603905048,
+        "n_veh_cv": 1,
+        "n_veh_ev": 6,
+        "distance_total": 687007.1726656801,
+        "distance_cv": 185231.70138994302,
+        "distance_ev": 501775.471275737,
+        "fuel_liters": 24.099323735651453,
+        "electricity_kwh": 158.21541730694614,
+        "route_time_hours": 10.650083333333335,
+        "depot_charging_kwh": 158.21541730694614,
+        "station_charging_kwh": 0,
+        "carbon_quota_kg": 0.0,
+        "ev_drive_kwh": 158.21541730694614
+      },
+      "feasible": true,
+      "prepared_solution": {
+        "routes": [
+          {
+            "vehicle_id": "CV_D_chongqing_1#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C050",
+              "C042",
+              "C043",
+              "C022",
+              "C046",
+              "C028",
+              "C045",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_chongqing_1#T2",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C029",
+              "C037",
+              "C026",
+              "C033",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_1#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C013",
+              "C006",
+              "C021",
+              "C008",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C014",
+              "C017",
+              "C003",
+              "C010",
+              "C001",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T2",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C002",
+              "C012",
+              "C011",
+              "C018",
+              "C004",
+              "C019",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_4#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chengdu",
+            "node_sequence": [
+              "D_chengdu",
+              "C009",
+              "C016",
+              "C005",
+              "C015",
+              "C007",
+              "C020",
+              "D_chengdu"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C049",
+              "C035",
+              "C038",
+              "C024",
+              "C041",
+              "C039",
+              "C032",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_3#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C048",
+              "C023",
+              "C025",
+              "C027",
+              "C047",
+              "C030",
+              "D_chongqing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_4#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_chongqing",
+            "node_sequence": [
+              "D_chongqing",
+              "C034",
+              "C036",
+              "C044",
+              "C040",
+              "C031",
+              "D_chongqing"
+            ]
+          }
+        ],
+        "charging_actions": [
+          {
+            "vehicle_id": "EV_D_chengdu_1#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 15.024826355955547,
+            "occupancy_minutes": 41.0973191501137,
+            "charge_start_second": 21600.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 15.024826355955547,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 16.987529407213007,
+            "occupancy_minutes": 46.46588926090617,
+            "charge_start_second": 21600.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 16.987529407213007,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_2#T2",
+            "station_id": "D_chengdu",
+            "energy_kwh": 19.973290104403613,
+            "occupancy_minutes": 54.6328229326334,
+            "charge_start_second": 51128.96644,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 19.973290104403613,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_chengdu_4#T1",
+            "station_id": "D_chengdu",
+            "energy_kwh": 21.133368198060754,
+            "occupancy_minutes": 57.80597771822501,
+            "charge_start_second": 21731.641336906,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 21.133368198060754,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_1#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 29.048738343026326,
+            "occupancy_minutes": 79.45684311474848,
+            "charge_start_second": 24032.589413115,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 29.048738343026326,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_3#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 26.838826347456198,
+            "occupancy_minutes": 73.41208383274784,
+            "charge_start_second": 24395.274970035,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 26.838826347456198,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_chongqing_4#T1",
+            "station_id": "D_chongqing",
+            "energy_kwh": 29.2088385508307,
+            "occupancy_minutes": 79.89476427138986,
+            "charge_start_second": 24006.314143717,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 29.2088385508307,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          }
+        ],
+        "cross_site_services": []
+      }
+    },
+    "run_accounting": {
+      "iterations": 100,
+      "evaluated": 218,
+      "rejected": 18,
+      "repaired": 65,
+      "restarts": 0,
+      "elapsed_seconds": 148.2930942499661
+    },
+    "private_accounting": {
+      "native_infeasible_candidates": 132,
+      "decoded_candidates": 48,
+      "rejected_candidates": 44,
+      "charging_rescue_attempts": 26,
+      "charging_rescues": 26,
+      "charging_rescue_rejection_reasons": {},
+      "charging_rescue_component_counts": {
+        "2": 34,
+        "1": 10
+      },
+      "charging_rescue_success_component_counts": {
+        "2": 26
+      },
+      "mechanism_calls": 46,
+      "mechanism_improvements": 38,
+      "charging_refinement_calls": 4,
+      "charging_refinement_improvements": 0,
+      "rejection_reasons": {
+        "ChargingRepairFailure: EV_D_chengdu_2: no feasible depot charging window": 4,
+        "ChargingRepairFailure: EV_D_chengdu_3: no feasible depot charging window": 4,
+        "ChargingRepairFailure: EV_D_chengdu_3: No feasible charging insert between D_chengdu and C043": 1,
+        "ChargingRepairFailure: EV_D_chengdu_1: no feasible depot charging window": 8,
+        "ChargingRepairFailure: EV_D_chengdu_1: No feasible charging insert between D_chengdu and C023": 1,
+        "ChargingRepairFailure: EV_D_chengdu_1: No feasible charging insert between D_chengdu and C043": 2,
+        "ChargingRepairFailure: EV_D_chongqing_2: no feasible depot charging window": 4,
+        "ChargingRepairFailure: EV_D_chengdu_2: No feasible charging insert between D_chengdu and C043": 4,
+        "ChargingRepairFailure: EV_D_chongqing_1: no feasible depot charging window": 10,
+        "ChargingRepairFailure: EV_D_chongqing_3: No feasible charging insert between D_chongqing and C014": 1,
+        "ChargingRepairFailure: EV_D_chengdu_4: no feasible depot charging window": 3,
+        "ChargingRepairFailure: EV_D_chengdu_3: No feasible charging insert between D_chengdu and C050": 1,
+        "ChargingRepairFailure: EV_D_chongqing_5: no feasible depot charging window": 1
+      },
+      "mechanism": {
+        "proposed_actions": {
+          "depot_collaboration": 2416,
+          "time_varying_carbon_charge": 6413,
+          "whole_duty_type_exchange": 3851
+        },
+        "evaluated_actions": {
+          "depot_collaboration": 43,
+          "time_varying_carbon_charge": 6413,
+          "whole_duty_type_exchange": 3529
+        },
+        "accepted_actions": {
+          "whole_duty_type_exchange": 73
+        },
+        "rejected_actions": {
+          "depot_collaboration:REJECTED_CHARGING": 2373,
+          "whole_duty_type_exchange:REJECTED_CHARGING": 322
+        },
+        "no_change_actions": {},
+        "full_evaluations": 0,
+        "initialization_full_evaluations": 0,
+        "incremental_evaluations": 9985,
+        "sentinel_evaluations": 73,
+        "actual_full_model_evaluations": 73,
+        "cache_seedings": 123,
+        "duty_slice_preparations": 15771,
+        "candidate_assemblies": 9985,
+        "crossover_calls": 0,
+        "crossover_actions": {},
+        "crossover_work_units": {},
+        "repair_calls": 0,
+        "education_rounds": 123,
+        "population_admission_attempts": 0,
+        "population_admissions": 0,
+        "restarts": 0,
+        "wall_seconds": 96.23912172624841,
+        "run_wall_seconds": 0.0,
+        "initialization_wall_seconds": 0.0,
+        "total_algorithm_wall_seconds": 0.0
+      }
+    }
+  }
+}

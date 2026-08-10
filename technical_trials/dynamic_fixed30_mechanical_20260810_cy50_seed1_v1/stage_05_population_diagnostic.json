@@ -1,0 +1,145 @@
+{
+  "stage": 5,
+  "trigger_second": 37800.0,
+  "active_customers": 46,
+  "future_customers": 46,
+  "requested_size": 2,
+  "actual_size": 2,
+  "initialization_mode": "current-plan-exact-regret2-insertion",
+  "attempts_exhausted": false,
+  "complete_feasible_candidates": 1,
+  "wall_seconds": 0.07046495901886374,
+  "attempts": {
+    "attempt_count": 1,
+    "status_counts": {
+      "ADMITTED": 1
+    },
+    "error_counts": {},
+    "violation_counts": {},
+    "total_attempt_wall_seconds": 0.06663954100804403,
+    "max_attempt_wall_seconds": 0.06663954100804403,
+    "sample": [
+      {
+        "action_id": "regret2-baseline",
+        "status": "ADMITTED",
+        "fingerprint": "5c85cb422d793eb59e541938ea92a18bc9af85e190e3cb4b30aa7a36f00081c3",
+        "feasible": true,
+        "violation_types": [],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.06663954100804403
+      }
+    ],
+    "sample_limit": 20
+  },
+  "asset_states": {
+    "CV_D_chengdu_1": {
+      "physical_vehicle_id": "CV_D_chengdu_1",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_chengdu",
+      "available_second": 37800.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_chengdu_2": {
+      "physical_vehicle_id": "CV_D_chengdu_2",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_chengdu",
+      "available_second": 37800.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_chengdu_3": {
+      "physical_vehicle_id": "CV_D_chengdu_3",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_chengdu",
+      "available_second": 37800.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_chongqing_1": {
+      "physical_vehicle_id": "CV_D_chongqing_1",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_chongqing",
+      "available_second": 37800.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_chongqing_2": {
+      "physical_vehicle_id": "CV_D_chongqing_2",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_chongqing",
+      "available_second": 37800.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_chongqing_3": {
+      "physical_vehicle_id": "CV_D_chongqing_3",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_chongqing",
+      "available_second": 37800.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "CV_D_chongqing_4": {
+      "physical_vehicle_id": "CV_D_chongqing_4",
+      "vehicle_type": "cv",
+      "home_depot_id": "D_chongqing",
+      "available_second": 37800.0,
+      "remaining_battery_kwh": 0.0,
+      "next_trip_index": 1
+    },
+    "EV_D_chengdu_1": {
+      "physical_vehicle_id": "EV_D_chengdu_1",
+      "vehicle_type": "ev",
+      "home_depot_id": "D_chengdu",
+      "available_second": 38423.688651669596,
+      "remaining_battery_kwh": 14.76799536859609,
+      "next_trip_index": 1
+    },
+    "EV_D_chongqing_1": {
+      "physical_vehicle_id": "EV_D_chongqing_1",
+      "vehicle_type": "ev",
+      "home_depot_id": "D_chongqing",
+      "available_second": 37800.0,
+      "remaining_battery_kwh": 33.929227929123996,
+      "next_trip_index": 1
+    }
+  },
+  "unserved_customers": [
+    "C044"
+  ],
+  "readiness_progress": [],
+  "search_accounting": {
+    "proposed_actions": {},
+    "evaluated_actions": {},
+    "accepted_actions": {},
+    "rejected_actions": {},
+    "no_change_actions": {},
+    "full_evaluations": 4,
+    "initialization_full_evaluations": 4,
+    "incremental_evaluations": 0,
+    "sentinel_evaluations": 0,
+    "actual_full_model_evaluations": 4,
+    "cache_seedings": 0,
+    "duty_slice_preparations": 0,
+    "candidate_assemblies": 0,
+    "crossover_calls": 0,
+    "crossover_actions": {},
+    "crossover_work_units": {},
+    "repair_calls": 0,
+    "education_rounds": 0,
+    "population_admission_attempts": 0,
+    "population_admissions": 0,
+    "restarts": 0,
+    "wall_seconds": 0.0,
+    "run_wall_seconds": 0.0,
+    "initialization_wall_seconds": 0.07046495901886374,
+    "total_algorithm_wall_seconds": 0.07046495901886374
+  },
+  "proposal_engine": {
+    "source_id": "mechanical-regret2-insertion-control",
+    "identity_sha256": null,
+    "providers": []
+  }
+}

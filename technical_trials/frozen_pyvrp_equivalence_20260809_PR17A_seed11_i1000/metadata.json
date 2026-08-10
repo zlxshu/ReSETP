@@ -1,0 +1,37 @@
+{
+  "formal_performance_result": false,
+  "implementation": "frozen_baseline",
+  "instance": "PR17A",
+  "instance_sha256": "3ce0c8d46f28378c7389e72c891975987899db0b546095d7343130c96807d156",
+  "iterations": 1000,
+  "purpose": "fixed-iteration behaviour check of the directly copied HGS foundation; no project search component",
+  "round_func": "round",
+  "seed": 11,
+  "source_identity": {
+    "argv": [
+      "solver/scripts/run_problem_hgs_copied_foundation_technical.py",
+      "technical_trials/frozen_pyvrp_equivalence_20260809_PR17A_seed11_i1000",
+      "--instance",
+      "PR17A",
+      "--seed",
+      "11",
+      "--iterations",
+      "1000",
+      "--implementation",
+      "frozen_baseline"
+    ],
+    "compiled_kernel_sha256": {
+      "/Users/zhouleixishu/.codex/python_envs/pyvrp-frozen-0.12.2/lib/python3.13/site-packages/pyvrp/_pyvrp.cpython-313-darwin.so": "f6f99ea630ed70138bd84392ef6a7badd9bbdc50d703f754f83202c6a311287f"
+    },
+    "genetic_algorithm_sha256": "c7c8c068a1fbd42d341e3dddda66b703a8d99ea9236a19ad5fd300d8963470fe",
+    "git_head": "b5b8d0981e9949ff9969372db4d079e0d7dcfe0b",
+    "git_status": "M AGENTS.md\n M HANDOFF.md\n M baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py\n M docs/handoff/duty_hgs_pdca_redesign_for_user_approval_20260809.md\n M docs/handoff/memory/MEMORY.md\n M docs/handoff/rules_coverage_inventory_20260806.md\n M docs/paper_gci_dmm_vrp_20260804/pending_decisions.md\n M solver/src/setp_solver/charging_action.py\n M solver/src/setp_solver/charging_curve.py\n M solver/src/setp_solver/china81.py\n M solver/src/setp_solver/cost.py\n M solver/src/setp_solver/prices.py\n M solver/src/setp_solver/search/dynamic_multitrip_schedule.py\n M solver/src/setp_solver/search/multitrip_schedule.py\n M solver/tests/test_china81_bundle_20260720.py\n M solver/tests/test_dynamic_multitrip_schedule.py\n?? docs/handoff/global_rules_skills_and_management_expansion_20260809.md\n?? docs/handoff/independent_algorithm_status_audit_20260809.md\n?? docs/handoff/independent_hgs_root_cause_roundtable_20260809.md\n?? docs/handoff/independent_problem_hgs_design_20260809.md\n?? docs/handoff/memory/dcrex_independent_architecture_correction_20260809.md\n?? docs/handoff/memory/global_rules_skills_management_expansion_20260809.md\n?? solver/scripts/run_integrated_public_component_scout.py\n?? solver/scripts/run_problem_hgs_copied_foundation_technical.py\n?? solver/scripts/run_problem_hgs_dynamic_disclosure_scout.py\n?? solver/scripts/run_problem_hgs_dynamic_technical.py\n?? solver/scripts/run_problem_hgs_private_technical.py\n?? solver/scripts/run_problem_hgs_public_assignment_insearch_trial.py\n?? solver/scripts/run_problem_hgs_public_assignment_probe.py\n?? solver/scripts/run_problem_hgs_public_technical.py\n?? solver/scripts/run_problem_hgs_static_effect_scout.py\n?? solver/src/setp_solver/algorithms/problem_hgs/\n?? solver/tests/test_problem_hgs_control.py\n?? solver/tests/test_problem_hgs_crossover_control.py\n?? solver/tests/test_problem_hgs_dynamic_public_charging.py\n?? solver/tests/test_problem_hgs_dynamic_unserved.py\n?? solver/tests/test_problem_hgs_integrated_foundation.py\n?? solver/tests/test_problem_hgs_multistage_history.py\n?? solver/tests/test_problem_hgs_population_foundation.py\n?? solver/tests/test_problem_hgs_public_assignment.py\n?? solver/tests/test_problem_hgs_readiness.py\n?? solver/tests/test_problem_hgs_vidal_compound.py\n?? solver/tests/test_station_specific_charging_curves.py\n?? technical_trials/\n?? third_party/setp_hgs_kernel/",
+    "kernel_package": "/Users/zhouleixishu/.codex/python_envs/pyvrp-frozen-0.12.2/lib/python3.13/site-packages/pyvrp",
+    "kernel_version": "0.12.2",
+    "other_package_importable": false,
+    "python_executable": "/Users/zhouleixishu/.codex/python_envs/pyvrp-frozen-0.12.2/bin/python",
+    "runner_sha256": "f8e3064260b1f282b02a7294ed341b44887e5f52972d9378e48a4996588790be",
+    "solve_sha256": "1e304cfdd21fcdffb7bac03afe300d3a18cee7c22defa652bada42776417f0cc"
+  },
+  "status": "COMPLETE"
+}

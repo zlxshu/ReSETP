@@ -18,23 +18,23 @@ integrates their true piecewise power over the same multi-period grid.
 
 from __future__ import annotations
 
+import math
 from bisect import bisect_right
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
-import math
 from typing import Any
 
 from .charging_curve import (
-    ChargingCurveError,
     L100_CONTROL,
+    ChargingCurveError,
     PiecewiseChargingCurve,
-    spec_from_parameters,
     slot_energy_kwh,
+    spec_for_charging_node,
+    spec_from_parameters,
 )
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
 from .solution import ChargingAction, Route, Solution, physical_vehicle_id
-
 
 # v2026-06-11: fixed NESO experiment grid, 2025-11-13 08:00-17:00 UTC.
 CARBON_ORIGIN_UTC = datetime(2025, 11, 13, 8, 0, 0, tzinfo=timezone.utc)
@@ -510,8 +510,27 @@ def charging_curve_for_action(
         action.end_energy_kwh,
         action.charging_curve_id,
     )
+    nodes = {node.node_id: node for node in instance.nodes}
+    station = nodes.get(action.station_id)
+    if station is None or station.node_type.lower() not in {"d", "f"}:
+        if all(value is None for value in metadata):
+            try:
+                legacy_spec = spec_from_parameters(prices)
+            except ChargingCurveError as exc:
+                raise ValueError(
+                    f"invalid charging curve parameters: {exc}"
+                ) from exc
+            if legacy_spec.curve_id == L100_CONTROL.curve_id:
+                return None
+        raise ValueError(
+            f"charging action uses unknown or non-charging node "
+            f"{action.station_id!r}"
+        )
     try:
-        spec = spec_from_parameters(prices)
+        spec = spec_for_charging_node(
+            prices,
+            node_type=station.node_type,
+        )
     except ChargingCurveError as exc:
         raise ValueError(f"invalid charging curve parameters: {exc}") from exc
     if all(value is None for value in metadata):
@@ -523,13 +542,6 @@ def charging_curve_for_action(
         return None
     if any(value is None for value in metadata):
         raise ValueError("charging action has incomplete curve metadata")
-    nodes = {node.node_id: node for node in instance.nodes}
-    station = nodes.get(action.station_id)
-    if station is None or station.node_type.lower() not in {"d", "f"}:
-        raise ValueError(
-            f"charging action uses unknown or non-charging node "
-            f"{action.station_id!r}"
-        )
     if station.node_type.lower() == "d":
         reference_power_kw = _price(prices, "depot_charge_power_kw")
     else:

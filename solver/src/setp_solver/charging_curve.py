@@ -8,11 +8,11 @@ this module instead of reimplementing ``energy / power`` arithmetic.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from functools import cache
 from hashlib import sha256
-import json
 from math import isfinite
 from typing import Iterable, Sequence
 
@@ -83,8 +83,37 @@ NL80_STRESS = ChargingCurveSpec(
     (1.0, 0.5, 0.25),
 )
 
+# Montoya et al. (2017), Fig. 8, p. 13, cross-checked against the
+# VRP-REP 2016-0020 XML instances.  Only the normalized SOC--power shape is
+# transferred to China81; it is not a calibration of the 77.28 kWh truck.
+M17_22KW_NORMAL_PWL = ChargingCurveSpec(
+    "M17_22KW_NORMAL_PWL",
+    (0.0, 0.85, 0.95, 1.0),
+    (
+        (13.6 / 0.62) / 22.0,
+        ((15.2 - 13.6) / (0.77 - 0.62)) / 22.0,
+        ((16.0 - 15.2) / (1.01 - 0.77)) / 22.0,
+    ),
+)
+M17_FAST_SHAPE_SCALED_60KW_PWL = ChargingCurveSpec(
+    "M17_FAST_SHAPE_SCALED_60KW_PWL",
+    (0.0, 0.85, 0.95, 1.0),
+    (
+        (13.6 / 0.31) / 44.0,
+        ((15.2 - 13.6) / (0.39 - 0.31)) / 44.0,
+        ((16.0 - 15.2) / (0.51 - 0.39)) / 44.0,
+    ),
+)
+
 CURVE_SPECS: dict[str, ChargingCurveSpec] = {
-    spec.curve_id: spec for spec in (L100_CONTROL, NL90_MILD, NL80_STRESS)
+    spec.curve_id: spec
+    for spec in (
+        L100_CONTROL,
+        NL90_MILD,
+        NL80_STRESS,
+        M17_22KW_NORMAL_PWL,
+        M17_FAST_SHAPE_SCALED_60KW_PWL,
+    )
 }
 
 
@@ -122,11 +151,19 @@ def spec_from_parameters(parameters: object) -> ChargingCurveSpec:
         powers = getattr(parameters, names[2])
     if isinstance(soc, (str, bytes)) or isinstance(powers, (str, bytes)):
         raise ChargingCurveError("charging curve arrays must be numeric sequences")
+    return _spec_from_values(curve_id, soc, powers)
+
+
+def _spec_from_values(
+    curve_id: object,
+    soc: object,
+    powers: object,
+) -> ChargingCurveSpec:
+    if isinstance(soc, (str, bytes)) or isinstance(powers, (str, bytes)):
+        raise ChargingCurveError("charging curve arrays must be numeric sequences")
     normalized_curve_id = str(curve_id).strip()
     normalized_soc = tuple(float(value) for value in soc)  # type: ignore[arg-type]
-    normalized_powers = tuple(  # type: ignore[arg-type]
-        float(value) for value in powers
-    )
+    normalized_powers = tuple(float(value) for value in powers)  # type: ignore[arg-type]
     registered = CURVE_SPECS.get(normalized_curve_id)
     if registered is not None:
         if (
@@ -145,6 +182,49 @@ def spec_from_parameters(parameters: object) -> ChargingCurveSpec:
     )
 
 
+def spec_for_charging_node(
+    parameters: object,
+    *,
+    node_type: str,
+) -> ChargingCurveSpec:
+    """Return the explicit depot or public-station curve specification.
+
+    Legacy parameter objects carry one shared curve.  New China81 objects
+    carry all three fields for each charging technology.  An incomplete
+    station-specific triple is rejected instead of being silently mixed with
+    the legacy curve.
+    """
+
+    normalized_type = str(node_type).strip().lower()
+    if normalized_type == "d":
+        prefix = "depot"
+    elif normalized_type == "f":
+        prefix = "public"
+    else:
+        raise ChargingCurveError(
+            f"node type {node_type!r} is not a charging technology"
+        )
+    names = (
+        f"{prefix}_charging_curve_id",
+        f"{prefix}_charging_soc_breakpoints",
+        f"{prefix}_charging_relative_powers",
+    )
+    if isinstance(parameters, Mapping):
+        present = tuple(name in parameters for name in names)
+        values = tuple(parameters.get(name) for name in names)
+    else:
+        present = tuple(hasattr(parameters, name) for name in names)
+        values = tuple(getattr(parameters, name, None) for name in names)
+    if not any(present) or (all(present) and all(value is None for value in values)):
+        return spec_from_parameters(parameters)
+    if not all(present) or any(value is None for value in values):
+        raise ChargingCurveError(
+            f"{prefix} charging parameters require an explicit curve id, "
+            "SOC breakpoints, and relative powers"
+        )
+    return _spec_from_values(*values)
+
+
 def curve_from_parameters(
     parameters: object,
     *,
@@ -154,6 +234,21 @@ def curve_from_parameters(
     """Scale the explicit curve carried by the shared parameter object."""
 
     return spec_from_parameters(parameters).scale(
+        capacity_kwh=capacity_kwh,
+        reference_power_kw=reference_power_kw,
+    )
+
+
+def curve_for_charging_node(
+    parameters: object,
+    *,
+    node_type: str,
+    capacity_kwh: float,
+    reference_power_kw: float,
+) -> PiecewiseChargingCurve:
+    """Scale the curve assigned to one depot or public-station technology."""
+
+    return spec_for_charging_node(parameters, node_type=node_type).scale(
         capacity_kwh=capacity_kwh,
         reference_power_kw=reference_power_kw,
     )

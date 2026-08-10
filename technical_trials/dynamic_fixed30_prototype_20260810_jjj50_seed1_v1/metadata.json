@@ -1,0 +1,125 @@
+{
+  "status": "FAILED",
+  "invocation_id": "e0374f7ed70342cebf22e93cee3836bb",
+  "purpose": "multi-stage dynamic disclosure technical scout",
+  "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+  "stream_seed": 1,
+  "search_seed": 11,
+  "trigger_policy": "fixed_30_minutes",
+  "trigger_policy_formally_selected": false,
+  "stage_runtime_seconds": 5.0,
+  "stage_stop_mode": "wall_clock",
+  "total_runtime_seconds": 180.0,
+  "stagnation_patience": 500,
+  "population_construction": "current-plan-exact-regret2-insertion-then-total-wall-clock-bounded-copied-hgs-random-skeleton-until-one-feasible",
+  "exact_dynamic_suffix_neighbourhood_enabled": true,
+  "mechanical_insertion_control": false,
+  "idle_ev_readiness_mode": "none",
+  "idle_ev_readiness_formally_selected": false,
+  "code_provenance": {
+    "git_head": "b5b8d0981e9949ff9969372db4d079e0d7dcfe0b",
+    "worktree_clean_before_run": false,
+    "worktree_status_before_run": "M AGENTS.md\n M HANDOFF.md\n M baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py\n M docs/handoff/duty_hgs_pdca_redesign_for_user_approval_20260809.md\n M docs/handoff/memory/MEMORY.md\n M docs/handoff/rules_coverage_inventory_20260806.md\n M docs/paper_gci_dmm_vrp_20260804/pending_decisions.md\n M solver/src/setp_solver/charging_action.py\n M solver/src/setp_solver/charging_curve.py\n M solver/src/setp_solver/china81.py\n M solver/src/setp_solver/cost.py\n M solver/src/setp_solver/prices.py\n M solver/src/setp_solver/search/dynamic_multitrip_schedule.py\n M solver/src/setp_solver/search/multitrip_schedule.py\n M solver/tests/test_china81_bundle_20260720.py\n M solver/tests/test_dynamic_multitrip_schedule.py\n?? docs/handoff/dynamic_instance_adjustment_application_20260810.md\n?? docs/handoff/global_rules_skills_and_management_expansion_20260809.md\n?? docs/handoff/independent_algorithm_status_audit_20260809.md\n?? docs/handoff/independent_hgs_root_cause_roundtable_20260809.md\n?? docs/handoff/independent_problem_hgs_design_20260809.md\n?? docs/handoff/memory/dcrex_independent_architecture_correction_20260809.md\n?? docs/handoff/memory/global_rules_skills_management_expansion_20260809.md\n?? docs/handoff/private_effect_and_instance_adjustment_application_20260810.md\n?? solver/scripts/run_integrated_private_carbon_scout.py\n?? solver/scripts/run_integrated_private_component_scout.py\n?? solver/scripts/run_integrated_public_component_scout.py\n?? solver/scripts/run_integrated_public_convergence_scout.py\n?? solver/scripts/run_problem_hgs_copied_foundation_technical.py\n?? solver/scripts/run_problem_hgs_dynamic_disclosure_scout.py\n?? solver/scripts/run_problem_hgs_dynamic_technical.py\n?? solver/scripts/run_problem_hgs_private_technical.py\n?? solver/scripts/run_problem_hgs_public_assignment_insearch_trial.py\n?? solver/scripts/run_problem_hgs_public_assignment_probe.py\n?? solver/scripts/run_problem_hgs_public_technical.py\n?? solver/scripts/run_problem_hgs_static_effect_scout.py\n?? solver/src/setp_solver/algorithms/problem_hgs/\n?? solver/tests/test_problem_hgs_control.py\n?? solver/tests/test_problem_hgs_crossover_control.py\n?? solver/tests/test_problem_hgs_dynamic_public_charging.py\n?? solver/tests/test_problem_hgs_dynamic_unserved.py\n?? solver/tests/test_problem_hgs_integrated_foundation.py\n?? solver/tests/test_problem_hgs_multistage_history.py\n?? solver/tests/test_problem_hgs_population_foundation.py\n?? solver/tests/test_problem_hgs_public_assignment.py\n?? solver/tests/test_problem_hgs_readiness.py\n?? solver/tests/test_problem_hgs_vidal_compound.py\n?? solver/tests/test_station_specific_charging_curves.py\n?? technical_trials/\n?? third_party/setp_hgs_kernel/",
+    "python_source_sha256": "564b4452702ae28bd53345b4f77b37dc13883bd49126edbcd96a80d955fc9c75",
+    "python_source_files": {
+      "solver/scripts/run_problem_hgs_private_technical.py": "08b4bc67b59744db57a302f468681a238afc41c0fee3a9423024b7069cbd276f",
+      "solver/src/setp_solver/algorithms/problem_hgs/__init__.py": "8dd9c5af9b881f589c05bfde0fba517d23fc68baac584ee8ba00dba2e7aed55b",
+      "solver/src/setp_solver/algorithms/problem_hgs/charging.py": "91ed0b5a3462c94907e39d39d7e5f0998f6cfb43924dff893dc31f0c77392ea7",
+      "solver/src/setp_solver/algorithms/problem_hgs/contracts.py": "124e2f00fe3138826068cdc96ae92cb518efc6b0a6013faee2870f414e44954b",
+      "solver/src/setp_solver/algorithms/problem_hgs/crossover.py": "4f38d3d40956ec0bdf8d63d70306a44c739480c7f8321dba47f3bef885e170cf",
+      "solver/src/setp_solver/algorithms/problem_hgs/crossover_control.py": "040160967e401102df931b9fdaabc74c10aad2468e41bebbf0a6d516e76040c8",
+      "solver/src/setp_solver/algorithms/problem_hgs/dcrex.py": "6058da4d296a9ab6909f8bef10a6ec2784934ba477613782ddd333a857849dcb",
+      "solver/src/setp_solver/algorithms/problem_hgs/dynamic.py": "e2b2556dcabe0d69c318b9054bd37779c614d565c4aa1999ea573726bfa4c8fa",
+      "solver/src/setp_solver/algorithms/problem_hgs/education.py": "16d5dee7c109ac3b7bfaa5ee6f7ee00c5f4433964522280c0ddc7918d603a667",
+      "solver/src/setp_solver/algorithms/problem_hgs/evaluation.py": "1ae19db83da5883d72164c7a2629f8e5cf8398ace4929541bafd91a34a112af3",
+      "solver/src/setp_solver/algorithms/problem_hgs/feedback.py": "29a582f94aadd642882a097d4917f6df6ef15b5f131d37032e9c602471543dc9",
+      "solver/src/setp_solver/algorithms/problem_hgs/independent.py": "3cedf965a33c027cedaa1c0a07ea162764885bcab057c63df85ad29043823ef9",
+      "solver/src/setp_solver/algorithms/problem_hgs/initialization.py": "ccb0b2c2bba02fdc4ae3adcaa2da63a8084cb9427cd158b9613fc6a01c8e0ad1",
+      "solver/src/setp_solver/algorithms/problem_hgs/integrated_private.py": "1494c9e04e836ef3378930bb8ce1ec18e4f8a3c43289083265f0f53d7c913538",
+      "solver/src/setp_solver/algorithms/problem_hgs/kernel_proposals.py": "b270acb8096a7fa578cf03694a367addc0d6caff18729d823929599a27513aca",
+      "solver/src/setp_solver/algorithms/problem_hgs/model.py": "77d3a502356ba1e01a00ee3deb6e75b40fcdd1422b4d8563239dcb06cb66f64d",
+      "solver/src/setp_solver/algorithms/problem_hgs/operators.py": "8bf4212cf9cb27cdbd48b8c819bebffc1e20720bde20352ab9731f6324bb5b39",
+      "solver/src/setp_solver/algorithms/problem_hgs/population.py": "40a82eee736d19051403d228f8b1af22c2823943c9932be1934caf0fa90cb881",
+      "solver/src/setp_solver/algorithms/problem_hgs/proposals.py": "bcc57ca26e9ef88134521d82b1a506c22e9dc9df1c9e979cbd44f77b30792486",
+      "solver/src/setp_solver/algorithms/problem_hgs/public.py": "20a8ae7eebba460f1d98f892f3cf1e9be5bbc8864d3dd707d2e6e1dd235af845",
+      "solver/src/setp_solver/algorithms/problem_hgs/public_assignment.py": "c0670b64e5eb2c52d0c1229e9955dad2fd1979776f416af0e67b6a04cef45f25",
+      "solver/src/setp_solver/algorithms/problem_hgs/public_search.py": "062fc89f2d6ae0a08ce145b69d9b3c09e28854f2c73f288d89255c5651db92b9",
+      "solver/src/setp_solver/algorithms/problem_hgs/readiness.py": "fb88c10c5b2dd9aee22fcd0b81a2994f7f0369b3491b3c2ea2c7d3c11c75d820",
+      "solver/src/setp_solver/algorithms/problem_hgs/repair.py": "4c93e0727bd28ff7afae2bc19a273a361e371f0208b42b202ab20fed11d21db1",
+      "solver/src/setp_solver/algorithms/problem_hgs/runner.py": "3c82b151a4c9506e2d8d42a76141d8913a6cb66b69a2b3e9cd9a3dbd09f3a44b",
+      "solver/src/setp_solver/algorithms/problem_hgs/srex.py": "d52729451b876e5fb27b2ba8e3d542a7bcc77113f5cbda71b4462012db25b921",
+      "solver/src/setp_solver/algorithms/problem_hgs/stopping.py": "7fd59719feef8984de2d8c288544889e4f4917775ab266b2936a87fdbe5f8678",
+      "solver/src/setp_solver/algorithms/problem_hgs/vidal_compound.py": "a1ff5ae54453303c2dc56423245e0f04fb9aa52147817c770a8b3c3cea6e5427",
+      "third_party/setp_hgs_kernel/LICENSE.md": "d9484b4905b1479240a99cdbe96b4f34d9a2c17347000d961819f8b177f3365b",
+      "third_party/setp_hgs_kernel/UPSTREAM_COMMIT": "2324c96fc3a2a60dc19b35257d295e643ddf95b86246f18cd1231c3155fa6bf5",
+      "third_party/setp_hgs_kernel/meson.build": "b67930686d00c5eafa6ceca4e674a5def8ccddb0ed8c74cbb8b4c16a650a986f",
+      "third_party/setp_hgs_kernel/pyproject.toml": "a05adc5bba4e3b79e69b424202ccb0312d89b863fba8e21a9c5174bea36266f6",
+      "solver/scripts/run_problem_hgs_dynamic_disclosure_scout.py": "ce76f081331d32a7ccadef0e531a0006e53e26b44ab8c14b4ab309ad265ce33b",
+      "baselines/china_e3_e7/e7_h0_g2_foundation_20260801/stream.py": "d5caee5d1eecb3241bcfdb572171777aa1694de7050b6e858c4bf013ab903951",
+      "baselines/china_e3_e7/e7_o1_replanning_20260801/policy.py": "12dc85607c3680d2d69f25880b5e6f28bc444321ade7d40917422fe6da997bfd",
+      "baselines/china_e3_e7/e7_trigger_policies_20260801/trigger_policies.py": "2ad5198c32f3ed1b117b76a431240d4d316be4d819865c420a79ff7323033d49"
+    },
+    "python_executable": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/setp-independent-hgs/bin/python",
+    "python_version": "3.13.9",
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "dependency_versions": {
+      "numpy": "2.5.2",
+      "scipy": null,
+      "setp-hgs-kernel": "0.12.2"
+    },
+    "kernel_runtime_identity": {
+      "version": "0.12.2",
+      "modules": {
+        "setp_hgs_kernel": {
+          "path": "/Volumes/移动硬盘（512G）/ReSETP/third_party/setp_hgs_kernel/setp_hgs_kernel/__init__.py",
+          "sha256": "38b90a345432d9313d40dee980e18b1ee893a530db98c3af0a8926f83a19061c"
+        },
+        "setp_hgs_kernel.search": {
+          "path": "/Volumes/移动硬盘（512G）/ReSETP/third_party/setp_hgs_kernel/setp_hgs_kernel/search/__init__.py",
+          "sha256": "47f91938cc9450b96eb9d5dd1c30ac82a793aad53918910d04742e88639c0eee"
+        },
+        "setp_hgs_kernel._setp_hgs_kernel": {
+          "path": "/Volumes/移动硬盘（512G）/ReSETP/third_party/setp_hgs_kernel/setp_hgs_kernel/_setp_hgs_kernel.cpython-313-darwin.so",
+          "sha256": "89e8323558b7a7234396c257a14dc882235fd31e6b090ef1baacb48efd80cafc"
+        },
+        "setp_hgs_kernel.search._search": {
+          "path": "/Volumes/移动硬盘（512G）/ReSETP/third_party/setp_hgs_kernel/setp_hgs_kernel/search/_search.cpython-313-darwin.so",
+          "sha256": "e4b295fd6b4b8cb7035d242c623a81269c190cfe2322f3ad42cf9a7c4a8e60e5"
+        }
+      },
+      "distribution_records": {
+        "setp_hgs_kernel-0.12.2.dist-info/METADATA": {
+          "path": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/setp-independent-hgs/lib/python3.13/site-packages/setp_hgs_kernel-0.12.2.dist-info/METADATA",
+          "sha256": "439d23ca99b286dd974066b4ae54dfe46b5c7fc13b7674a076e9b5ce56103598"
+        },
+        "setp_hgs_kernel-0.12.2.dist-info/RECORD": {
+          "path": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/setp-independent-hgs/lib/python3.13/site-packages/setp_hgs_kernel-0.12.2.dist-info/RECORD",
+          "sha256": "2dc062960d5d720494c420bc1afb412f915a90d7fb955aa398230826af81b845"
+        }
+      }
+    },
+    "pyvrp_importable": false,
+    "cwd": "/Volumes/移动硬盘（512G）/ReSETP",
+    "command_argv": [
+      "solver/scripts/run_problem_hgs_dynamic_disclosure_scout.py",
+      "technical_trials/dynamic_fixed30_prototype_20260810_jjj50_seed1_v1",
+      "--instance-id",
+      "cn-jjj-50c-01-V2-LOCATIONS",
+      "--stream-seed",
+      "1",
+      "--search-seed",
+      "11",
+      "--trigger-policy",
+      "fixed_30_minutes",
+      "--stage-runtime-seconds",
+      "5",
+      "--total-runtime-seconds",
+      "180",
+      "--idle-ev-readiness-mode",
+      "none"
+    ],
+    "output_path": "/Volumes/移动硬盘（512G）/ReSETP/technical_trials/dynamic_fixed30_prototype_20260810_jjj50_seed1_v1",
+    "stderr_capture_state": "caller_not_declared"
+  }
+}

@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 from .charging_curve import L100_CONTROL
 
-
 # ---------------------------------------------------------------------------
 # 区块A: Goeke 物理与能耗参数
 # 本区块全部参数取自算例基准文献, 与生成算例的物理基础保持一致, 审计时以此为准。
@@ -154,6 +153,15 @@ class PriceParameters:
     charging_curve_id: str = charging_curve_id
     charging_soc_breakpoints: tuple[float, ...] = charging_soc_breakpoints
     charging_relative_powers: tuple[float, ...] = charging_relative_powers
+    # Optional station-technology overrides.  A complete triple selects that
+    # technology's curve; three ``None`` values preserve the explicit legacy
+    # shared-curve contract for non-China81 inputs.
+    depot_charging_curve_id: str | None = None
+    depot_charging_soc_breakpoints: tuple[float, ...] | None = None
+    depot_charging_relative_powers: tuple[float, ...] | None = None
+    public_charging_curve_id: str | None = None
+    public_charging_soc_breakpoints: tuple[float, ...] | None = None
+    public_charging_relative_powers: tuple[float, ...] | None = None
 
     @property
     def charging_occupancy_fee(self) -> float:

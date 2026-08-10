@@ -1,0 +1,376 @@
+{
+  "individual": {
+    "duties": [
+      {
+        "physical_vehicle_id": "CV_D_chengdu_1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "trips": [],
+        "charging_sessions": [],
+        "has_dynamic_commitment": true
+      },
+      {
+        "physical_vehicle_id": "CV_D_chengdu_2",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "trips": [
+          {
+            "trip_index": 1,
+            "customer_ids": [
+              "C007",
+              "C002",
+              "C012",
+              "C011",
+              "C018",
+              "C004",
+              "C019"
+            ],
+            "locked_customer_prefix": [],
+            "route_visits": []
+          }
+        ],
+        "charging_sessions": [],
+        "has_dynamic_commitment": true
+      },
+      {
+        "physical_vehicle_id": "CV_D_chengdu_3",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chengdu",
+        "trips": [],
+        "charging_sessions": [],
+        "has_dynamic_commitment": false
+      },
+      {
+        "physical_vehicle_id": "CV_D_chongqing_1",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "trips": [],
+        "charging_sessions": [],
+        "has_dynamic_commitment": false
+      },
+      {
+        "physical_vehicle_id": "CV_D_chongqing_2",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "trips": [],
+        "charging_sessions": [],
+        "has_dynamic_commitment": false
+      },
+      {
+        "physical_vehicle_id": "CV_D_chongqing_3",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "trips": [],
+        "charging_sessions": [],
+        "has_dynamic_commitment": false
+      },
+      {
+        "physical_vehicle_id": "CV_D_chongqing_4",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_chongqing",
+        "trips": [
+          {
+            "trip_index": 1,
+            "customer_ids": [
+              "C029",
+              "C033",
+              "C031",
+              "C032"
+            ],
+            "locked_customer_prefix": [],
+            "route_visits": []
+          }
+        ],
+        "charging_sessions": [],
+        "has_dynamic_commitment": false
+      },
+      {
+        "physical_vehicle_id": "EV_D_chengdu_1",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chengdu",
+        "trips": [],
+        "charging_sessions": [],
+        "has_dynamic_commitment": true
+      },
+      {
+        "physical_vehicle_id": "EV_D_chongqing_1",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_chongqing",
+        "trips": [],
+        "charging_sessions": [],
+        "has_dynamic_commitment": true
+      }
+    ],
+    "unserved_customers": [],
+    "version": 1,
+    "source": "regret_insert:regret-insert:C029->CV_D_chongqing_4#T1@0"
+  },
+  "evaluation": {
+    "total_cost": 2453.711503503042,
+    "total_cost_with_readiness_accounting": 2453.711503503042,
+    "breakdown": {
+      "total_cost": 2453.711503503042,
+      "cost_fix": 1190.0,
+      "cost_km": 602.3855201814002,
+      "cost_fuel": 609.3142693554832,
+      "cost_elec": 34.802412129391364,
+      "cost_occ": 0.0,
+      "cost_time": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 17.20930183676695,
+      "E_total": 229.39618550742404,
+      "E_cv_direct": 219.95852906869905,
+      "E_ev_indirect": 9.437656438724996,
+      "n_veh_cv": 5,
+      "n_veh_ev": 2,
+      "distance_total": 796241.87847756,
+      "distance_cv": 626395.105467591,
+      "distance_ev": 169846.773009969,
+      "fuel_liters": 81.32138968222351,
+      "electricity_kwh": 53.167887005124555,
+      "route_time_hours": 12.207166666666668,
+      "depot_charging_kwh": 53.167887005124555,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 53.167887005124555
+    },
+    "breakdown_with_readiness_accounting": {
+      "total_cost": 2453.711503503042,
+      "cost_fix": 1190.0,
+      "cost_km": 602.3855201814002,
+      "cost_fuel": 609.3142693554832,
+      "cost_elec": 34.802412129391364,
+      "cost_occ": 0.0,
+      "cost_time": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 17.20930183676695,
+      "E_total": 229.39618550742404,
+      "E_cv_direct": 219.95852906869905,
+      "E_ev_indirect": 9.437656438724996,
+      "n_veh_cv": 5,
+      "n_veh_ev": 2,
+      "distance_total": 796241.87847756,
+      "distance_cv": 626395.105467591,
+      "distance_ev": 169846.773009969,
+      "fuel_liters": 81.32138968222351,
+      "electricity_kwh": 53.167887005124555,
+      "route_time_hours": 12.207166666666668,
+      "depot_charging_kwh": 53.167887005124555,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 53.167887005124555,
+      "readiness_charging_kwh": 0.0,
+      "readiness_cost_total": 0.0
+    },
+    "emissions_with_readiness_accounting": 229.39618550742404,
+    "readiness_costs": {
+      "electricity_kwh": 0,
+      "cost_electricity": 0,
+      "emissions_kg": 0,
+      "cost_carbon": 0.0,
+      "cost_total": 0.0
+    },
+    "readiness_intervals": [],
+    "readiness_reserved_charging_actions": [],
+    "readiness_envelope_limitations": [],
+    "readiness_station_capacity_violations": [],
+    "feasible": true,
+    "violations": [],
+    "prepared_solution": {
+      "routes": [
+        {
+          "vehicle_id": "CV_D_chengdu_1#T1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C014",
+            "C009",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CV_D_chengdu_1#T2",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C013",
+            "C001",
+            "C006",
+            "C021",
+            "C008",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CV_D_chengdu_2#T1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C017",
+            "C003",
+            "C005",
+            "C010",
+            "C015",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CV_D_chengdu_2#T2",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C007",
+            "C002",
+            "C012",
+            "C011",
+            "C018",
+            "C004",
+            "C019",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CV_D_chongqing_1#T1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C049",
+            "C023",
+            "C044",
+            "C040",
+            "C037",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CV_D_chongqing_3#T1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C048",
+            "C025",
+            "C034",
+            "C046",
+            "C028",
+            "C045",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CV_D_chongqing_4#T1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C036",
+            "C035",
+            "C038",
+            "C024",
+            "C041",
+            "C039",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CV_D_chongqing_4#T2",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C029",
+            "C033",
+            "C031",
+            "C032",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "EV_D_chengdu_1#T1",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C016",
+            "C020",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "EV_D_chongqing_1#T1",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C050",
+            "C042",
+            "C043",
+            "C022",
+            "C027",
+            "C030",
+            "C047",
+            "C026",
+            "D_chongqing"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "EV_D_chengdu_1#T1",
+          "station_id": "D_chengdu",
+          "energy_kwh": 14.76799536859609,
+          "occupancy_minutes": 40.39481086115989,
+          "charge_start_second": 36000.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 14.76799536859609,
+          "charging_curve_id": "M17_22KW_NORMAL_PWL"
+        },
+        {
+          "vehicle_id": "EV_D_chengdu_1#T1",
+          "station_id": "D_chengdu",
+          "energy_kwh": 4.470663707404473,
+          "occupancy_minutes": 12.228580140841647,
+          "charge_start_second": 45000.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 14.76799536859609,
+          "end_energy_kwh": 19.238659076000562,
+          "charging_curve_id": "M17_22KW_NORMAL_PWL"
+        },
+        {
+          "vehicle_id": "EV_D_chongqing_1#T1",
+          "station_id": "D_chongqing",
+          "energy_kwh": 33.929227929123996,
+          "occupancy_minutes": 92.80641757083917,
+          "charge_start_second": 23231.61494575,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 33.929227929123996,
+          "charging_curve_id": "M17_22KW_NORMAL_PWL"
+        }
+      ],
+      "cross_site_services": []
+    }
+  },
+  "final_fairness_evaluation": {
+    "feasible": false,
+    "violations": [
+      {
+        "type": "PROFIT_FAIRNESS",
+        "vehicle_id": "",
+        "location": "D_chengdu",
+        "detail": "profit Pi=7768.647105 below theta*Pi0=7786.874808 (theta=1.000000, Pi0=7786.874808)",
+        "severity": "hard"
+      }
+    ],
+    "participation_margin": {
+      "D_chengdu": -18.227702735265666,
+      "D_chongqing": 48.11121148336679
+    }
+  }
+}

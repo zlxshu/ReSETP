@@ -1,0 +1,89 @@
+{
+  "visible_customer_ids": [
+    "C001",
+    "C002",
+    "C003",
+    "C004",
+    "C005",
+    "C006",
+    "C007",
+    "C008",
+    "C009",
+    "C010",
+    "C011",
+    "C012",
+    "C013",
+    "C014",
+    "C015",
+    "C016",
+    "C017",
+    "C018",
+    "C019",
+    "C020",
+    "C022",
+    "C023",
+    "C024",
+    "C025",
+    "C029",
+    "C031",
+    "C032",
+    "C033",
+    "C036",
+    "C037",
+    "C038",
+    "C039",
+    "C040",
+    "C041",
+    "C042",
+    "C045",
+    "C046",
+    "C048",
+    "C049",
+    "C050"
+  ],
+  "hidden_customer_ids_used": [],
+  "requested_size": 2,
+  "actual_size": 2,
+  "attempts_exhausted": false,
+  "population_wall_seconds": 0.11568916699616238,
+  "search_iterations": 1,
+  "search_termination_status": "INTEGRATED_HGS_STOPPED_BY_CALLER",
+  "total_wall_seconds": 6.161197540990543,
+  "attempts": {
+    "attempt_count": 2,
+    "status_counts": {
+      "ADMITTED": 2
+    },
+    "error_counts": {},
+    "violation_counts": {
+      "CAPACITY": 1
+    },
+    "total_attempt_wall_seconds": 0.11540858400985599,
+    "max_attempt_wall_seconds": 0.0580942920059897,
+    "sample": [
+      {
+        "random_seed": 11,
+        "status": "ADMITTED",
+        "fingerprint": "f101ebf8a5996c1b8f1ee04a7e7cded03bc4dc08dbf0fc8c72cdc885416852bb",
+        "feasible": false,
+        "violation_types": [
+          "CAPACITY"
+        ],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.0580942920059897
+      },
+      {
+        "random_seed": 12,
+        "status": "ADMITTED",
+        "fingerprint": "b13d86c7d6c3860f36bb3625c5e62579fb3617391cf3575fdb25a0bf6821a88f",
+        "feasible": true,
+        "violation_types": [],
+        "error_type": null,
+        "error": null,
+        "wall_seconds": 0.057314292003866285
+      }
+    ],
+    "sample_limit": 20
+  }
+}

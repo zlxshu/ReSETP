@@ -1,8 +1,8 @@
 # ReSETP — Claude 项目指令
 
-**开工前必读（强制）**：先完整读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，再按其中清单读取 `HANDOFF.md`、`docs/handoff/project_prd_execution_map_v2_20260702.md`、`docs/handoff/project_planning_map_20260701.md`、`docs/handoff/memory/MEMORY.md`、`docs/handoff/memory/project-prd-execution-v2.md`、`docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`。读完之前不要动手、不要下结论。第一条工作汇报必须写明“已读强制入口”和当前停止条件。
+**开工前必读（强制）**：依次读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`、`docs/handoff/CURRENT_PROJECT_CONTEXT.md` 和 `docs/paper_gci_dmm_vrp_20260804/pending_decisions.md`。日常接手不再通读 `HANDOFF.md`、memory、旧 PRD、旧计划或 MASTER 提示词；只有核某个数字、决定来源或失败原因时，才按当前总入口的证据地图定点读取。读完之前不要动手、不要下结论。第一条工作汇报用人话说明当前任务和停止条件，不要列一串文件名。
 
-**每次重大决策 / 任务 / 对话后**：把变化追加进 `HANDOFF.md` 文末「变更日志」，并同步更新 `docs/handoff/memory/`，让它们始终是最新单一事实源（跨机器迁移防偏差全靠这个）。
+**每次重大决策 / 任务 / 对话后**：当前状态更新 `docs/handoff/CURRENT_PROJECT_CONTEXT.md`；只有用户决定变化时更新 `pending_decisions.md`；再把变化追加进 `HANDOFF.md` 文末「变更日志」，并在 `docs/handoff/memory/MEMORY.md` 登记证据入口。不要再创建另一份重复的“最新总交接”。
 
 **角色铁律**：Claude 只思考 / 判断 / 写 Codex 提示词 / 写文档；禁止运行或修改代码、禁止开 workflow / ultracode。Codex 执行。
 

@@ -1,0 +1,3 @@
+from setp_hgs_kernel._setp_hgs_kernel import Solution
+
+def broken_pairs_distance(first: Solution, second: Solution) -> float: ...

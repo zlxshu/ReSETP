@@ -4,8 +4,16 @@ import csv
 from pathlib import Path
 
 import pytest
-
-from setp_solver.charging_curve import NL90_MILD
+from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
+    ChargeOption,
+    integrated_charge_carbon_kg,
+    score_charge_option,
+)
+from setp_solver.charging_action import _curve_aware_action
+from setp_solver.charging_curve import (
+    M17_22KW_NORMAL_PWL,
+    M17_FAST_SHAPE_SCALED_60KW_PWL,
+)
 from setp_solver.china81 import (
     CHINA81_HORIZON_END_SECOND,
     CHINA81_HORIZON_START_SECOND,
@@ -20,11 +28,6 @@ from setp_solver.cost import (
     diesel_price_for_route,
     evaluate,
 )
-from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
-    ChargeOption,
-    integrated_charge_carbon_kg,
-    score_charge_option,
-)
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.model_config import (
     DEPOT_CHARGER_CAPACITY_FINITE_INSTANCE,
@@ -32,8 +35,7 @@ from setp_solver.model_config import (
     ModelConfig,
 )
 from setp_solver.prices import PriceParameters
-from setp_solver.solution import ChargingAction, Route, Solution
-
+from setp_solver.solution import Route, Solution
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CORRECTED_STATIC = (
@@ -77,7 +79,13 @@ def test_real_china81_bundle_joins_region_vehicle_and_road_contracts(
         value == pytest.approx(diesel_price)
         for value in bundle.diesel_price_by_city.values()
     )
-    assert bundle.prices.charging_curve_id == NL90_MILD.curve_id
+    assert bundle.prices.charging_curve_id == M17_22KW_NORMAL_PWL.curve_id
+    assert bundle.prices.depot_charging_curve_id == (
+        M17_22KW_NORMAL_PWL.curve_id
+    )
+    assert bundle.prices.public_charging_curve_id == (
+        M17_FAST_SHAPE_SCALED_60KW_PWL.curve_id
+    )
     assert bundle.prices.B_battery_kwh == pytest.approx(77.28)
     assert len(bundle.instance.nodes) == 12
     assert bundle.instance.num_cv == num_cv
@@ -261,15 +269,14 @@ def test_china81_customer_order_and_city_tariff_are_runtime_inputs() -> None:
         bundle.time_profile,
         key=lambda row: float(row["horizon_second_start"]),
     )
-    action = ChargingAction(
+    action = _curve_aware_action(
         vehicle_id="EV1",
         station_id=depot.node_id,
-        energy_kwh=11.0,
-        occupancy_minutes=30.0,
-        charge_start_second=0.0,
         start_energy_kwh=0.0,
-        end_energy_kwh=11.0,
-        charging_curve_id=NL90_MILD.curve_id,
+        energy_kwh=10.0,
+        reference_power_kw=22.0,
+        prices=bundle.prices,
+        instance=bundle.instance,
     )
     assert charging_action_electricity_cost(
         action,
@@ -277,7 +284,7 @@ def test_china81_customer_order_and_city_tariff_are_runtime_inputs() -> None:
         bundle.time_profile,
         bundle.prices,
     ) == pytest.approx(
-        11.0 * float(profile_row["depot_energy_cny_per_kwh"])
+        10.0 * float(profile_row["depot_energy_cny_per_kwh"])
     )
     assert charging_action_emissions_kg(
         action,
@@ -285,7 +292,7 @@ def test_china81_customer_order_and_city_tariff_are_runtime_inputs() -> None:
         bundle.time_profile,
         bundle.prices,
     ) == pytest.approx(
-        11.0
+        10.0
         * float(profile_row["actual_gco2_per_kwh"])
         / 1_000.0
     )
@@ -463,12 +470,17 @@ def test_china81_mechanism_scoring_uses_the_station_city() -> None:
             node_type="d",
             earliest_start_second=0.0,
             latest_start_second=0.0,
-            energy_kwh=11.0,
+            energy_kwh=10.0,
             power_kw=22.0,
-            occupancy_seconds_override=1_800.0,
+            occupancy_seconds_override=(
+                M17_22KW_NORMAL_PWL.scale(
+                    capacity_kwh=77.28,
+                    reference_power_kw=22.0,
+                ).duration_seconds(0.0, 10.0)
+            ),
             start_energy_kwh=0.0,
-            end_energy_kwh=11.0,
-            charging_curve_id=NL90_MILD.curve_id,
+            end_energy_kwh=10.0,
+            charging_curve_id=M17_22KW_NORMAL_PWL.curve_id,
         ),
         bundle.instance,
         bundle.time_profile,
@@ -476,7 +488,7 @@ def test_china81_mechanism_scoring_uses_the_station_city() -> None:
         carbon_weight=0.0,
     )
     assert scored.electricity_cost == pytest.approx(
-        11.0 * float(profile_row["depot_energy_cny_per_kwh"])
+        10.0 * float(profile_row["depot_energy_cny_per_kwh"])
     )
 
 

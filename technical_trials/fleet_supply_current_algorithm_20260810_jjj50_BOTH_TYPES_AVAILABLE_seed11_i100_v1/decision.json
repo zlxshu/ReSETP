@@ -1,0 +1,32 @@
+{
+  "verdict": "TECHNICAL_FLEET_SUPPLY_SCOUT_COMPLETE",
+  "formal_experiment": false,
+  "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+  "search_mode": "FULL_PROBLEM_COMPONENTS",
+  "rows": [
+    {
+      "instance_id": "cn-jjj-50c-01-V2-LOCATIONS",
+      "arm": "BOTH_TYPES_AVAILABLE",
+      "search_mode": "FULL_PROBLEM_COMPONENTS",
+      "seed": 11,
+      "iterations": 100,
+      "runtime_seconds": 475.1606186659774,
+      "initial_total_cost_cny": 2409.588573273671,
+      "total_cost_cny": 1877.3815496267737,
+      "total_emissions_kg": 150.03858429611697,
+      "cv_direct_emissions_kg": 53.773586646272044,
+      "ev_indirect_emissions_kg": 96.26499764984491,
+      "used_cv": 1,
+      "used_ev": 6,
+      "electricity_kwh": 152.54570013469032,
+      "customers_served": 50,
+      "customers_total": 50,
+      "demand_served": 13264.0,
+      "demand_total": 13264.0,
+      "caps_by_depot_json": "{\"D_beijing\": {\"num_cv\": 6, \"num_ev\": 6, \"total_fleet_cap\": 6}, \"D_tianjin\": {\"num_cv\": 3, \"num_ev\": 3, \"total_fleet_cap\": 3}}",
+      "individual_fingerprint": "6e03c1cc746f432235afa06e3607f18ed0ac0f29e6affe4afa9061ee786c52a4"
+    }
+  ],
+  "service_and_demand_equal": true,
+  "formal_model_or_instance_modified": false
+}

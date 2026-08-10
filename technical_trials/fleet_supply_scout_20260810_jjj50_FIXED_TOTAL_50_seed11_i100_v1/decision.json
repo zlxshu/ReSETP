@@ -1,0 +1,6 @@
+{
+  "verdict": "TECHNICAL_SCOUT_FAILED",
+  "failure_type": "RuntimeError",
+  "failure": "shared China81 completion returned an infeasible solution: FLEET_SIZE::ev:EV physical vehicles 3 exceed available electric vehicles 2",
+  "traceback": "Traceback (most recent call last):\n  File \"/Volumes/移动硬盘（512G）/ReSETP/solver/scripts/run_integrated_private_fleet_supply_scout.py\", line 320, in <module>\n    raise SystemExit(main())\n                     ~~~~^^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/solver/scripts/run_integrated_private_fleet_supply_scout.py\", line 201, in main\n    completed = complete_china81_route_skeleton(skeleton, bundle).solution\n                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py\", line 637, in complete_china81_route_skeleton\n    raise RuntimeError(\n    ...<2 lines>...\n    )\nRuntimeError: shared China81 completion returned an infeasible solution: FLEET_SIZE::ev:EV physical vehicles 3 exceed available electric vehicles 2\n"
+}

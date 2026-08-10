@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from .charging_curve import ChargingCurveError, curve_from_parameters
+from .charging_curve import (
+    ChargingCurveError,
+    curve_for_charging_node,
+    curve_from_parameters,
+)
 from .instance_loader import Instance
 from .prices import PriceParameters
 from .solution import ChargingAction
@@ -23,17 +27,33 @@ def _curve_aware_action(
     """Build one action whose duration and energy ledger share one curve."""
 
     try:
-        curve = curve_from_parameters(
-            prices,
-            capacity_kwh=(
-                _price(prices, "B_battery_kwh")
-                if instance is None
-                else instance.battery_capacity_kwh(
-                    fallback=_price(prices, "B_battery_kwh"),
-                )
-            ),
-            reference_power_kw=float(reference_power_kw),
+        capacity_kwh = (
+            _price(prices, "B_battery_kwh")
+            if instance is None
+            else instance.battery_capacity_kwh(
+                fallback=_price(prices, "B_battery_kwh"),
+            )
         )
+        if instance is None:
+            curve = curve_from_parameters(
+                prices,
+                capacity_kwh=capacity_kwh,
+                reference_power_kw=float(reference_power_kw),
+            )
+        else:
+            nodes = {node.node_id: node for node in instance.nodes}
+            station = nodes.get(station_id)
+            if station is None or station.node_type.lower() not in {"d", "f"}:
+                raise ValueError(
+                    f"charging action uses unknown or non-charging node "
+                    f"{station_id!r}"
+                )
+            curve = curve_for_charging_node(
+                prices,
+                node_type=station.node_type,
+                capacity_kwh=capacity_kwh,
+                reference_power_kw=float(reference_power_kw),
+            )
     except ChargingCurveError as exc:
         raise ValueError(f"invalid charging curve: {exc}") from exc
     start = float(start_energy_kwh)

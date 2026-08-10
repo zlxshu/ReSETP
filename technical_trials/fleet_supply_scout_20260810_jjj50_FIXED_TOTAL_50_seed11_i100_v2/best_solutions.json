@@ -1,0 +1,489 @@
+{
+  "FIXED_TOTAL_50": {
+    "individual": {
+      "duties": [
+        {
+          "physical_vehicle_id": "CV_D_beijing_1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_beijing_2",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C015",
+                "C001",
+                "C032",
+                "C023",
+                "C009",
+                "C018",
+                "C020"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_beijing_3",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C036",
+                "C022",
+                "C025",
+                "C027",
+                "C034"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            },
+            {
+              "trip_index": 2,
+              "customer_ids": [
+                "C029",
+                "C007",
+                "C026",
+                "C011",
+                "C037"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "CV_D_tianjin_1",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_tianjin",
+          "trips": [],
+          "charging_sessions": [],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_beijing_1",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C031",
+                "C008",
+                "C024",
+                "C012",
+                "C002",
+                "C003",
+                "C006"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_beijing",
+              "energy_kwh": 27.153768952036476,
+              "occupancy_minutes": 74.27354448645272,
+              "charge_start_second": 20743.587330813,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 27.153768952036476,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_beijing_2",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C014",
+                "C033",
+                "C005",
+                "C028",
+                "C019",
+                "C013",
+                "C016"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_beijing",
+              "energy_kwh": 37.937323530639134,
+              "occupancy_minutes": 103.76973789263056,
+              "charge_start_second": 18973.815726442,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 37.937323530639134,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_beijing_3",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C017",
+                "C035",
+                "C030",
+                "C010",
+                "C004",
+                "C021"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_beijing",
+              "energy_kwh": 30.74683846386054,
+              "occupancy_minutes": 84.10164638644207,
+              "charge_start_second": 20153.901216813,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 30.74683846386054,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_tianjin_1",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_tianjin",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C041",
+                "C043",
+                "C046",
+                "C044",
+                "C048",
+                "C039",
+                "C038"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_tianjin",
+              "energy_kwh": 14.897259402468103,
+              "occupancy_minutes": 40.74838601263334,
+              "charge_start_second": 14400.0,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 14.897259402468103,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        },
+        {
+          "physical_vehicle_id": "EV_D_tianjin_2",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_tianjin",
+          "trips": [
+            {
+              "trip_index": 1,
+              "customer_ids": [
+                "C042",
+                "C050",
+                "C049",
+                "C045",
+                "C047",
+                "C040"
+              ],
+              "locked_customer_prefix": [],
+              "route_visits": []
+            }
+          ],
+          "charging_sessions": [
+            {
+              "trip_index": 1,
+              "station_id": "D_tianjin",
+              "energy_kwh": 18.75722748416379,
+              "occupancy_minutes": 51.30653400080096,
+              "charge_start_second": 14400.0,
+              "charge_day_offset": 0,
+              "start_energy_kwh": 0.0,
+              "end_energy_kwh": 18.75722748416379,
+              "charging_curve_id": "M17_22KW_NORMAL_PWL",
+              "locked": false
+            }
+          ],
+          "has_dynamic_commitment": false
+        }
+      ],
+      "unserved_customers": [],
+      "version": 1,
+      "source": "integrated_route_kernel:integrated-native-skeleton:06e4229bfb140f29"
+    },
+    "evaluation": {
+      "total_cost": 1945.1721366135207,
+      "breakdown": {
+        "total_cost": 1945.1721366135207,
+        "cost_fix": 1190.0,
+        "cost_km": 450.8725024593212,
+        "cost_fuel": 223.25474415268565,
+        "cost_elec": 68.79106333907092,
+        "cost_occ": 0.0,
+        "cost_time": 0.0,
+        "cost_transship": 0.0,
+        "cost_carbon": 12.253826662443084,
+        "E_total": 163.34079795312027,
+        "E_cv_direct": 80.73002996851844,
+        "E_ev_indirect": 82.61076798460182,
+        "n_veh_cv": 2,
+        "n_veh_ev": 5,
+        "distance_total": 635963.592977457,
+        "distance_cv": 225244.50149477297,
+        "distance_ev": 410719.091482684,
+        "fuel_liters": 29.846890929503427,
+        "electricity_kwh": 129.49241783316805,
+        "route_time_hours": 10.125916666666667,
+        "depot_charging_kwh": 129.49241783316805,
+        "station_charging_kwh": 0,
+        "carbon_quota_kg": 0.0,
+        "ev_drive_kwh": 129.49241783316805
+      },
+      "feasible": true,
+      "prepared_solution": {
+        "routes": [
+          {
+            "vehicle_id": "CV_D_beijing_2#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_beijing",
+            "node_sequence": [
+              "D_beijing",
+              "C015",
+              "C001",
+              "C032",
+              "C023",
+              "C009",
+              "C018",
+              "C020",
+              "D_beijing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_beijing_3#T1",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_beijing",
+            "node_sequence": [
+              "D_beijing",
+              "C036",
+              "C022",
+              "C025",
+              "C027",
+              "C034",
+              "D_beijing"
+            ]
+          },
+          {
+            "vehicle_id": "CV_D_beijing_3#T2",
+            "vehicle_type": "cv",
+            "home_depot_id": "D_beijing",
+            "node_sequence": [
+              "D_beijing",
+              "C029",
+              "C007",
+              "C026",
+              "C011",
+              "C037",
+              "D_beijing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_beijing_1#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_beijing",
+            "node_sequence": [
+              "D_beijing",
+              "C031",
+              "C008",
+              "C024",
+              "C012",
+              "C002",
+              "C003",
+              "C006",
+              "D_beijing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_beijing_2#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_beijing",
+            "node_sequence": [
+              "D_beijing",
+              "C014",
+              "C033",
+              "C005",
+              "C028",
+              "C019",
+              "C013",
+              "C016",
+              "D_beijing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_beijing_3#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_beijing",
+            "node_sequence": [
+              "D_beijing",
+              "C017",
+              "C035",
+              "C030",
+              "C010",
+              "C004",
+              "C021",
+              "D_beijing"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_tianjin_1#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_tianjin",
+            "node_sequence": [
+              "D_tianjin",
+              "C041",
+              "C043",
+              "C046",
+              "C044",
+              "C048",
+              "C039",
+              "C038",
+              "D_tianjin"
+            ]
+          },
+          {
+            "vehicle_id": "EV_D_tianjin_2#T1",
+            "vehicle_type": "ev",
+            "home_depot_id": "D_tianjin",
+            "node_sequence": [
+              "D_tianjin",
+              "C042",
+              "C050",
+              "C049",
+              "C045",
+              "C047",
+              "C040",
+              "D_tianjin"
+            ]
+          }
+        ],
+        "charging_actions": [
+          {
+            "vehicle_id": "EV_D_beijing_1#T1",
+            "station_id": "D_beijing",
+            "energy_kwh": 27.153768952036476,
+            "occupancy_minutes": 74.27354448645272,
+            "charge_start_second": 20743.587330813,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 27.153768952036476,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_beijing_2#T1",
+            "station_id": "D_beijing",
+            "energy_kwh": 37.937323530639134,
+            "occupancy_minutes": 103.76973789263056,
+            "charge_start_second": 18973.815726442,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 37.937323530639134,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_beijing_3#T1",
+            "station_id": "D_beijing",
+            "energy_kwh": 30.74683846386054,
+            "occupancy_minutes": 84.10164638644207,
+            "charge_start_second": 20153.901216813,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 30.74683846386054,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_tianjin_1#T1",
+            "station_id": "D_tianjin",
+            "energy_kwh": 14.897259402468103,
+            "occupancy_minutes": 40.74838601263334,
+            "charge_start_second": 14400.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 14.897259402468103,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          },
+          {
+            "vehicle_id": "EV_D_tianjin_2#T1",
+            "station_id": "D_tianjin",
+            "energy_kwh": 18.75722748416379,
+            "occupancy_minutes": 51.30653400080096,
+            "charge_start_second": 14400.0,
+            "charge_day_offset": 0,
+            "start_energy_kwh": 0.0,
+            "end_energy_kwh": 18.75722748416379,
+            "charging_curve_id": "M17_22KW_NORMAL_PWL"
+          }
+        ],
+        "cross_site_services": []
+      }
+    },
+    "run_accounting": {
+      "iterations": 42,
+      "evaluated": 110,
+      "rejected": 0,
+      "repaired": 32,
+      "restarts": 0,
+      "elapsed_seconds": 189.675948124961
+    },
+    "private_accounting": {
+      "decoded_candidates": 25,
+      "rejected_candidates": 74,
+      "mechanism_calls": 23,
+      "mechanism_improvements": 11
+    }
+  }
+}

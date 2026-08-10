@@ -1,0 +1,32 @@
+{
+  "verdict": "TECHNICAL_FLEET_SUPPLY_SCOUT_COMPLETE",
+  "formal_experiment": false,
+  "instance_id": "cn-cy-50c-01-V2-LOCATIONS",
+  "search_mode": "FULL_PROBLEM_COMPONENTS",
+  "rows": [
+    {
+      "instance_id": "cn-cy-50c-01-V2-LOCATIONS",
+      "arm": "BOTH_TYPES_AVAILABLE",
+      "search_mode": "FULL_PROBLEM_COMPONENTS",
+      "seed": 11,
+      "iterations": 85,
+      "runtime_seconds": 60.2597917499952,
+      "initial_total_cost_cny": 2206.5372959867027,
+      "total_cost_cny": 2008.2498742890243,
+      "total_emissions_kg": 78.57137841265953,
+      "cv_direct_emissions_kg": 40.341443155315176,
+      "ev_indirect_emissions_kg": 38.22993525734435,
+      "used_cv": 1,
+      "used_ev": 7,
+      "electricity_kwh": 177.4209022979791,
+      "customers_served": 50,
+      "customers_total": 50,
+      "demand_served": 13266.0,
+      "demand_total": 13266.0,
+      "caps_by_depot_json": "{\"D_chengdu\": {\"num_cv\": 4, \"num_ev\": 4, \"total_fleet_cap\": 4}, \"D_chongqing\": {\"num_cv\": 5, \"num_ev\": 5, \"total_fleet_cap\": 5}}",
+      "individual_fingerprint": "77c35bf5ff76c231736f37329f714ccc6d54da8324087a81c9bb7942a9ea1271"
+    }
+  ],
+  "service_and_demand_equal": true,
+  "formal_model_or_instance_modified": false
+}
