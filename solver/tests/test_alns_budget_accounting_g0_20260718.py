@@ -13,7 +13,7 @@ from setp_solver.search.evaluation import EvalBudget, EvaluationContext
 from setp_solver.solution import Solution
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.candidates import make_shared_initial_solution
 from setp_solver.algorithms.resetp_alns.kernel.alns_core import run_alns_wouda
@@ -131,17 +131,18 @@ def test_real_alns_targets_close_exactly_and_final_solution_rechecks(target: int
         eval_budget=target,
         max_runtime_seconds=20.0,
         seed=17,
+        prices=UK_2025_PRICES,
     )
     assert result.evaluations == target
     assert result.candidate_scores == target
     assert 0 <= result.actual_moves <= target
     bundle = load_search_bundle(VERIFY_BUNDLE)
-    assert check_solution(result.best_solution, bundle.instance, DEFAULT_PRICES) == []
+    assert check_solution(result.best_solution, bundle.instance, UK_2025_PRICES) == []
     independent = evaluate(
         result.best_solution,
         bundle.instance,
         bundle.carbon_profile,
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
     )["total_cost"]
     assert independent == pytest.approx(result.best_obj)
 
@@ -153,6 +154,7 @@ def test_same_seed_and_budget_replay_same_solution_and_stop() -> None:
         eval_budget=7,
         max_runtime_seconds=20.0,
         seed=29,
+        prices=UK_2025_PRICES,
     )
     right = run_alns_wouda(
         VERIFY_BUNDLE,
@@ -160,6 +162,7 @@ def test_same_seed_and_budget_replay_same_solution_and_stop() -> None:
         eval_budget=7,
         max_runtime_seconds=20.0,
         seed=29,
+        prices=UK_2025_PRICES,
     )
     assert asdict(left.best_solution) == asdict(right.best_solution)
     assert (left.evaluations, left.candidate_scores, left.actual_moves) == (
@@ -171,13 +174,13 @@ def test_same_seed_and_budget_replay_same_solution_and_stop() -> None:
 
 def test_route_sum_carbon_feature_matches_complete_evaluator() -> None:
     bundle = load_search_bundle(VERIFY_BUNDLE)
-    solution = make_shared_initial_solution(bundle)
-    context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+    solution = make_shared_initial_solution(bundle, UK_2025_PRICES)
+    context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
     expected = evaluate(
         solution,
         bundle.instance,
         bundle.carbon_profile,
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         carbon_quota_kg=0.0,
     )["E_total"]
     assert _solution_carbon_kg(solution, context) == pytest.approx(expected)
@@ -186,18 +189,18 @@ def test_route_sum_carbon_feature_matches_complete_evaluator() -> None:
 @pytest.mark.parametrize("component", ["global_repack", "fleet_charge"])
 def test_structural_components_stop_cleanly_at_one_remaining_score(component: str) -> None:
     bundle = load_search_bundle(VERIFY_BUNDLE)
-    solution = make_shared_initial_solution(bundle)
-    reference = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+    solution = make_shared_initial_solution(bundle, UK_2025_PRICES)
+    reference = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
     current_objective = evaluate(
         solution,
         bundle.instance,
         bundle.carbon_profile,
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
     )["total_cost"]
     context = EvaluationContext(
         bundle.instance,
         bundle.carbon_profile,
-        prices=DEFAULT_PRICES,
+        prices=UK_2025_PRICES,
         budget=EvalBudget(limit=1, target=1),
     )
     if component == "global_repack":

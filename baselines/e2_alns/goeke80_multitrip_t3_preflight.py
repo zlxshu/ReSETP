@@ -178,7 +178,7 @@ def build_metadata(repo_root: Path, args: argparse.Namespace) -> dict[str, Any]:
 
 
 def phase0_audit(repo_root: Path) -> dict[str, Any]:
-    tex = (repo_root / "docs/paper_submission_final/paper_main.tex").read_text(encoding="utf-8", errors="ignore")
+    tex = (repo_root / "docs/paper_submission_final/RETIRED_paper_main.tex").read_text(encoding="utf-8", errors="ignore")
     rescue = repo_root / "baselines/e2_alns/goeke80_multitrip_rescue_gate.md"
     rescue_text = rescue.read_text(encoding="utf-8", errors="ignore") if rescue.exists() else ""
     warm_rows = []

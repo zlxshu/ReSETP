@@ -151,6 +151,15 @@ class LocalSearch:
         self._ls.shuffle(self._rng)
         return self._ls.intensify(solution, cost_evaluator)
 
+    def repair_required(
+        self,
+        solution: Solution,
+        cost_evaluator: CostEvaluator,
+    ) -> Solution:
+        """Insert missing required clients without other local-search moves."""
+
+        return self._ls.repair_required(solution, cost_evaluator)
+
     def search(
         self, solution: Solution, cost_evaluator: CostEvaluator
     ) -> Solution:

@@ -192,7 +192,7 @@ def phase0_audit() -> dict[str, Any]:
 def model_intent_audit() -> dict[str, Any]:
     cost_text = (REPO_ROOT / "solver/src/setp_solver/cost.py").read_text(encoding="utf-8")
     prices_text = (REPO_ROOT / "solver/src/setp_solver/prices.py").read_text(encoding="utf-8")
-    tex_text = (REPO_ROOT / "docs/paper_submission_final/paper_main.tex").read_text(encoding="utf-8")
+    tex_text = (REPO_ROOT / "docs/paper_submission_final/RETIRED_paper_main.tex").read_text(encoding="utf-8")
     checks = {
         "cost_has_route_fixed_cost": "cost_fix = len(solution.routes) * _price(prices, \"vehicle_fixed_cost\")" in cost_text,
         "cost_has_km_cost": "cost_km = (distance_total / 1000.0) * _price(prices, \"c_km\")" in cost_text,

@@ -4,7 +4,7 @@ from dataclasses import replace
 
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.solution import Route, Solution
 
 
@@ -17,12 +17,12 @@ def test_e5_time_value_is_zero_by_default_and_isolated_when_enabled() -> None:
         distance_matrix=[[0.0, 90_000.0], [90_000.0, 0.0]],
     )
     solution = Solution(routes=[Route("CV1", "cv", "D", ["D", "C", "D"])])
-    default = evaluate(solution, instance, [], DEFAULT_PRICES)
+    default = evaluate(solution, instance, [], UK_2025_PRICES)
     sensitivity = evaluate(
         solution,
         instance,
         [],
-        replace(DEFAULT_PRICES, route_time_cost_per_hour=75.0),
+        replace(UK_2025_PRICES, route_time_cost_per_hour=75.0),
     )
     assert default["cost_time"] == 0.0
     assert sensitivity["route_time_hours"] == 2.0

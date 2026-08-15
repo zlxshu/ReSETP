@@ -70,7 +70,7 @@ UNAUTHORIZED_PROTECTED = (
     "solver/src/setp_solver/cost.py",
     "solver/src/setp_solver/check.py",
     "solver/src/setp_solver/search/evaluation.py",
-    "docs/paper_submission_final/paper_main.tex",
+    "docs/paper_submission_final/RETIRED_paper_main.tex",
 )
 TARGET_TESTS = (
     "solver/tests/test_charging_curve.py",

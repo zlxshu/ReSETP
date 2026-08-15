@@ -59,7 +59,7 @@ EXPECTED_SCENARIO_VALUES = {
     "revenue_cny_per_kg": 1.5,
     "cv_non_energy_distance_cny_per_km": 0.78,
     "ev_non_energy_distance_cny_per_km": 0.67,
-    "depot_charger_count": 2,
+    "configured_depot_gun_count_if_finite": 2,
     "depot_charger_power_kw": 22.0,
     "fleet_main_reserve_factor": 1.25,
 }
@@ -132,7 +132,7 @@ def main() -> int:
     rows: list[dict[str, Any]] = []
 
     register = read_csv(RUNTIME / "city_runtime_parameter_register.csv")
-    calendar = read_csv(RUNTIME / "tariff_carbon_48slot_calendar.csv")
+    calendar = read_csv(RUNTIME / "tariff_carbon_hourly_calendar.csv")
     fleet = read_csv(FLEET / "fleet_caps.csv")
     catalog = read_csv(STATIC / "instance_catalog.csv")
 
@@ -174,7 +174,7 @@ def main() -> int:
         ),
     )
     slot_keys = {
-        (row["city"].strip().lower(), int(row["half_hour_slot"]))
+        (row["city"].strip().lower(), int(row["hourly_calendar_row"]))
         for row in formal_calendar
     }
     add(
@@ -311,8 +311,8 @@ def main() -> int:
         "revenue_cny_per_kg": 1.5,
         "cv_non_energy_distance_cny_per_km": 0.78,
         "ev_non_energy_distance_cny_per_km": 0.67,
-        "depot_charger_count": {
-            int(row["depot_charger_count"]) for row in fleet
+        "configured_depot_gun_count_if_finite": {
+            int(row["configured_depot_gun_count_if_finite"]) for row in fleet
         },
         "depot_charger_power_kw": {
             float(row["depot_charge_power_kw"]) for row in fleet
@@ -322,7 +322,7 @@ def main() -> int:
         },
     }
     scenario_ok = (
-        observed_scenario["depot_charger_count"] == {2}
+        observed_scenario["configured_depot_gun_count_if_finite"] == {2}
         and observed_scenario["depot_charger_power_kw"] == {22.0}
         and observed_scenario["fleet_main_reserve_factor"] == {1.25}
         and all(
@@ -330,7 +330,7 @@ def main() -> int:
             for key, expected in EXPECTED_SCENARIO_VALUES.items()
             if key
             not in {
-                "depot_charger_count",
+                "configured_depot_gun_count_if_finite",
                 "depot_charger_power_kw",
                 "fleet_main_reserve_factor",
             }

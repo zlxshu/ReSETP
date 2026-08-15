@@ -110,7 +110,8 @@ class ReportingOutputTest(unittest.TestCase):
         self.assertIn("陈婉茹2023", text)
         self.assertIn("Soriano2023", text)
         self.assertIn("Shi2025", text)
-        self.assertIn("峰/平/谷按当日 $\\gamma$ 三分位划分", text)
+        self.assertIn("低/中/高碳强度组", text)
+        self.assertIn("不是电价的谷/平/峰类别", text)
 
     def test_t3_chen_table5_grouped_algorithm_columns(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -176,8 +177,14 @@ class ReportingOutputTest(unittest.TestCase):
             {"scenario": "碳感知充电", "gamma_gco2_per_kwh": "30", "total_kwh": "10"},
         ]
         shares = charging_period_shares(rows)
-        self.assertEqual(shares["朴素充电"], {"谷": 0.30, "平": 0.30, "峰": 0.40})
-        self.assertEqual(shares["碳感知充电"], {"谷": 0.80, "平": 0.10, "峰": 0.10})
+        self.assertEqual(
+            shares["朴素充电"],
+            {"低碳": 0.30, "中碳": 0.30, "高碳": 0.40},
+        )
+        self.assertEqual(
+            shares["碳感知充电"],
+            {"低碳": 0.80, "中碳": 0.10, "高碳": 0.10},
+        )
 
     def test_f4_renders_new_formal_48_slot_schema(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -185,7 +192,7 @@ class ReportingOutputTest(unittest.TestCase):
             rows = ["scenario,slot_index,horizon_second_start,gamma_gco2_per_kwh,depot_kwh,station_kwh,other_kwh,total_kwh"]
             for scenario in ("naive_return_charge", "carbon_aware"):
                 for slot in range(48):
-                    gamma = 120 + (slot % 24) * 6
+                    gamma = 120 + (slot // 2) * 6
                     kwh = 0.0
                     if scenario == "naive_return_charge" and slot in {18, 19, 20}:
                         kwh = 20.0

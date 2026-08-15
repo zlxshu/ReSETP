@@ -24,6 +24,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
+from feasibility_report_text import _format_full_evaluation_result
 from setp_solver.algorithms.duty_hgs.charging import ChargingRepairPolicy
 from setp_solver.algorithms.duty_hgs.contracts import CandidateStatus
 from setp_solver.algorithms.duty_hgs.education import evaluate_move
@@ -56,6 +57,7 @@ from setp_solver.algorithms.duty_hgs.runner import (
     population_sha256,
     run_duty_hgs,
 )
+from setp_solver.charge_timing import CHARGE_TIMING_POLICIES
 from setp_solver.china81 import load_china81_bundle
 from setp_solver.china81_completion import complete_china81_route_skeleton
 from setp_solver.profit import calculate_depot_profits
@@ -169,15 +171,21 @@ def _git(repo: Path, *args: str) -> str:
     ).stdout.strip()
 
 
-def _policy(evaluator: DutyFullEvaluator) -> ChargingRepairPolicy:
+def _policy(
+    evaluator: DutyFullEvaluator,
+    *,
+    first_trip_prev_night_enabled: bool = False,
+    charge_timing_policy: str = "cost_plus_carbon",
+) -> ChargingRepairPolicy:
     return ChargingRepairPolicy(
         strategy="integrated",
         carbon_weight=1.0,
         depot_charge_window_mode=evaluator.context.depot_charge_window_mode,
-        charge_timing_policy="cost_plus_carbon",
+        charge_timing_policy=charge_timing_policy,
         charge_amount_strategy="just_enough",
         public_station_candidate_mode="parallel",
         carbon_profiles_by_day_offset=None,
+        first_trip_prev_night_enabled=first_trip_prev_night_enabled,
     )
 
 
@@ -535,6 +543,20 @@ def main() -> int:
     parser.add_argument("--no-retain-trajectory", action="store_true")
     parser.add_argument("--stderr-capture-state", default="caller_not_declared")
     parser.add_argument(
+        "--first-trip-prev-night",
+        action="store_true",
+        help=(
+            "merge previous-day and same-day predeparture charging candidates "
+            "for the first trip of each physical-vehicle duty"
+        ),
+    )
+    parser.add_argument(
+        "--charge-timing-policy",
+        choices=tuple(sorted(CHARGE_TIMING_POLICIES)),
+        default="cost_plus_carbon",
+        help="charging-start policy used by both paired arms",
+    )
+    parser.add_argument(
         "--proposal-mode",
         choices=("legacy", "system", "route_only", "mechanism_only"),
         default="system",
@@ -568,18 +590,29 @@ def main() -> int:
             "requested_truth_sentinel_enabled": not args.disable_truth_sentinel,
             "requested_trajectory_streaming": args.stream_trajectory,
             "requested_trajectory_retention": not args.no_retain_trajectory,
+            "requested_first_trip_prev_night": args.first_trip_prev_night,
+            "requested_charge_timing_policy": args.charge_timing_policy,
         },
     )
 
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
     bundle, initial, pi0, context = _build_context(repo, args.instance_id)
+    if args.first_trip_prev_night:
+        context = replace(
+            context,
+            depot_charge_window_mode="full_gap",
+        )
     if args.disable_truth_sentinel:
         context = replace(
             context,
             incremental_full_truth_sentinel_enabled=False,
         )
     evaluator = DutyFullEvaluator(context)
-    policy = _policy(evaluator)
+    policy = _policy(
+        evaluator,
+        first_trip_prev_night_enabled=args.first_trip_prev_night,
+        charge_timing_policy=args.charge_timing_policy,
+    )
     parameters = _parameters(
         stagnation_patience=args.stagnation_patience
     )
@@ -857,13 +890,17 @@ def main() -> int:
             "provenance": asdict(result.provenance),
         },
     )
+    full_evaluation_result = _format_full_evaluation_result(
+        feasible=result.best_evaluation.feasible,
+        violation_count=len(result.best_evaluation.violations),
+    )
     report = f"""# Duty-HGS 真实输入单轮技术试跑报告
 
 ## 结论
 
 本轮判定：`{verdict}`。这是一轮接线和内部一致性检查，不是算法对比实验，也没有替用户确定正式算例、收敛迭代数或论文结论。
 
-真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；完整评价判定可行，违规数为 {len(result.best_evaluation.violations)}。本轮候选方式为 `{args.proposal_mode}`。完整真值哨兵开关为 `{context.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹增量写盘为 `{args.stream_trajectory}`，内存保留为 `{not args.no_retain_trajectory}`。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
+真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；{full_evaluation_result}。本轮候选方式为 `{args.proposal_mode}`。完整真值哨兵开关为 `{context.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹增量写盘为 `{args.stream_trajectory}`，内存保留为 `{not args.no_retain_trajectory}`。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
 
 初始成本为 {initial_evaluation.total_cost:.12f}，本轮保存解成本为 {result.best_evaluation.total_cost:.12f}。这个差值只用于排查运行过程，不能据此宣称 Duty-HGS 更优，因为本轮只有一个种子、一个循环，也没有同预算强基线。
 

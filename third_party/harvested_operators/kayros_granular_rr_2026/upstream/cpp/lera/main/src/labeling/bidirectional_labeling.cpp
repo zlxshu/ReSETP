@@ -1,0 +1,624 @@
+//
+// Created by Gonzalo Lera Romero.
+// Grupo de Optimizacion Combinatoria (GOC).
+// Departamento de Computacion - Universidad de Buenos Aires.
+//
+
+#include "labeling/bidirectional_labeling.h"
+
+#include "bcp/pricing_problem.h"
+
+#include <climits>
+#include <cstdlib>
+
+#include "labeling/trace.h"
+
+using namespace std;
+using namespace goc;
+using namespace nyr;
+
+namespace solver
+{
+namespace
+{
+// kayros (M5.7): normalize a monotone PWL function so that no zero-width
+// vertical survives and every coincident-abscissa breakpoint pair is bridged
+// by a steep segment (width <= 1e-3, staying below the following piece), so
+// Inverse() yields gap-free departure functions. Originally added for the
+// stepwise (Rifki-style) value jumps that interior arrival plateaus produce.
+//
+// DO NOT DELETE AS MOLLIFIER RESIDUE: this is LOAD-BEARING on the default
+// (jump-free) path. Two ordinary features of continuous instances reach it,
+// and it does not distinguish either from a genuine value jump:
+//  - CHOICE verticals. PWLFunction::Inverse turns every departure-function
+//    plateau into one, and FlipTime/FlipValue carry them into the reflected
+//    reverse arrival. Value() returns the attained endpoint at both domain
+//    endpoints of a vertical, so a vertical contributes a single breakpoint
+//    and its other endpoint reappears as a duplicate-x against the next piece.
+//  - Coincident abscissae between ordinary pieces: pieces store slope and
+//    intercept, so Value(domain.left) need not round-trip bit-exactly to the
+//    y that constructed the piece.
+// Instrumented counts (2026-08-05, df05a37): Vu2020 n=59 Vu-A5-pA-d90-w40,
+// 314 reverse arcs, 229 rewritten, 158 choice verticals flattened, 128
+// bridges; TDVRP Dabia2013 n=25 C101, 650 arcs, 590 rewritten, 566 bridges
+// with no vertical present at all. Zero JUMP verticals on either.
+//
+// Flattening those verticals is exactly the invariant the audited kayros 1.0.0
+// reverse arithmetic needs: a jump-free solve runs with
+// goc::step_exact_arithmetic() == false (M13.3), so goc applies its LEGACY
+// vertical handling, and verticals surviving into the reverse arr/tau/dep/
+// pretau make it over-certify. Removal was tried on 2026-08-05 and REFUSED:
+// cold TL-600 certificates rose deterministically above checker-valid stored
+// solutions on Vu2020 n=59 Vu-A2-pB-d98-w60 (1278.262 vs 1275.832, +2.43) and
+// Vu-A2-pB-d98-w100 (1852.944 vs 1846.807, +6.14). See NOTICE.md item 9,
+// amendment 7; the gates live in tests/test_lera_stepwise_soundness.py.
+PWLFunction continuize_value_jumps(const PWLFunction& f)
+{
+	const double delta = 1e-3; // >> goc EPS (1e-6), dust vs any horizon
+	if (f.PieceCount() <= 1) return f;
+	// Piecewise breakpoints; value jumps appear as duplicate-x pairs.
+	vector<Point2D> bp;
+	for (int k = 0; k < f.PieceCount(); ++k)
+	{
+		const LinearFunction& p = f.Piece(k);
+		Point2D l(p.domain.left, p.Value(p.domain.left));
+		Point2D r(p.domain.right, p.Value(p.domain.right));
+		if (bp.empty() || bp.back().x != l.x || bp.back().y != l.y) bp.push_back(l);
+		if (r.x != l.x || r.y != l.y) bp.push_back(r);
+	}
+	PWLFunction g;
+	size_t k = 0;
+	while (k < bp.size())
+	{
+		size_t j = k;
+		while (j + 1 < bp.size() && bp[j + 1].x == bp[k].x) ++j;
+		Point2D lo(bp[k].x, bp[k].y), hi(bp[j].x, bp[j].y);
+		Point2D cur = lo;
+		if (hi.y > lo.y && j + 1 < bp.size())
+		{
+			// Steep bridge from the lower value onto the following segment.
+			const Point2D& nxt = bp[j + 1];
+			double d = min(delta, (nxt.x - hi.x) / 2.0);
+			double t = d / (nxt.x - hi.x);
+			Point2D mid(hi.x + d, hi.y + t * (nxt.y - hi.y));
+			g.AddPiece(LinearFunction(cur, mid));
+			cur = mid;
+		}
+		if (j + 1 < bp.size())
+		{
+			const Point2D& nxt = bp[j + 1];
+			// Continue to the next breakpoint's lower value.
+			size_t j2 = j + 1;
+			g.AddPiece(LinearFunction(cur, Point2D(nxt.x, bp[j2].y)));
+		}
+		k = j + 1;
+	}
+	return g;
+}
+
+// Reverses a VRP instance.
+// o' := d
+// d' := o
+// D' := reverse(D)
+// tw'(v) := [T-b(v), T-a(v)]
+// arr'_vu(t) := T-dep_uv(T-t)
+VRPInstance reverse_instance(const VRPInstance& vrp)
+{
+	VRPInstance r = vrp; // default shallow copy.
+	swap(r.o, r.d);
+	r.D = vrp.D.Reverse();
+	for (Vertex v: r.D.Vertices()) r.tw[v] = {vrp.T - vrp.tw[v].right, vrp.T - vrp.tw[v].left};
+	for (Vertex u: vrp.D.Vertices())
+	{
+		for (Vertex v: vrp.D.Successors(u))
+		{
+			// Compute reverse travel functions. M5.9 (design memo 12.2): the
+			// reflection T - dep(T - t) is built by the exact graph transforms
+			// FlipTime + FlipValue (one IEEE subtraction per coordinate,
+			// platform-stable, jumps keep their attained endpoints), not by
+			// Compose(T - Id) + arithmetic. The waiting-time prefix (a plateau
+			// at the earliest reverse arrival, covering [min tw, min dom)) is a
+			// direct graph edit equivalent to the old Min(Constant, .) on a
+			// non-decreasing function, avoiding Max/Intersection entirely.
+			r.arr[v][u] = vrp.dep[u][v].FlipTime(vrp.T).FlipValue(vrp.T);
+			if (epsilon_smaller(min(r.tw[v]), min(dom(r.arr[v][u]))))
+			{
+				PWLFunction padded;
+				padded.AddPiece(LinearFunction(
+					Point2D(min(r.tw[v]), min(img(r.arr[v][u]))),
+					Point2D(min(dom(r.arr[v][u])), min(img(r.arr[v][u])))));
+				for (auto& p: r.arr[v][u].Pieces()) padded.AddPiece(p);
+				r.arr[v][u] = padded;
+			}
+			// The reverse-side normalizer is load-bearing and unconditional here.
+			// Time-reversal turns a left-continuous forward step function into a
+			// right-continuous reverse one; the labeling assumes uniform
+			// left-continuity, so exact reverse verticals misprice at jumps. It is
+			// NOT a no-op on jump-free arcs either: it flattens the CHOICE
+			// verticals that Inverse/FlipTime leave in the reflected arrival, which
+			// is the invariant the legacy (non-exact) arithmetic requires. Only the
+			// exact value-jump path skips it, and that path carries verticals on
+			// purpose. See the helper's header before touching this.
+			if (!std::getenv("KAYROS_STEP_EXACT")) // M5.9 exact-jump path (13.2 tagged verticals)
+				r.arr[v][u] = continuize_value_jumps(r.arr[v][u]); // kayros (M5.7): see above.
+			r.tau[v][u] = r.arr[v][u] - PWLFunction::IdentityFunction({0.0, vrp.T});
+			r.dep[v][u] = r.arr[v][u].Inverse();
+			r.pretau[v][u] = PWLFunction::IdentityFunction(dom(r.dep[v][u])) - r.dep[v][u];
+		}
+	}
+	// Add travel functions for (i, i) (for boundary reasons).
+	for (Vertex u: r.D.Vertices())
+	{
+		r.tau[u][u] = r.pretau[u][u] = PWLFunction::ConstantFunction(0.0, r.tw[u]);
+		r.dep[u][u] = r.arr[u][u] = PWLFunction::IdentityFunction(r.tw[u]);
+	}
+	// Set LDT.
+	for (Vertex i: r.D.Vertices())
+	{
+		vector<TimeUnit> LDT_i = compute_latest_departure_time(r.D, i, r.tw[i].right, [&] (Vertex u, Vertex v, double tf) { return r.DepartureTime({u,v}, tf); });
+		for (Vertex k: r.D.Vertices()) r.LDT[k][i] = LDT_i[k];
+	}
+	return r;
+}
+
+PricingProblem reverse_pricing_problem(const PricingProblem& pp)
+{
+	PricingProblem rpp = pp;
+	rpp.A.clear();
+	for (Arc e: pp.A) rpp.A.push_back(e.Reverse());
+	return rpp;
+}
+}
+
+BidirectionalLabeling::BidirectionalLabeling(
+	const VRPInstance& vrp,
+	const std::optional<TDNGRoutesParams>& ng_routes_params
+): 
+	vrp_(vrp), 
+	ng_params_(ng_routes_params),
+	lbl_{
+		MonodirectionalLabeling(vrp_, ng_routes_params), // Forward labeling.
+		MonodirectionalLabeling(reverse_instance(vrp_), ng_routes_params) // Backward labeling.
+	}
+{
+	solution_limit = INT_MAX;
+	time_limit = Duration::Max();
+	screen_output = nullptr;
+	closing_state = true;
+	merge_start = 0;
+	lbl_[0].process_limit = lbl_[1].process_limit = 10;
+	lbl_[0].cross = false, lbl_[1].cross = true;
+	partial = limited_extension = lazy_extension = unreachable_strengthened = sort_by_cost = true;
+	elementary_check_relaxation = cost_check_relaxation = ng_routes_relaxation = false;
+	correcting = false;
+	// M5.9: `symmetric` was NEVER initialized (upstream set it from the
+	// experiment JSON, e.g. bpc_lera.json: false; the vendoring dropped that
+	// wiring), so line ~172 read an indeterminate value: per-binary-
+	// deterministic garbage that can differ across toolchains. Prime suspect
+	// for the 2026-07-10 cross-platform certification divergence. Default =
+	// upstream Lera BPC config (false: asymmetric, t_m = T). Env toggle for
+	// the divergence experiment; TODO remove after the experiment concludes.
+	symmetric = std::getenv("KAYROS_LBL_SYMMETRIC") != nullptr;
+	// M13.0: path-keyed solution pool on the exact value-jump path only. The
+	// marker mirrors the continuize gate in reverse_instance above: with
+	// KAYROS_STEP_EXACT the reversed arrivals keep the verticals that the
+	// normalizer would otherwise flatten, which is exactly when merge-time
+	// duration bounds carry vertical-arithmetic dust (measured on Rifki-2:
+	// forward dep carries 5367 choice verticals; the reversed arr inherits them
+	// under the toggle and holds none when the normalizer runs). Every default
+	// run, jump-free or stepwise, keeps the legacy set-keyed pool
+	// bit-identically.
+	step_pool_ = false;
+	if (std::getenv("KAYROS_STEP_EXACT"))
+	{
+		for (Vertex u: vrp_.D.Vertices())
+		{
+			for (Vertex v: vrp_.D.Successors(u))
+			{
+				for (int k = 0; k < vrp_.dep[u][v].PieceCount(); ++k)
+					if (vrp_.dep[u][v].Piece(k).is_vertical()) { step_pool_ = true; break; }
+				if (step_pool_) break;
+			}
+			if (step_pool_) break;
+		}
+	}
+	if (trace::merge_on())
+	{
+		fprintf(stderr, "TRC CTOR step_pool=%d\n", (int) step_pool_);
+		// Dump arr/dep pieces of every arc along the merge target (dev tool).
+		const auto& t = trace::merge_target();
+		for (size_t k = 0; k + 1 < t.size(); ++k)
+		{
+			Vertex u = t[k], v = t[k + 1];
+			if (!vrp_.D.IncludesArc({u, v})) continue;
+			auto dump = [&](const char* name, const PWLFunction& f) {
+				for (int p = 0; p < f.PieceCount(); ++p)
+				{
+					const LinearFunction& pc = f.Piece(p);
+					fprintf(stderr, "TRC ARC %s[%d][%d] piece=%d dom=[%.6f,%.6f] img=[%.6f,%.6f] %s att=%.6f\n",
+						name, (int) u, (int) v, p, pc.domain.left, pc.domain.right,
+						pc.image.left, pc.image.right,
+						pc.is_vertical() ? (pc.is_choice_vertical() ? "C" : "J") : "-",
+						pc.is_vertical() ? pc.intercept : pc.Value(pc.domain.left));
+				}
+			};
+			dump("arr", vrp_.arr[u][v]);
+			dump("dep", vrp_.dep[u][v]);
+		}
+	}
+}
+
+BLBExecutionLog BidirectionalLabeling::Run(
+    const PricingProblem& pricing_problem, 
+    std::vector<Route>* R,
+    LabelingLevel level
+) {
+	// Clean solution pool.
+	S.clear();
+	S_paths.clear(); // M13.0 path-keyed pool (step-carrying instances)
+	M[0] = M[1] = vector<MonodirectionalLabeling::DemandLevel>(vrp_.D.NbVertices());
+	
+	// Set pricing problem.
+	vrp_.D.AddArcs(pp_.A); // Add previously forbidden arcs.
+	pp_ = pricing_problem;
+	vrp_.D.RemoveArcs(pp_.A); // Remove pricing problem forbidden arcs.
+	
+	// Init forward and backward labeling.
+	lbl_[0].SetProblem(pp_);
+	lbl_[1].SetProblem(reverse_pricing_problem(pp_));
+	lbl_[0].t_m = lbl_[1].t_m = symmetric ? vrp_.T / 2 : vrp_.T;
+	
+	// Determine level flags.
+	setup_labeling_level_flag(level);
+
+	// Set flags based on the level
+	lbl_[0].partial = lbl_[1].partial = partial;
+	lbl_[0].elementary_check_relaxation = lbl_[1].elementary_check_relaxation = elementary_check_relaxation;
+	lbl_[0].cost_check_relaxation = lbl_[1].cost_check_relaxation = cost_check_relaxation;
+	lbl_[0].limited_extension = lbl_[1].limited_extension = limited_extension;
+	lbl_[0].lazy_extension = lbl_[1].lazy_extension = lazy_extension;
+	lbl_[0].sort_by_cost = lbl_[1].sort_by_cost = sort_by_cost;
+	lbl_[0].unreachable_strengthened = lbl_[1].unreachable_strengthened = unreachable_strengthened;
+	lbl_[0].correcting = lbl_[1].correcting = correcting;
+	
+	BLBExecutionLog log(true);
+	Stopwatch rolex(false), merge_rolex(false);
+	run_deadline_ = Deadline::In(time_limit); // (kayros M5.2)
+	
+	// Init queues with initial labels.
+	LBQueue q[2];
+	q[0].push(lbl_[0].Init());
+	q[1].push(lbl_[1].Init());
+	
+	// Index monodirectional labeling logs by direction.
+	MLBExecutionLog* mlb_log[2] { &*log.forward_log, &*log.backward_log };
+	
+	// Initialize output.
+	TableStream tstream(screen_output, 2.0);
+	tstream.AddColumn("time", 10).AddColumn("fw-time", 10).AddColumn("bw-time", 10).AddColumn("fw-proc", 10).
+		AddColumn("bw-proc", 10).AddColumn("#sol", 6).AddColumn("fw-t_m", 8).AddColumn("bw-t_m", 8).
+		AddColumn("#q-f", 10).AddColumn("#q-b", 10);
+	tstream.WriteHeader();
+	
+	rolex.Resume();
+	
+	// While there are labels to extend, do it.
+	bool processed = true;
+	while (processed)
+	{
+		processed = false;
+		// For each direction of the labeling (0=Forward, 1=Backward).
+		for (int d: {0, 1})
+		{
+			int od = (d+1)%2; // opposite direction.
+			
+			if (q[d].empty()) continue;
+			if (rolex.Peek() >= time_limit) { log.status = BLBStatus::TimeLimitReached; break; } // Check if TLim is reached.
+			if (pool_size() >= solution_limit) { log.status = BLBStatus::SolutionLimitReached; break; } // Check if SLim is reached.
+			// kayros (M13.2): sticky memory watermark; also catches a
+			// monodirectional Run below that broke on MemoryLimitReached.
+			if (MemoryMonitor::Exceeded()) { log.status = BLBStatus::MemoryLimitReached; break; }
+			lbl_[d].time_limit = time_limit - rolex.Peek(); // Set time limit.
+			auto P = lbl_[d].Run(&q[d], mlb_log[d]);
+			
+			// If iterative-merge is enabled, then add the labels to the structure.
+			if (!closing_state)
+				for (Label* l: P)
+					insert_sorted(M[d][l->v].Insert(floor(l->q), {}), l, [] (Label* l, Label* m) { return l->min_cost < m->min_cost; });
+			
+			// If iterative-merge is enabled, then try to merge.
+			if (!closing_state && log.forward_log->processed_count >= merge_start)
+			{
+				merge_rolex.Reset().Resume();
+				for (Label* l: P)
+				{
+					if (run_deadline_.Reached()) break; // (kayros M5.2)
+					IterativeMerge(l, M[od]);
+				}
+				*log.merge_time += merge_rolex.Pause();
+			}
+			
+			// Check if any full route was generated.
+			for (Label* l: P)
+				if (d == 0 && l->v == vrp_.d && epsilon_smaller(l->min_cost, 0.0))
+					AddSolution(l->Path(), min(img(l->duration)));
+			
+			// Update t_m.
+			if (q[d].empty()) lbl_[d].t_m = vrp_.T - lbl_[od].t_m; // If d has no more labels in the queue, the middle is t_m
+			else lbl_[od].t_m = min(lbl_[od].t_m, max(vrp_.T-lbl_[d].t_m, vrp_.T-q[d].top().makespan));
+			
+			// Check if any label was processed.
+			processed |= !P.empty();
+		}
+		
+		// Output to screen.
+		if (tstream.RegisterAttempt() || !processed)
+		{
+			tstream.WriteRow({STR(rolex.Peek()), STR(mlb_log[0]->time), STR(mlb_log[1]->time),
+					 STR(mlb_log[0]->processed_count), STR(mlb_log[1]->processed_count), STR(pool_size()),
+					 STR(lbl_[0].t_m), STR(vrp_.T-lbl_[1].t_m), STR(q[0].size()), STR(q[1].size())});
+		}
+	}
+	
+	// Last-edge merge.
+	// kayros (M13.2): a memory-tripped run must not start the merge tail.
+	if (pool_size() < solution_limit && rolex.Peek() < time_limit && log.status != BLBStatus::MemoryLimitReached)
+	{
+		merge_rolex.Reset().Resume();
+		LastArcMerge(q[0], lbl_[1].U);
+		*log.merge_time += merge_rolex.Pause();
+		// (kayros M5.2) A deadline-truncated merge must not report Finished:
+		// "Finished" is the caller's proof that pricing was exhaustive.
+		if (run_deadline_.Reached()) log.status = BLBStatus::TimeLimitReached;
+	}
+	
+	// kayros (M13.2): MemoryLimitReached takes precedence: "Finished" or a
+	// full pool would let the caller read a truncated pricing as exhaustive.
+	if (log.status != BLBStatus::MemoryLimitReached)
+	{
+		if (pool_size() >= solution_limit) log.status = BLBStatus::SolutionLimitReached;
+		else if (log.status == BLBStatus::DidNotStart) log.status = BLBStatus::Finished;
+	}
+	*log.time += rolex.Pause();
+	
+	// Add solutions from the pool to the return vector R.
+	// (kayros M5.2) Repricing the pool (one DP per route) is post-deadline
+	// work on a doomed run once the TL fired — cut the tail. The routes
+	// lost here would never be used: the caller terminates on the TL.
+	auto reprice_into_R = [&](const Route& r) {
+		// Compute r actual duration (nyr::RouteDuration -> goc::Route).
+		auto best = vrp_.BestDurationRoute(r.path);
+		// M13.0 trace: fate of the merge target through the pool repricing.
+		if (trace::merge_on() && r.path == trace::merge_target())
+			fprintf(stderr, "TRC POOL-EXIT path_len=%zu pool_dur=%.6f best_dur=%.6f best_empty=%d\n",
+				r.path.size(), r.duration, best.value, (int) best.path.empty());
+		R->push_back(Route(best.path, best.t0, best.value));
+	};
+	if (step_pool_)
+	{
+		for (auto& P_r: S_paths)
+		{
+			if (run_deadline_.Reached()) break;
+			reprice_into_R(P_r.second);
+		}
+	}
+	else
+	{
+		for (auto& V_r: S)
+		{
+			if (run_deadline_.Reached()) break;
+			reprice_into_R(V_r.second);
+		}
+	}
+	
+	return log;
+}
+
+void BidirectionalLabeling::IterativeMerge(Label* l, const MonodirectionalLabeling::DominanceStructure& L)
+{
+	TimeUnit T = vrp_.T;
+	for (auto& demand_entry : L[l->v])
+	{
+		if (run_deadline_.Reached()) break; // (kayros M5.2)
+		if (pool_size() >= solution_limit) break; // Do not exceed solution limit.
+		if (epsilon_bigger(demand_entry.first+l->q-vrp_.q[l->v], vrp_.Q)) break;
+		for (auto& m: demand_entry.second)
+		{
+			if (pool_size() >= solution_limit) break; // Do not exceed solution limit.
+			if (epsilon_bigger_equal(m->min_cost+l->min_cost+pp_.P[l->v] + l->cut_cost - l->parent->cut_cost, 0.0)) break;
+			Merge(l, m);
+		}
+	}
+}
+
+void BidirectionalLabeling::LastArcMerge(LBQueue& qf, const MonodirectionalLabeling::DominanceStructure& Lb)
+{
+	TimeUnit T = vrp_.T;
+	
+	// Create M_ijq structure.
+	Matrix<VectorMap<CapacityUnit, vector<Label*>>> M(vrp_.D.NbVertices(), vrp_.D.NbVertices());
+	for (Vertex v: vrp_.D.Vertices())
+		for (auto& entry: Lb[v])
+			for (auto& m: entry.second)
+				insert_sorted(M[m->v][m->parent->v].Insert(entry.first, {}), m, [] (Label* m1, Label* m2) { return m1->min_cost < m2->min_cost; });
+	
+	while (!qf.empty())
+	{
+		if (run_deadline_.Reached()) break; // (kayros M5.2)
+		LazyLabel ll = qf.top();
+		qf.pop();
+		Label* l = ll.parent;
+		if (pool_size() >= solution_limit) continue;
+		
+		// M13.0 trace: is this pop the merge target's frontier arc?
+		bool tr_arc = trace::merge_fwd_prefix(l);
+		if (tr_arc)
+			fprintf(stderr, "TRC LAM-POP l=%s v=%d l_min_cost=%.6f\n",
+				trace::path_str(l).c_str(), (int) ll.v, l->min_cost);
+		for (auto& entry: M[ll.parent->v][ll.v])
+		{
+			// M13.0 trace: report the witness backward label's standing in this
+			// pool even when the sorted cost break would stop before reaching it.
+			if (tr_arc)
+				for (Label* m: entry.second)
+					if (trace::merge_bwd_suffix(m))
+						fprintf(stderr, "TRC LAM-WITNESS l=%s m=%s q_entry=%.1f m_min_cost=%.6f l_min_cost=%.6f P=%.6f sum=%.6f q_break=%d\n",
+							trace::path_str(l).c_str(), trace::path_str(m).c_str(),
+							entry.first, m->min_cost, l->min_cost, pp_.P[l->v],
+							m->min_cost+l->min_cost+pp_.P[l->v] + l->cut_cost - l->parent->cut_cost,
+							(int) epsilon_bigger(entry.first + l->q - vrp_.q[l->v], vrp_.Q));
+			if (epsilon_bigger(entry.first + l->q - vrp_.q[l->v], vrp_.Q))
+			{
+				if (tr_arc) fprintf(stderr, "TRC LAM-QBREAK l=%s v=%d q_entry=%.1f\n",
+					trace::path_str(l).c_str(), (int) ll.v, entry.first);
+				break;
+			}
+			if (pool_size() >= solution_limit) break; // Do not exceed solution limit.
+			for (Label* m: entry.second)
+			{
+				if (pool_size() >= solution_limit) break; // Do not exceed solution limit.
+				if (epsilon_bigger_equal(m->min_cost+l->min_cost+pp_.P[l->v] + l->cut_cost - l->parent->cut_cost, 0.0))
+				{
+					if (tr_arc && trace::merge_bwd_suffix(m))
+						fprintf(stderr, "TRC LAM-CBREAK l=%s m=%s m_min_cost=%.6f l_min_cost=%.6f P=%.6f sum=%.6f\n",
+							trace::path_str(l).c_str(), trace::path_str(m).c_str(),
+							m->min_cost, l->min_cost, pp_.P[l->v],
+							m->min_cost+l->min_cost+pp_.P[l->v] + l->cut_cost - l->parent->cut_cost);
+					break;
+				}
+				Merge(l, m);
+			}
+		}
+	}
+}
+
+void BidirectionalLabeling::Merge(Label* l, Label* m)
+{
+	TimeUnit T = vrp_.T;
+
+	// M13.0 trace: full arithmetic of the witness pair's merge attempt.
+	bool tr = trace::merge_matches(l, m);
+	if (epsilon_bigger(min(l->rw), T-min(m->rw)))
+	{
+		if (tr) fprintf(stderr, "TRC MERGE-RET l=%s m=%s reason=rw-disjoint l_rw_min=%.6f T-m_rw_min=%.6f\n",
+			trace::path_str(l).c_str(), trace::path_str(m).c_str(), min(l->rw), T-min(m->rw));
+		return;
+	}
+	if (intersection(l->S, m->S) != create_bitset<MAX_N>({l->v}))
+	{
+		if (tr) fprintf(stderr, "TRC MERGE-RET l=%s m=%s reason=S-overlap\n",
+			trace::path_str(l).c_str(), trace::path_str(m).c_str());
+		return;
+	}
+	
+	Route r;
+	// kayros (M5.7): rw and dom(duration) are maintained separately and can
+	// disagree by epsilon (goc's piece arithmetic is epsilon-tolerant, and the
+	// reverse-side normalizer can nudge reverse-arrival domain boundaries),
+	// while Value() throws outside the domain; clamp boundary evaluations into
+	// the domain. Search arithmetic only: columns are repriced checker-exactly
+	// (stage A). Instrumented on 2026-08-05 over six jump-free and stepwise
+	// solves: 47552 calls, never once out of domain. Kept as a guard, because
+	// nothing enforces rw within dom(duration) and the alternative to clamping
+	// is a thrown exception, not a better value.
+	auto duration_at = [](const Label* x, double t) {
+		t = std::max(min(dom(x->duration)), std::min(t, max(dom(x->duration))));
+		// M5.9 (21/n): minimum over the departure-choice set (see
+		// monodirectional duration_at).
+		return x->duration.MinValueAt(t);
+	};
+	// Merge l and m duration functions lm_d(t) = l_d(t) + m_d(T-t).
+	if (epsilon_bigger_equal(T-max(m->rw), max(l->rw)))
+	{
+		r.duration = duration_at(l, max(l->rw)) + duration_at(m, max(m->rw)) + (T-max(m->rw)) - max(l->rw);
+		if (tr) fprintf(stderr, "TRC MERGE-WAIT l=%s m=%s l_at=%.6f m_at=%.6f wait=%.6f dur=%.6f\n",
+			trace::path_str(l).c_str(), trace::path_str(m).c_str(),
+			duration_at(l, max(l->rw)), duration_at(m, max(m->rw)),
+			(T-max(m->rw)) - max(l->rw), r.duration);
+	}
+	else
+	{
+		// M5.9 (design memo 12.2): m->duration(T - t) via the exact graph
+		// reflection FlipTime, not Compose(T - Id). One IEEE subtraction per
+		// breakpoint (platform-stable, no epsilon/PreValue arithmetic), and
+		// value jumps keep their attained endpoints through the reflection.
+		PWLFunction lm_duration = l->duration + m->duration.FlipTime(T);
+		if (lm_duration.Empty())
+		{
+			if (tr) fprintf(stderr, "TRC MERGE-RET l=%s m=%s reason=empty-overlap l_rw=[%.6f,%.6f] m_flip_rw=[%.6f,%.6f]\n",
+				trace::path_str(l).c_str(), trace::path_str(m).c_str(),
+				min(l->rw), max(l->rw), T-max(m->rw), T-min(m->rw));
+			return;
+		}
+		r.duration = min(img(lm_duration));
+		if (tr) fprintf(stderr, "TRC MERGE-OVERLAP l=%s m=%s dur=%.6f l_rw=[%.6f,%.6f] m_flip_rw=[%.6f,%.6f]\n",
+			trace::path_str(l).c_str(), trace::path_str(m).c_str(), r.duration,
+			min(l->rw), max(l->rw), T-max(m->rw), T-min(m->rw));
+	}
+
+	double merge_cut_cost = 0.0;
+	for (int i = 0; i < pp_.S.size(); ++i) if (l->parent->cut_visited[i]+m->cut_visited[i] >= 2) merge_cut_cost += pp_.sigma[i];
+	double merge_cost = r.duration - l->p - m->p + pp_.P[l->v] - merge_cut_cost;
+	if (tr) fprintf(stderr, "TRC MERGE-COST l=%s m=%s dur=%.6f merge_cost=%.6f -> %s\n",
+		trace::path_str(l).c_str(), trace::path_str(m).c_str(), r.duration, merge_cost,
+		epsilon_bigger_equal(merge_cost, 0.0) ? "REJECT" : "ADD");
+	if (epsilon_bigger_equal(merge_cost, 0.0)) return;
+	
+	// Merge l and m paths.
+	r.path = l->Path();
+	for (Label* x = m->parent; x->parent != nullptr; x = x->parent) r.path.push_back(x->v);
+	if (r.path[0] != vrp_.o) r.path = reverse(r.path);
+	
+	// We have a negative reduced cost route r.
+	AddSolution(r.path, r.duration);
+}
+
+void BidirectionalLabeling::AddSolution(const goc::GraphPath& p, double min_duration)
+{
+	// M13.0 trace: pool decisions for orderings of the merge target's vertex set.
+	if (trace::merge_on()
+		&& create_bitset<MAX_N>(p) == create_bitset<MAX_N>(trace::merge_target()))
+	{
+		std::string ps;
+		for (auto v: p) ps += (ps.empty() ? "" : ",") + std::to_string(v);
+		fprintf(stderr, "TRC POOL-ADD cand=%s dur=%.6f pool=%s\n",
+			ps.c_str(), min_duration, step_pool_ ? "path" : "set");
+	}
+	if (step_pool_)
+	{
+		// M13.0: path-keyed pool (see the header comment): every distinct
+		// ordering survives to the checker-exact pool-exit repricing; the
+		// bound only dedups re-merges of the SAME path.
+		if (!includes_key(S_paths, p)) S_paths[p] = Route({}, 0.0, INFTY);
+		if (S_paths[p].duration > min_duration) S_paths[p] = Route(p, 0.0, min_duration);
+		return;
+	}
+	VertexSet V = create_bitset<MAX_N>(p);
+	if (!includes_key(S, V)) S[V] = Route({}, 0.0, INFTY);
+	if (S[V].duration > min_duration) S[V] = Route(p, 0.0, min_duration);
+}
+
+void BidirectionalLabeling::setup_labeling_level_flag(
+    LabelingLevel level
+) {
+    cost_check_relaxation = false;
+    elementary_check_relaxation = false;
+    ng_routes_relaxation = false;
+
+    switch (level)
+    {
+        case LabelingLevel::HeuristicCost:
+            cost_check_relaxation = true;
+            break;
+        case LabelingLevel::HeuristicElementarity:
+            elementary_check_relaxation = true;
+            break;
+        case LabelingLevel::HeuristicNG:
+            ng_routes_relaxation = true;
+            break;
+        case LabelingLevel::Exact:
+            // No relaxation flags are set.
+            break;
+    }
+}
+} // namespace

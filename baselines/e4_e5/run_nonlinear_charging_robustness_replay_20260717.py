@@ -680,7 +680,7 @@ def main() -> int:
                         default=0.0,
                     ),
                     "max_exact_concurrency": max_exact,
-                    "max_half_hour_slot_occupancy": max_slot,
+                    "max_hourly_calendar_row_occupancy": max_slot,
                     "minimum_station_capacity": 0 if math.isinf(min_capacity) else int(min_capacity),
                     "exact_capacity_excess": exact_excess,
                     "half_hour_capacity_excess": slot_excess,

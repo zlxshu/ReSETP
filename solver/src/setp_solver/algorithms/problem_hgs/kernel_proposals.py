@@ -19,7 +19,7 @@ from setp_hgs_kernel import Solution as IndependentKernelSolution
 from setp_hgs_kernel import Trip as IndependentKernelTrip
 from setp_hgs_kernel._setp_hgs_kernel import RandomNumberGenerator
 from setp_hgs_kernel.PenaltyManager import PenaltyManager
-from setp_hgs_kernel.search import LocalSearch, compute_neighbours
+from setp_hgs_kernel.search import DepotSplit, LocalSearch, compute_neighbours
 from setp_hgs_kernel.solve import SolveParams
 
 from setp_solver.cost import (
@@ -30,6 +30,7 @@ from setp_solver.cost import (
 )
 from setp_solver.instance_loader import Instance
 from setp_solver.solution import Route
+from setp_solver.field_rename_compat import calendar_row_number
 
 from .evaluation import DutyEvaluationContext, FullEvaluation
 from .model import DutyIndividual
@@ -48,11 +49,39 @@ class IndependentKernelDutyRouteProposalEngine:
         *,
         random_seed: int,
         stream_role: str = "main_route",
+        include_propulsion_proxy: bool = True,
+        depot_assignment_operator_enabled: bool = False,
+        rebuilt_volume_capacity_enabled: bool = False,
+        rebuilt_shift_neighbours_only: bool = False,
+        cross_depot_enabled: bool = True,
+        multi_trip_enabled: bool = True,
+        type_exchange_enabled: bool = True,
+        shift_aware_ev_unit_cost_enabled: bool = False,
     ) -> None:
         if kernel_version != "0.12.2":
             raise RuntimeError("Duty route proposals require IndependentKernel 0.12.2 HGS")
         self._context = context
         self.stream_role = str(stream_role)
+        self.include_propulsion_proxy = bool(include_propulsion_proxy)
+        self.depot_assignment_operator_enabled = bool(
+            depot_assignment_operator_enabled
+        )
+        self.rebuilt_volume_capacity_enabled = bool(
+            rebuilt_volume_capacity_enabled
+        )
+        self.rebuilt_shift_neighbours_only = bool(
+            rebuilt_shift_neighbours_only
+        )
+        self.cross_depot_enabled = bool(cross_depot_enabled)
+        self.multi_trip_enabled = bool(multi_trip_enabled)
+        self.type_exchange_enabled = bool(type_exchange_enabled)
+        self.depot_assignment_operator_enabled = bool(
+            self.depot_assignment_operator_enabled
+            and self.cross_depot_enabled
+        )
+        self.shift_aware_ev_unit_cost_enabled = bool(
+            shift_aware_ev_unit_cost_enabled
+        )
         if not self.stream_role:
             raise ValueError("route proposal stream role cannot be empty")
         self._fleet_registry = tuple(
@@ -69,7 +98,33 @@ class IndependentKernelDutyRouteProposalEngine:
             self._node_id_by_location,
             self._vehicle_type_by_duty_id,
             self._duty_id_by_vehicle_type,
-        ) = _build_unique_asset_problem(context, fleet_template)
+            self._shift_aware_ev_proxy,
+        ) = _build_unique_asset_problem(
+            context,
+            fleet_template,
+            include_propulsion_proxy=self.include_propulsion_proxy,
+            include_rebuilt_volume_capacity=(
+                self.rebuilt_volume_capacity_enabled
+            ),
+            cross_depot_enabled=self.cross_depot_enabled,
+            multi_trip_enabled=self.multi_trip_enabled,
+            type_exchange_enabled=self.type_exchange_enabled,
+            shift_aware_ev_unit_cost_enabled=(
+                self.shift_aware_ev_unit_cost_enabled
+            ),
+        )
+        self._customer_home_depot_by_id = {
+            customer: duty.home_depot_id
+            for duty in fleet_template.duties
+            for trip in duty.trips
+            for customer in trip.customer_ids
+        }
+        self._customer_vehicle_type_by_id = {
+            customer: duty.vehicle_type
+            for duty in fleet_template.duties
+            for trip in duty.trips
+            for customer in trip.customer_ids
+        }
         params = SolveParams()
         rng = RandomNumberGenerator(seed=int(random_seed))
         self._rng = rng
@@ -78,12 +133,35 @@ class IndependentKernelDutyRouteProposalEngine:
             rng,
             compute_neighbours(self._data, params.neighbourhood),
         )
+        if self.rebuilt_shift_neighbours_only:
+            self._restrict_neighbours_to_rebuilt_shift()
         self._node_operator_names: list[str] = []
         self._route_operator_names: list[str] = []
+        self._depot_split_operator = None
+        self._depot_split_evaluations = 0
+        self._depot_split_applications = 0
         for operator in params.node_ops:
+            if (
+                not self.multi_trip_enabled
+                and operator.__name__ == "RelocateWithDepot"
+            ):
+                continue
             if operator.supports(self._data):
                 self._local_search.add_node_operator(operator(self._data))
                 self._node_operator_names.append(operator.__name__)
+        if (
+            self.depot_assignment_operator_enabled
+            and self.cross_depot_enabled
+            and DepotSplit.supports(
+                self._data
+            )
+        ):
+            self._depot_split_operator = DepotSplit(
+                self._data,
+                self._compatible_vehicle_groups(),
+            )
+            self._local_search.add_node_operator(self._depot_split_operator)
+            self._node_operator_names.append(DepotSplit.__name__)
         for operator in params.route_ops:
             if operator.supports(self._data):
                 self._local_search.add_route_operator(operator(self._data))
@@ -95,7 +173,35 @@ class IndependentKernelDutyRouteProposalEngine:
         self._penalty_manager = penalty_manager
         self._cost_evaluator = penalty_manager.booster_cost_evaluator()
         self.source_id = (
-            "setp_hgs_kernel-0.12.2-local-search-unique-duty-slots-v3:"
+            "setp_hgs_kernel-0.12.2-local-search-unique-duty-slots-v4:"
+            + (
+                "half-load-propulsion:"
+                if self.include_propulsion_proxy
+                else "route-only:"
+            )
+            + (
+                "depot-split:"
+                if self.depot_assignment_operator_enabled
+                else ""
+            )
+            + (
+                "volume-capacity:"
+                if self.rebuilt_volume_capacity_enabled
+                else ""
+            )
+            + (
+                "same-shift-neighbours:"
+                if self.rebuilt_shift_neighbours_only
+                else ""
+            )
+            + ("cross-depot-off:" if not self.cross_depot_enabled else "")
+            + ("multi-trip-off:" if not self.multi_trip_enabled else "")
+            + ("type-exchange-off:" if not self.type_exchange_enabled else "")
+            + (
+                "shift-aware-ev-price:"
+                if self.shift_aware_ev_unit_cost_enabled
+                else ""
+            )
             + self.stream_role
         )
         dynamic_identity = None
@@ -131,9 +237,36 @@ class IndependentKernelDutyRouteProposalEngine:
             "route_cost_scale": _ROUTE_COST_SCALE,
             "route_cost_scope": (
                 "vehicle-fixed-plus-half-load-propulsion-carbon-distance-time"
+                if self.include_propulsion_proxy
+                else "vehicle-fixed-plus-non-energy-distance-time"
             ),
             "dynamic_state": dynamic_identity,
+            "rebuilt_volume_capacity_enabled": (
+                self.rebuilt_volume_capacity_enabled
+            ),
+            "rebuilt_shift_neighbours_only": (
+                self.rebuilt_shift_neighbours_only
+            ),
         }
+        if not self.cross_depot_enabled:
+            identity["cross_depot_enabled"] = False
+        if not self.multi_trip_enabled:
+            identity["multi_trip_enabled"] = False
+        if not self.type_exchange_enabled:
+            identity["type_exchange_enabled"] = False
+        if self.shift_aware_ev_unit_cost_enabled:
+            identity["shift_aware_ev_proxy"] = self._shift_aware_ev_proxy
+        if self.depot_assignment_operator_enabled:
+            identity["depot_assignment_operator"] = {
+                "name": "DepotSplit",
+                "compatible_vehicle_groups": (
+                    self._compatible_vehicle_groups()
+                ),
+                "scope": (
+                    "same-vehicle-class-cross-depot-trip-prefix-or-suffix-"
+                    "to-empty-duty"
+                ),
+            }
         self.identity_sha256 = hashlib.sha256(
             json.dumps(
                 identity,
@@ -166,6 +299,76 @@ class IndependentKernelDutyRouteProposalEngine:
         """Return the copied HGS native routing penalty manager."""
 
         return self._penalty_manager
+
+    @property
+    def depot_assignment_statistics(self) -> dict[str, int | bool]:
+        """Return cumulative native DepotSplit work for this engine."""
+
+        return {
+            "enabled": self.depot_assignment_operator_enabled,
+            "evaluations": self._depot_split_evaluations,
+            "applications": self._depot_split_applications,
+        }
+
+    @property
+    def depot_assignment_compatible_vehicle_groups(self) -> tuple[int, ...]:
+        """Group unique duty slots by their canonical vehicle class."""
+
+        return tuple(self._compatible_vehicle_groups())
+
+    @property
+    def node_operator_names(self) -> tuple[str, ...]:
+        """Return the enabled native node operators for closure evidence."""
+
+        return tuple(self._node_operator_names)
+
+    @property
+    def shift_aware_ev_proxy(self) -> dict[str, object]:
+        """Return the exact private-side shift-rate inputs used by the proxy."""
+
+        return dict(self._shift_aware_ev_proxy)
+
+    def _compatible_vehicle_groups(self) -> list[int]:
+        labels = sorted(
+            {
+                vehicle_type
+                for _duty_id, vehicle_type, _depot in self._fleet_registry
+            }
+        )
+        group_by_label = {label: index for index, label in enumerate(labels)}
+        groups = [0] * self._data.num_vehicle_types
+        for duty_id, vehicle_type, _depot in self._fleet_registry:
+            groups[
+                self._vehicle_type_by_duty_id[duty_id]
+            ] = group_by_label[vehicle_type]
+        return groups
+
+    def _record_depot_split_statistics(self) -> None:
+        if self._depot_split_operator is None:
+            return
+        statistics = self._depot_split_operator.statistics
+        self._depot_split_evaluations += int(statistics.num_evaluations)
+        self._depot_split_applications += int(statistics.num_applications)
+
+    def _restrict_neighbours_to_rebuilt_shift(self) -> None:
+        contract = self._context.rebuilt_route_constraints
+        if contract is None:
+            raise ValueError(
+                "same-shift neighbours require rebuilt route constraints"
+            )
+        shifts = contract.customer_shift_by_id
+        neighbours = self._local_search.neighbours
+        for customer_id, shift_id in shifts.items():
+            if customer_id not in self._location_by_node_id:
+                continue
+            location = self._location_by_node_id[customer_id]
+            neighbours[location] = [
+                other
+                for other in neighbours[location]
+                if self._node_id_by_location.get(other) in shifts
+                and shifts[self._node_id_by_location[other]] == shift_id
+            ]
+        self._local_search.neighbours = neighbours
 
     def project(
         self,
@@ -217,7 +420,10 @@ class IndependentKernelDutyRouteProposalEngine:
             )
         warm = self._project(individual)
         improved = self._local_search(warm, self._cost_evaluator)
+        self._record_depot_split_statistics()
         replacements = self._decode_changes(individual, improved)
+        if not self._mechanism_locks_preserved(individual, replacements):
+            return ()
         components = _migration_components(individual, replacements)
         if not components:
             return ()
@@ -259,7 +465,10 @@ class IndependentKernelDutyRouteProposalEngine:
             random_solution,
             self._cost_evaluator,
         )
+        self._record_depot_split_statistics()
         replacements = self._decode_changes(individual, educated_solution)
+        if not self._mechanism_locks_preserved(individual, replacements):
+            return None
         if not replacements:
             return None
         return DutySkeletonMove(
@@ -268,6 +477,40 @@ class IndependentKernelDutyRouteProposalEngine:
             replacements=replacements,
             dynamic_future_only=self._context.dynamic_state is not None,
         )
+
+    def _mechanism_locks_preserved(
+        self,
+        individual: DutyIndividual,
+        replacements: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...],
+    ) -> bool:
+        chains = {
+            duty.physical_vehicle_id: tuple(
+                tuple(trip.customer_ids) for trip in duty.trips
+            )
+            for duty in individual.duties
+        }
+        chains.update(dict(replacements))
+        duty_by_id = {
+            duty.physical_vehicle_id: duty for duty in individual.duties
+        }
+        for duty_id, trips in chains.items():
+            duty = duty_by_id[duty_id]
+            if not self.multi_trip_enabled and len(trips) > 1:
+                return False
+            for customer in (item for trip in trips for item in trip):
+                if (
+                    not self.cross_depot_enabled
+                    and self._customer_home_depot_by_id.get(customer)
+                    != duty.home_depot_id
+                ):
+                    return False
+                if (
+                    not self.type_exchange_enabled
+                    and self._customer_vehicle_type_by_id.get(customer)
+                    != duty.vehicle_type
+                ):
+                    return False
+        return True
 
     def _project(self, individual: DutyIndividual) -> IndependentKernelSolution:
         routes: list[IndependentKernelRoute] = []
@@ -332,6 +575,13 @@ class IndependentKernelDutyRouteProposalEngine:
 def _build_unique_asset_problem(
     context: DutyEvaluationContext,
     fleet_template: DutyIndividual,
+    *,
+    include_propulsion_proxy: bool = True,
+    include_rebuilt_volume_capacity: bool = False,
+    cross_depot_enabled: bool = True,
+    multi_trip_enabled: bool = True,
+    type_exchange_enabled: bool = True,
+    shift_aware_ev_unit_cost_enabled: bool = False,
 ):
     bundle = context.bundle
     instance = bundle.instance
@@ -361,6 +611,58 @@ def _build_unique_asset_problem(
         (max(0, -Decimal(str(value)).as_tuple().exponent) for value in load_values),
         default=0,
     )
+    volume_by_customer = None
+    volume_scale = 1
+    volume_capacity = None
+    if include_rebuilt_volume_capacity:
+        contract = context.rebuilt_route_constraints
+        if contract is None:
+            raise ValueError(
+                "rebuilt volume capacity requires a registered route contract"
+            )
+        volume_by_customer = contract.customer_volume_m3_by_id
+        if not {node.node_id for node in customers}.issubset(
+            volume_by_customer
+        ):
+            raise ValueError(
+                "rebuilt volume capacity does not cover dynamic customers"
+            )
+        volume_values = [
+            *volume_by_customer.values(),
+            contract.vehicle_volume_capacity_m3,
+        ]
+        volume_scale = 10 ** max(
+            (
+                max(0, -Decimal(str(value)).as_tuple().exponent)
+                for value in volume_values
+            ),
+            default=0,
+        )
+        volume_capacity = round(
+            float(contract.vehicle_volume_capacity_m3) * volume_scale
+        )
+    baseline_depot_by_customer = {
+        customer: duty.home_depot_id
+        for duty in fleet_template.duties
+        for trip in duty.trips
+        for customer in trip.customer_ids
+    }
+    baseline_type_by_customer = {
+        customer: duty.vehicle_type
+        for duty in fleet_template.duties
+        for trip in duty.trips
+        for customer in trip.customer_ids
+    }
+    locked_depots = (
+        ()
+        if cross_depot_enabled
+        else tuple(sorted({duty.home_depot_id for duty in fleet_template.duties}))
+    )
+    locked_vehicle_types = (
+        ()
+        if type_exchange_enabled
+        else tuple(sorted({duty.vehicle_type for duty in fleet_template.duties}))
+    )
     location_object = {}
     location_by_node_id: dict[str, int] = {}
     node_id_by_location: dict[int, str] = {}
@@ -374,10 +676,28 @@ def _build_unique_asset_problem(
                 name=node.node_id,
             )
         else:
+            delivery = round(float(node.demand) * load_scale)
+            if volume_by_customer is not None or locked_depots or locked_vehicle_types:
+                delivery = [delivery]
+                if volume_by_customer is not None:
+                    delivery.append(
+                        round(
+                            float(volume_by_customer[node.node_id])
+                            * volume_scale
+                        )
+                    )
+                delivery.extend(
+                    int(baseline_depot_by_customer[node.node_id] == depot_id)
+                    for depot_id in locked_depots
+                )
+                delivery.extend(
+                    int(baseline_type_by_customer[node.node_id] == vehicle_type)
+                    for vehicle_type in locked_vehicle_types
+                )
             location_object[node.node_id] = model.add_client(
                 node.x,
                 node.y,
-                delivery=round(float(node.demand) * load_scale),
+                delivery=delivery,
                 service_duration=round(node.service_time),
                 tw_early=round(node.ready_time),
                 tw_late=round(node.due_time),
@@ -397,7 +717,11 @@ def _build_unique_asset_problem(
             name=f"{vehicle_type}@{depot_id}"
         )
     ev_unit_cost_by_depot: dict[str, float] = {}
+    shift_aware_ev_proxy: dict[str, object] = {}
+    ev_unit_cost_by_depot_and_shift: dict[tuple[str, str], float] = {}
     for vehicle_type, depot_id in profiles:
+        if not include_propulsion_proxy:
+            continue
         if vehicle_type != "ev" or depot_id in ev_unit_cost_by_depot:
             continue
         rows = time_profile_rows_for_node(
@@ -416,6 +740,13 @@ def _build_unique_asset_problem(
             )
             for row in rows
         ) / len(rows)
+        if shift_aware_ev_unit_cost_enabled:
+            rates = _rebuilt_shift_aware_ev_unit_costs(context, rows)
+            for shift_id, row in rates.items():
+                ev_unit_cost_by_depot_and_shift[(depot_id, shift_id)] = (
+                    float(row["proxy_cny_per_kwh"])
+                )
+            shift_aware_ev_proxy[depot_id] = rates
     for left in (*depots, *customers):
         for right in (*depots, *customers):
             if left.node_id == right.node_id:
@@ -437,6 +768,18 @@ def _build_unique_asset_problem(
                         vehicle_type=vehicle_type,
                         depot_id=depot_id,
                         ev_unit_cost=ev_unit_cost_by_depot.get(depot_id),
+                        ev_unit_cost_by_shift=(
+                            {
+                                shift_id: unit_cost
+                                for (candidate_depot, shift_id), unit_cost in (
+                                    ev_unit_cost_by_depot_and_shift.items()
+                                )
+                                if candidate_depot == depot_id
+                            }
+                            if shift_aware_ev_unit_cost_enabled
+                            else None
+                        ),
+                        include_propulsion_proxy=include_propulsion_proxy,
                     ),
                     duration=max(0, round(duration_s)),
                     profile=profile,
@@ -463,12 +806,30 @@ def _build_unique_asset_problem(
                 float(context.dynamic_state.cut.trigger_second),
                 float(asset.available_second),
             )
+        capacity = round(float(vehicle.payload_capacity_kg) * load_scale)
+        if volume_capacity is not None or locked_depots or locked_vehicle_types:
+            capacity = [capacity]
+            if volume_capacity is not None:
+                capacity.append(volume_capacity)
+            capacity.extend(
+                len(customers) if duty.home_depot_id == depot_id else 0
+                for depot_id in locked_depots
+            )
+            capacity.extend(
+                len(customers) if duty.vehicle_type == vehicle_type else 0
+                for vehicle_type in locked_vehicle_types
+            )
         model.add_vehicle_type(
             num_available=1,
-            capacity=round(float(vehicle.payload_capacity_kg) * load_scale),
+            capacity=capacity,
             start_depot=depot,
             end_depot=depot,
-            fixed_cost=_money_units(bundle.prices.vehicle_fixed_cost),
+            fixed_cost=_money_units(
+                instance.vehicle_fixed_cost_per_day(
+                    duty.vehicle_type,
+                    fallback=bundle.prices.vehicle_fixed_cost,
+                )
+            ),
             tw_early=round(vehicle_tw_early),
             tw_late=round(depot_open.due_time),
             unit_distance_cost=1,
@@ -477,8 +838,8 @@ def _build_unique_asset_problem(
             ),
             profile=profiles[(duty.vehicle_type, duty.home_depot_id)],
             name=duty.physical_vehicle_id,
-            reload_depots=[depot],
-            max_reloads=max_reloads,
+            reload_depots=[depot] if multi_trip_enabled else [],
+            max_reloads=max_reloads if multi_trip_enabled else 0,
         )
         vehicle_type_by_duty_id[duty.physical_vehicle_id] = vehicle_type_index
         duty_id_by_vehicle_type[vehicle_type_index] = duty.physical_vehicle_id
@@ -488,6 +849,7 @@ def _build_unique_asset_problem(
         node_id_by_location,
         vehicle_type_by_duty_id,
         duty_id_by_vehicle_type,
+        shift_aware_ev_proxy,
     )
 
 
@@ -496,6 +858,61 @@ def _money_units(value: float | Decimal) -> int:
 
     scaled = Decimal(str(value)) * _ROUTE_COST_SCALE
     return max(0, int(scaled.to_integral_value(rounding=ROUND_HALF_UP)))
+
+
+def _rebuilt_shift_aware_ev_unit_costs(
+    context: DutyEvaluationContext,
+    rows,
+) -> dict[str, dict[str, float | int]]:
+    """Select the lowest-carbon half-hour in each causal charging window."""
+
+    contract = context.rebuilt_route_constraints
+    if contract is None:
+        raise ValueError("shift-aware EV price requires rebuilt route constraints")
+    ordered = sorted(
+        contract.shift_window_second_by_id.items(),
+        key=lambda item: (float(item[1][0]), item[0]),
+    )
+    selected: dict[str, dict[str, float | int]] = {}
+    previous_end = 0.0
+    for shift_id, (shift_start, shift_end) in ordered:
+        window_start = previous_end
+        window_end = float(shift_start)
+        available = tuple(
+            row
+            for row in rows
+            if window_start
+            <= float(row["horizon_second_start"])
+            < window_end
+        )
+        if not available:
+            raise ValueError(
+                f"shift {shift_id!r} has no causal depot charging slot"
+            )
+        row = min(
+            available,
+            key=lambda item: (
+                float(item["actual_gco2_per_kwh"]),
+                float(item["depot_energy_cny_per_kwh"]),
+                -float(item["horizon_second_start"]),
+            ),
+        )
+        electricity = float(row["depot_energy_cny_per_kwh"])
+        carbon = float(row["actual_gco2_per_kwh"])
+        selected[str(shift_id)] = {
+            "window_start_second": float(window_start),
+            "window_end_second": float(window_end),
+            "selected_slot": calendar_row_number(row),
+            "selected_slot_start_second": float(
+                row["horizon_second_start"]
+            ),
+            "electricity_cny_per_kwh": electricity,
+            "actual_gco2_per_kwh": carbon,
+            "proxy_cny_per_kwh": electricity
+            + carbon / 1_000.0 * float(context.bundle.prices.carbon_price),
+        }
+        previous_end = float(shift_end)
+    return selected
 
 
 def _distance_cost_units(distance_m: float, rate_per_km: float) -> int:
@@ -513,6 +930,8 @@ def _route_proxy_cost_units(
     vehicle_type: str,
     depot_id: str,
     ev_unit_cost: float | None = None,
+    ev_unit_cost_by_shift: dict[str, float] | None = None,
+    include_propulsion_proxy: bool = True,
 ) -> int:
     """Return a neutral static gradient; complete Duty truth remains final."""
 
@@ -535,6 +954,8 @@ def _route_proxy_cost_units(
             fallback=float(prices.c_km),
         )
     )
+    if not include_propulsion_proxy:
+        return _money_units(non_energy)
     if vehicle_type == "cv":
         fuel_liters = cv_instance_arc_fuel_liters(
             instance,
@@ -563,7 +984,23 @@ def _route_proxy_cost_units(
         )
         if ev_unit_cost is None:
             raise ValueError("EV route proxy unit cost was not prepared")
-        propulsion = energy_kwh * ev_unit_cost
+        active_ev_unit_cost = ev_unit_cost
+        if ev_unit_cost_by_shift:
+            contract = context.rebuilt_route_constraints
+            if contract is None:
+                raise ValueError(
+                    "shift-aware EV price requires rebuilt route constraints"
+                )
+            shifts = {
+                contract.customer_shift_by_id[node_id]
+                for node_id in (left_node_id, right_node_id)
+                if node_id in contract.customer_shift_by_id
+            }
+            if shifts:
+                active_ev_unit_cost = sum(
+                    ev_unit_cost_by_shift[shift_id] for shift_id in shifts
+                ) / len(shifts)
+        propulsion = energy_kwh * active_ev_unit_cost
     else:
         raise ValueError(f"unsupported route proxy vehicle type {vehicle_type!r}")
     return _money_units(non_energy + propulsion)

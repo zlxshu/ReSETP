@@ -358,6 +358,7 @@ def prepare_dynamic_multitrip_solution(
     stage_start_second: float,
     locked_charging_actions: Sequence[ChargingAction] = (),
     ordered_route_ids: Sequence[str] = (),
+    minimum_departure_second_by_route: Mapping[str, float] | None = None,
 ) -> tuple[Solution, MultiTripCertificate]:
     """Schedule open routes on the exact inherited assets.
 
@@ -446,6 +447,11 @@ def prepare_dynamic_multitrip_solution(
             prices,
             public_charging_actions=tuple(
                 public_actions_by_route.get(route.vehicle_id, ())
+            ),
+            minimum_departure_second=(
+                None
+                if minimum_departure_second_by_route is None
+                else minimum_departure_second_by_route.get(route.vehicle_id)
             ),
         )
         for route in solution.routes
@@ -1424,6 +1430,7 @@ def _route_profile(
     prices: PriceParameters | dict[str, float] | Any,
     *,
     public_charging_actions: tuple[ChargingAction, ...] = (),
+    minimum_departure_second: float | None = None,
 ) -> _RouteProfile:
     if route.vehicle_type.lower() not in {"cv", "ev"}:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has an unknown vehicle type")
@@ -1465,7 +1472,16 @@ def _route_profile(
 
     origin = nodes[route.home_depot_id]
     elapsed = float(origin.service_time)
-    departure_candidates = [float(origin.ready_time) + float(origin.service_time)]
+    departure_floor = float(origin.ready_time) + float(origin.service_time)
+    if minimum_departure_second is not None:
+        requested_floor = float(minimum_departure_second)
+        if not _finite(requested_floor):
+            raise ValueError(
+                f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has a "
+                "non-finite minimum departure"
+            )
+        departure_floor = max(departure_floor, requested_floor)
+    departure_candidates = [departure_floor]
     for from_id, to_id in zip(route.node_sequence, route.node_sequence[1:]):
         _, travel, _ = instance.arc_metrics(
             from_id,
@@ -1489,9 +1505,9 @@ def _route_profile(
             fallback_speed_mps=speed,
         )
         latest_start = min(float(node.due_time), latest_start - float(node.service_time) - travel)
-    if latest_start < float(origin.ready_time) - _TOL:
-        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has no feasible clock")
     latest = latest_start + float(origin.service_time)
+    if latest < departure_floor - _TOL:
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has no feasible clock")
     preferred = min(preferred, latest)
 
     loads = _arc_loads(route.node_sequence, nodes)
@@ -1522,6 +1538,7 @@ def _route_profile(
             instance,
             prices,
             charging_actions=list(public_charging_actions),
+            minimum_departure_second=minimum_departure_second,
         )
         energy = float(timing.drive_energy_kwh)
         public_energy = float(timing.public_charge_energy_kwh)

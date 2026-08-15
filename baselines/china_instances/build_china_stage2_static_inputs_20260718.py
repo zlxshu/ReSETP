@@ -128,7 +128,7 @@ def select_facilities() -> list[dict]:
             "depot_lat": depot["road_access_lat_wgs84"],
             "depot_point_semantics": depot["point_semantics"],
             "depot_source": depot["source"],
-            "depot_power_kw": 22.0,
+            "depot_site_power_kw_shadow": 22.0,
             "depot_gun_count": 2,
             "depot_parameter_class": "UNIFORM_PLANNED_CAPACITY_SCENARIO_PROXY",
             "station_name": station.get("name") or f"OSM公共充电站 {station['osm_type']}/{station['osm_id']}",
@@ -157,7 +157,7 @@ def period_for(city: str, minute: int) -> str:
 
 def build_calendar() -> list[dict]:
     reg = json.loads(TARIFF.read_text(encoding="utf-8"))
-    carbon = {(r["date"], int(r["half_hour_slot"])): r for r in read_csv(CARBON)}
+    carbon = {(r["date"], int(r["hourly_calendar_row"])): r for r in read_csv(CARBON)}
     result = []
     for city, (_, carbon_col, price_area) in CITIES.items():
         candidate = reg["one_to_ten_kv_candidate_rows"][price_area]
@@ -178,7 +178,7 @@ def build_calendar() -> list[dict]:
                     "city": city,
                     "region": CITIES[city][0],
                     "date": day.isoformat(),
-                    "half_hour_slot": slot,
+                    "hourly_calendar_row": slot,
                     "minute_of_day": minute,
                     "tariff_period": label,
                     "depot_energy_cny_per_kwh": prices[label],
@@ -240,7 +240,7 @@ def main() -> None:
     facilities = select_facilities()
     write_csv(OUT / "facilities.csv", facilities)
     calendar = build_calendar()
-    write_csv(OUT / "tariff_carbon_48slot_calendar.csv", calendar)
+    write_csv(OUT / "tariff_carbon_hourly_calendar.csv", calendar)
     catalog = build_nodes(facilities)
     write_csv(OUT / "instance_catalog.csv", catalog)
     stats = {
@@ -284,7 +284,7 @@ def main() -> None:
             "month": "2025-02",
             "main_display_day": "2025-02-12",
             "rows": len(calendar),
-            "calendar_sha256": digest(OUT / "tariff_carbon_48slot_calendar.csv"),
+            "calendar_sha256": digest(OUT / "tariff_carbon_hourly_calendar.csv"),
         },
         "effect_thresholds": stats,
         "remaining_g1_dependent": [

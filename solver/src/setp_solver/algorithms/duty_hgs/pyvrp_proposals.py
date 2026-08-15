@@ -386,7 +386,12 @@ def _build_unique_asset_problem(
             capacity=round(float(vehicle.payload_capacity_kg) * load_scale),
             start_depot=depot,
             end_depot=depot,
-            fixed_cost=_money_units(bundle.prices.vehicle_fixed_cost),
+            fixed_cost=_money_units(
+                instance.vehicle_fixed_cost_per_day(
+                    duty.vehicle_type,
+                    fallback=bundle.prices.vehicle_fixed_cost,
+                )
+            ),
             tw_early=round(vehicle_tw_early),
             tw_late=round(depot_open.due_time),
             unit_distance_cost=1,

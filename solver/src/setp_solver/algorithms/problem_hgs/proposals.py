@@ -88,6 +88,10 @@ class MechanismProposalEngine:
     charging_policy: ChargingRepairPolicy
     include_charging_candidates: bool = True
     include_non_charging_candidates: bool = True
+    include_structural_channels: bool = False
+    cross_depot_enabled: bool = True
+    multi_trip_enabled: bool = True
+    type_exchange_enabled: bool = True
     source_id: str = "problem-hgs-problem-mechanism-actions-v1"
 
     @property
@@ -103,6 +107,19 @@ class MechanismProposalEngine:
             + "\n"
             + repr(self.include_non_charging_candidates)
         )
+        if self.include_structural_channels:
+            payload += "\nstructural_channels=depot,fairness,multi_trip"
+        disabled = tuple(
+            name
+            for name, enabled in (
+                ("cross_depot", self.cross_depot_enabled),
+                ("multi_trip", self.multi_trip_enabled),
+                ("type_exchange", self.type_exchange_enabled),
+            )
+            if not enabled
+        )
+        if disabled:
+            payload += "\nmechanism_off=" + ",".join(disabled)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def propose(
@@ -113,11 +130,31 @@ class MechanismProposalEngine:
         *,
         include_whole_duty_type_exchange: bool,
     ) -> Iterable[DutyMove]:
-        del evaluation, instance
         duties = tuple(individual.duties)
         if (
             self.include_non_charging_candidates
+            and self.include_structural_channels
+        ):
+            structural_channels = set()
+            if self.cross_depot_enabled:
+                structural_channels.update(
+                    {"depot_collaboration", "fairness_cross_depot"}
+                )
+            if self.multi_trip_enabled:
+                structural_channels.add("multi_trip")
+            for move in generate_problem_moves(
+                individual,
+                evaluation,
+                instance,
+                include_whole_duty_type_exchange=False,
+            ):
+                if move.channel in structural_channels:
+                    yield move
+
+        if (
+            self.include_non_charging_candidates
             and include_whole_duty_type_exchange
+            and self.type_exchange_enabled
         ):
             for left_index, left in enumerate(duties):
                 for right in duties[left_index + 1 :]:
@@ -192,6 +229,9 @@ class MechanismProposalEngine:
                     )
 
         if not self.include_non_charging_candidates:
+            return
+
+        if not self.cross_depot_enabled:
             return
 
         for left_index, left in enumerate(duties):

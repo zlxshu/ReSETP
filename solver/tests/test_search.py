@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import json
 from pathlib import Path
 import tempfile
@@ -9,7 +10,7 @@ from unittest.mock import patch
 from setp_solver.check import check_solution
 from setp_solver.cost import CARBON_N_SLOTS
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.search.alns_wouda import (
     AlnsState,
     SearchPolicy,
@@ -69,7 +70,7 @@ def _profile() -> list[dict[str, float]]:
 
 
 def _legacy_battery_prices() -> PriceParameters:
-    return PriceParameters(B_battery_kwh=80.0)
+    return replace(UK_2025_PRICES, B_battery_kwh=80.0)
 
 
 class SearchGateTests(unittest.TestCase):
@@ -133,8 +134,8 @@ class SearchGateTests(unittest.TestCase):
         instance = _charging_instance()
         profile = _profile()
         solution = Solution(routes=[Route("EV1", "ev", "D0", ["D0", "C1", "D0"])])
-        low = PriceParameters(B_battery_kwh=80.0, initial_ev_battery_kwh=80.0)
-        high = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
+        low = replace(UK_2025_PRICES, B_battery_kwh=80.0, initial_ev_battery_kwh=80.0)
+        high = replace(UK_2025_PRICES, B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
 
         low_violations = check_solution(solution, instance, low)
         high_violations = check_solution(solution, instance, high)
@@ -153,10 +154,20 @@ class SearchGateTests(unittest.TestCase):
     # v2026-06-12: H0 verifies fleet metadata and reports charge candidates.
     def test_h0_fleet_diagnostic_finds_ev_capacity_and_charge_candidates(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
-        cv_seed = build_initial_solution(bundle.instance, bundle.carbon_profile, introduce_ev=False)
+        cv_seed = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+            introduce_ev=False,
+        )
 
         limits = infer_fleet_limits(FIXTURE_DIR)
-        diagnostic = fleet_probe_diagnostic(FIXTURE_DIR, cv_seed, bundle.instance)
+        diagnostic = fleet_probe_diagnostic(
+            FIXTURE_DIR,
+            cv_seed,
+            bundle.instance,
+            UK_2025_PRICES,
+        )
 
         self.assertEqual((limits.cv, limits.ev), (10, 10))
         self.assertEqual(diagnostic.customer_count, 25)
@@ -167,7 +178,12 @@ class SearchGateTests(unittest.TestCase):
         self.assertEqual(legacy.battery_kwh, 80.0)
         self.assertGreaterEqual(legacy.charging_candidate_count, 1)
 
-        modern = fleet_probe_diagnostic(FIXTURE_DIR, cv_seed, bundle.instance, PriceParameters(B_battery_kwh=280.0))
+        modern = fleet_probe_diagnostic(
+            FIXTURE_DIR,
+            cv_seed,
+            bundle.instance,
+            replace(UK_2025_PRICES, B_battery_kwh=280.0),
+        )
         self.assertEqual(modern.battery_kwh, 280.0)
         self.assertEqual(modern.charging_candidate_count, 0)
 
@@ -184,7 +200,7 @@ class SearchGateTests(unittest.TestCase):
         packed = normalize_solution_vehicle_trips(solution, instance)
 
         self.assertEqual([route.vehicle_id for route in packed.routes], ["CV1#T1", "CV1#T2"])
-        self.assertEqual(check_solution(packed, instance), [])
+        self.assertEqual(check_solution(packed, instance, UK_2025_PRICES), [])
 
     def test_fleet_limits_read_hard_caps_from_instance_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -211,10 +227,19 @@ class SearchGateTests(unittest.TestCase):
     # v2026-06-11: G3 seed solution must be feasible on the real carbon-aligned fixture.
     def test_initial_solution_feasible_and_penalty_preserves_feasible_objective(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
-        solution = build_initial_solution(bundle.instance, bundle.carbon_profile, require_charging_signal=False)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        solution = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+            require_charging_signal=False,
+        )
+        context = EvaluationContext(
+            bundle.instance,
+            bundle.carbon_profile,
+            prices=UK_2025_PRICES,
+        )
 
-        self.assertEqual(check_solution(solution, bundle.instance), [])
+        self.assertEqual(check_solution(solution, bundle.instance, UK_2025_PRICES), [])
         self.assertLessEqual(sum(1 for route in solution.routes if route.vehicle_type.lower() == "cv"), 10)
         self.assertGreaterEqual(sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev"), 1)
         self.assertGreaterEqual(sum(action.energy_kwh for action in solution.charging_actions), 0.0)
@@ -245,8 +270,18 @@ class SearchGateTests(unittest.TestCase):
     # candidate scores from free reference/warm-start scoring.
     def test_root_cause_score_breakdown_reference_does_not_consume_budget(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
-        solution = build_initial_solution(bundle.instance, bundle.carbon_profile, require_charging_signal=False)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile, budget=EvalBudget(limit=5, target=5))
+        solution = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+            require_charging_signal=False,
+        )
+        context = EvaluationContext(
+            bundle.instance,
+            bundle.carbon_profile,
+            prices=UK_2025_PRICES,
+            budget=EvalBudget(limit=5, target=5),
+        )
 
         score_reference(solution, context)
         reference = _breakdown_for(solution, context)
@@ -291,10 +326,11 @@ class SearchGateTests(unittest.TestCase):
         solution = build_initial_solution(
             bundle.instance,
             bundle.carbon_profile,
+            UK_2025_PRICES,
             fleet_limits=FleetLimits(cv=3, ev=8, source="test"),
         )
 
-        self.assertEqual(check_solution(solution, bundle.instance), [])
+        self.assertEqual(check_solution(solution, bundle.instance, UK_2025_PRICES), [])
         self.assertLessEqual(len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "cv"}), 3)
         self.assertLessEqual(len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "ev"}), 8)
 
@@ -303,17 +339,26 @@ class SearchGateTests(unittest.TestCase):
         import numpy as np
 
         bundle = load_search_bundle(FIXTURE_DIR)
-        solution = build_initial_solution(bundle.instance, bundle.carbon_profile, require_charging_signal=False)
+        solution = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+            require_charging_signal=False,
+        )
         state = AlnsState(
             solution,
-            EvaluationContext(bundle.instance, bundle.carbon_profile),
+            EvaluationContext(
+                bundle.instance,
+                bundle.carbon_profile,
+                prices=UK_2025_PRICES,
+            ),
             policy=SearchPolicy(require_charging_signal=False),
         )
 
         swapped = vehicle_type_swap(state, np.random.default_rng(2))
 
         self.assertNotEqual(swapped.solution, solution)
-        self.assertEqual(check_solution(swapped.solution, bundle.instance), [])
+        self.assertEqual(check_solution(swapped.solution, bundle.instance, UK_2025_PRICES), [])
 
     # v2026-06-14: ALNS-Wouda vehicle_type_swap must consider both CV->EV and
     # EV->CV candidates and choose using the shared repair scorer.
@@ -321,18 +366,23 @@ class SearchGateTests(unittest.TestCase):
         import numpy as np
 
         bundle = load_search_bundle(FIXTURE_DIR)
-        solution = build_initial_solution(bundle.instance, bundle.carbon_profile, require_charging_signal=False)
+        solution = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+            require_charging_signal=False,
+        )
         policy = SearchPolicy(require_charging_signal=False)
         expected_rng = np.random.default_rng(2)
 
-        cv_to_ev = _try_cv_to_ev_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile), policy=policy), np.random.default_rng(2))
-        ev_to_cv = _try_ev_to_cv_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile), policy=policy), np.random.default_rng(2))
+        cv_to_ev = _try_cv_to_ev_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES), policy=policy), np.random.default_rng(2))
+        ev_to_cv = _try_ev_to_cv_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES), policy=policy), np.random.default_rng(2))
         candidates = [
-            *_try_cv_to_ev_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile), policy=policy), expected_rng),
-            *_try_ev_to_cv_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile), policy=policy), expected_rng),
+            *_try_cv_to_ev_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES), policy=policy), expected_rng),
+            *_try_ev_to_cv_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES), policy=policy), expected_rng),
         ]
 
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
         swapped = vehicle_type_swap(AlnsState(solution, context, policy=policy), np.random.default_rng(2))
 
         self.assertGreater(len(cv_to_ev), 0)
@@ -340,14 +390,14 @@ class SearchGateTests(unittest.TestCase):
         self.assertIn(swapped.solution, candidates)
         self.assertEqual(context.score_counts["repair_delta"], len(candidates))
         self.assertEqual(context.score_counts.get("candidate", 0), 0)
-        self.assertEqual(check_solution(swapped.solution, bundle.instance), [])
+        self.assertEqual(check_solution(swapped.solution, bundle.instance, UK_2025_PRICES), [])
 
     # v2026-06-14: Repair insertion ranking scores full CV and EV candidate
     # solutions through the shared accounting path.
     def test_alns_wouda_repair_insertions_account_cv_and_ev_scores(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
         customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
 
         options = _insertion_options(
             Solution(),
@@ -366,14 +416,24 @@ class SearchGateTests(unittest.TestCase):
     # must not consume complete candidate eval budget.
     def test_feasible_repair_insertions_are_feasible_and_delta_only(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
-        solution = build_initial_solution(bundle.instance, bundle.carbon_profile, require_charging_signal=False)
+        solution = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+            require_charging_signal=False,
+        )
         customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
         partial_routes = [
             Route(route.vehicle_id, route.vehicle_type, route.home_depot_id, [node for node in route.node_sequence if node != customer_id])
             for route in solution.routes
         ]
         partial = Solution(routes=[route for route in partial_routes if len([node for node in route.node_sequence if node.startswith("C")]) > 0])
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile, budget=EvalBudget(limit=10, target=10))
+        context = EvaluationContext(
+            bundle.instance,
+            bundle.carbon_profile,
+            prices=UK_2025_PRICES,
+            budget=EvalBudget(limit=10, target=10),
+        )
 
         options = enumerate_feasible_insertions(partial, customer_id, context, SearchPolicy(require_charging_signal=False))
 
@@ -382,7 +442,7 @@ class SearchGateTests(unittest.TestCase):
         self.assertEqual(context.score_counts.get("candidate", 0), 0)
         repaired = repair_removed_customers(partial, [customer_id], context, SearchPolicy(require_charging_signal=False), mode="regret2")
         self.assertIsNotNone(repaired)
-        self.assertEqual(check_solution(repaired, bundle.instance), [])
+        self.assertEqual(check_solution(repaired, bundle.instance, UK_2025_PRICES), [])
 
     # v2026-06-15: Destroy scale follows the ALNS strong plan and never falls
     # back to the old fixed q=1 behavior.
@@ -400,7 +460,12 @@ class SearchGateTests(unittest.TestCase):
 
     # v2026-06-11: G4 ALNS-Wouda smoke test must run through the local package without installation.
     def test_alns_wouda_smoke_returns_feasible_not_worse_than_seed(self) -> None:
-        result = run_alns_wouda(FIXTURE_DIR, iterations=1, seed=1)
+        result = run_alns_wouda(
+            FIXTURE_DIR,
+            iterations=1,
+            seed=1,
+            prices=UK_2025_PRICES,
+        )
 
         self.assertTrue(result.feasible)
         self.assertLessEqual(result.best_obj, result.initial_obj + 1e-9)
@@ -416,7 +481,14 @@ class SearchGateTests(unittest.TestCase):
 
     # v2026-06-15: Strong Wouda accounting is one complete score per move.
     def test_alns_wouda_eval_budget_matches_moves_after_repair_failures(self) -> None:
-        result = run_alns_wouda(FIXTURE_DIR, iterations=None, eval_budget=30, max_runtime_seconds=20.0, seed=1)
+        result = run_alns_wouda(
+            FIXTURE_DIR,
+            iterations=None,
+            eval_budget=30,
+            max_runtime_seconds=20.0,
+            seed=1,
+            prices=UK_2025_PRICES,
+        )
 
         self.assertTrue(result.feasible)
         self.assertEqual(result.evaluations, 30)
@@ -448,6 +520,7 @@ class SearchGateTests(unittest.TestCase):
             seed=1,
             policy=SearchPolicy(require_charging_signal=False),
             allow_zero_charge=True,
+            prices=UK_2025_PRICES,
         )
 
         self.assertEqual(len(probe.carbon_on.rows), CARBON_N_SLOTS)
@@ -469,6 +542,7 @@ class SearchGateTests(unittest.TestCase):
             enforce_k0=True,
             policy=SearchPolicy(require_charging_signal=False),
             allow_zero_charge=True,
+            prices=UK_2025_PRICES,
         )
 
         self.assertLess(probe.carbon_on.run.best_obj, probe.carbon_on.run.initial_obj)
@@ -480,7 +554,12 @@ class SearchGateTests(unittest.TestCase):
     # v2026-06-11: G5 table helper must expose 18 slots even for no-charge solutions.
     def test_slot_charge_table_shape(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
-        rows = slot_charge_table(Solution(), bundle.instance, bundle.carbon_profile)
+        rows = slot_charge_table(
+            Solution(),
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+        )
 
         self.assertEqual(len(rows), CARBON_N_SLOTS)
         self.assertEqual(sum(row.energy_kwh for row in rows), 0.0)
@@ -495,12 +574,22 @@ class SearchGateTests(unittest.TestCase):
     # v2026-06-12: Z1 candidate codec must round-trip through Solution and the shared checker.
     def test_z1_candidate_codec_round_trip_returns_feasible_solution(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
-        seed = build_initial_solution(bundle.instance, bundle.carbon_profile, introduce_ev=False)
+        seed = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+            introduce_ev=False,
+        )
 
         chromosome = solution_to_random_key(seed, bundle.instance)
-        decoded = random_key_to_solution(chromosome, bundle.instance, bundle.carbon_profile)
+        decoded = random_key_to_solution(
+            chromosome,
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+        )
 
-        self.assertEqual(check_solution(decoded, bundle.instance), [])
+        self.assertEqual(check_solution(decoded, bundle.instance, UK_2025_PRICES), [])
         served = {
             node_id
             for route in decoded.routes
@@ -512,7 +601,14 @@ class SearchGateTests(unittest.TestCase):
 
     # v2026-06-12: Z1 tiny smoke only proves feasible adapters; formal W1 budgets own collapse checks.
     def test_z1_smoke_board_passes_on_fixture_with_tiny_budget(self) -> None:
-        report = run_z1_smoke(REPO_ROOT, FIXTURE_DIR, seed=1, eval_budget=8, max_runtime_seconds=60.0)
+        report = run_z1_smoke(
+            REPO_ROOT,
+            FIXTURE_DIR,
+            seed=1,
+            eval_budget=8,
+            max_runtime_seconds=60.0,
+            prices=UK_2025_PRICES,
+        )
 
         self.assertEqual(report.gate, "PASS")
         self.assertTrue(report.alns_wouda_feasible)
@@ -523,7 +619,7 @@ class SearchGateTests(unittest.TestCase):
     # v2026-06-12: W1e/W1f require formal-budget diagnostics and no warm-start handback for repaired red algorithms.
     def test_w1_formal_budget_vns_and_dr_alns_leave_shared_seed_with_diagnostics(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
-        warm_start = make_shared_initial_solution(bundle)
+        warm_start = make_shared_initial_solution(bundle, UK_2025_PRICES)
         warm_start_hash = solution_signature_hash(warm_start)
 
         for algorithm in ("VNS@Valdecy", "DR-ALNS"):
@@ -534,6 +630,7 @@ class SearchGateTests(unittest.TestCase):
                 eval_budget=2000,
                 max_runtime_seconds=120.0,
                 initial_solution=warm_start,
+                prices=UK_2025_PRICES,
             )
 
             self.assertTrue(result.feasible, algorithm)
@@ -547,7 +644,7 @@ class SearchGateTests(unittest.TestCase):
     # as the number of outer moves attempted by their hand-written loops.
     def test_candidate_adapter_evals_are_shared_scorer_calls(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
-        warm_start = make_shared_initial_solution(bundle)
+        warm_start = make_shared_initial_solution(bundle, UK_2025_PRICES)
 
         for algorithm in (
             "VNS@Valdecy",
@@ -565,6 +662,7 @@ class SearchGateTests(unittest.TestCase):
                 eval_budget=30,
                 max_runtime_seconds=60.0,
                 initial_solution=warm_start,
+                prices=UK_2025_PRICES,
             )
 
             self.assertTrue(result.feasible, algorithm)

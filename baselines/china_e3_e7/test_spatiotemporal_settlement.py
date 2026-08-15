@@ -162,7 +162,7 @@ def test_all_nine_cities_use_one_explicit_date_slot_key() -> None:
                     rel_tol=0.0,
                     abs_tol=1.0e-12,
                 )
-                assert int(expected["half_hour_slot"]) == slot + 1
+                assert int(expected["hourly_calendar_row"]) == slot + 1
                 assert math.isclose(
                     float(expected["horizon_second_start"]),
                     slot * 1800.0,
@@ -257,7 +257,7 @@ def test_mixed_city_price_identity_fails_closed() -> None:
             "price_area_id": (
                 "deliberately-wrong-price-area"
                 if row["city"] == city
-                and int(row["half_hour_slot"]) == 1
+                and int(row["hourly_calendar_row"]) == 1
                 else row["price_area_id"]
             ),
         }

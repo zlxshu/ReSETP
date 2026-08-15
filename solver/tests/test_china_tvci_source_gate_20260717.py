@@ -74,7 +74,7 @@ def test_half_hour_conversion_duplicates_hours_and_preserves_daily_integral() ->
     assert set(counts.values()) == {48}
     for day_start in range(0, len(rows), 48):
         day = rows[day_start : day_start + 48]
-        assert [int(row["half_hour_slot"]) for row in day] == list(range(1, 49))
+        assert [int(row["half_hour_interval_index"]) for row in day] == list(range(1, 49))
         for hour in range(24):
             first, second = day[2 * hour : 2 * hour + 2]
             assert first["source_hour"] == second["source_hour"]

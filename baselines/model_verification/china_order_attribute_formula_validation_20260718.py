@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "data/ChinaInstances/china_order_attribute_calibration_v2_20260718/empirical_order_attribute_rows.csv"
 CONTRACT = ROOT / "data/ChinaInstances/china_order_attribute_contract_v2_20260718.json"
-PAPER = ROOT / "docs/paper_submission_final/paper_main.tex"
+PAPER = ROOT / "docs/paper_submission_final/RETIRED_paper_main.tex"
 OUT = ROOT / "baselines/model_verification/china_order_attribute_formula_validation_20260718"
 
 VOLUMES = [Decimal("1.0"), Decimal("1.5"), Decimal("2.0"), Decimal("2.5"), Decimal("3.0")]

@@ -49,7 +49,7 @@ def test_v3_has_144_depot_rows_and_exact_hamilton_allocations() -> None:
         row["fleet_parameter_class"] for row in rows
     } == {"DERIVED_FIXED_TOTAL_MULTITRIP_ZERO_SEARCH_AUTHORITY"}
     for row in rows:
-        levels = json.loads(row["level_allocations_json"])
+        levels = json.loads(row["fleet_allocation_map_metadata_only"])
         assert set(levels) == {"0", "25", "50", "75", "100"}
         for allocation in levels.values():
             assert allocation["num_cv"] + allocation["num_ev"] == int(

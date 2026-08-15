@@ -49,7 +49,7 @@ E2 的 9 层城市群--规模绝对成本表（`tab:china81-summary`）未在任
 | M15 | 992-993行 | $g_0$=9.81、$\rho^a$=1.2041、$c_R$=0.01 | `solver/src/setp_solver/prices.py` 第22-25行 g0/rho_a/c_r 逐位一致 |
 | M16 | 1029行 | 公共站额定充电功率60kW | `china_parameter_lock_v2_20260718.json` charging_profiles.public_base.power_kw_per_charge_action=60.0 一致 |
 | M17 | 1029行 | 车场充电功率22kW | `prices.py` depot_charge_power_kw=22.0 一致 |
-| M18 | `tab:tou`（1005-1024行）北京/深圳/广州行 | 峰/平/谷三档数值 | `data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_48slot_calendar.csv`（2025-02-12）逐城市复算：北京峰1.1486/平0.8364/谷0.5633，深圳峰1.1553/平0.7578/谷0.2572，广州峰1.3272/平0.7921/谷0.3182，与表中数值逐位一致（仅抽查这3行，其余4行未逐行复算） |
+| M18 | `tab:tou`（1005-1024行）北京/深圳/广州行 | 峰/平/谷三档数值 | `data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_hourly_calendar.csv`（2025-02-12）逐城市复算：北京峰1.1486/平0.8364/谷0.5633，深圳峰1.1553/平0.7578/谷0.2572，广州峰1.3272/平0.7921/谷0.3182，与表中数值逐位一致（仅抽查这3行，其余4行未逐行复算） |
 | M19 | 1017行"河北南网(石家庄)"尖峰1.1348 | 1.1348 | 同一calendar文件：全表唯一带`sharp_peak`价档的城市是shijiazhuang，值为1.1348，一致 |
 
 ### 2.2 STALE（与封存证据不一致）
@@ -68,7 +68,7 @@ E2 的 9 层城市群--规模绝对成本表（`tab:china81-summary`）未在任
 |---|---|---|---|
 | U1 | 1456-1458行 | "京津冀...时段碳强度绝对极差最大(0.634kgCO$_2$e/kWh)且日均水平最高(0.560)"；"成渝...日均碳强度仅0.101" | 该三个数字不出现在`e4_carbon_timing_20260729/`任何报告文件或`magnitude_diagnostics.json`中，也不出现在`figures_e4_20260731/`的产物中。反向排查：仅当把京津冀区域内北京+天津+石家庄三城、成渝区域内成都+重庆两城的2025-02-12全部半小时值**混合池化**（而非按方法节声明的"京津冀取北京电网、珠三角取广东电网、成渝取重庆电网"单一代表电网）时，才能复算出极差0.6343≈0.634、均值0.5598≈0.560（京津冀）及均值0.10083≈0.101（成渝）。这与4.1节方法陈述的"单一代表电网"口径相矛盾，且该混合池化计算本身未出现在任何交付产物中，无法认定为封存证据 |
 | U2 | 978行 | 空气阻力系数0.45（CV、EV相同） | `prices.py`区块A的通用默认值c_d=0.7（Goeke基线，非China81专用）；`china_parameter_lock_v2_20260718.json`的vehicle_contract中CV/EV均未给出阻力系数字段（只有frontal_area_rule标记为`DERIVED_PENDING`）。未在已检查的合同文件中找到0.45的来源 |
-| U3 | `tab:tou` 广东珠三角尖峰1.6521、深圳尖峰1.4372 | 见上 | `china81_runtime_parameter_authority_v3_20260723/`与`_v4_20260723/`的`tariff_carbon_48slot_calendar.csv`（覆盖2025年2月全部28个电网日）中，`tariff_period=sharp_peak`（尖峰）的行**仅存在于shijiazhuang**（对应表中河北南网1.1348，已在MATCHED M19核实），广州、深圳、东莞、佛山在整个2025年2月日历中均无尖峰价档记录。1.6521和1.4372两个数值未在v3/v4任一权威日历中找到对应来源，也可能是官方年度目录中仅夏季（迎峰度夏）适用、2月不生效的价档，若如此需要表注披露而非直接列入"2025年2月"标题的表格 |
+| U3 | `tab:tou` 广东珠三角尖峰1.6521、深圳尖峰1.4372 | 见上 | `china81_runtime_parameter_authority_v3_20260723/`与`_v4_20260723/`的`tariff_carbon_hourly_calendar.csv`（覆盖2025年2月全部28个电网日）中，`tariff_period=sharp_peak`（尖峰）的行**仅存在于shijiazhuang**（对应表中河北南网1.1348，已在MATCHED M19核实），广州、深圳、东莞、佛山在整个2025年2月日历中均无尖峰价档记录。1.6521和1.4372两个数值未在v3/v4任一权威日历中找到对应来源，也可能是官方年度目录中仅夏季（迎峰度夏）适用、2月不生效的价档，若如此需要表注披露而非直接列入"2025年2月"标题的表格 |
 | U4 | 982行 | 里程费率CV 0.78元/km、EV 0.67元/km | 未在`prices.py`（其c_km=0.35£/km为英国情景默认值，单位和币种均不同）或`china_parameter_lock_v2_20260718.json`的price_contract小节中找到这两个人民币数值的来源 |
 
 ### 2.4 PLACEHOLDER（占位符/明显未填）

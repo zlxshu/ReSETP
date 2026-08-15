@@ -1,0 +1,161 @@
+% !TEX program = xelatex
+% 系统工程理论与实践 LaTeX 空骨架。
+% 本文件只提供版式和环境模板，不含实验数据、实验结论或正文论断。
+\documentclass{setp-new}
+
+% 此处配置中英文字体。setp-new.cls 使用 fontset=none，须在正文中显式指定字体。
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\IfFontExistsTF{Songti SC}{%
+  \newcommand{\setpSongFont}{Songti SC}%
+}{%
+  \newcommand{\setpSongFont}{SimSun}%
+}
+\IfFontExistsTF{Songti SC}{%
+  \newcommand{\setpFangSongFont}{Songti SC}%
+}{%
+  \newcommand{\setpFangSongFont}{FangSong}%
+}
+\IfFontExistsTF{SimHei}{%
+  \newcommand{\setpHeiFont}{SimHei}%
+}{%
+  \IfFontExistsTF{Noto Sans CJK SC}{%
+    \newcommand{\setpHeiFont}{Noto Sans CJK SC}%
+  }{%
+    % 若系统没有独立黑体，则以可用宋体作最后回退，保证骨架可编译。
+    \newcommand{\setpHeiFont}{\setpSongFont}%
+  }
+}
+\setCJKmainfont[BoldFont=\setpHeiFont]{\setpSongFont}
+\setCJKsansfont{\setpHeiFont}
+\setCJKmonofont{\setpSongFont}
+\setCJKfamilyfont{zhsong}[BoldFont=\setpHeiFont]{\setpSongFont}
+\setCJKfamilyfont{zhhei}{\setpHeiFont}
+\setCJKfamilyfont{zhfs}{\setpFangSongFont}
+\providecommand{\songti}{}
+\providecommand{\heiti}{}
+\providecommand{\fangsong}{}
+\renewcommand{\songti}{\CJKfamily{zhsong}}
+\renewcommand{\heiti}{\CJKfamily{zhhei}}
+\renewcommand{\fangsong}{\CJKfamily{zhfs}}
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip=0pt plus 1pt
+
+% 此处加载骨架示例所需宏包；setp-new.cls 已加载 amsmath、booktabs 和 graphicx。
+\usepackage{mathtools}
+\setlength{\parindent}{2em}
+\setlength{\headheight}{32pt}
+\setlength{\emergencystretch}{3em}
+
+% 此处填写期刊卷期、起始页、DOI、中图分类号和文献标志码；录用前未知项可暂留占位。
+% 月份参数必须是 1--12 的整数，不能写中文“待定”，否则类文件无法生成英文月份。
+\jolname{系统工程理论与实践}{Systems Engineering --- Theory \& Practice}
+\Volume{20XX}{1}{XX}{X}
+\PageNum{1}
+\PaperDOI{}
+\Category{}{A}
+
+% 此处填写中文短题名，用于页眉。
+\TitleMark{中文短题名（待填写）}
+% 此处填写中文题名。
+\Title{中文题名（待填写）}
+% 此处填写中文作者姓名及作者单位、城市和邮政编码。
+\Author{作者姓名（待填写）}{作者单位、城市和邮政编码（待填写）}
+% 此处填写中文摘要；摘要应独立说明研究问题、方法、结果和结论。
+\Abstract{中文摘要（待填写）}
+% 此处填写中文关键词，关键词之间使用分号。
+\Keywords{关键词一；关键词二；关键词三}
+
+% 此处填写英文题名。
+\ETitle{English Title (To Be Filled)}
+% 此处填写作者姓名拼音或英文写法，以及英文单位和地址。
+\EAuthor{AUTHOR NAME (TO BE FILLED)}{Affiliation and address (to be filled)}
+% 此处填写英文摘要，与中文摘要信息一致。
+\EAbstract{English abstract (to be filled).}
+% 此处填写英文关键词，关键词之间使用分号。
+\EKeywords{keyword one; keyword two; keyword three}
+
+\begin{document}
+\maketitle
+
+\section{引言}
+
+% 此处放研究背景、问题提出、文献回顾、研究不足和本文贡献。
+【正文占位：引言】
+
+\section{模型建立}
+
+% 此处放问题描述、基本假设、符号说明、目标函数和约束条件。
+【正文占位：模型建立】
+
+% 此处放公式。用 equation 环境自动编号；用 label 与 eqref 在正文中交叉引用。
+\begin{equation}
+  \min_{x\in\mathcal{X}} f(x)
+  \label{eq:template-objective}
+\end{equation}
+% 此处解释公式中的符号、单位和成立条件。
+【正文占位：式~\eqref{eq:template-objective}的符号说明】
+
+% 此处放三线表。表题置于表格上方；单位写入列名，表注放在表格下方。
+\begin{table}[htbp]
+  \centering
+  \caption{三线表标题（待填写）}
+  \label{tab:template-three-line}
+  \begin{tabular}{lll}
+    \toprule
+    项目 & 符号或口径 & 数值与单位 \\
+    \midrule
+    【占位】 & 【占位】 & 【占位】 \\
+    \bottomrule
+  \end{tabular}
+  \tabnote{注：此处填写数据口径、缩写、显著性或其他必要说明。}
+\end{table}
+
+\section{算法设计}
+
+% 此处放算法总体框架、关键步骤、复杂度或停止条件。
+【正文占位：算法设计】
+
+% 此处放可复现生成的矢量图片；正式文件建议置于 figures/ 目录。
+\begin{figure}[htbp]
+  \centering
+  % 将下一行占位框替换为：\includegraphics[width=0.90\linewidth]{figures/图片文件名.pdf}
+  \fbox{\parbox[c][38mm][c]{0.86\linewidth}{\centering 图片占位：在此嵌入矢量 PDF}}
+  \caption{图片标题（待填写）}
+  \label{fig:template-image}
+\end{figure}
+
+\section{数值实验}
+
+% 此处放算例与参数、比较协议、结果表图及与证据一致的分析。
+% 未产生并获准进入正文的正式结果不得写入本节。
+【正文占位：数值实验】
+
+\section{结语}
+
+% 此处概括经正式结果支持的研究结论、管理启示、局限和后续研究。
+【正文占位：结语】
+
+% 此处按《系统工程理论与实践》的著录体例逐条填写参考文献。
+% 正文引用示例：\cite{ref:template-cn-journal}。
+\begin{thebibliography}{99}
+  % 中文期刊论文模板：中文著录之后另起一行给出对应英文著录。
+  \bibitem{ref:template-cn-journal}
+  中文作者. 中文文献题名[J]. 中文刊名, 年, 卷(期): 起页--止页.\\
+  English author. English title[J]. English Journal Title, year, volume(issue): start--end.
+
+  % 外文期刊论文模板：作者. 题名[J]. 刊名, 年, 卷(期): 起页--止页.
+  \bibitem{ref:template-en-journal}
+  Author. Article title[J]. Journal Title, year, volume(issue): start--end.
+
+  % 专著模板：作者. 书名[M]. 出版地: 出版者, 年.
+  \bibitem{ref:template-book}
+  作者. 书名[M]. 出版地: 出版者, 年.
+
+  % 网络资源模板：责任者. 题名[EB/OL]. 发布日期[引用日期]. 网址.
+  \bibitem{ref:template-online}
+  责任者. 网络资源题名[EB/OL]. 发布日期[引用日期]. \url{https://example.invalid}.
+\end{thebibliography}
+
+\end{document}

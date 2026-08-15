@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import math
 import unittest
 
 from setp_solver.cost import charging_slot_breakdown, evaluate
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution
 
 
@@ -78,7 +79,7 @@ def _ev_drive_kwh(distance_m: float, load_kg: float, prices: PriceParameters) ->
 
 class CostEvaluatorTests(unittest.TestCase):
     def test_multitrip_fixed_cost_is_charged_once_per_physical_vehicle(self) -> None:
-        prices = PriceParameters(vehicle_fixed_cost=170.0)
+        prices = replace(UK_2025_PRICES, vehicle_fixed_cost=170.0)
         solution = Solution(
             routes=[
                 Route("CV1#T1", "cv", "D0", ["D0", "C1", "D0"]),
@@ -93,7 +94,7 @@ class CostEvaluatorTests(unittest.TestCase):
         self.assertEqual(result["cost_fix"], 170.0)
 
     def test_manual_two_vehicle_bill_matches_cmem_hand_calculation(self) -> None:
-        prices = PriceParameters()
+        prices = UK_2025_PRICES
         carbon_profile = [{"horizon_second_start": 0.0, "actual_gco2_per_kwh": 86.0}]
         result = evaluate(
             _toy_solution(),
@@ -145,7 +146,7 @@ class CostEvaluatorTests(unittest.TestCase):
             self.assertAlmostEqual(result[key], value, places=6, msg=key)
 
     def test_carbon_lookup_uses_previous_hold_between_slots(self) -> None:
-        prices = PriceParameters()
+        prices = UK_2025_PRICES
         # v2026-06-11: carbon slot lookup now uses the shared route schedule at the charging station.
         instance = Instance(
             nodes=[
@@ -176,7 +177,7 @@ class CostEvaluatorTests(unittest.TestCase):
         self.assertAlmostEqual(result["E_ev_indirect"], 10.0 * 86.0 / 1000.0, places=6)
 
     def test_carbon_allowance_can_make_carbon_cost_negative(self) -> None:
-        prices = PriceParameters()
+        prices = UK_2025_PRICES
         carbon_profile = [{"horizon_second_start": 0.0, "actual_gco2_per_kwh": 50.0}]
         result = evaluate(
             _toy_solution(energy_kwh=1.0),
@@ -191,7 +192,7 @@ class CostEvaluatorTests(unittest.TestCase):
     # v2026-06-12: Z0a CE=inf is the no-quota baseline used to derive the
     # formal 80% allowance; finite CE still keeps buy/sell signs.
     def test_infinite_carbon_allowance_zeroes_carbon_trading_cost(self) -> None:
-        prices = PriceParameters()
+        prices = UK_2025_PRICES
         carbon_profile = [{"horizon_second_start": 0.0, "actual_gco2_per_kwh": 50.0}]
 
         result = evaluate(
@@ -207,7 +208,7 @@ class CostEvaluatorTests(unittest.TestCase):
         self.assertAlmostEqual(result["cost_carbon"], 0.0, places=9)
 
     def test_unit_conversions_and_ev_drive_not_billed_as_electricity(self) -> None:
-        prices = PriceParameters()
+        prices = UK_2025_PRICES
         carbon_profile = [{"horizon_second_start": 0.0, "actual_gco2_per_kwh": 1000.0}]
         result = evaluate(
             _toy_solution(energy_kwh=1.0),
@@ -223,7 +224,7 @@ class CostEvaluatorTests(unittest.TestCase):
 
     # v2026-06-11: verify B-full multi-slot charging emissions use uniform y_skt construction.
     def test_charging_cross_slot_carbon(self) -> None:
-        prices = PriceParameters()
+        prices = UK_2025_PRICES
         instance = Instance(
             nodes=[
                 Node("D0", "d", 0.0, 0.0, demand=0.0),
@@ -251,7 +252,7 @@ class CostEvaluatorTests(unittest.TestCase):
 
     # v2026-06-12: Q2 depot pre-departure charging uses the same slot carbon split as station charging.
     def test_depot_charging_cross_slot_carbon_and_depot_price(self) -> None:
-        prices = PriceParameters()
+        prices = UK_2025_PRICES
         instance = Instance(
             nodes=[
                 Node("D0", "d", 0.0, 0.0, demand=0.0, due_time=10_000.0),
@@ -281,7 +282,7 @@ class CostEvaluatorTests(unittest.TestCase):
 
     # v2026-06-12: S0 overnight depot charging wraps across the 48-slot day boundary.
     def test_depot_charging_cross_midnight_carbon_uses_cyclic_48_slot_split(self) -> None:
-        prices = PriceParameters()
+        prices = UK_2025_PRICES
         instance = Instance(
             nodes=[
                 Node("D0", "d", 0.0, 0.0, demand=0.0, due_time=86_400.0),

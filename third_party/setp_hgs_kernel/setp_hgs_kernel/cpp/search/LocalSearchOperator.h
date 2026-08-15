@@ -74,6 +74,12 @@ public:
      */
     OperatorStatistics const &statistics() const { return stats_; }
 
+    /**
+     * Whether this operator needs empty routes in the first search pass.
+     * Ordinary operators retain the historical delayed-empty-route behaviour.
+     */
+    virtual bool supportsInitialEmptyRouteMoves() const { return false; }
+
     LocalSearchOperator(ProblemData const &data) : data(data){};
     virtual ~LocalSearchOperator() = default;
 };

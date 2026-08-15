@@ -13,7 +13,7 @@
 
 1. `baselines/china_e3_e7/e4_carbon_timing_20260729/action_timing_audit.csv`：44,072 个会话日，SHA-256 `a93cf85d31bcf11d3e37571379c50e488297eec5780be1087057b26d23269497`。
 2. `baselines/china_e3_e7/e4_carbon_timing_20260729/raw_runs.csv`：11,340 个配对解--日，SHA-256 `530f2b89f3a03ea10b6ac53b3945cc98ac75018ac5e37db74fa6fc82a46fd3f4`。
-3. `data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_48slot_calendar.csv`：9 城×28 日×48 槽，SHA-256 `54acbdc757c8a3a3b097d1e39cd35294e795ca2c1711bd56b12bc3b9af9b1c0b`。
+3. `data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_hourly_calendar.csv`：9 城×28 日×48 槽，SHA-256 `54acbdc757c8a3a3b097d1e39cd35294e795ca2c1711bd56b12bc3b9af9b1c0b`。
 
 三个当前哈希均与 E4 `artifact_hashes.json` 的登记值一致。必需字段无缺失；44,072 个动作键唯一，按解--日聚合的会话数和电量与 11,340 行 `raw_runs.csv` 逐行一致。合法窗口违约、日界外开始、非正电量均为 0。
 

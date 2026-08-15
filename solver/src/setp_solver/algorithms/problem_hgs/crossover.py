@@ -266,6 +266,10 @@ def trip_assignment_exchange(
     parents: tuple[DutyIndividual, DutyIndividual],
     rng: random.Random,
     customer_coordinates: Mapping[str, tuple[float, float]],
+    *,
+    customer_home_depot_by_id: Mapping[str, str] | None = None,
+    customer_vehicle_type_by_id: Mapping[str, str] | None = None,
+    multi_trip_enabled: bool = True,
 ) -> DutyCrossoverResult:
     """Return the first candidate in the randomized exact assignment order."""
 
@@ -273,6 +277,9 @@ def trip_assignment_exchange(
         parents,
         rng,
         customer_coordinates,
+        customer_home_depot_by_id=customer_home_depot_by_id,
+        customer_vehicle_type_by_id=customer_vehicle_type_by_id,
+        multi_trip_enabled=multi_trip_enabled,
     )[0]
 
 
@@ -280,6 +287,10 @@ def trip_assignment_exchange_candidates(
     parents: tuple[DutyIndividual, DutyIndividual],
     rng: random.Random,
     customer_coordinates: Mapping[str, tuple[float, float]],
+    *,
+    customer_home_depot_by_id: Mapping[str, str] | None = None,
+    customer_vehicle_type_by_id: Mapping[str, str] | None = None,
+    multi_trip_enabled: bool = True,
 ) -> tuple[DutyCrossoverResult, ...]:
     """Append one compatible donor trip and remove its former occurrences.
 
@@ -349,6 +360,23 @@ def trip_assignment_exchange_candidates(
                 duty
                 for duty in first.duties
                 if duty.physical_vehicle_id not in origins
+                and (multi_trip_enabled or not duty.trips)
+                and (
+                    customer_home_depot_by_id is None
+                    or all(
+                        customer_home_depot_by_id.get(customer)
+                        == duty.home_depot_id
+                        for customer in donor_customers
+                    )
+                )
+                and (
+                    customer_vehicle_type_by_id is None
+                    or all(
+                        customer_vehicle_type_by_id.get(customer)
+                        == duty.vehicle_type
+                        for customer in donor_customers
+                    )
+                )
             )
             if receivers:
                 candidates.append((donor_duty, donor_trip, receivers))

@@ -8,7 +8,7 @@ import pytest
 
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.profit import calculate_depot_profits, infer_customer_home_depots
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.certificate_execution import (
@@ -79,7 +79,7 @@ def _formal_114_customer_case():
     )
     bundle = load_search_bundle(E3 / "assets" / "L-main-threeshift-50c-01" / "bundle")
     prices = replace(
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=0.0,
         cross_site_cost=0.0,
@@ -94,21 +94,21 @@ def test_whole_trip_accounting_defeats_the_depot_fragment_overcount() -> None:
     route = Route("CV_D0_1#T1", "cv", "D0", ["D0", "C1", "C2", "D0"])
     source = Solution(routes=[route])
     execution = _execution(route)
-    ledger = ExecutionAccountingLedger(source, instance, [], DEFAULT_PRICES)
+    ledger = ExecutionAccountingLedger(source, instance, [], UK_2025_PRICES)
 
     assert ledger.register_trip(execution, at_second=50.0) is True
     assert ledger.register_trip(execution, at_second=50.0) is False
     assert ledger.register_trip(execution, at_second=100.0) is False
     summary = ledger.summary()
 
-    expected = evaluate(source, instance, [], DEFAULT_PRICES)
+    expected = evaluate(source, instance, [], UK_2025_PRICES)
     fragments = Solution(
         routes=[
             Route("CV_D0_1#T1", "cv", "D0", ["D0", "C1", "D0"]),
             Route("CV_D0_2#T1", "cv", "D0", ["D0", "C2", "D0"]),
         ]
     )
-    old_fragmented = evaluate(fragments, instance, [], DEFAULT_PRICES)
+    old_fragmented = evaluate(fragments, instance, [], UK_2025_PRICES)
 
     assert summary.booked_route_count == 1
     assert summary.booked_customer_count == 2
@@ -117,7 +117,7 @@ def test_whole_trip_accounting_defeats_the_depot_fragment_overcount() -> None:
     assert summary.system.distance_total == pytest.approx(expected["distance_total"])
     assert summary.system.total_cost == pytest.approx(expected["total_cost"])
     assert summary.system.revenue == pytest.approx(
-        (100.0 + 200.0) * DEFAULT_PRICES.revenue_per_kg
+        (100.0 + 200.0) * UK_2025_PRICES.revenue_per_kg
     )
     assert summary.system.realized_profit == pytest.approx(
         summary.system.revenue - summary.system.total_cost
@@ -134,7 +134,7 @@ def test_signature_or_customer_revenue_rebooking_is_a_hard_error() -> None:
         Solution(routes=[first, second]),
         instance,
         [],
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
     )
     first_execution = _execution(first)
     assert ledger.register_trip(first_execution, at_second=100.0) is True

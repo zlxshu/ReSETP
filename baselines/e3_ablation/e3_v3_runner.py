@@ -37,7 +37,7 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (
 )
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.profit import calculate_depot_profits, infer_customer_home_depots
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.e3_multitrip_runtime import hard_violations, prepare_solution
@@ -324,7 +324,7 @@ def prepare_assets(out: Path, size: str) -> dict[str, Any]:
     owners = owner_map(instance_name)
     if owners != infer_customer_home_depots(source.instance):
         raise ValueError(f"frozen owner map drifted for {instance_name}")
-    prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
     independent_routes, shared_routes = _structure_routes(size, source.instance, prices)
     independent_routes = _assign_types_within_assets(independent_routes, source.instance, prices)
     with strict_mode():
@@ -391,7 +391,7 @@ def layer_settings(layer: str) -> dict[str, Any]:
     mode = "zero_gamma" if layer in {"M0", "M1"} else "mean_gamma" if layer == "M2" else "actual_gamma"
     return {
         "profile_mode": mode,
-        "carbon_price": 0.0 if layer in {"M0", "M1", "M2", "M3"} else float(DEFAULT_PRICES.carbon_price),
+        "carbon_price": 0.0 if layer in {"M0", "M1", "M2", "M3"} else float(UK_2025_PRICES.carbon_price),
         "carbon_weight": 0.0 if layer in {"M0", "M1"} else 1.0,
         "fairness_enabled": layer == "M5",
         "charging_strategy": "naive" if layer in {"M0", "M1", "M2"} else "aware",
@@ -433,7 +433,7 @@ def fairness_rejection_count(counts: dict[str, int]) -> int:
 def prices_for(layer: str, fee: float) -> Any:
     settings = layer_settings(layer)
     return replace(
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=0.0,
         cross_site_cost=float(fee),

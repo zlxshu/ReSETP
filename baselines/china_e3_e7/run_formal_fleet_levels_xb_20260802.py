@@ -325,7 +325,7 @@ def allocations_by_level(
 ) -> dict[int, dict[str, dict[str, int]]]:
     result: dict[int, dict[str, dict[str, int]]] = {level: {} for level in LEVELS}
     for row in authority_rows(instance_id):
-        allocations = json.loads(row["level_allocations_json"])
+        allocations = json.loads(row["fleet_allocation_map_metadata_only"])
         for level in LEVELS:
             values = allocations[str(level)]
             cap = {
@@ -1162,7 +1162,7 @@ def preregistration(
             "authority": str(AUTHORITY.relative_to(REPO)),
             "authority_delivery": str(AUTHORITY_DELIVERY.relative_to(REPO)),
             "authority_version": "china81_finite_fleet_authority_v3_20260802",
-            "allocation": "Hamilton largest remainder, read verbatim from level_allocations_json",
+            "allocation": "Hamilton largest remainder, read verbatim from fleet_allocation_map_metadata_only",
             "total_fixed_across_levels": True,
             "strict_multitrip": True,
             "fixed_cost_billing": "once per used physical vehicle",
@@ -1286,8 +1286,8 @@ def initial_metadata(
         "input_tree_sha256": prereg["input_tree_sha256"],
         "input_files_sha256": prereg["input_files_sha256"],
         "protected_files_not_modified": [
-            "docs/paper_v2/paper_main.tex",
-            "docs/paper_submission_final/paper_main.tex",
+            "docs/paper_v2/RETIRED_paper_main.tex",
+            "docs/paper_submission_final/RETIRED_paper_main.tex",
             "solver/src/setp_solver/check.py",
             "solver/src/setp_solver/search/evaluation.py",
         ],

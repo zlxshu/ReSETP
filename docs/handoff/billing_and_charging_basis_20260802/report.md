@@ -73,7 +73,7 @@
 
 `FACT`。A 类 1 篇不进入分母。真正建模充电的 7 篇中：B 类 5 篇，占 `71.428571%`；C 类 2 篇，占 `28.571429%`。这只能说明本样本文献怎样处理资源，并不把 A 类“未建模充电”误写成“证明可无限并发”。
 
-`FACT`。本文现场字段见 `data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/fleet_caps.csv:1-3`：每场 `depot_charger_count=2`、`depot_charge_power_kw=22.0`。`decision.json:2-7` 同时记录 `charger_parameter_class=CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT`、`formal_search_allowed=false`；`china81.py:573-579` 把字段绑定为车场节点的 `station_chargers` 与 `charge_power_kw`。
+`FACT`。本文现场字段见 `data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/fleet_caps.csv:1-3`：每场 `configured_depot_gun_count_if_finite=2`、`depot_charge_power_kw=22.0`。`decision.json:2-7` 同时记录 `charger_parameter_class=CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT`、`formal_search_allowed=false`；`china81.py:573-579` 把字段绑定为车场节点的 `station_chargers` 与 `charge_power_kw`。
 
 `INFERENCE`。按并发资源压力，本文偏紧。它比 5 篇 B 类的无限并发严格；与 Froger 相比，枪数等于其 1/2 枪设计的较松档，但 Froger 是途中站而非配送车场；与 Wu 的 30 车站点时隙相比明显更紧。按单枪功率，22 kW 在 Montoya 的 11/22/44 kW 中居中，低于 Wang 的 30 kWh/h 与 Wu 的约 200 kW，故功率是低到中档。总体判定为“偏紧”，不是“相当”。
 

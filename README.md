@@ -72,7 +72,7 @@ python CONTROL_CONSOLE.py --dry-run
 
 The principal manuscript files are:
 
-- `docs/paper_submission_final/paper_main.tex`
+- `docs/paper_submission_final/RETIRED_paper_main.tex`
 - `docs/paper_submission_final/paper_main.pdf`
 - `docs/paper_submission_final/setp-new.cls`
 

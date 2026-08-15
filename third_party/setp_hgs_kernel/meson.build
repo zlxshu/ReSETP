@@ -73,6 +73,7 @@ libsearch = static_library(
     [
         SRC_DIR / 'search' / 'LocalSearch.cpp',
         SRC_DIR / 'search' / 'Route.cpp',
+        SRC_DIR / 'search' / 'DepotSplit.cpp',
         SRC_DIR / 'search' / 'primitives.cpp',
         SRC_DIR / 'search' / 'RelocateWithDepot.cpp',
         SRC_DIR / 'search' / 'SwapRoutes.cpp',
@@ -89,6 +90,7 @@ librepair = static_library(
         SRC_DIR / 'repair' / 'greedy_repair.cpp',
         SRC_DIR / 'repair' / 'nearest_route_insert.cpp',
         SRC_DIR / 'repair' / 'repair.cpp',
+        SRC_DIR / 'repair' / 'sisr_repair.cpp',
     ],
     include_directories: INCLUDES,
     link_with: [libsetp_hgs_kernel, libsearch],  # uses search to evaluate repair moves

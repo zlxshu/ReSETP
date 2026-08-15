@@ -106,7 +106,7 @@ def build() -> dict[str, Any]:
             }
         )
 
-    source_calendar = read_csv(SOURCE / "tariff_carbon_48slot_calendar.csv")
+    source_calendar = read_csv(SOURCE / "tariff_carbon_hourly_calendar.csv")
     calendar_rows: list[dict[str, Any]] = []
     keys: set[tuple[str, str, int]] = set()
     for row in source_calendar:
@@ -114,7 +114,7 @@ def build() -> dict[str, Any]:
         value = float(row["diesel_price_candidate_cny_per_l"])
         if value != EXPECTED_DIESEL[city]:
             raise RuntimeError(f"calendar diesel value disagrees for {city}")
-        key = (city, row["date"], int(row["half_hour_slot"]))
+        key = (city, row["date"], int(row["hourly_calendar_row"]))
         if key in keys:
             raise RuntimeError(f"duplicate city/date/slot key: {key}")
         keys.add(key)
@@ -130,7 +130,7 @@ def build() -> dict[str, Any]:
         raise RuntimeError("calendar row count is not 9 x 28 x 48")
 
     write_csv(OUT / "city_runtime_parameter_register.csv", register_rows)
-    write_csv(OUT / "tariff_carbon_48slot_calendar.csv", calendar_rows)
+    write_csv(OUT / "tariff_carbon_hourly_calendar.csv", calendar_rows)
     raw_rows = [
         {
             "check_id": "V4-CITY-DIESEL-ACTIVATION",
@@ -150,7 +150,7 @@ def build() -> dict[str, Any]:
             "check_id": "V4-ELECTRICITY-CARBON-NUMERIC-REUSE",
             "status": "PASS",
             "observed": sha256(
-                SOURCE / "tariff_carbon_48slot_calendar.csv"
+                SOURCE / "tariff_carbon_hourly_calendar.csv"
             ),
             "expected": "v3 numeric rows reused; only approval fields appended",
             "search_evaluations": 0,
@@ -182,7 +182,7 @@ def build() -> dict[str, Any]:
                 str(path.relative_to(REPO)): sha256(path)
                 for path in (
                     SOURCE / "city_runtime_parameter_register.csv",
-                    SOURCE / "tariff_carbon_48slot_calendar.csv",
+                    SOURCE / "tariff_carbon_hourly_calendar.csv",
                     SOURCE / "decision.json",
                     APPROVAL,
                 )

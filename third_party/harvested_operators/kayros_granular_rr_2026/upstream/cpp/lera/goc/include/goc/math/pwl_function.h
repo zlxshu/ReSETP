@@ -1,0 +1,283 @@
+//
+// Created by Gonzalo Lera Romero.
+// Grupo de Optimizacion Combinatoria (GOC).
+// Departamento de Computacion - Universidad de Buenos Aires.
+//
+
+#pragma once
+
+#include <iostream>
+#include <vector>
+
+#include "goc/lib/json.hpp"
+#include "goc/math/interval.h"
+#include "goc/math/partitioned_interval.h"
+#include "goc/math/linear_function.h"
+#include "goc/print/printable.h"
+
+namespace goc
+{
+// M13.3 (kayros-added, NOT vendored): selects which vertical-piece arithmetic
+// the PWL operators use.
+//
+//   true  = the M13.0 exact tagged-vertical rules. Compose carries BOTH
+//           vertical kinds through an increasing inner function, operator+
+//           pairs vertical endpoints by sweep order, and operator+/operator*
+//           hold an operand back for any stacked boundary piece. These rules
+//           are what the exact value-jump labeling needs on step-carrying
+//           (stepwise-ATF) instances.
+//   false = the pre-M13.0 (kayros 1.0.0) rules, which preserve only JUMP
+//           verticals in Compose, pair operator+ verticals by image order, and
+//           hold back only for a boundary vertical after a non-vertical piece.
+//
+// Why the switch exists: CHOICE verticals (from Inverse of a departure
+// plateau) and set-valued label durations occur on JUMP-FREE instances too, so
+// the M13.0 rules were never confined to the exact path the way M13.0 assumed.
+// On jump-free instances they change the audited v1.0.0 arithmetic and
+// over-certify (M13.3). The flag restores the documented intent: jump-free
+// solves take the v1.0.0 arithmetic bit-identically.
+//
+// Process-global, defaulting to the M13.0 rules (the library semantics the goc
+// unit tests pin). `kayros::lera::solve_duration_json` sets it per solve from
+// KAYROS_STEP_EXACT through StepExactArithmeticScope and restores it on exit.
+bool step_exact_arithmetic();
+void set_step_exact_arithmetic(bool on);
+
+// RAII: set the mode for a scope, restore the previous value on exit.
+class StepExactArithmeticScope
+{
+public:
+    explicit StepExactArithmeticScope(bool on) : previous_(step_exact_arithmetic())
+    {
+        set_step_exact_arithmetic(on);
+    }
+    ~StepExactArithmeticScope() { set_step_exact_arithmetic(previous_); }
+    StepExactArithmeticScope(const StepExactArithmeticScope&) = delete;
+    StepExactArithmeticScope& operator=(const StepExactArithmeticScope&) = delete;
+
+private:
+    bool previous_;
+};
+
+// This class represents a piecewise linear function. It has a sequence of linear functions with bounded domains.
+// Invariant: the linear functions are non overlapping and are increasing in domain.
+// Invariant: the function is stored normalized. A function is normalized iif no two consecutive pieces have the same
+//               slope, intercept, and share the end and beginning of their domains.
+// Example: [segment1={(1,2),(2,3)},segment2={(2,3),(3,4)}] is not normalized. [segment1={(1,2),(3,4)}] is normalized.
+class PWLFunction : public Printable
+{
+public:
+    // Returns: f(x)=a with the specific domain.
+    static PWLFunction ConstantFunction(double a, Interval domain);
+    
+    // Returns: f(x)=x with the specific domain.
+    static PWLFunction IdentityFunction(Interval domain);
+    
+    // Creates an empty piecewise linear function.
+    PWLFunction();
+    
+    // Creates a piecewise linear function with the specified pieces.
+    PWLFunction(const std::vector<LinearFunction>& pieces);
+
+    // Constructor for 2D continuous piecewise linear function
+    // Precondition: The list of breakpoints must be sorted and unique.
+    PWLFunction(
+        const std::vector<double>& breakpoints,
+        const std::vector<double>& values
+    );
+    
+    // Adds the piece at the end of the function.
+    // Keeps the normalization invariant automatically.
+    void AddPiece(const LinearFunction& piece);
+    
+    // Removes the last piece from the function.
+    // Precondition: PieceCount() > 0.
+    void PopPiece();
+    
+    // Returns: if the function has no pieces.
+    bool Empty() const;
+    
+    // Returns: the numer of pieces of the function.
+    int PieceCount() const;
+    
+    // Returns: a vector with the function pieces.
+    const std::vector<LinearFunction>& Pieces() const;
+    
+    // Returns: the i-th piece of the function.
+    // Precondition: i > PieceCount().
+    const LinearFunction& Piece(int i) const;
+    
+    // Returns: the i-th piece of the function.
+    // Precondition: i > PieceCount().
+    const LinearFunction& operator[](int i) const;
+    
+    // Returns: the first piece of the function.
+    // Precondition: !Empty().
+    const LinearFunction& FirstPiece() const;
+    
+    // Returns: the last piece of the function.
+    // Precondition: !Empty().
+    const LinearFunction& LastPiece() const;
+    
+    // Returns: the last piece index that includes x in its domain.
+    // Precondition: x \in dom(p) for any piece p.
+    int PieceIncluding(double x) const;
+    
+    // Returns: the smallest interval [m, M] that includes all pieces domains.
+    // Observation: if Empty() then returns [INFTY, -INFTY].
+    Interval Domain() const;
+    
+    // Returns: the smallest interval [m, M] that includes all pieces images.
+    // Observation: if Empty() then returns [INFTY, -INFTY].
+    Interval Image() const;
+    
+    // Returns: the evaluation of the piece that includes x in its domain.
+    // Exception: if no piece includes x in its domain, it throws an exception.
+    double Value(double x) const;
+    
+    // Returns: the evaluation of the piece that includes x in its domain.
+    // Exception: if no piece includes x in its domain, it throws an exception.
+    double operator()(double x) const;
+    
+    // Returns: the last x such that f(x) = y. Notice that if the function is not bijective it may contain multiple
+    // x such that f(x) = y.
+    // Exception: if no f(x) = y, then it throws an exception.
+    double PreValue(double y) const;
+    
+    // Returns: whether some piece covers x; if so *value = the attained value
+    // there (Value semantics without the hard failure). Post-domination label
+    // durations legitimately carry interior domain holes (M5.9); callers that
+    // may probe inside them use this instead of Value.
+    bool TryValue(double x, double* value) const;
+
+    // Returns: the MINIMUM value attainable at x across every piece covering x
+    // (M5.9, 21/n). Label DURATION functions are set-valued at an abscissa
+    // where a departure-choice set exists (stacked point pieces or choice
+    // verticals from composing through dep): the label semantics D(t) = min
+    // duration at t demands the minimum, while Value returns an arbitrary
+    // (first) representative there. Jump verticals contribute only their
+    // attained value; choice verticals their span minimum.
+    double MinValueAt(double x) const;
+
+    // Returns: the composition of this function (f) and g, i.e. fog(x) == f(g(x)).
+    // Observation: the domain of the new function are those x such that g(x) \in dom(f).
+    PWLFunction Compose(const PWLFunction& g) const;
+    
+    // Returns: the inverse of this function (f) if is inversible, otherwise returns g(y) = max{x : f(x) = y}.
+    PWLFunction Inverse() const;
+
+    // Returns: g(x) = f(T - x). Exact graph transform (M5.9, design memo 12.2):
+    // each breakpoint abscissa moves by ONE IEEE subtraction (platform-stable, no
+    // epsilon logic), arrays reversed; a value jump's ATTAINED endpoint (13.1) is
+    // preserved by construction. Replaces Compose(T - Id), the labeling's only
+    // decreasing-inner composition (reverse_instance, Merge).
+    PWLFunction FlipTime(double t_max) const;
+
+    // Returns: h(x) = T - f(x). Exact graph transform on the values; attained
+    // endpoints preserved. Combined with FlipTime it builds the reverse arrival
+    // function T - dep(T - t) exactly.
+    PWLFunction FlipValue(double t_max) const;
+    
+    // Restricts the domain to only the pieces included in the parameter.
+    // Returns: the restricted function.
+    PWLFunction RestrictDomain(const Interval& domain) const;
+    
+    // Restricts the image to only the pieces included in the parameter.
+    // Returns: the restricted function.
+    PWLFunction RestrictImage(const Interval& image) const;
+
+    bool check_invariant() const;
+	bool check_normalization() const;
+    bool check_continuity() const;
+
+    const std::pair<std::vector<double>, std::vector<double>> copy_breakpoints_and_values() const;
+
+    // Prints the function.
+    // Format: [p1, p2, ..., pn].
+    virtual void Print(std::ostream& os) const;
+    
+    // Returns: if all the pieces of both functions are the same.
+    bool operator==(const PWLFunction& f) const;
+    
+    // Returns: if any piece of both functions is different.
+    bool operator!=(const PWLFunction& f) const;
+
+    // Returns the total memory footprint of *this* object, in bytes,
+    // including both the fixed‐size portion (sizeof(*this)) and any
+    // heap allocations (e.g. std::vector buffers).
+    std::size_t memory_footprint_bytes() const;
+
+    /**
+     * @brief Computes the area under the non-decreasing continuous piecewise linear function.
+     * * This function calculates the definite integral of the function from its
+     * minimum domain value to its maximum domain value. It achieves this by
+     * summing the areas of the trapezoids formed by each linear piece and the x-axis.
+     * * For each segment from (x_i, y_i) to (x_{i+1}, y_{i+1}), the area of the
+     * trapezoid is calculated as: (y_i + y_{i+1}) * (x_{i+1} - x_i) / 2.0.
+     * * Vertical segments (where x_{i+1} - x_i == 0) correctly contribute 0 area.
+     * * @return The total area under the function. Returns 0.0 if the function is empty.
+     */
+    double compute_area() const;
+private:
+    // Updates the image_ attribute to keep it updated after a Pop() operation.
+    void UpdateImage();
+    
+    std::vector<LinearFunction> pieces_;
+    Interval domain_, image_;
+};
+
+// JSON format: [p1, p2, ..., pn].
+void from_json(const nlohmann::json& j, PWLFunction& f);
+
+void to_json(nlohmann::json& j, const PWLFunction& f);
+
+std::string to_string(const PWLFunction& f);
+
+// Returns: the function h(x) = f(x)+g(x).
+// Observation: only returns h(x) for x \in dom(f) \cap dom(g).
+PWLFunction operator+(const PWLFunction& f, const PWLFunction& g);
+
+// Returns: the function h(x) = f(x)-g(x).
+// Observation: only returns h(x) for x \in dom(f) \cap dom(g).
+PWLFunction operator-(const PWLFunction& f, const PWLFunction& g);
+
+// Returns: the function h(x) = f(x)*g(x).
+// Observation: only returns h(x) for x \in dom(f) \cap dom(g).
+PWLFunction operator*(const PWLFunction& f, const PWLFunction& g);
+
+// Returns: the function h(x) = f(x)+a.
+PWLFunction operator+(const PWLFunction& f, double a);
+PWLFunction operator+(double a, const PWLFunction& f);
+
+// Returns: the function h(x) = f(x)-a.
+PWLFunction operator-(const PWLFunction& f, double a);
+
+// Returns: the function h(x) = a-f(x).
+PWLFunction operator-(double a, const PWLFunction& f);
+
+// Returns: the function h(x) = f(x)*a.
+PWLFunction operator*(const PWLFunction& f, double a);
+PWLFunction operator*(double a, const PWLFunction& f);
+
+// Returns: h(x) = max(f(x), g(x)).
+// Obs: If x \in dom(f), but x \not\in dom(g), then h(x) = f(x). Analogously, for the opposite case.
+goc::PWLFunction Max(const goc::PWLFunction& f, const goc::PWLFunction& g);
+
+// Returns: h(x) = max(f(x), a).
+goc::PWLFunction Max(const goc::PWLFunction& f, double a);
+goc::PWLFunction Max(double a, const goc::PWLFunction& f);
+
+// Returns: h(x) = min(f(x), g(x)).
+// Obs: If x \in dom(f), but x \not\in dom(g), then h(x) = f(x). Analogously, for the opposite case.
+goc::PWLFunction Min(const goc::PWLFunction& f, const goc::PWLFunction& g);
+
+// Returns: h(x) = min(f(x), a).
+goc::PWLFunction Min(const goc::PWLFunction& f, double a);
+goc::PWLFunction Min(double a, const goc::PWLFunction& f);
+
+// Returns: f.domain
+inline Interval dom(const PWLFunction& f) { return f.Domain(); }
+
+// Returns: f.image
+inline Interval img(const PWLFunction& f) { return f.Image(); }
+} // namespace goc

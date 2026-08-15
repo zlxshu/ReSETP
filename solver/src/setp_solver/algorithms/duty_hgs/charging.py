@@ -26,10 +26,14 @@ from setp_solver.algorithms.resetp_alns.support.charging import (
     repair_route_charging,
     repair_route_charging_candidates,
 )
-from setp_solver.charge_timing import _timing_candidates
+from setp_solver.charge_timing import (
+    _timing_candidates,
+    charge_timing_objective_value,
+)
 from setp_solver.charging_action import _curve_aware_action
 from setp_solver.search.multitrip_schedule import (
     STATIC_PREHORIZON_SECONDS,
+    certified_depot_charge_window,
     prepare_multitrip_solution,
     route_timing,
     select_certified_depot_charge_start,
@@ -59,6 +63,79 @@ class ChargingRepairPolicy:
     carbon_profiles_by_day_offset: Mapping[
         int, list[dict[str, Any]]
     ] | None
+    first_trip_prev_night_enabled: bool = False
+
+
+def _route_repair_window_modes(
+    duty: PhysicalVehicleDuty,
+    trip: DutyTrip,
+    policy: ChargingRepairPolicy,
+) -> tuple[str, ...]:
+    """Expose the preceding-day alternative only for an unlocked first trip."""
+
+    if policy.first_trip_prev_night_enabled and trip == duty.trips[0]:
+        return ("same_day_predeparture", "prev_night")
+    return ("same_day_predeparture",)
+
+
+def _select_depot_charge_start_from_windows(
+    action: ChargingAction,
+    windows: tuple[tuple[str, float, float], ...],
+    *,
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+) -> tuple[float, int]:
+    """Select once after merging already certified calendar windows."""
+
+    candidates: list[tuple[float, float, float, int]] = []
+    for mode, earliest, latest in windows:
+        start, offset = select_certified_depot_charge_start(
+            action,
+            earliest,
+            latest,
+            context.bundle.instance,
+            context.bundle.prices,
+            context.bundle.time_profile,
+            mode=mode,
+            strategy=policy.strategy,
+            carbon_weight=float(policy.carbon_weight),
+            charge_timing_policy=policy.charge_timing_policy,
+            carbon_profiles_by_day_offset=(
+                policy.carbon_profiles_by_day_offset
+            ),
+        )
+        if policy.carbon_profiles_by_day_offset is None:
+            profile = context.bundle.time_profile
+        else:
+            try:
+                profile = policy.carbon_profiles_by_day_offset[int(offset)]
+            except KeyError as exc:
+                raise ValueError(
+                    "missing registered carbon/price profile for depot "
+                    f"day offset {offset}"
+                ) from exc
+        placed = replace(
+            action,
+            charge_start_second=float(start),
+            charge_day_offset=int(offset),
+        )
+        score = charge_timing_objective_value(
+            placed,
+            context.bundle.instance,
+            profile,
+            context.bundle.prices,
+            charge_timing_policy=policy.charge_timing_policy,
+        )
+        absolute_start = (
+            float(offset) * STATIC_PREHORIZON_SECONDS + float(start)
+        )
+        candidates.append(
+            (float(score), absolute_start, float(start), int(offset))
+        )
+    if not candidates:
+        raise ValueError("no certified depot charging window candidates")
+    _, _, start, offset = min(candidates)
+    return start, offset
 
 
 @dataclass
@@ -256,7 +333,6 @@ def _repair_one_ev_duty_candidates(
                 "one trip cannot mix locked and unlocked charging sessions"
             )
 
-    route_repair_window_mode = "same_day_predeparture"
     options_by_trip: list[
         tuple[tuple[Route, tuple[ChargingAction, ...]], ...]
     ] = []
@@ -286,42 +362,43 @@ def _repair_one_ev_duty_candidates(
 
         trip_options: list[tuple[Route, tuple[ChargingAction, ...]]] = []
         for amount_strategy in amount_strategies:
-            try:
-                route_candidates = repair_route_charging_candidates(
-                    route,
-                    bundle.instance,
-                    bundle.time_profile,
-                    bundle.prices,
-                    strategy=policy.strategy,
-                    carbon_weight=float(policy.carbon_weight),
-                    depot_charge_window_mode=route_repair_window_mode,
-                    charge_timing_policy=policy.charge_timing_policy,
-                    charge_amount_strategy=amount_strategy,
-                    carbon_profiles_by_day_offset=(
-                        policy.carbon_profiles_by_day_offset
-                    ),
-                    public_station_candidate_mode=(
-                        policy.public_station_candidate_mode
-                    ),
-                )
-            except (TypeError, ValueError):
-                continue
-            for _label, repaired_route, repaired_actions in route_candidates:
-                _assert_customer_order(
-                    trip.customer_ids,
-                    repaired_route,
-                    node_lookup,
-                )
-                normalized_actions = tuple(repaired_actions)
-                if any(
-                    existing_route == repaired_route
-                    and existing_actions == normalized_actions
-                    for existing_route, existing_actions in trip_options
-                ):
+            for window_mode in _route_repair_window_modes(duty, trip, policy):
+                try:
+                    route_candidates = repair_route_charging_candidates(
+                        route,
+                        bundle.instance,
+                        bundle.time_profile,
+                        bundle.prices,
+                        strategy=policy.strategy,
+                        carbon_weight=float(policy.carbon_weight),
+                        depot_charge_window_mode=window_mode,
+                        charge_timing_policy=policy.charge_timing_policy,
+                        charge_amount_strategy=amount_strategy,
+                        carbon_profiles_by_day_offset=(
+                            policy.carbon_profiles_by_day_offset
+                        ),
+                        public_station_candidate_mode=(
+                            policy.public_station_candidate_mode
+                        ),
+                    )
+                except (TypeError, ValueError):
                     continue
-                trip_options.append(
-                    (repaired_route, normalized_actions)
-                )
+                for _label, repaired_route, repaired_actions in route_candidates:
+                    _assert_customer_order(
+                        trip.customer_ids,
+                        repaired_route,
+                        node_lookup,
+                    )
+                    normalized_actions = tuple(repaired_actions)
+                    if any(
+                        existing_route == repaired_route
+                        and existing_actions == normalized_actions
+                        for existing_route, existing_actions in trip_options
+                    ):
+                        continue
+                    trip_options.append(
+                        (repaired_route, normalized_actions)
+                    )
         if not trip_options:
             return
         options_by_trip.append(tuple(trip_options))
@@ -506,7 +583,6 @@ def _repair_one_ev_duty(
     # The single-route repair builds a provisional, same-day local action.
     # The physical-duty certificate below places and re-times that action in
     # the approved first-trip or inter-trip calendar window.
-    route_repair_window_mode = "same_day_predeparture"
     for trip in duty.trips:
         temporary_id = duty.route_id(trip.trip_index)
         route = Route(
@@ -526,23 +602,34 @@ def _repair_one_ev_duty(
                 for session in reference_sessions_by_trip[trip.trip_index]
             )
             continue
-        repaired_route, repaired_actions = repair_route_charging(
-            route,
-            bundle.instance,
-            bundle.time_profile,
-            bundle.prices,
-            strategy=policy.strategy,
-            carbon_weight=float(policy.carbon_weight),
-            depot_charge_window_mode=route_repair_window_mode,
-            charge_timing_policy=policy.charge_timing_policy,
-            charge_amount_strategy=policy.charge_amount_strategy,
-            carbon_profiles_by_day_offset=(
-                policy.carbon_profiles_by_day_offset
-            ),
-            public_station_candidate_mode=(
-                policy.public_station_candidate_mode
-            ),
-        )
+        repair_error: TypeError | ValueError | None = None
+        for window_mode in _route_repair_window_modes(duty, trip, policy):
+            try:
+                repaired_route, repaired_actions = repair_route_charging(
+                    route,
+                    bundle.instance,
+                    bundle.time_profile,
+                    bundle.prices,
+                    strategy=policy.strategy,
+                    carbon_weight=float(policy.carbon_weight),
+                    depot_charge_window_mode=window_mode,
+                    charge_timing_policy=policy.charge_timing_policy,
+                    charge_amount_strategy=policy.charge_amount_strategy,
+                    carbon_profiles_by_day_offset=(
+                        policy.carbon_profiles_by_day_offset
+                    ),
+                    public_station_candidate_mode=(
+                        policy.public_station_candidate_mode
+                    ),
+                )
+            except (TypeError, ValueError) as exc:
+                repair_error = exc
+                continue
+            break
+        else:
+            if repair_error is None:
+                raise AssertionError("charging repair had no registered window mode")
+            raise repair_error
         _assert_customer_order(
             trip.customer_ids,
             repaired_route,
@@ -741,7 +828,36 @@ def _anchor_duty_depot_actions(
                     instance=instance,
                 )
                 duration = float(selected_depot.occupancy_minutes) * 60.0
-                if position == 0:
+                if position == 0 and policy.first_trip_prev_night_enabled:
+                    windows: list[tuple[str, float, float]] = []
+                    for mode in ("same_day_predeparture", "prev_night"):
+                        local_earliest, local_latest, day_offset = (
+                            certified_depot_charge_window(
+                                route,
+                                instance,
+                                prices,
+                                occupancy_seconds=duration,
+                                mode=mode,
+                                charging_actions=route_actions,
+                            )
+                        )
+                        day_start = (
+                            float(day_offset) * STATIC_PREHORIZON_SECONDS
+                        )
+                        windows.append(
+                            (
+                                mode,
+                                day_start + float(local_earliest),
+                                day_start + float(local_latest),
+                            )
+                        )
+                    start, offset = _select_depot_charge_start_from_windows(
+                        selected_depot,
+                        tuple(windows),
+                        context=context,
+                        policy=policy,
+                    )
+                elif position == 0:
                     if policy.depot_charge_window_mode == "same_day_predeparture":
                         earliest = 0.0
                         latest = float(timing.earliest_departure_second) - duration
@@ -756,21 +872,24 @@ def _anchor_duty_depot_actions(
                     earliest = previous_return
                     latest = float(timing.earliest_departure_second) - duration
                     mode = "full_gap"
-                start, offset = select_certified_depot_charge_start(
-                    selected_depot,
-                    earliest,
-                    latest,
-                    instance,
-                    prices,
-                    context.bundle.time_profile,
-                    mode=mode,
-                    strategy=policy.strategy,
-                    carbon_weight=float(policy.carbon_weight),
-                    charge_timing_policy=policy.charge_timing_policy,
-                    carbon_profiles_by_day_offset=(
-                        policy.carbon_profiles_by_day_offset
-                    ),
-                )
+                if not (
+                    position == 0 and policy.first_trip_prev_night_enabled
+                ):
+                    start, offset = select_certified_depot_charge_start(
+                        selected_depot,
+                        earliest,
+                        latest,
+                        instance,
+                        prices,
+                        context.bundle.time_profile,
+                        mode=mode,
+                        strategy=policy.strategy,
+                        carbon_weight=float(policy.carbon_weight),
+                        charge_timing_policy=policy.charge_timing_policy,
+                        carbon_profiles_by_day_offset=(
+                            policy.carbon_profiles_by_day_offset
+                        ),
+                    )
                 selected_depot = replace(
                     selected_depot,
                     charge_start_second=float(start),

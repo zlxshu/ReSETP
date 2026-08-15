@@ -177,7 +177,7 @@ def verify_numeric_markers(failures: list[str]) -> None:
         require(text, value, failures, f"diesel value {name}")
     for value in ("0.5306", "0.5737", "0.5827"):
         require(factors, value, failures, f"MEE power factor {value}")
-    for value in ("43.330", "20.20×10-3", "98%"):
+    for value in ("0.84", "43.330", "20.20×10-3", "98%"):
         require(guideline, value, failures, f"diesel factor input {value}")
 
 
@@ -257,13 +257,27 @@ def scenario_rows() -> list[dict[str, Any]]:
 
 
 def emission_rows() -> list[dict[str, Any]]:
-    diesel_tco2_per_t = 43.330 * 20.20e-3 * 0.98 * 44.0 / 12.0
-    density_kg_per_l = 6.88 / (8000.0 / 1000.0)
-    diesel_kgco2_per_l = diesel_tco2_per_t * density_kg_per_l
-    if not math.isclose(density_kg_per_l, 0.86, rel_tol=0.0, abs_tol=1e-12):
-        raise PriceGateError("diesel density implied by the official price table differs")
-    if not math.isclose(diesel_tco2_per_t, 3.1451224933333326, abs_tol=1e-12):
-        raise PriceGateError("diesel CO2 factor formula differs")
+    # NDRC land-transport GHG guide (trial): printed p. 15 gives diesel
+    # density 0.84 t/m3; printed p. 60 gives 43.330 GJ/t, 20.20e-3 tC/GJ,
+    # and a 98% oxidation rate.  Printed pp. 10-11 define AD and EF.
+    density_t_per_l = 0.84 / 1000.0
+    energy_gj_per_l = density_t_per_l * 43.330
+    carbon_t_per_l = energy_gj_per_l * 20.20e-3
+    oxidized_carbon_t_per_l = carbon_t_per_l * 0.98
+    diesel_kgco2_per_l = (
+        oxidized_carbon_t_per_l * 44.0 / 12.0 * 1000.0
+    )
+    if not math.isclose(density_t_per_l, 0.00084, abs_tol=1e-15):
+        raise PriceGateError("official diesel density conversion differs")
+    if not math.isclose(energy_gj_per_l, 0.0363972, abs_tol=1e-15):
+        raise PriceGateError("official diesel energy conversion differs")
+    if not math.isclose(
+        diesel_kgco2_per_l,
+        2.6419028944,
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    ):
+        raise PriceGateError("official diesel CO2 factor formula differs")
     return [
         {
             "factor": "Shanghai purchased electricity annual average",
@@ -279,7 +293,7 @@ def emission_rows() -> list[dict[str, Any]]:
         },
         {
             "factor": "diesel combustion",
-            "value": f"{diesel_kgco2_per_l:.8f}",
+            "value": f"{diesel_kgco2_per_l:.10f}",
             "unit": "kgCO2_per_L",
             "boundary": "CO2 from fuel combustion only; excludes CH4, N2O, urea, upstream fuel, vehicle and battery manufacturing",
         },

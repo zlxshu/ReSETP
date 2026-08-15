@@ -327,7 +327,7 @@ def half_hour_rows(values: list[tuple[Any, ...]]) -> tuple[list[dict[str, Any]],
             record: dict[str, Any] = {
                 "date": current_date.isoformat(),
                 "day_index": day_index + 1,
-                "half_hour_slot": hour * 2 + half + 1,
+                "hourly_calendar_row": hour * 2 + half + 1,
                 "source_hour": hour_index + 1,
                 "hour_of_day": hour,
                 "minute": half * 30,

@@ -29,6 +29,11 @@ from time import perf_counter
 
 from setp_hgs_kernel.HGSControl import HGSControl, HGSControlState
 
+from .bi_objective_population import (
+    SINGLE_OBJECTIVE,
+    BiObjectiveArchive,
+    validate_population_objective_mode,
+)
 from .charging import ChargingRepairPolicy, repair_changed_duties
 from .contracts import (
     CandidateOutcome,
@@ -84,6 +89,7 @@ class ProblemHGSSearchParameters:
     crossover_mode: str = "fast_only"
     include_whole_duty_type_exchange: bool = True
     dcrex_discount_factor: float = DISCOUNT_FACTOR
+    objective_mode: str = SINGLE_OBJECTIVE
 
     def __post_init__(self) -> None:
         if self.stagnation_patience < 1:
@@ -92,6 +98,27 @@ class ProblemHGSSearchParameters:
             raise ValueError("crossover mode must be fast_only or hybrid")
         if not 0.0 < float(self.dcrex_discount_factor) <= 1.0:
             raise ValueError("DCREX discount factor must be in (0, 1]")
+        validate_population_objective_mode(self.objective_mode)
+
+
+@dataclass(frozen=True)
+class PrivateAblationTreatment:
+    """The only component switches allowed to differ inside one paired run."""
+
+    schedule_cross_repair_fallback: bool = False
+    schedule_all_changed_move_evaluation: bool = False
+    fleet_activation_enabled: bool = False
+
+    def __post_init__(self) -> None:
+        if (
+            self.schedule_all_changed_move_evaluation
+            and not self.schedule_cross_repair_fallback
+        ):
+            raise ValueError("all-move DSS requires crossover DSS fallback")
+        if self.fleet_activation_enabled and not (
+            self.schedule_all_changed_move_evaluation
+        ):
+            raise ValueError("endogenous fleet treatment requires all-move DSS")
 
 
 @dataclass(frozen=True)
@@ -128,6 +155,58 @@ class ProblemHGSSearchState:
 
 
 @dataclass(frozen=True)
+class BiObjectiveSolutionRecord:
+    """One saved Pareto point with its complete evaluation and certificate."""
+
+    individual: DutyIndividual
+    evaluation: FullEvaluation
+    total_cost: float
+    total_emissions_kg: float
+
+    def to_dict(self) -> dict[str, object]:
+        """Return a JSON-ready point, including the full solution certificate."""
+
+        return {
+            "individual_fingerprint": self.individual.fingerprint,
+            "objectives": {
+                "Z1_total_cost": float(self.total_cost),
+                "Z2_total_emissions_kg": float(self.total_emissions_kg),
+                "E_cv_direct": float(
+                    self.evaluation.breakdown["E_cv_direct"]
+                ),
+                "E_ev_indirect": float(
+                    self.evaluation.breakdown["E_ev_indirect"]
+                ),
+            },
+            "individual": asdict(self.individual),
+            "prepared_solution": asdict(self.evaluation.prepared_solution),
+            "solution_certificate": self.evaluation.certificate.as_dict(),
+            "evaluation": {
+                "total_cost": float(self.evaluation.total_cost),
+                "breakdown": dict(self.evaluation.breakdown),
+                "feasible": bool(self.evaluation.feasible),
+                "violations": [
+                    asdict(violation)
+                    for violation in self.evaluation.violations
+                ],
+                "violation_magnitudes": [
+                    float(value)
+                    for value in self.evaluation.violation_magnitudes
+                ],
+                "depot_profit": dict(self.evaluation.depot_profit),
+                "participation_margin": dict(
+                    self.evaluation.participation_margin
+                ),
+                "evaluation_context_sha256": (
+                    self.evaluation.evaluation_context_sha256
+                ),
+                "source": self.evaluation.source,
+                "accounting": dict(self.evaluation.accounting),
+            },
+        }
+
+
+@dataclass(frozen=True)
 class ProblemHGSRunResult:
     best: DutyIndividual
     best_evaluation: FullEvaluation
@@ -138,6 +217,11 @@ class ProblemHGSRunResult:
     termination_status: str
     termination_error_type: str | None = None
     termination_error: str | None = None
+    objective_mode: str = SINGLE_OBJECTIVE
+    non_dominated_set: tuple[BiObjectiveSolutionRecord, ...] = ()
+    cost_priority_point: BiObjectiveSolutionRecord | None = None
+    emissions_priority_point: BiObjectiveSolutionRecord | None = None
+    charging_prescreen_accounting: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -171,10 +255,6 @@ class _TrajectoryRecorder:
         *,
         retain: bool,
     ) -> None:
-        if sink is None and not retain:
-            raise ValueError(
-                "trajectory_sink is required when retain_trajectory is false"
-            )
         self._sink = sink
         self._retain = bool(retain)
         self.retained: list[TrajectoryRow] = []
@@ -208,6 +288,12 @@ def run_integrated_problem_hgs(
     initial_evaluations: tuple[FullEvaluation, ...] | None = None,
     initialization_full_evaluation_count: int | None = None,
     initialization_wall_seconds: float = 0.0,
+    treatment: PrivateAblationTreatment | None = None,
+    charging_prescreen_enabled: bool = False,
+    charging_prescreen_audit_limit: int = 0,
+    cross_depot_enabled: bool = True,
+    multi_trip_enabled: bool = True,
+    type_exchange_enabled: bool = True,
 ) -> ProblemHGSRunResult:
     """Run the common HGS control flow over complete Duty candidates."""
 
@@ -242,6 +328,7 @@ def run_integrated_problem_hgs(
         (route_engine, MechanismProposalEngine(evaluator.context, charging_policy)),
         source_id=DEFAULT_SERIAL_PROPOSAL_SOURCE_ID,
     )
+    trajectory_enabled = trajectory_sink is not None or retain_trajectory
     trajectory = _TrajectoryRecorder(
         trajectory_sink,
         retain=retain_trajectory,
@@ -255,6 +342,7 @@ def run_integrated_problem_hgs(
             charging_policy,
             arm=arm,
             proposal_engine=active_proposal_engine,
+            treatment=treatment,
         ),
         initial_population_source_id=initial_population_identity.source_id,
         initial_population_sha256=(
@@ -342,8 +430,27 @@ def run_integrated_problem_hgs(
         population_parameters=parameters.population,
         proposal_engine=proposal_engine,
         initial_evaluations=initial_evaluations,
-        trajectory_sink=trajectory.emit_many,
+        trajectory_sink=(trajectory.emit_many if trajectory_enabled else None),
         arm=arm,
+        schedule_cross_repair_fallback=(
+            False
+            if treatment is None
+            else treatment.schedule_cross_repair_fallback
+        ),
+        schedule_all_changed_move_evaluation=(
+            False
+            if treatment is None
+            else treatment.schedule_all_changed_move_evaluation
+        ),
+        fleet_activation_enabled=(
+            True if treatment is None else treatment.fleet_activation_enabled
+        ),
+        objective_mode=parameters.objective_mode,
+        charging_prescreen_enabled=charging_prescreen_enabled,
+        charging_prescreen_audit_limit=charging_prescreen_audit_limit,
+        cross_depot_enabled=cross_depot_enabled,
+        multi_trip_enabled=multi_trip_enabled,
+        type_exchange_enabled=type_exchange_enabled,
     )
     accounting = bundle.accounting.mechanism
     result = bundle.algorithm.run(_IntegratedStop())
@@ -369,6 +476,12 @@ def run_integrated_problem_hgs(
         if not best.evaluation.feasible
         else "STOPPED_BY_CALLER"
     )
+    archive = bundle.bi_objective_archive()
+    (
+        non_dominated_set,
+        cost_priority_point,
+        emissions_priority_point,
+    ) = _bi_objective_result(archive)
     return _finish_result(
         best,
         evaluator,
@@ -378,6 +491,15 @@ def run_integrated_problem_hgs(
         started,
         provenance,
         status=status,
+        objective_mode=parameters.objective_mode,
+        non_dominated_set=non_dominated_set,
+        cost_priority_point=cost_priority_point,
+        emissions_priority_point=emissions_priority_point,
+        charging_prescreen_accounting=(
+            None
+            if bundle.charging_prescreen is None
+            else bundle.charging_prescreen.statistics()
+        ),
     )
 
 
@@ -1329,19 +1451,26 @@ def search_configuration_sha256(
     *,
     arm: str,
     proposal_engine: DutyProposalEngine | None = None,
+    treatment: PrivateAblationTreatment | None = None,
 ) -> str:
     """Hash only the runner, charging-policy, and arm configuration."""
 
     active_proposal_engine = proposal_engine or LegacyCompleteProposalEngine()
+    parameter_payload = asdict(parameters)
+    if parameters.objective_mode == SINGLE_OBJECTIVE:
+        # Preserve every pre-P39 single-objective configuration digest.
+        parameter_payload.pop("objective_mode")
     payload = {
         "arm": str(arm),
-        "parameters": asdict(parameters),
+        "parameters": parameter_payload,
         "charging_policy": asdict(charging_policy),
         "proposal_engine": {
             "source_id": active_proposal_engine.source_id,
             "identity_sha256": active_proposal_engine.identity_sha256,
         },
     }
+    if treatment is not None:
+        payload["private_ablation_treatment"] = asdict(treatment)
     encoded = json.dumps(
         payload,
         ensure_ascii=False,
@@ -1350,6 +1479,40 @@ def search_configuration_sha256(
         allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _bi_objective_result(
+    archive: BiObjectiveArchive | None,
+) -> tuple[
+    tuple[BiObjectiveSolutionRecord, ...],
+    BiObjectiveSolutionRecord | None,
+    BiObjectiveSolutionRecord | None,
+]:
+    if archive is None:
+        return (), None, None
+    records = tuple(
+        BiObjectiveSolutionRecord(
+            individual=entry.candidate.solution,
+            evaluation=entry.candidate.evaluation.full,
+            total_cost=float(entry.objectives.total_cost),
+            total_emissions_kg=float(entry.objectives.total_emissions_kg),
+        )
+        for entry in archive.entries
+    )
+    by_fingerprint = {
+        record.individual.fingerprint: record for record in records
+    }
+    cost_priority = (
+        None
+        if archive.cost_priority is None
+        else by_fingerprint[archive.cost_priority.fingerprint]
+    )
+    emissions_priority = (
+        None
+        if archive.emissions_priority is None
+        else by_fingerprint[archive.emissions_priority.fingerprint]
+    )
+    return records, cost_priority, emissions_priority
 
 
 def _finish_result(
@@ -1363,6 +1526,11 @@ def _finish_result(
     *,
     status: str,
     error: Exception | None = None,
+    objective_mode: str = SINGLE_OBJECTIVE,
+    non_dominated_set: tuple[BiObjectiveSolutionRecord, ...] = (),
+    cost_priority_point: BiObjectiveSolutionRecord | None = None,
+    emissions_priority_point: BiObjectiveSolutionRecord | None = None,
+    charging_prescreen_accounting: dict[str, object] | None = None,
 ) -> ProblemHGSRunResult:
     final_evaluation = evaluator.evaluate(best.individual)
     accounting.full_evaluations += 1
@@ -1378,4 +1546,9 @@ def _finish_result(
         termination_status=status,
         termination_error_type=(None if error is None else type(error).__name__),
         termination_error=None if error is None else str(error),
+        objective_mode=objective_mode,
+        non_dominated_set=non_dominated_set,
+        cost_priority_point=cost_priority_point,
+        emissions_priority_point=emissions_priority_point,
+        charging_prescreen_accounting=charging_prescreen_accounting,
     )

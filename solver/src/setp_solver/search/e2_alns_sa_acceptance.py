@@ -21,6 +21,7 @@ from .alns_crush_v2 import _parse_seed_list
 from .bundle import load_search_bundle
 from .candidates import make_shared_initial_solution
 from .metaheuristic_baselines import run_metaheuristic_baseline
+from ..prices import UK_2025_PRICES
 from .winner_operators import WinnerKernelConfig, e2_alns_sa_acceptance_flags, run_e2_alns_sa_acceptance
 
 
@@ -197,7 +198,7 @@ def _run_one(task: dict[str, Any]) -> dict[str, Any]:
     root = Path(task["repo_root"])
     bundle_dir = root / str(task["bundle_dir"])
     bundle = load_search_bundle(bundle_dir)
-    warm = make_shared_initial_solution(bundle)
+    warm = make_shared_initial_solution(bundle, UK_2025_PRICES)
     algorithm = str(task["algorithm"])
     seed = int(task["seed"])
     eval_budget = int(task["eval_budget"])
@@ -212,6 +213,7 @@ def _run_one(task: dict[str, Any]) -> dict[str, Any]:
             bundle_dir,
             config=WinnerKernelConfig(seed=seed, eval_budget=eval_budget, max_runtime_seconds=runtime_cap),
             initial_solution=warm,
+            prices=UK_2025_PRICES,
             mode=mode,
         )
         solution = result["best_solution"]
@@ -229,6 +231,7 @@ def _run_one(task: dict[str, Any]) -> dict[str, Any]:
             eval_budget=eval_budget,
             max_runtime_seconds=runtime_cap,
             initial_solution=warm,
+            prices=UK_2025_PRICES,
         )
         solution = result.best_solution
         best_cost = float(result.best_cost) if result.best_cost is not None else math.inf

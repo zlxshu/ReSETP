@@ -92,7 +92,7 @@ def all_source_paths(contract: dict[str, Any]) -> list[str]:
             contract["source_contracts"]["parameter_lock_machine"],
             "data/ChinaInstances/china81_g1_independent_frozen_v2_20260718/decision.json",
             "baselines/model_verification/china81_vehicle_road_profiles_nl3b_20260720/decision.json",
-            "docs/paper_v2/paper_main.tex",
+            "docs/paper_v2/RETIRED_paper_main.tex",
         ]
     )
     return list(dict.fromkeys(paths))

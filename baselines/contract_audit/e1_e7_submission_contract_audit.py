@@ -284,7 +284,7 @@ def main() -> None:
     metadata = {
         "schema_version": "resetp.e1_e7_submission_contract_audit.v1",
         "execution_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
-        "sources": [str(E2_RAW), str(E3_RAW), "solver/src/setp_solver/search/formal_runner.py", "docs/paper_submission_final/paper_main.tex"],
+        "sources": [str(E2_RAW), str(E3_RAW), "solver/src/setp_solver/search/formal_runner.py", "docs/paper_submission_final/RETIRED_paper_main.tex"],
         "customer_owner_rule": "nearest depot using infer_customer_home_depots; pending final user approval",
         "no_search": True,
     }

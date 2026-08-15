@@ -443,7 +443,7 @@ def build_midday_valley_profile(
     )
     for original in profile:
         row = dict(original)
-        slot = int(row["half_hour_slot"])
+        slot = int(row["hourly_calendar_row"])
         city = str(row["city"])
         if city in templates and slot in MIDDAY_SLOTS:
             before = {
@@ -458,7 +458,7 @@ def build_midday_valley_profile(
             changed.append(
                 {
                     "city": city,
-                    "half_hour_slot": slot,
+                    "hourly_calendar_row": slot,
                     "start_second": float(row["horizon_second_start"]),
                     "before": before,
                     "after": after,
@@ -479,7 +479,7 @@ def build_midday_valley_profile(
             "service_fee_class",
             *price_fields,
         }
-        if int(original["half_hour_slot"]) not in MIDDAY_SLOTS:
+        if int(original["hourly_calendar_row"]) not in MIDDAY_SLOTS:
             if canonical_bytes(original) != canonical_bytes(row):
                 raise RuntimeError("P arm changed a row outside slots 25-30")
         else:
@@ -718,7 +718,7 @@ def slot_rows_for_solution(
                 "arm": arm,
                 "budget": budget,
                 "seed": seed,
-                "half_hour_slot": slot,
+                "hourly_calendar_row": slot,
                 "start_minute": (slot - 1) * 30,
                 "end_minute": slot * 30,
                 "charging_kwh": energy,
@@ -1089,7 +1089,7 @@ SLOT_FIELDS = (
     "arm",
     "budget",
     "seed",
-    "half_hour_slot",
+    "hourly_calendar_row",
     "start_minute",
     "end_minute",
     "charging_kwh",

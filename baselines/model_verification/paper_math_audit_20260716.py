@@ -20,7 +20,7 @@ import sympy as sp
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PAPER = ROOT / "docs/paper_submission_final/paper_main.tex"
+PAPER = ROOT / "docs/paper_submission_final/RETIRED_paper_main.tex"
 OUT = ROOT / "baselines/model_verification/paper_math_audit_20260716"
 sys.path.insert(0, str(ROOT / "solver/src"))
 

@@ -208,7 +208,7 @@ def build() -> dict[str, Any]:
     legacy.OUT = OUT
     legacy.ORDERS = ORDERS
     legacy.build_calendar = lambda: read_csv(
-        PARAMETERS / "tariff_carbon_48slot_calendar.csv"
+        PARAMETERS / "tariff_carbon_hourly_calendar.csv"
     )
     legacy.main()
 

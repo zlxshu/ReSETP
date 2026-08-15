@@ -417,7 +417,7 @@ def evidence_matrix_rows() -> list[dict[str, Any]]:
             "cap_value_rule": "",
             "scenario_relevance": "supports multidepot/shared charging as a scenario, not a numeric fleet cap by itself",
             "caveat": "Do not generate evidence_ratio_cap from this source without extracting explicit fleet-count data.",
-            "path_or_url": "docs/paper_submission_final/paper_main.tex ref:7",
+            "path_or_url": "docs/paper_submission_final/RETIRED_paper_main.tex ref:7",
         },
         {
             "source_id": "Wang2024ResourceSharing",
@@ -427,7 +427,7 @@ def evidence_matrix_rows() -> list[dict[str, Any]]:
             "cap_value_rule": "",
             "scenario_relevance": "supports shared resources in multidepot routing",
             "caveat": "Context source only for this runner.",
-            "path_or_url": "docs/paper_submission_final/paper_main.tex ref:25",
+            "path_or_url": "docs/paper_submission_final/RETIRED_paper_main.tex ref:25",
         },
         {
             "source_id": "Qiu2024MixedFleet",

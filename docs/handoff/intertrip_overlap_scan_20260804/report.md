@@ -24,7 +24,7 @@ FACT：节点、位置、功率、枪数以及逐字段价格见下表；价格�
 | `S_beijing` | beijing | 116.4141099, 39.969583 | 60.0 kW | 1 |
 | `S_tianjin` | tianjin | 117.1896076, 39.0725287 | 60.0 kW | 1 |
 
-FACT：该 bundle 的价格表（`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv`）中，北京公共电价/服务费为 谷 `0.56328575+0.4=0.96328575`、平 `0.83644275+0.4=1.23644275`、峰 `1.14862175+0.4=1.54862175` CNY/kWh；天津为谷 `0.43996875+0.4=0.83996875`、平 `0.79746875+0.4=1.19746875`、峰 `1.12856875+0.4=1.52856875` CNY/kWh。
+FACT：该 bundle 的价格表（`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv`）中，北京公共电价/服务费为 谷 `0.56328575+0.4=0.96328575`、平 `0.83644275+0.4=1.23644275`、峰 `1.14862175+0.4=1.54862175` CNY/kWh；天津为谷 `0.43996875+0.4=0.83996875`、平 `0.79746875+0.4=1.19746875`、峰 `1.12856875+0.4=1.52856875` CNY/kWh。
 FACT：当前补全器确实有公共站分支：`charging.py:268` 收集 `node_type == f`；`charging.py:317-340` 在直达电量不可行时调用 `_best_station_insert`；`charging.py:770-971` 遍历公共站并构造带 `station_id=S_*` 的 `ChargingAction`。
 FACT：补全入口位于 `china81_completion.py:336-349`，调用上述 `repair_route_charging`；车场预充在 `charging.py:278-296`、`557-657` 先执行，目标电量由整条 EV 路线需求计算 （`charging.py:578-585`），公共站分支只在随后直达电量检查失败时进入。
 FACT：现有 T5/T7 两个 18-run 归档中，合计 36 个 final solution、86 个充电动作，公共站动作数为 `0`；归档动作的站点集合只有 `D_beijing`/`D_tianjin`。

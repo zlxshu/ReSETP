@@ -565,7 +565,7 @@
 1. 项目名称：公共站在分时电能价上叠加的服务费。
 2. 当前取值：0.40 元/kWh。
 3. 来源类型：工程假设。
-4. 一手来源：没有找到与 0.40 精确对应、且适用于九城命名站的运营商一手价目；当前落盘值在 `data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv`，SHA-256 `e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b`。
+4. 一手来源：没有找到与 0.40 精确对应、且适用于九城命名站的运营商一手价目；当前落盘值在 `data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv`，SHA-256 `e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b`。
 5. 日期：运行时权威 2026-07-23；本次核验 2026-07-28。
 6. 在代码中的位置：`solver/src/setp_solver/china81.py:779-800,824-829`，从日历读取并校验 `energy + service = total`。
 7. 在论文中的位置：第 2 节公式 `eq:F5`；第 4 节表 `tab:tou` 表注只说叠加运营商服务费。

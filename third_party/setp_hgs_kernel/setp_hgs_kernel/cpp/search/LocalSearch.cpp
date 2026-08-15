@@ -48,6 +48,22 @@ Solution LocalSearch::intensify(Solution const &solution,
     return exportSolution();
 }
 
+Solution LocalSearch::repairRequired(Solution const &solution,
+                                     CostEvaluator const &costEvaluator)
+{
+    loadSolution(solution);
+
+    for (auto const uClient : orderNodes)
+    {
+        auto *U = &nodes[uClient];
+        ProblemData::Client const &client = data.location(U->client());
+        if (!U->route() && client.required)
+            insertRequiredFeasible(U, costEvaluator);
+    }
+
+    return exportSolution();
+}
+
 void LocalSearch::search(CostEvaluator const &costEvaluator)
 {
     if (nodeOps.empty())
@@ -103,8 +119,8 @@ void LocalSearch::search(CostEvaluator const &costEvaluator)
 
             // Moves involving empty routes are not tested in the first
             // iteration to avoid using too many routes.
-            if (step > 0)
-                applyEmptyRouteMoves(U, costEvaluator);
+            if (step > 0 || hasInitialEmptyRouteOperator)
+                applyEmptyRouteMoves(U, costEvaluator, step == 0);
         }
     }
 }
@@ -159,10 +175,14 @@ void LocalSearch::shuffle(RandomNumberGenerator &rng)
 
 bool LocalSearch::applyNodeOps(Route::Node *U,
                                Route::Node *V,
-                               CostEvaluator const &costEvaluator)
+                               CostEvaluator const &costEvaluator,
+                               bool initialEmptyOnly)
 {
     for (auto *nodeOp : nodeOps)
     {
+        if (initialEmptyOnly && !nodeOp->supportsInitialEmptyRouteMoves())
+            continue;
+
         auto const deltaCost = nodeOp->evaluate(U, V, costEvaluator);
         if (deltaCost < 0)
         {
@@ -242,7 +262,8 @@ void LocalSearch::applyDepotRemovalMove(Route::Node *U,
 }
 
 void LocalSearch::applyEmptyRouteMoves(Route::Node *U,
-                                       CostEvaluator const &costEvaluator)
+                                       CostEvaluator const &costEvaluator,
+                                       bool initialEmptyOnly)
 {
     assert(U->route());
 
@@ -257,7 +278,8 @@ void LocalSearch::applyEmptyRouteMoves(Route::Node *U,
         auto const pred = [](auto const &route) { return route.empty(); };
         auto empty = std::find_if(begin, end, pred);
 
-        if (empty != end && applyNodeOps(U, (*empty)[0], costEvaluator))
+        if (empty != end
+            && applyNodeOps(U, (*empty)[0], costEvaluator, initialEmptyOnly))
             break;
     }
 }
@@ -366,6 +388,41 @@ void LocalSearch::insert(Route::Node *U,
         UAfter->route()->insert(UAfter->idx() + 1, U);
         update(UAfter->route(), UAfter->route());
     }
+}
+
+bool LocalSearch::insertRequiredFeasible(
+    Route::Node *U, CostEvaluator const &costEvaluator)
+{
+    Route::Node *bestAfter = nullptr;
+    Cost bestCost = 0;
+
+    // Required dynamic clients cannot be left at a penalised infeasible
+    // position.  Screen every insertion position with the same cached route
+    // prefix/suffix proposal used by regular local search, and materialise
+    // only the cheapest hard-feasible one.
+    for (auto &route : routes)
+    {
+        for (size_t idx = 0; idx + 1 < route.size(); ++idx)
+        {
+            auto *V = route[idx];
+            if (!insertFeasible(U, V, data))
+                continue;
+
+            auto const cost = insertCost(U, V, data, costEvaluator);
+            if (!bestAfter || cost < bestCost)
+            {
+                bestAfter = V;
+                bestCost = cost;
+            }
+        }
+    }
+
+    if (!bestAfter)
+        return false;
+
+    bestAfter->route()->insert(bestAfter->idx() + 1, U);
+    update(bestAfter->route(), bestAfter->route());
+    return true;
 }
 
 void LocalSearch::update(Route *U, Route *V)
@@ -496,6 +553,8 @@ Solution LocalSearch::exportSolution() const
 void LocalSearch::addNodeOperator(NodeOperator &op)
 {
     nodeOps.emplace_back(&op);
+    hasInitialEmptyRouteOperator
+        = hasInitialEmptyRouteOperator || op.supportsInitialEmptyRouteMoves();
 }
 
 void LocalSearch::addRouteOperator(RouteOperator &op)

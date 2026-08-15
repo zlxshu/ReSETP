@@ -198,7 +198,7 @@ def main() -> int:
         canonical_starts = [
             float(row["horizon_second_start"]) for row in station_profile
         ]
-        canonical_slots = [int(row["half_hour_slot"]) for row in station_profile]
+        canonical_slots = [int(row["hourly_calendar_row"]) for row in station_profile]
         if canonical_starts != [slot * 1800.0 for slot in range(48)]:
             positive_errors.append(f"{city}:noncanonical_starts")
         if canonical_slots != list(range(1, 49)):
@@ -451,7 +451,7 @@ def main() -> int:
     raw_calendar_path = (
         REPO
         / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/"
-        "tariff_carbon_48slot_calendar.csv"
+        "tariff_carbon_hourly_calendar.csv"
     )
     with raw_calendar_path.open(
         newline="", encoding="utf-8-sig"
@@ -481,7 +481,7 @@ def main() -> int:
         if (
             row["city"] == "shenzhen"
             and row["date"] == "2025-02-12"
-            and row["half_hour_slot"] == "21"
+            and row["hourly_calendar_row"] == "21"
         ):
             row["public_total_cny_per_kwh"] = ""
             break
@@ -508,7 +508,7 @@ def main() -> int:
         if (
             row["city"] == "shenzhen"
             and row["date"] == "2025-02-12"
-            and row["half_hour_slot"] == "21"
+            and row["hourly_calendar_row"] == "21"
         ):
             row["city"] = ""
             break
@@ -533,7 +533,7 @@ def main() -> int:
         if (
             row["city"] == "shenzhen"
             and row["date"] == "2025-02-12"
-            and row["half_hour_slot"] == "21"
+            and row["hourly_calendar_row"] == "21"
         ):
             row["minute_of_day"] = "610"
             break
@@ -549,7 +549,7 @@ def main() -> int:
             if shifted_rejected
             else "accepted without canonical-grid validation"
         ),
-        expected="half_hour_slot s starts at exactly (s-1)*1800 seconds",
+        expected="hourly_calendar_row s starts at exactly (s-1)*1800 seconds",
         evidence="china81.py::_load_time_profile; cost.py profile lookup",
     )
 

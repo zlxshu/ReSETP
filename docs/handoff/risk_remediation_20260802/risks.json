@@ -193,7 +193,7 @@
         {
           "type": "改措辞",
           "detail": "改为“所有公共站统一预设60 kW/1枪，所有车场统一预设22 kW/2枪；这些是容量情景，不是命名设备观测”。",
-          "source_and_page": "facilities.csv: depot_power_kw、depot_gun_count、depot_parameter_class、station_power_kw、station_gun_count、station_parameter_class、station_observed_boundary"
+          "source_and_page": "facilities.csv: depot_site_power_kw_shadow、depot_gun_count、depot_parameter_class、station_power_kw、station_gun_count、station_parameter_class、station_observed_boundary"
         },
         {
           "type": "补出处",
@@ -208,7 +208,7 @@
       "id": "A11",
       "class": "A",
       "fact": "paper_main.tex 第1040-1042行写三区分别使用北京、广东、重庆三条核心电网序列；当前运行映射实际是北京→Beijing、天津→Tianjin、石家庄→Hebei、珠三角四城→Guangdong、成都→Sichuan、重庆→Chongqing，共六个 carbon_source_column。",
-      "tex_line_or_path": "docs/paper_v2/paper_main.tex:1040-1042；solver/src/setp_solver/china81.py:70-125；data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv:表头及 carbon_source_column 字段",
+      "tex_line_or_path": "docs/paper_v2/paper_main.tex:1040-1042；solver/src/setp_solver/china81.py:70-125；data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv:表头及 carbon_source_column 字段",
       "options": [
         {
           "type": "改措辞",
@@ -248,7 +248,7 @@
       "id": "B01",
       "class": "B",
       "fact": "运行日历把 public_service_fee_cny_per_kwh 固定为0.4，并把 service_fee_class 标为 UNIFORM_SCENARIO_PROXY_NOT_MARKET_OBSERVATION；没有九城命名公共站在实验日期统一收取0.40元/kWh的原始价目。",
-      "tex_line_or_path": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv:表头及第2行；docs/paper_v2/paper_main.tex:1029-1030（仅称运营商分时服务费，未交代0.40来源）",
+      "tex_line_or_path": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv:表头及第2行；docs/paper_v2/paper_main.tex:1029-1030（仅称运营商分时服务费，未交代0.40来源）",
       "options": [
         {
           "type": "改措辞",

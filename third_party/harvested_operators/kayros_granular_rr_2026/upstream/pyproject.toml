@@ -1,0 +1,72 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.13"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "kayros"
+# Version bump checklist — this key is the single source for code and packaging
+# (scikit-build injects it as SKBUILD_PROJECT_VERSION_FULL -> CMake -> the
+# KAYROS_VERSION compile definition -> kayros.__version__; the "0.0.0" in
+# cpp/bindings/module.cpp is only a no-CMake fallback, never bump it).
+# Bump BY HAND alongside this key: CITATION.cff `version:`, the README status
+# line, and create the matching GitHub release tag vX.Y.Z (publish.yml ships
+# the wheels to PyPI on release).
+version = "1.6.0"
+description = "KAYROS — exact & anytime solver for duration-minimization time-dependent vehicle routing (TDVRPTW / TDVRP)"
+readme = "README.md"
+authors = [
+    { name = "Florian Rascoussier (Onyr)", email = "onyr.maintainer@gmail.com" },
+]
+license = { text = "MIT" }
+# Upper bound is deliberate: kayros ships compiled wheels, so the metadata must
+# not admit an interpreter the wheel matrix does not cover. Without the cap, a
+# resolver on a newer CPython finds no matching wheel, silently falls back to
+# the sdist, and drags the user into a CMake + Boost.Graph + C++23 source build.
+# `<3.15` (not `<=3.14`) because PEP 440 orders 3.14.6 above 3.14.
+# Widen this only together with CIBW_BUILD in publish.yml, the CI matrix, and
+# the classifiers below.
+requires-python = ">=3.11,<3.15"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+# The canonical benchmark/checker dependency: loaders, the NDCPWLF reference
+# checker, BKS helpers and the OptimalityMetadata schema. The floor is the
+# stack the certification work is tested against.
+dependencies = [
+    "mamut-routing-lib>=0.6.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/0nyr/kayros"
+Issues = "https://github.com/0nyr/kayros/issues"
+Benchmarks = "https://github.com/ANR-MAMUT/MAMUT-routing"
+Changelog = "https://github.com/0nyr/kayros/blob/main/CHANGELOG.md"
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.26"
+wheel.packages = ["src/kayros"]
+sdist.exclude = [".github", "nix-dev"]
+# License/attribution files carried into the wheel's .dist-info/licenses/. The
+# root LICENSE covers kayros itself; cpp/lera/NOTICE.md is the MIT attribution
+# for the vendored Lera-Romero BPC code, which ships compiled inside the wheel
+# and MUST travel with its NOTICE (the default license-files globs only match
+# top-level files, so the nested NOTICE is listed explicitly).
+wheel.license-files = ["LICENSE", "cpp/lera/NOTICE.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

@@ -273,15 +273,17 @@ def run_candidate(
     eval_budget: int = 2000,
     max_runtime_seconds: float = 300.0,
     initial_solution: Solution | None = None,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
 ) -> CandidateRunResult:
     """Run one W1 candidate through the shared referee."""
 
     started = time.perf_counter()
     bundle = load_search_bundle(bundle_dir)
-    shared_solution = initial_solution or make_shared_initial_solution(bundle)
+    shared_solution = initial_solution or make_shared_initial_solution(bundle, prices)
     shared_context = EvaluationContext(
         bundle.instance,
         bundle.carbon_profile,
+        prices=prices,
         budget=EvalBudget(limit=_candidate_budget_limit(eval_budget), target=max(1, int(eval_budget))),
     )
     shared_seed_cost = model_cost(shared_solution, shared_context)
@@ -295,6 +297,7 @@ def run_candidate(
             initial_solution=shared_solution,
             shared_seed_cost=shared_seed_cost,
             started=started,
+            prices=prices,
         )
 
     return _run_external_candidate(
@@ -306,6 +309,7 @@ def run_candidate(
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
         started=started,
+        prices=prices,
     )
 
 
@@ -317,6 +321,7 @@ def run_z1_smoke(
     eval_budget: int = 2000,
     max_runtime_seconds: float = 300.0,
     output_path: str | Path | None = None,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
 ) -> CandidateSmokeReport:
     """Run the W1/Z1 smoke board and persist anti-collapse diagnostics."""
 
@@ -330,6 +335,7 @@ def run_z1_smoke(
                 seed=seed,
                 eval_budget=eval_budget,
                 max_runtime_seconds=max_runtime_seconds,
+                prices=prices,
             )
         )
         for algorithm in algorithms
@@ -432,6 +438,7 @@ def _run_primary_alns(
     initial_solution: Solution,
     shared_seed_cost: float,
     started: float,
+    prices: PriceParameters | dict[str, float] | Any,
 ) -> CandidateRunResult:
     try:
         run = run_alns_wouda(
@@ -442,6 +449,7 @@ def _run_primary_alns(
             eval_budget=eval_budget,
             max_runtime_seconds=max_runtime_seconds,
             initial_solution=initial_solution,
+            prices=prices,
         )
         elapsed = time.perf_counter() - started
         signature = solution_signature_hash(run.best_solution)
@@ -510,11 +518,13 @@ def _run_external_candidate(
     eval_budget: int,
     max_runtime_seconds: float,
     started: float,
+    prices: PriceParameters | dict[str, float] | Any,
 ) -> CandidateRunResult:
     probe = _candidate_package_probe(algorithm, _repo_root_from_bundle(bundle.bundle_dir))
     context = EvaluationContext(
         bundle.instance,
         bundle.carbon_profile,
+        prices=prices,
         budget=EvalBudget(limit=_candidate_budget_limit(eval_budget), target=max(1, int(eval_budget))),
     )
     state = CandidateState(
@@ -551,7 +561,11 @@ def _run_external_candidate(
 
     _finalize_search_diagnosis(state, algorithm, shared_solution, best_solution, current)
     elapsed = time.perf_counter() - started
-    feasible = best_solution is not None and not check_solution(best_solution, bundle.instance, DEFAULT_PRICES)
+    feasible = best_solution is not None and not check_solution(
+        best_solution,
+        bundle.instance,
+        prices,
+    )
     status = "feasible"
     if algorithm == "NSGA-II@haris989":
         status = "scalarized_after_pareto"

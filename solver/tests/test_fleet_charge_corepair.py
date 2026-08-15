@@ -26,15 +26,15 @@ class FleetChargeCorepairTests(unittest.TestCase):
 
     def test_flip_candidates_never_return_infeasible_solution(self) -> None:
         from setp_solver.check import check_solution
-        from setp_solver.prices import DEFAULT_PRICES
+        from setp_solver.prices import UK_2025_PRICES
         from setp_solver.search.evaluation import EvaluationContext, model_cost
         from setp_solver.algorithms.resetp_alns.support.fleet_charge_corepair import (
             propose_fleet_charge_corepair,
         )
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        solution = make_shared_initial_solution(bundle)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+        solution = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
 
         outcome = propose_fleet_charge_corepair(
             solution,
@@ -46,7 +46,7 @@ class FleetChargeCorepairTests(unittest.TestCase):
         self.assertGreaterEqual(outcome.attempts, 1)
         self.assertGreaterEqual(outcome.feasible, 0)
         if outcome.solution is not None:
-            self.assertFalse(check_solution(outcome.solution, bundle.instance, DEFAULT_PRICES))
+            self.assertFalse(check_solution(outcome.solution, bundle.instance, UK_2025_PRICES))
             self.assertIn(outcome.source_route_type, {"cv", "ev"})
             self.assertIn(outcome.target_route_type, {"cv", "ev"})
             self.assertIsNotNone(outcome.objective)

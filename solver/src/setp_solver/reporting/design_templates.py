@@ -383,7 +383,13 @@ def _f4_rows() -> list[dict[str, Any]]:
     for scenario in ("naive_return_charge", "carbon_aware"):
         for slot in range(48):
             hour = slot * 0.5
-            gamma = 170.0 - 90.0 * max(0.0, 1.0 - abs(hour - 12.0) / 8.0)
+            # The sample mirrors the China81 information contract: one hourly
+            # carbon value is displayed on two adjacent 30-minute grid rows.
+            source_hour = slot // 2
+            gamma = 170.0 - 90.0 * max(
+                0.0,
+                1.0 - abs(float(source_hour) - 12.0) / 8.0,
+            )
             naive_kwh = 26.0 if 17 <= hour <= 20 else 3.0
             aware_kwh = 24.0 if 10 <= hour <= 14 else 2.0
             rows.append({"scenario": scenario, "slot_index": slot, "horizon_second_start": slot * 1800, "gamma_gco2_per_kwh": gamma, "depot_kwh": 0.0, "station_kwh": 0.0, "other_kwh": 0.0, "total_kwh": naive_kwh if scenario == "naive_return_charge" else aware_kwh})
@@ -488,7 +494,7 @@ def _data_contract_markdown() -> str:
             "## F3 两层减碳",
             "本图证明：同 T6 的三行链条能分解动力替换与充电择时的贡献。",
             "",
-            "## F4 48槽碳强度与充电负荷",
+            "## F4 逐小时碳强度与30分钟充电负荷",
             "本图证明：碳感知充电把充电量移向低碳时段。",
             "",
             "## F5 碳价响应",
@@ -518,7 +524,7 @@ def _preview_tex() -> str:
         ("F1 主解路线图", "figure_f1_route_map.pdf"),
         ("F2 算法性能", "figure_f2_algorithm_performance.pdf"),
         ("F3 两层减碳", "figure_f3_two_layer_carbon.pdf"),
-        ("F4 48槽碳强度与充电负荷", "figure_f4_48slot_charging.pdf"),
+        ("F4 逐小时碳强度与30分钟充电负荷", "figure_f4_48slot_charging.pdf"),
         ("F5 碳价响应", "figure_f5_carbon_response.pdf"),
         ("F6 公平前沿", "figure_f6_fairness_frontier.pdf"),
         ("F7 动态时间线", "figure_f7_dynamic_timeline.pdf"),

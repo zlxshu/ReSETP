@@ -98,7 +98,7 @@ def build() -> dict[str, Any]:
     contract["source_contracts"]["calendar_panel"] = (
         "data/ChinaInstances/"
         "china81_runtime_parameter_authority_v4_20260723/"
-        "tariff_carbon_48slot_calendar.csv"
+        "tariff_carbon_hourly_calendar.csv"
     )
     contract["source_contracts"]["budget_pilot"] = (
         "baselines/china_e3_e7/"

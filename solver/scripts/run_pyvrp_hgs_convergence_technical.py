@@ -16,6 +16,10 @@ from pyvrp import read, solve
 from pyvrp.stop import MaxRuntime, MultipleCriteria, NoImprovement
 
 
+PUBLIC_INSTANCE_ROUND_FUNC = "exact"
+PUBLIC_INSTANCE_SCALE = 1_000
+
+
 def _sha256(path: Path) -> str:
     import hashlib
 
@@ -100,6 +104,8 @@ def main() -> int:
             "git_head": git_head,
             "runner_sha256": _sha256(Path(__file__).resolve()),
             "instance_sha256": _sha256(instance_path),
+            "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
+            "integer_scale": PUBLIC_INSTANCE_SCALE,
             "pyvrp_version": version,
             "pyvrp_module_path": str(module_path),
             "pyvrp_module_sha256": _sha256(module_path),
@@ -108,7 +114,7 @@ def main() -> int:
         },
     )
 
-    data = read(instance_path, round_func="round")
+    data = read(instance_path, round_func=PUBLIC_INSTANCE_ROUND_FUNC)
     criteria = [NoImprovement(args.stagnation_patience)]
     if args.max_runtime_seconds is not None:
         criteria.append(MaxRuntime(args.max_runtime_seconds))
@@ -208,6 +214,8 @@ def main() -> int:
             "verdict": verdict,
             "formal_performance_result": False,
             "algorithm": "unmodified PyVRP 0.12.2 HGS",
+            "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
+            "integer_scale": PUBLIC_INSTANCE_SCALE,
             "cost": cost,
             "iterations": int(result.num_iterations),
             "runtime_seconds": float(result.runtime),

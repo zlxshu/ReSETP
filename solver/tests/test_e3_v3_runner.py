@@ -29,7 +29,7 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (
 )
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import repair_removed_customers
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import DEFAULT_PRICES, UK_2025_PRICES
 from setp_solver.search.evaluation import EvalBudget, EvaluationContext
 from setp_solver.solution import Route, Solution
 
@@ -145,6 +145,7 @@ def test_cross_depot_neighborhood_builds_reciprocal_exchange_when_opted_in() -> 
     context = EvaluationContext(
         instance,
         [],
+        prices=UK_2025_PRICES,
         fairness_enabled=True,
         independent_profit={"D0": 1.0, "D1": 1.0},
         fairness_theta=1.0,

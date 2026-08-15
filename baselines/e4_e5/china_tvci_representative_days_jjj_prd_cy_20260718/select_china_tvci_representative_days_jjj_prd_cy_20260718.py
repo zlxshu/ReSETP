@@ -59,7 +59,7 @@ def load_daily_metrics(source_path: Path) -> dict[str, list[DailyMetric]]:
         reader = csv.DictReader(handle)
         if reader.fieldnames is None:
             raise ValueError("source CSV has no header")
-        required = {"date", "day_index", "half_hour_slot", *REGIONS}
+        required = {"date", "day_index", "hourly_calendar_row", *REGIONS}
         missing = required - set(reader.fieldnames)
         if missing:
             raise ValueError(f"source CSV missing columns: {sorted(missing)}")
@@ -70,7 +70,7 @@ def load_daily_metrics(source_path: Path) -> dict[str, list[DailyMetric]]:
             if day.year != SOURCE_YEAR:
                 raise ValueError(f"unexpected source year: {day}")
             day_index = int(row["day_index"])
-            slot = int(row["half_hour_slot"])
+            slot = int(row["hourly_calendar_row"])
             if not 1 <= slot <= SLOTS_PER_DAY:
                 raise ValueError(f"invalid half-hour slot {slot} on {day}")
             prior_index = day_indices.setdefault(day, day_index)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import csv
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +10,7 @@ import pytest
 from setp_solver.check import DynamicCheckContext, DynamicVehicleState, check_solution
 from setp_solver.cost import ev_arc_energy_kwh, route_node_schedule
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.search import dynamic as dynamic_module
 from setp_solver.search.dynamic import (
     DynamicEvent,
@@ -89,7 +89,8 @@ def test_dynamic_clock_starts_at_inherited_vehicle_time() -> None:
 
 
 def _battery_case() -> tuple[Instance, Solution, DynamicCheckContext, PriceParameters]:
-    prices = PriceParameters(
+    prices = replace(
+        UK_2025_PRICES,
         c_d=0.0,
         m_curb=1.0,
         m_unit=0.0,
@@ -468,7 +469,7 @@ def test_real_rolling_keeps_mid_arc_position_load_and_battery_on_the_original_ve
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
         params=RollingParameters(delta_t_seconds=56.0, q_bar=8, stages=2),
-        prices=PriceParameters(initial_ev_battery_kwh=80.0, B_battery_kwh=80.0),
+        prices=replace(UK_2025_PRICES, initial_ev_battery_kwh=80.0, B_battery_kwh=80.0),
         policy_callback=policy,
     )
 
@@ -527,6 +528,7 @@ def test_real_stage_solver_cannot_depart_before_the_dynamic_trigger(tmp_path: Pa
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
         params=RollingParameters(delta_t_seconds=60.0, q_bar=8, stages=2),
+        prices=UK_2025_PRICES,
     )
 
     assert report.get("gate") == "HALT_E7_STAGE_CHECK"
@@ -582,6 +584,7 @@ def test_real_stage_solver_cannot_invent_a_second_vehicle_while_the_only_vehicle
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
         params=RollingParameters(delta_t_seconds=56.0, q_bar=8, stages=2),
+        prices=UK_2025_PRICES,
         policy_callback=policy,
     )
 
@@ -636,7 +639,7 @@ def test_returned_ev_cannot_reappear_with_full_battery_without_recorded_charging
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
         params=RollingParameters(delta_t_seconds=60.0, q_bar=8, stages=2),
-        prices=PriceParameters(initial_ev_battery_kwh=80.0, B_battery_kwh=80.0),
+        prices=replace(UK_2025_PRICES, initial_ev_battery_kwh=80.0, B_battery_kwh=80.0),
         policy_callback=policy,
     )
 
@@ -730,7 +733,8 @@ def _run_charger_rolling_scenario(root: Path) -> ChargerRollingEvidence:
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
         params=RollingParameters(delta_t_seconds=600.0, q_bar=8, stages=3),
-        prices=PriceParameters(
+        prices=replace(
+            UK_2025_PRICES,
             initial_ev_battery_kwh=0.0,
             B_battery_kwh=80.0,
         ),
@@ -876,6 +880,7 @@ def _run_lifecycle_rolling_scenario(root: Path, event_type: str) -> LifecycleRol
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
         params=RollingParameters(delta_t_seconds=100.0, q_bar=8, stages=2),
+        prices=UK_2025_PRICES,
         policy_callback=policy,
     )
     return LifecycleRollingEvidence(event_type, report, tuple(contexts))
@@ -1011,6 +1016,7 @@ def test_every_dynamic_policy_branch_avoids_the_legacy_alns_entrypoint(
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
         params=RollingParameters(delta_t_seconds=100.0, q_bar=8, stages=2),
+        prices=UK_2025_PRICES,
         policy_callback=policy,
     )
 

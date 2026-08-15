@@ -223,7 +223,7 @@ def build() -> dict[str, Any]:
                     "num_cv": base,
                     "num_ev": main_ev,
                     "total_fleet_cap": base + main_ev,
-                    "depot_charger_count": DEPOT_CHARGER_COUNT,
+                    "configured_depot_gun_count_if_finite": DEPOT_CHARGER_COUNT,
                     "depot_charge_power_kw": f"{DEPOT_CHARGE_POWER_KW:.1f}",
                     "fleet_parameter_class": (
                         "CONSTRUCTED_DEMAND_TIME_WINDOW_ROAD_SCENARIO"
@@ -333,7 +333,7 @@ def build() -> dict[str, Any]:
         "fleet_rows": len(fleet_rows),
         "main_reserve_factor": MAIN_RESERVE_FACTOR,
         "sensitivity_factors": list(SENSITIVITY_FACTORS),
-        "depot_charger_count": DEPOT_CHARGER_COUNT,
+        "configured_depot_gun_count_if_finite": DEPOT_CHARGER_COUNT,
         "depot_charge_power_kw": DEPOT_CHARGE_POWER_KW,
         "charger_parameter_class": (
             "CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT"

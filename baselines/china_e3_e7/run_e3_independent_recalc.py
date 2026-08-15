@@ -310,8 +310,8 @@ def independent_settlement_trace(
                     ),
                     "diesel_zone": row["diesel_zone"],
                     "scenario_date": row["date"],
-                    "half_hour_slot": int(
-                        row["half_hour_slot"]
+                    "hourly_calendar_row": int(
+                        row["hourly_calendar_row"]
                     ),
                     "energy_kwh": float(slot.y_skt_kwh),
                     "electricity_price_field": price_field,

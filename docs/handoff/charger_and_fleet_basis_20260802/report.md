@@ -88,7 +88,7 @@
 
 ## 证据边界与终局
 
-`FACT`。当前车场参数来自 `data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/fleet_caps.csv:1-3` 与 `decision.json:2-6`：`depot_charger_count=2`、`depot_charge_power_kw=22.0`、`charger_parameter_class=CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT`。`china81.py:573-579` 把这两个字段绑定进车场节点。它们是构造情景，不是九城车场现场合同。
+`FACT`。当前车场参数来自 `data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/fleet_caps.csv:1-3` 与 `decision.json:2-6`：`configured_depot_gun_count_if_finite=2`、`depot_charge_power_kw=22.0`、`charger_parameter_class=CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT`。`china81.py:573-579` 把这两个字段绑定进车场节点。它们是构造情景，不是九城车场现场合同。
 
 `FACT`。多趟技术接口现状由 `baselines/china_e3_e7/multitrip_interface_completion_20260802/done.json` 锁定为 `MULTITRIP_INTERFACE_COMPLETE`、`search_executed=false`；本任务只使用既有趟链与失败诊断，不升级为正式优化结果。
 

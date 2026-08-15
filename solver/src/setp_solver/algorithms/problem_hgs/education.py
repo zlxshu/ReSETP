@@ -28,8 +28,10 @@ from itertools import chain
 from time import perf_counter
 
 from .charging import (
+    ChargingFeasibilityPrescreen,
     ChargingRepairCache,
     ChargingRepairPolicy,
+    charging_rejection_reason,
     repair_changed_duties,
 )
 from .contracts import (
@@ -43,9 +45,12 @@ from .evaluation import (
     DutyIncrementalEvaluator,
     FullEvaluation,
 )
+from .fleet_registry import assert_fleet_activation_allowed
 from .model import DutyIndividual, assert_locks_preserved
 from .operators import DutyMove
 from .proposals import DutyProposalEngine, LegacyCompleteProposalEngine
+from .schedule_capture import emit_schedule_capture
+from .schedule_oracle import OracleStatus, ScheduleCoordinator
 
 
 # The complete evaluator combines many floating-point cost components.  The
@@ -73,22 +78,154 @@ def evaluate_move(
     charging_repair_cache: ChargingRepairCache | None = None,
     verify_full_truth: bool | None = None,
     penalized_cost: Callable[[FullEvaluation], float] | None = None,
+    schedule_capture_iteration: int | None = None,
+    schedule_coordinator: ScheduleCoordinator | None = None,
+    schedule_accounting: SearchAccounting | None = None,
+    fleet_activation_enabled: bool = True,
+    charging_prescreen: ChargingFeasibilityPrescreen | None = None,
 ) -> CandidateOutcome:
     """Return a typed candidate outcome; truth-sentinel failures still raise."""
 
     started = perf_counter()
+    raw = None
     try:
         raw = move.apply(current)
         assert_locks_preserved(current, raw)
+        assert_fleet_activation_allowed(
+            current,
+            raw,
+            enabled=fleet_activation_enabled,
+        )
     except (TypeError, ValueError) as exc:
+        if raw is not None:
+            emit_schedule_capture(
+                channel=move.channel,
+                action_id=move.action_id,
+                iteration=schedule_capture_iteration,
+                reference=current,
+                raw_candidate=raw,
+                changed_duty_ids=move.changed_duty_ids,
+                context=evaluator.context,
+                a0_status="INFEASIBLE",
+                error=exc,
+            )
         return _rejection(
             move,
             CandidateStatus.REJECTED_LOCK
             if "locked" in str(exc).lower()
+            else CandidateStatus.REJECTED_REGISTRY
+            if "fleet" in str(exc).lower()
+            or "empty duty" in str(exc).lower()
             else CandidateStatus.REJECTED_INTERFACE,
             exc,
             started,
         )
+    emit_schedule_capture(
+        channel=move.channel,
+        action_id=move.action_id,
+        iteration=schedule_capture_iteration,
+        reference=current,
+        raw_candidate=raw,
+        changed_duty_ids=move.changed_duty_ids,
+        context=evaluator.context,
+        a0_status="FEASIBLE",
+        error=None,
+    )
+    if schedule_coordinator is not None:
+        coordinated = schedule_coordinator.coordinate(
+            current,
+            raw,
+            changed_duty_ids=move.changed_duty_ids,
+        )
+        if schedule_accounting is not None:
+            schedule_accounting.record_schedule_coordinator_result(
+                coordinated,
+                changed_duty_count=len(move.changed_duty_ids),
+            )
+        if coordinated.status != OracleStatus.FEASIBLE:
+            if schedule_accounting is not None:
+                schedule_accounting.schedule_rejected_candidates_by_channel_and_status[
+                    f"{move.channel}:{coordinated.status.value}"
+                ] += 1
+            return CandidateOutcome(
+                action_id=move.action_id,
+                channel=move.channel,
+                status=CandidateStatus.REJECTED_CHARGING,
+                changed_duty_ids=move.changed_duty_ids,
+                error_type="ScheduleCoordinatorResult",
+                error=(
+                    f"{coordinated.status.value}: "
+                    f"{coordinated.failure_reason or 'no schedule frontier'}"
+                ),
+                charging_rejection_reason=charging_rejection_reason(
+                    ValueError(
+                        f"{coordinated.status.value}: "
+                        f"{coordinated.failure_reason or 'no schedule frontier'}"
+                    )
+                ),
+                wall_seconds=perf_counter() - started,
+            )
+        evaluated = []
+        for scheduled in coordinated.frontier:
+            try:
+                full = evaluator.evaluate(scheduled)
+            except (TypeError, ValueError):
+                continue
+            evaluated.append((scheduled, full))
+        if not evaluated:
+            return CandidateOutcome(
+                action_id=move.action_id,
+                channel=move.channel,
+                status=CandidateStatus.REJECTED_INTERFACE,
+                changed_duty_ids=move.changed_duty_ids,
+                error_type="ScheduleFrontierEvaluationError",
+                error="no coordinated schedule passed complete evaluation",
+                wall_seconds=perf_counter() - started,
+            )
+        objective = penalized_cost or (lambda full: float(full.total_cost))
+        candidate, result = min(
+            evaluated,
+            key=lambda item: (
+                float(objective(item[1])),
+                item[0].fingerprint,
+            ),
+        )
+        if candidate.fingerprint == current.fingerprint:
+            return CandidateOutcome(
+                action_id=move.action_id,
+                channel=move.channel,
+                status=CandidateStatus.NO_CHANGE,
+                changed_duty_ids=frozenset(),
+                candidate=current,
+                wall_seconds=perf_counter() - started,
+            )
+        return CandidateOutcome(
+            action_id=move.action_id,
+            channel=move.channel,
+            status=CandidateStatus.EVALUATED,
+            changed_duty_ids=move.changed_duty_ids,
+            candidate=candidate,
+            evaluation=result,
+            wall_seconds=perf_counter() - started,
+        )
+    preserved_charging_ids = frozenset(
+        getattr(move, "explicit_charging_duty_ids", ())
+    )
+    if charging_prescreen is not None:
+        failure = charging_prescreen.screen(
+            current,
+            raw,
+            changed_duty_ids=move.changed_duty_ids,
+            channel=move.channel,
+            preserve_explicit_charging_duty_ids=preserved_charging_ids,
+        )
+        if failure is not None:
+            return _rejection(
+                move,
+                CandidateStatus.REJECTED_CHARGING,
+                failure,
+                started,
+            )
     try:
         candidate = repair_changed_duties(
             current,
@@ -97,9 +234,7 @@ def evaluate_move(
             context=evaluator.context,
             policy=charging_policy,
             cache=charging_repair_cache,
-            preserve_explicit_charging_duty_ids=set(
-                getattr(move, "explicit_charging_duty_ids", ())
-            ),
+            preserve_explicit_charging_duty_ids=set(preserved_charging_ids),
         )
     except (TypeError, ValueError) as exc:
         return _rejection(
@@ -196,6 +331,10 @@ def educate_best_improvement(
     proposal_engine: DutyProposalEngine | None = None,
     stop_requested: Callable[[], bool] | None = None,
     selection_policy: str = "best",
+    schedule_coordinator: ScheduleCoordinator | None = None,
+    fleet_activation_enabled: bool = True,
+    charging_prescreen: ChargingFeasibilityPrescreen | None = None,
+    record_trajectory: bool = True,
 ) -> tuple[DutyIndividual, FullEvaluation, tuple[TrajectoryRow, ...]]:
     """Run complete-cost best or first improvement education."""
 
@@ -246,10 +385,11 @@ def educate_best_improvement(
         sentinel_mismatch = False
         for move in moves:
             if stop_requested is not None and stop_requested():
-                if trajectory_sink is None:
-                    rows.extend(round_rows)
-                else:
-                    trajectory_sink(tuple(round_rows))
+                if record_trajectory:
+                    if trajectory_sink is None:
+                        rows.extend(round_rows)
+                    else:
+                        trajectory_sink(tuple(round_rows))
                 return current, current_evaluation, tuple(rows)
             outcome = evaluate_move(
                 current,
@@ -260,19 +400,25 @@ def educate_best_improvement(
                 charging_repair_cache=charging_repair_cache,
                 verify_full_truth=False,
                 penalized_cost=penalized_cost,
+                schedule_capture_iteration=iteration,
+                schedule_coordinator=schedule_coordinator,
+                schedule_accounting=accounting,
+                fleet_activation_enabled=fleet_activation_enabled,
+                charging_prescreen=charging_prescreen,
             )
             accounting.record_outcome(outcome)
-            round_rows.append(
-                _trajectory_row(
-                    iteration=iteration,
-                    phase="education",
-                    arm=arm,
-                    before=current,
-                    before_evaluation=current_evaluation,
-                    outcome=outcome,
-                    accepted=False,
+            if record_trajectory:
+                round_rows.append(
+                    _trajectory_row(
+                        iteration=iteration,
+                        phase="education",
+                        arm=arm,
+                        before=current,
+                        before_evaluation=current_evaluation,
+                        outcome=outcome,
+                        accepted=False,
+                    )
                 )
-            )
             sentinel_mismatch = bool(
                 sentinel_mismatch
                 or outcome.status == CandidateStatus.SENTINEL_MISMATCH
@@ -289,7 +435,9 @@ def educate_best_improvement(
                 if best_key is None or candidate_key < best_key:
                     best = outcome
                     best_key = candidate_key
-                    best_row_index = len(round_rows) - 1
+                    best_row_index = (
+                        len(round_rows) - 1 if record_trajectory else None
+                    )
                 if (
                     selection_policy == "first"
                     and _meaningfully_better(
@@ -333,10 +481,11 @@ def educate_best_improvement(
                 round_rows[best_row_index],
                 accepted=True,
             )
-        if trajectory_sink is None:
-            rows.extend(round_rows)
-        else:
-            trajectory_sink(tuple(round_rows))
+        if record_trajectory:
+            if trajectory_sink is None:
+                rows.extend(round_rows)
+            else:
+                trajectory_sink(tuple(round_rows))
         if sentinel_mismatch:
             raise DutySentinelMismatch(tuple(rows))
         if not accepted or best is None:
@@ -439,6 +588,11 @@ def _rejection(
         changed_duty_ids=move.changed_duty_ids,
         error_type=type(error).__name__,
         error=str(error),
+        charging_rejection_reason=(
+            charging_rejection_reason(error)
+            if status == CandidateStatus.REJECTED_CHARGING
+            else None
+        ),
         wall_seconds=perf_counter() - started,
     )
 

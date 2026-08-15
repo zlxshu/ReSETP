@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.search.bundle import SearchBundle
 from setp_solver.search import metaheuristic_baselines as mb
 from setp_solver.solution import Route, Solution
@@ -54,7 +54,7 @@ class BaselineStartPointReferenceTest(unittest.TestCase):
                 8,
                 120.0,
                 warm,
-                prices=DEFAULT_PRICES,
+                prices=UK_2025_PRICES,
                 common_flip_preprocess=True,
             )
 

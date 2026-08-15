@@ -80,7 +80,7 @@ RECORD_SURFACES = (
 UNCHANGED_PROTECTED = (
     "solver/src/setp_solver/prices.py",
     "solver/src/setp_solver/search/evaluation.py",
-    "docs/paper_submission_final/paper_main.tex",
+    "docs/paper_submission_final/RETIRED_paper_main.tex",
 )
 TARGET_TESTS = (
     "solver/tests/test_nonlinear_cost_check_nl2_20260720.py",

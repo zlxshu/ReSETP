@@ -12,7 +12,7 @@ from setp_solver.search.alns_crush_v2 import (
     sa_config_diff_from_manifests,
 )
 from setp_solver.check import check_solution
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.winner_operators import (
     WinnerKernelConfig,
@@ -173,9 +173,14 @@ class AlnsCrushV2Tests(unittest.TestCase):
         solution = build_initial_solution(
             bundle.instance,
             bundle.carbon_profile,
+            UK_2025_PRICES,
             require_charging_signal=False,
         )
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        context = EvaluationContext(
+            bundle.instance,
+            bundle.carbon_profile,
+            prices=UK_2025_PRICES,
+        )
         state = AlnsState(solution, context, objective_value=score_reference(solution, context))
 
         default_acceptance = _make_winner_acceptance_criterion(state, config=WinnerKernelConfig(eval_budget=100), flags=winner_variant_flags())
@@ -200,15 +205,15 @@ class AlnsCrushV2Tests(unittest.TestCase):
 
         self.assertTrue(solution.routes)
         self.assertTrue(all(route.vehicle_type.lower() == "cv" for route in solution.routes))
-        self.assertEqual(check_solution(solution, bundle.instance, DEFAULT_PRICES), [])
+        self.assertEqual(check_solution(solution, bundle.instance, UK_2025_PRICES), [])
 
     def test_e2_scan_bridge_same_seed_small_budget_is_deterministic(self) -> None:
         root = Path(__file__).resolve().parents[2]
         bundle_dir = root / "models/data_bundle/generated_instances/e2_benchmark/vanilla/e2-vanilla-10c-01"
         config = WinnerKernelConfig(seed=7, eval_budget=16, max_runtime_seconds=120.0)
 
-        first = run_e2_alns_scan_bridge(bundle_dir, config=config)
-        second = run_e2_alns_scan_bridge(bundle_dir, config=config)
+        first = run_e2_alns_scan_bridge(bundle_dir, config=config, prices=UK_2025_PRICES)
+        second = run_e2_alns_scan_bridge(bundle_dir, config=config, prices=UK_2025_PRICES)
 
         self.assertEqual(first["violation_count"], 0)
         self.assertEqual(second["violation_count"], 0)
@@ -220,8 +225,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
         bundle_dir = root / "models/data_bundle/generated_instances/e2_benchmark/vanilla/e2-vanilla-10c-01"
         config = WinnerKernelConfig(seed=7, eval_budget=16, max_runtime_seconds=120.0)
 
-        first = run_e2_alns_sa_acceptance(bundle_dir, config=config, mode="autofit")
-        second = run_e2_alns_sa_acceptance(bundle_dir, config=config, mode="autofit")
+        first = run_e2_alns_sa_acceptance(bundle_dir, config=config, prices=UK_2025_PRICES, mode="autofit")
+        second = run_e2_alns_sa_acceptance(bundle_dir, config=config, prices=UK_2025_PRICES, mode="autofit")
 
         self.assertEqual(first["violation_count"], 0)
         self.assertEqual(second["violation_count"], 0)

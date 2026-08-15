@@ -142,7 +142,7 @@ def plot_figure3() -> dict[str, Any]:
         subset = [row for row in rows if row["region"] == region]
         if len(subset) != 48:
             raise RuntimeError(f"Figure 3 {region} rows={len(subset)}, expected 48")
-        subset.sort(key=lambda row: (float(row["time_hour"]), int(row["half_hour_slot"])))
+        subset.sort(key=lambda row: (float(row["time_hour"]), int(row["hourly_calendar_row"])))
         x = [float(row["time_hour"]) for row in subset]
         y = [float(row["carbon_intensity_gCO2_per_kWh"]) for row in subset]
         color, linestyle = FIG3_STYLES[region]

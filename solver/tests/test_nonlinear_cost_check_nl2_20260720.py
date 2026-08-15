@@ -11,7 +11,7 @@ from setp_solver.cost import (
     evaluate,
 )
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.search.charging import (
     _curve_aware_action,
     solve_charging_fixed_route,
@@ -30,7 +30,8 @@ def _prices(
     initial_kwh: float = 80.0,
     power_kw: float = 100.0,
 ) -> PriceParameters:
-    return PriceParameters(
+    return replace(
+        UK_2025_PRICES,
         B_battery_kwh=capacity_kwh,
         initial_ev_battery_kwh=initial_kwh,
         depot_charge_power_kw=power_kw,

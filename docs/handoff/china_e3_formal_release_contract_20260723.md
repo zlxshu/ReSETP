@@ -10,7 +10,7 @@
 
 所有 China81 正式任务必须绑定同一个联合主键：
 
-`instance_id + node_id + city + price_area_id + carbon_source_column + diesel_zone + scenario_date + half_hour_slot`。
+`instance_id + node_id + city + price_area_id + carbon_source_column + diesel_zone + scenario_date + hourly_calendar_row`。
 
 其中，节点经纬度只验证 `node_id -> city` 的空间归属，不直接选择电价、碳强度或
 柴油价。电价由 `price_area_id` 选择，碳强度由 `carbon_source_column` 选择，

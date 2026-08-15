@@ -19,7 +19,7 @@ import numpy as np
 
 from ..check import check_solution
 from ..cost import evaluate
-from ..prices import DEFAULT_PRICES
+from ..prices import DEFAULT_PRICES, PriceParameters, UK_2025_PRICES
 from .bundle import load_search_bundle
 from .candidates import make_shared_initial_solution
 from .metaheuristic_baselines import run_metaheuristic_baseline, solution_from_dict, solution_to_dict
@@ -41,6 +41,26 @@ GATE_INSTANCES = (
 HARD_TIMEOUT_GRACE_SECONDS = 15.0
 GOLD_PYTHON = "/opt/anaconda3/bin/python3.13"
 GOLD_NUMPY = "2.3.5"
+UK_2025_PRICE_SET_ID = "UK_2025_PRICES"
+
+
+def _price_set_id(prices: PriceParameters) -> str:
+    if prices == UK_2025_PRICES:
+        return UK_2025_PRICE_SET_ID
+    raise ValueError(
+        "E2 throughput tasks require an explicit supported price set; "
+        "use UK_2025_PRICES for this historical UK runner"
+    )
+
+
+def _prices_for_task(task: dict[str, Any]) -> PriceParameters:
+    price_set_id = str(task.get("price_set_id", ""))
+    if price_set_id == UK_2025_PRICE_SET_ID:
+        return UK_2025_PRICES
+    raise ValueError(
+        "E2 throughput task has no supported explicit price_set_id: "
+        f"{price_set_id or '<missing>'}"
+    )
 
 
 def run_profile(
@@ -52,12 +72,24 @@ def run_profile(
     seed: int,
     eval_budget: int,
     max_runtime_seconds: float,
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     phase = str(phase).strip().lower()
     if phase not in {"before", "after"}:
         raise ValueError("phase must be before or after")
     output_dir.mkdir(parents=True, exist_ok=True)
-    task = _task(repo_root, output_dir, "threeshift", instance, "alns_e2_throughput", seed, eval_budget, max_runtime_seconds, profile_phase=phase)
+    task = _task(
+        repo_root,
+        output_dir,
+        "threeshift",
+        instance,
+        "alns_e2_throughput",
+        seed,
+        eval_budget,
+        max_runtime_seconds,
+        profile_phase=phase,
+        prices=prices,
+    )
     row = _execute_task_subprocess(repo_root, task, task_index=0, timeout_seconds=max_runtime_seconds + HARD_TIMEOUT_GRACE_SECONDS)
     timings = _timing_rows(row)
     profile_path = output_dir / f"throughput_profile_{phase}.csv"
@@ -84,7 +116,12 @@ def run_profile(
     return {"gate": "PROFILE_COMPLETE" if ratio >= 0.90 else "HALT_PROFILE_UNEXPLAINED", "profile": str(profile_path), "explained_ratio": ratio}
 
 
-def run_smoke(repo_root: Path, output_dir: Path) -> dict[str, Any]:
+def run_smoke(
+    repo_root: Path,
+    output_dir: Path,
+    *,
+    prices: PriceParameters = DEFAULT_PRICES,
+) -> dict[str, Any]:
     return run_gate(
         repo_root,
         output_dir,
@@ -93,6 +130,7 @@ def run_smoke(repo_root: Path, output_dir: Path) -> dict[str, Any]:
         workers=1,
         instance_rows=[("vanilla", "e2-vanilla-10c-01", 120.0)],
         command_name="smoke",
+        prices=prices,
     )
 
 
@@ -105,6 +143,7 @@ def run_gate(
     workers: int,
     instance_rows: tuple[tuple[str, str, float], ...] | list[tuple[str, str, float]] = GATE_INSTANCES,
     command_name: str = "gate",
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -114,7 +153,19 @@ def run_gate(
     for category, instance, cap in instance_rows:
         for seed in seeds:
             for algorithm in ALGORITHMS:
-                tasks.append(_task(repo_root, output_dir, category, instance, algorithm, seed, eval_budget, cap))
+                tasks.append(
+                    _task(
+                        repo_root,
+                        output_dir,
+                        category,
+                        instance,
+                        algorithm,
+                        seed,
+                        eval_budget,
+                        cap,
+                        prices=prices,
+                    )
+                )
     rows: list[dict[str, Any]] = []
     if workers <= 1:
         for idx, task in enumerate(tasks):
@@ -159,6 +210,7 @@ def _task(
     runtime_cap_seconds: float,
     *,
     profile_phase: str = "after",
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     checkpoint = output_dir / "checkpoints" / f"{instance}__{algorithm}__seed{seed}.json"
     return {
@@ -172,6 +224,7 @@ def _task(
         "eval_budget": int(eval_budget),
         "runtime_cap_seconds": float(runtime_cap_seconds),
         "profile_phase": str(profile_phase),
+        "price_set_id": _price_set_id(prices),
         "checkpoint_path": str(checkpoint),
         "commit_hash": _git_commit(repo_root),
     }
@@ -210,10 +263,11 @@ def _run_one(task: dict[str, Any]) -> dict[str, Any]:
     root = Path(task["repo_root"])
     bundle_dir = root / str(task["bundle_dir"])
     bundle = load_search_bundle(bundle_dir)
-    warm = make_shared_initial_solution(bundle)
+    prices = _prices_for_task(task)
+    warm = make_shared_initial_solution(bundle, prices)
     checkpoint_path = Path(task["checkpoint_path"])
     os.environ["SETP_E2_ALNS_CHECKPOINT_PATH"] = str(checkpoint_path)
-    warm_cost = float(evaluate(warm, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
+    warm_cost = float(evaluate(warm, bundle.instance, bundle.carbon_profile, prices)["total_cost"])
     _write_checkpoint(checkpoint_path, warm, best_cost=warm_cost, best_obj=warm_cost, eval_count=0, elapsed_seconds=0.0, operator="shared_warm_start")
     algorithm = str(task["algorithm"])
     seed = int(task["seed"])
@@ -232,6 +286,7 @@ def _run_one(task: dict[str, Any]) -> dict[str, Any]:
             bundle_dir,
             config=WinnerKernelConfig(seed=seed, eval_budget=eval_budget, max_runtime_seconds=runtime_cap),
             initial_solution=warm,
+            prices=prices,
             route_cost_cache=route_cache,
             repair_structure_cache=structure_cache,
             timing_ledger=True,
@@ -245,7 +300,15 @@ def _run_one(task: dict[str, Any]) -> dict[str, Any]:
         history = list(result.get("history", []))
         timings = dict(result.get("timings", {}))
     elif algorithm == "LNS":
-        result = run_metaheuristic_baseline("LNS", bundle_dir, seed=seed, eval_budget=eval_budget, max_runtime_seconds=runtime_cap, initial_solution=warm)
+        result = run_metaheuristic_baseline(
+            "LNS",
+            bundle_dir,
+            seed=seed,
+            eval_budget=eval_budget,
+            max_runtime_seconds=runtime_cap,
+            initial_solution=warm,
+            prices=prices,
+        )
         solution = result.best_solution
         best_cost = float(result.best_cost) if result.best_cost is not None else math.inf
         evals = int(result.evals)
@@ -283,6 +346,7 @@ def _row_from_solution(
         "instance": task["instance"],
         "category": task["category"],
         "algorithm": task["algorithm"],
+        "price_set_id": task["price_set_id"],
         "seed": int(task["seed"]),
         "runtime_cap_seconds": float(task["runtime_cap_seconds"]),
         "elapsed_seconds": float(elapsed),
@@ -308,8 +372,9 @@ def _timeout_row(task: dict[str, Any], *, elapsed: float, stdout: str | bytes | 
     if checkpoint is not None:
         solution = solution_from_dict(checkpoint["solution"])
         bundle = load_search_bundle(Path(task["repo_root"]) / str(task["bundle_dir"]))
-        violations = check_solution(solution, bundle.instance, DEFAULT_PRICES)
-        cost = float(evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"]) if not violations else math.inf
+        prices = _prices_for_task(task)
+        violations = check_solution(solution, bundle.instance, prices)
+        cost = float(evaluate(solution, bundle.instance, bundle.carbon_profile, prices)["total_cost"]) if not violations else math.inf
         return _row_from_solution(
             task,
             solution,
@@ -338,6 +403,7 @@ def _failure_row(task: dict[str, Any], *, elapsed: float, status: str, reason: s
         "instance": task["instance"],
         "category": task["category"],
         "algorithm": task["algorithm"],
+        "price_set_id": task.get("price_set_id", ""),
         "seed": int(task["seed"]),
         "runtime_cap_seconds": float(task["runtime_cap_seconds"]),
         "elapsed_seconds": float(elapsed),
@@ -649,11 +715,27 @@ def main(argv: list[str] | None = None) -> None:
         return
     repo_root = Path(__file__).resolve().parents[4]
     if args.command == "profile":
-        result = run_profile(repo_root, Path(args.output_dir), phase=args.phase, instance=args.instance, seed=args.seed, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+        result = run_profile(
+            repo_root,
+            Path(args.output_dir),
+            phase=args.phase,
+            instance=args.instance,
+            seed=args.seed,
+            eval_budget=args.eval_budget,
+            max_runtime_seconds=args.max_runtime_seconds,
+            prices=UK_2025_PRICES,
+        )
     elif args.command == "smoke":
-        result = run_smoke(repo_root, Path(args.output_dir))
+        result = run_smoke(repo_root, Path(args.output_dir), prices=UK_2025_PRICES)
     elif args.command == "gate":
-        result = run_gate(repo_root, Path(args.output_dir), seeds=_parse_seeds(args.seeds), eval_budget=args.eval_budget, workers=args.workers)
+        result = run_gate(
+            repo_root,
+            Path(args.output_dir),
+            seeds=_parse_seeds(args.seeds),
+            eval_budget=args.eval_budget,
+            workers=args.workers,
+            prices=UK_2025_PRICES,
+        )
     else:
         parser.error("choose profile, smoke, or gate")
     print(f"GATE E2_ALNS_THROUGHPUT {json.dumps(result, ensure_ascii=False)}")

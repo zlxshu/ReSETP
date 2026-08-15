@@ -798,7 +798,7 @@ def create_report(
                 "",
                 "FACT：该 bundle 的价格表（`data/ChinaInstances/"
                 "china81_runtime_parameter_authority_v4_20260723/"
-                "tariff_carbon_48slot_calendar.csv`）中，北京公共电价/服务费为 "
+                "tariff_carbon_hourly_calendar.csv`）中，北京公共电价/服务费为 "
                 "谷 `0.56328575+0.4=0.96328575`、平 `0.83644275+0.4=1.23644275`、"
                 "峰 `1.14862175+0.4=1.54862175` CNY/kWh；天津为谷 `0.43996875+0.4=0.83996875`、"
                 "平 `0.79746875+0.4=1.19746875`、峰 `1.12856875+0.4=1.52856875` CNY/kWh。",

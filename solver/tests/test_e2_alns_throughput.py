@@ -14,7 +14,7 @@ import setp_solver.search.winner_operators as winner_ops
 from setp_solver.algorithms.resetp_alns.kernel import winner as winner_impl
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.candidates import make_shared_initial_solution
 from setp_solver.search.e2_alns_throughput import _task, _timeout_row, _write_checkpoint, run_smoke
@@ -60,9 +60,9 @@ class E2AlnsThroughputTest(unittest.TestCase):
 
     def test_route_elimination_default_rejects_same_route_count_candidate(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        solution = make_shared_initial_solution(bundle)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
-        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
+        solution = make_shared_initial_solution(bundle, UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
+        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, UK_2025_PRICES)["total_cost"])
         candidate_solution = replace(solution, routes=list(reversed(solution.routes)))
 
         def fake_destroy(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
@@ -98,9 +98,9 @@ class E2AlnsThroughputTest(unittest.TestCase):
 
     def test_relaxed_route_compression_accepts_lower_cost_same_route_count_candidate(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        solution = make_shared_initial_solution(bundle)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
-        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
+        solution = make_shared_initial_solution(bundle, UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
+        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, UK_2025_PRICES)["total_cost"])
         candidate_solution = replace(solution, routes=list(reversed(solution.routes)))
 
         def fake_destroy(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
@@ -137,9 +137,9 @@ class E2AlnsThroughputTest(unittest.TestCase):
 
     def test_relaxed_route_compression_rejects_infeasible_candidate(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        solution = make_shared_initial_solution(bundle)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
-        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
+        solution = make_shared_initial_solution(bundle, UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
+        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, UK_2025_PRICES)["total_cost"])
         infeasible_solution = replace(solution, routes=solution.routes[:-1])
 
         def fake_destroy(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
@@ -176,9 +176,9 @@ class E2AlnsThroughputTest(unittest.TestCase):
 
     def test_candidate_route_elimination_relaxed_gate_accepts_cost_drop_without_route_drop(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        solution = make_shared_initial_solution(bundle)
+        solution = make_shared_initial_solution(bundle, UK_2025_PRICES)
         candidate_solution = replace(solution, routes=list(reversed(solution.routes)))
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
 
         with patch.object(candidate_ops, "_regret_reinsert_removed", return_value=candidate_solution), patch.object(
             candidate_ops,
@@ -201,9 +201,9 @@ class E2AlnsThroughputTest(unittest.TestCase):
 
     def test_route_cost_cache_matches_uncached_route_cost(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        solution = make_shared_initial_solution(bundle)
+        solution = make_shared_initial_solution(bundle, UK_2025_PRICES)
         route = solution.routes[0]
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
         old = os.environ.get("SETP_ALNS_CRUSH_ROUTE_COST_CACHE")
         try:
             os.environ["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"] = "0"
@@ -222,10 +222,20 @@ class E2AlnsThroughputTest(unittest.TestCase):
 
     def test_timeout_row_returns_finite_checkpoint_incumbent(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        warm = make_shared_initial_solution(bundle)
-        warm_cost = float(evaluate(warm, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
+        warm = make_shared_initial_solution(bundle, UK_2025_PRICES)
+        warm_cost = float(evaluate(warm, bundle.instance, bundle.carbon_profile, UK_2025_PRICES)["total_cost"])
         with tempfile.TemporaryDirectory() as tmp:
-            task = _task(REPO_ROOT, Path(tmp), "vanilla", "e2-vanilla-10c-01", "LNS", 1, 32, 0.001)
+            task = _task(
+                REPO_ROOT,
+                Path(tmp),
+                "vanilla",
+                "e2-vanilla-10c-01",
+                "LNS",
+                1,
+                32,
+                0.001,
+                prices=UK_2025_PRICES,
+            )
             task["bundle_dir"] = str(VERIFY_BUNDLE.relative_to(REPO_ROOT))
             task["category"] = "fixture"
             task["instance"] = "verify_20251113"
@@ -239,8 +249,8 @@ class E2AlnsThroughputTest(unittest.TestCase):
     def test_e2_alns_throughput_same_seed_small_budget_is_deterministic(self) -> None:
         config = WinnerKernelConfig(seed=11, eval_budget=16, max_runtime_seconds=120.0)
 
-        first = run_e2_alns_throughput(VERIFY_BUNDLE, config=config)
-        second = run_e2_alns_throughput(VERIFY_BUNDLE, config=config)
+        first = run_e2_alns_throughput(VERIFY_BUNDLE, config=config, prices=UK_2025_PRICES)
+        second = run_e2_alns_throughput(VERIFY_BUNDLE, config=config, prices=UK_2025_PRICES)
 
         self.assertEqual(first["violation_count"], 0)
         self.assertEqual(second["violation_count"], 0)
@@ -248,18 +258,18 @@ class E2AlnsThroughputTest(unittest.TestCase):
         self.assertEqual(first["evaluations"], second["evaluations"])
         self.assertTrue(first["timings"])
 
-    def test_e2_alns_throughput_default_prices_match_explicit_default(self) -> None:
+    def test_e2_alns_throughput_explicit_uk_prices_are_deterministic(self) -> None:
         config = WinnerKernelConfig(seed=12, eval_budget=4, max_runtime_seconds=120.0)
 
-        implicit = run_e2_alns_throughput(VERIFY_BUNDLE, config=config)
-        explicit = run_e2_alns_throughput(VERIFY_BUNDLE, config=config, prices=DEFAULT_PRICES)
+        first = run_e2_alns_throughput(VERIFY_BUNDLE, config=config, prices=UK_2025_PRICES)
+        second = run_e2_alns_throughput(VERIFY_BUNDLE, config=config, prices=UK_2025_PRICES)
 
-        self.assertEqual(implicit["violation_count"], explicit["violation_count"])
-        self.assertEqual(implicit["evaluations"], explicit["evaluations"])
-        self.assertAlmostEqual(implicit["best_cost"], explicit["best_cost"])
+        self.assertEqual(first["violation_count"], second["violation_count"])
+        self.assertEqual(first["evaluations"], second["evaluations"])
+        self.assertAlmostEqual(first["best_cost"], second["best_cost"])
 
     def test_e2_alns_throughput_prices_override_reaches_search_context(self) -> None:
-        override = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+        override = replace(UK_2025_PRICES, B_battery_kwh=280.0)
         captured_batteries: list[float] = []
         real_context = winner_impl.EvaluationContext
 
@@ -314,9 +324,9 @@ class E2AlnsThroughputTest(unittest.TestCase):
     def test_run_e2_alns_carbon_uses_carbon_variant_without_changing_default(self) -> None:
         config = WinnerKernelConfig(seed=14, eval_budget=4, max_runtime_seconds=120.0)
 
-        carbon = run_e2_alns_carbon(VERIFY_BUNDLE, config=config, carbon_bias_weight=1.0)
-        ablation = run_e2_alns_carbon(VERIFY_BUNDLE, config=config, carbon_bias_weight=0.0, variant_id="alns_e2_carbon_ablation")
-        default = run_e2_alns_throughput(VERIFY_BUNDLE, config=config)
+        carbon = run_e2_alns_carbon(VERIFY_BUNDLE, config=config, prices=UK_2025_PRICES, carbon_bias_weight=1.0)
+        ablation = run_e2_alns_carbon(VERIFY_BUNDLE, config=config, prices=UK_2025_PRICES, carbon_bias_weight=0.0, variant_id="alns_e2_carbon_ablation")
+        default = run_e2_alns_throughput(VERIFY_BUNDLE, config=config, prices=UK_2025_PRICES)
 
         self.assertEqual(carbon["variant"], "alns_e2_carbon")
         self.assertEqual(ablation["variant"], "alns_e2_carbon_ablation")
@@ -328,7 +338,7 @@ class E2AlnsThroughputTest(unittest.TestCase):
 
     def test_runner_smoke_outputs_finite_zero_violation_rows(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            result = run_smoke(REPO_ROOT, Path(tmp))
+            result = run_smoke(REPO_ROOT, Path(tmp), prices=UK_2025_PRICES)
 
         # v2026-06-26: physical-vehicle multi-trip semantics make the E2-10c
         # smoke feasible again under hard num_cv/num_ev caps.

@@ -62,6 +62,7 @@ class VehicleTypeParameters:
     engine_displacement_l: float | None
     traction_energy_multiplier: float | None
     source_ids: tuple[str, ...]
+    fixed_cost_per_physical_vehicle_day: float | None = None
 
 
 @dataclass(frozen=True)
@@ -260,6 +261,17 @@ class Instance:
             if profile is None
             else float(profile.non_energy_distance_cost_per_km)
         )
+
+    def vehicle_fixed_cost_per_day(
+        self,
+        vehicle_type: str,
+        *,
+        fallback: float,
+    ) -> float:
+        profile = self.vehicle_profile(vehicle_type)
+        if profile is None or profile.fixed_cost_per_physical_vehicle_day is None:
+            return float(fallback)
+        return float(profile.fixed_cost_per_physical_vehicle_day)
 
     def load_mass_kg(
         self,
@@ -482,6 +494,13 @@ def _validate_vehicle_parameters(
             raise ValueError(
                 f"{profile} vehicle {name} must be finite and positive"
             )
+    fixed_cost = parameters.fixed_cost_per_physical_vehicle_day
+    if fixed_cost is not None and (
+        not math.isfinite(float(fixed_cost)) or float(fixed_cost) <= 0.0
+    ):
+        raise ValueError(
+            f"{profile} vehicle fixed cost must be finite and positive"
+        )
     if (
         float(parameters.curb_mass_kg)
         + float(parameters.payload_capacity_kg)

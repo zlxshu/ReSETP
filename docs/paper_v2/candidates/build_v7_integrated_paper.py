@@ -11,7 +11,7 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[3]
-PAPER = REPO / "docs/paper_v2/paper_main.tex"
+PAPER = REPO / "docs/paper_v2/RETIRED_paper_main.tex"
 CANDIDATE_DIR = REPO / "docs/paper_v2/candidates"
 REGISTRATION = CANDIDATE_DIR / "v7_paper_integration_registration.json"
 CAMPAIGN = (

@@ -183,7 +183,7 @@
 | INF-3 | v2 重算与 v1 **逐行全等**：144 行差异 0；总 `R_d` 1040=1040；`num_cv` 1040=1040；`num_ev` 309=309；81 个 witness 的目标值与路线逐个全等，唯一不同字段是 `schema` | `data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/comparison_vs_v1.json` | `CLAUDE_COMPUTED` |
 | INF-4 | ⇒ 台账 L33 的前提（"旧 EV 载重推出的 `R_d` 不再有效"）**不成立**，因为 EV 参数从未进入 `R_d` | 推论 | 待复核 |
 | INF-5 | **但**：`num_ev = 0.25 R_d` 的 0.25 来自储备系数 1.25（登记为构造情景），**且全过程从未校验 EV 77.28 kWh 能否完成分给它的路线** | 同 INF-1 | `CLAUDE_COMPUTED` |
-| INF-6 | 碳日历 `tariff_carbon_48slot_calendar.csv` 只有一列 `carbon_factor_kgco2e_per_kwh`（12096 行）；`china81.py:816-817` 把同一值同时赋给 `actual_gco2_per_kwh` 与 `forecast_gco2_per_kwh` | 两文件 | `CLAUDE_COMPUTED` |
+| INF-6 | 碳日历 `tariff_carbon_hourly_calendar.csv` 只有一列 `carbon_factor_kgco2e_per_kwh`（12096 行）；`china81.py:816-817` 把同一值同时赋给 `actual_gco2_per_kwh` 与 `forecast_gco2_per_kwh` | 两文件 | `CLAUDE_COMPUTED` |
 | INF-7 | **预测/实际机制在代码里是通的**：调度侧 `search/dynamic_multitrip_schedule.py:557` 默认 `forecast`；核算侧 `cost.py:652/740`、`search/multitrip_schedule.py:1402/1529` 默认 `actual`；**E4 本身 `run_e4_carbon_timing.py:568` 与 `:574` 按两个字段各算一遍** | 各文件 | `CLAUDE_COMPUTED` |
 | INF-8 | 碳数据集 `10.6084/m9.figshare.28953545.v3` 共 7 个文件；本项目此前只下载 S1 与说明 PDF；2026-07-31 已补齐，7/7 MD5 与出版方公布值一致 | `data/Carbon/中国情景/cef_dataset_full_20260731/download_manifest.json` | `CLAUDE_COMPUTED` |
 | INF-9 | 数据集自述为 **projected**（规划情景投影），逐小时值为"average emission intensity … calculated through power system operation simulation … not instantaneous values" | `Annotation_of_the_dataset.pdf` | `CLAUDE_COMPUTED` |

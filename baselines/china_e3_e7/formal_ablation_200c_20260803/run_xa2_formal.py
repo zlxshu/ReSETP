@@ -39,7 +39,7 @@ SEEDS = tuple(range(2026080201, 2026080211))
 EXPECTED_RUNS = 30
 PRIOR_XA = REPO / "baselines/china_e3_e7/formal_algorithm_20260802"
 PROTECTED_BOUNDARY_FILES = (
-    REPO / "docs/paper_submission_final/paper_main.tex",
+    REPO / "docs/paper_submission_final/RETIRED_paper_main.tex",
     REPO / "solver/src/setp_solver/check.py",
     REPO / "solver/src/setp_solver/search/evaluation.py",
 )

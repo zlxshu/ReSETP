@@ -70,7 +70,7 @@ TIMING_AUTHORITY = (
 APPROVED_WRAPPER_AUTHORITY = (
     ROOT / "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723"
 )
-CALENDAR_NAME = "tariff_carbon_48slot_calendar.csv"
+CALENDAR_NAME = "tariff_carbon_hourly_calendar.csv"
 OPERATING_DAY = date(2025, 2, 12)
 PREVIOUS_DAY = OPERATING_DAY - timedelta(days=1)
 TOL = 1.0e-6
@@ -106,7 +106,7 @@ REQUIRED_PROFILE_FIELDS = {
     "date",
     "depot_energy_cny_per_kwh",
     "forecast_gco2_per_kwh",
-    "half_hour_slot",
+    "hourly_calendar_row",
     "horizon_second_start",
     "price_area_id",
     "public_energy_cny_per_kwh",
@@ -120,7 +120,7 @@ SHARED_E4_TIMING_FIELDS = (
     "city",
     "region",
     "date",
-    "half_hour_slot",
+    "hourly_calendar_row",
     "minute_of_day",
     "tariff_period",
     "depot_energy_cny_per_kwh",

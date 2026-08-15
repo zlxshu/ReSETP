@@ -249,7 +249,15 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
     gamma = [float(row["gamma_gco2_per_kwh"]) for row in gamma_rows]
     axes[0].axvspan(8, 17, color=PALETTE["light_gray"], alpha=0.55, label="日间作业窗")
     ax2 = axes[0].twinx()
-    axes[0].plot(x, gamma, color=PALETTE["dark"], linewidth=0.9, linestyle="-", label="$\\gamma$")
+    axes[0].plot(
+        x,
+        gamma,
+        color=PALETTE["dark"],
+        linewidth=0.9,
+        linestyle="-",
+        drawstyle="steps-post",
+        label="$\\gamma$",
+    )
     offsets = {"朴素充电": -0.09, "碳感知充电": 0.09}
     colors = {"朴素充电": PALETTE["red"], "碳感知充电": PALETTE["green"]}
     hatches = {"朴素充电": "//", "碳感知充电": ""}
@@ -259,7 +267,9 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
         kwh = [float(row["total_kwh"]) for row in data]
         shifted = [value + offsets[scenario] for value in x]
         ax2.bar(shifted, kwh, width=0.16, color=colors[scenario], alpha=0.78, hatch=hatches[scenario], label=scenario)
-    axes[0].set_title("(a) 48槽碳强度与充电负荷")
+    # Keep the generic renderer neutral: China81 supplies hourly values repeated
+    # on this grid, while archived non-China inputs may be native half-hour data.
+    axes[0].set_title("(a) 电网碳强度与30分钟充电负荷")
     axes[0].set_xlabel("时间 / h")
     axes[0].set_ylabel("$\\gamma$ gCO2/kWh")
     axes[0].set_xlim(0, 24)
@@ -271,10 +281,10 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
 
     shares = charging_period_shares(rows)
     bottoms = {scenario: 0.0 for scenario in scenarios}
-    share_colors = {"谷": PALETTE["green"], "平": PALETTE["gray"], "峰": PALETTE["red"]}
-    share_hatches = {"谷": "", "平": "..", "峰": "//"}
+    share_colors = {"低碳": PALETTE["green"], "中碳": PALETTE["gray"], "高碳": PALETTE["red"]}
+    share_hatches = {"低碳": "", "中碳": "..", "高碳": "//"}
     xpos = range(len(scenarios))
-    for period in ("谷", "平", "峰"):
+    for period in ("低碳", "中碳", "高碳"):
         values = [shares.get(scenario, {}).get(period, 0.0) * 100.0 for scenario in scenarios]
         axes[1].bar(xpos, values, bottom=[bottoms[scenario] * 100.0 for scenario in scenarios], color=share_colors[period], hatch=share_hatches[period], width=0.55, label=period, edgecolor=PALETTE["dark"], linewidth=0.55)
         for scenario, value in zip(scenarios, values):
@@ -282,7 +292,7 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
     axes[1].set_xticks(list(xpos), scenarios)
     axes[1].set_ylim(0, 100)
     axes[1].set_ylabel("充电量占比 %")
-    axes[1].set_title("(b) 峰/平/谷充电占比")
+    axes[1].set_title("(b) 低/中/高碳强度组充电占比")
     axes[1].legend(loc="upper center", ncols=3, fontsize=7)
     return save_pdf_png(fig, output_stem)
 
@@ -689,18 +699,20 @@ def charging_period_shares(rows: list[dict[str, str]]) -> dict[str, dict[str, fl
         return {}
     lower = gamma_values[max(0, len(gamma_values) // 3 - 1)]
     upper = gamma_values[min(len(gamma_values) - 1, (len(gamma_values) * 2) // 3)]
-    totals: dict[str, dict[str, float]] = defaultdict(lambda: {"谷": 0.0, "平": 0.0, "峰": 0.0})
+    totals: dict[str, dict[str, float]] = defaultdict(
+        lambda: {"低碳": 0.0, "中碳": 0.0, "高碳": 0.0}
+    )
     scenario_totals: dict[str, float] = defaultdict(float)
     for row in rows:
         scenario = row["scenario"]
         gamma = float(row["gamma_gco2_per_kwh"])
         kwh = float(row["total_kwh"])
         if gamma <= lower:
-            period = "谷"
+            period = "低碳"
         elif gamma >= upper:
-            period = "峰"
+            period = "高碳"
         else:
-            period = "平"
+            period = "中碳"
         totals[scenario][period] += kwh
         scenario_totals[scenario] += kwh
     return {

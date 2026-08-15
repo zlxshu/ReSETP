@@ -215,7 +215,7 @@ def slot_rows_for_solution(
             "draft_status": MARKER,
             "arm": arm,
             "seed": seed,
-            "half_hour_slot": slot,
+            "hourly_calendar_row": slot,
             "start_minute": (slot - 1) * 30,
             "end_minute": slot * 30,
             "charging_kwh": by_slot_city[(slot, "beijing")] + by_slot_city[(slot, "tianjin")],
@@ -607,7 +607,7 @@ TRACE_FIELDS = (
     "task_id", "draft_status", "run_id", "arm", "seed", "budget", "evaluation_index", "view", "source", "iteration", "candidate_id", "completion_succeeded", "status", "search_objective", "exception_type", "exception_message", "failure_category",
 )
 SLOT_FIELDS = (
-    "task_id", "draft_status", "arm", "seed", "half_hour_slot", "start_minute", "end_minute", "charging_kwh", "beijing_kwh", "tianjin_kwh", "share_of_run_charging", "charging_cost_cny", "charging_emissions_kg",
+    "task_id", "draft_status", "arm", "seed", "hourly_calendar_row", "start_minute", "end_minute", "charging_kwh", "beijing_kwh", "tianjin_kwh", "share_of_run_charging", "charging_cost_cny", "charging_emissions_kg",
 )
 
 
@@ -817,7 +817,7 @@ def write_report(*, run_rows: list[dict[str, Any]], slot_rows: list[dict[str, An
         slot_by_key[(int(row["seed"]), row["arm"])].append(row)
     for seed in SEEDS:
         for arm in ARMS:
-            summary = "; ".join(f"{int(row['half_hour_slot'])}:{float(row['charging_kwh']):.6f}" for row in slot_by_key.get((seed, arm), []) if abs(float(row["charging_kwh"])) > 1.0e-9)
+            summary = "; ".join(f"{int(row['hourly_calendar_row'])}:{float(row['charging_kwh']):.6f}" for row in slot_by_key.get((seed, arm), []) if abs(float(row["charging_kwh"])) > 1.0e-9)
             lines.append(f"| {seed} | {arm} | {summary or '无'} |")
     lines.extend(["", "## FACT：逐种子分解", "", "定义：排程层减排 = COST 系统排放 − FIXED_ROUTE_RETIME 系统排放；总减排 = COST 系统排放 − COST_CARBON 系统排放；路径层贡献 = 总减排 − 排程层减排。正值表示减排贡献，负值保留为负。EV 工作量混杂规则为 `abs(COST_CARBON 充电量 − COST 充电量) > 10 kWh`。路线改变按规范化路线、客户指派和有向弧签名共同核对。", "", "| 种子 | 排程层减排 kg | 总减排 kg | 路径层贡献 kg | COST_CARBON−COST 电量差 kWh | 里程差 km | EV 工作量混杂 | 路线是否改变 |", "|---:|---:|---:|---:|---:|---:|:---:|:---|"])
     decompositions: list[dict[str, Any]] = []

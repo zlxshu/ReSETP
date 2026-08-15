@@ -29,7 +29,7 @@ SOURCE_HASHES_JSON = E4_DIR / "artifact_hashes.json"
 CALENDAR_CSV = (
     PROJECT_ROOT
     / "data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723"
-    / "tariff_carbon_48slot_calendar.csv"
+    / "tariff_carbon_hourly_calendar.csv"
 )
 
 TYPICAL_DATE = "2025-02-12"
@@ -79,7 +79,7 @@ CALENDAR_REQUIRED = (
     "city",
     "region",
     "date",
-    "half_hour_slot",
+    "hourly_calendar_row",
     "minute_of_day",
     "carbon_factor_kgco2e_per_kwh",
     "carbon_source_column",
@@ -139,12 +139,12 @@ def validate_hashes() -> dict[str, str]:
     expected = {
         "action_timing_audit.csv": source_hashes["artifacts"]["action_timing_audit.csv"],
         "raw_runs.csv": source_hashes["artifacts"]["raw_runs.csv"],
-        "tariff_carbon_48slot_calendar.csv": source_hashes["calendar_sha256"],
+        "tariff_carbon_hourly_calendar.csv": source_hashes["calendar_sha256"],
     }
     observed = {
         "action_timing_audit.csv": sha256(ACTION_CSV),
         "raw_runs.csv": sha256(RAW_RUNS_CSV),
-        "tariff_carbon_48slot_calendar.csv": sha256(CALENDAR_CSV),
+        "tariff_carbon_hourly_calendar.csv": sha256(CALENDAR_CSV),
     }
     mismatches = {name: (expected[name], digest) for name, digest in observed.items() if digest != expected[name]}
     if mismatches:
@@ -234,7 +234,7 @@ def build_aggregates(
         carbon_energy = binned["CARBON"][index]
         distribution_rows.append(
             {
-                "half_hour_slot": index + 1,
+                "hourly_calendar_row": index + 1,
                 "start_hour": fmt_decimal(Decimal(index) / Decimal("2"), 1),
                 "asap_energy_kwh": fmt_decimal(asap_energy, 9),
                 "carbon_energy_kwh": fmt_decimal(carbon_energy, 9),
@@ -329,8 +329,8 @@ def build_carbon_curves(calendar_rows: list[dict[str, str]]) -> tuple[list[dict[
             for row in calendar_rows
             if row["region"] == region and row["city"] == city and row["date"] == TYPICAL_DATE
         ]
-        rows.sort(key=lambda row: int(row["half_hour_slot"]))
-        if len(rows) != 48 or {int(row["half_hour_slot"]) for row in rows} != set(range(1, 49)):
+        rows.sort(key=lambda row: int(row["hourly_calendar_row"]))
+        if len(rows) != 48 or {int(row["hourly_calendar_row"]) for row in rows} != set(range(1, 49)):
             raise ValueError(f"incomplete representative curve for {region}/{city}/{TYPICAL_DATE}")
         if {row["carbon_source_column"] for row in rows} != {source}:
             raise ValueError(f"unexpected carbon source for {region}/{city}/{TYPICAL_DATE}")
@@ -339,7 +339,7 @@ def build_carbon_curves(calendar_rows: list[dict[str, str]]) -> tuple[list[dict[
     wide_rows: list[dict[str, object]] = []
     for index in range(48):
         row: dict[str, object] = {
-            "half_hour_slot": index + 1,
+            "hourly_calendar_row": index + 1,
             "start_hour": fmt_decimal(Decimal(index) / Decimal("2"), 1),
         }
         for region, _label, _city, _source in REPRESENTATIVE_GRIDS:
@@ -544,7 +544,7 @@ def main() -> None:
     write_csv(
         OUTPUT_DIR / "e4_energy_weighted_start_distribution.csv",
         [
-            "half_hour_slot",
+            "hourly_calendar_row",
             "start_hour",
             "asap_energy_kwh",
             "carbon_energy_kwh",
@@ -558,7 +558,7 @@ def main() -> None:
     write_csv(
         OUTPUT_DIR / "e4_typical_day_carbon.csv",
         [
-            "half_hour_slot",
+            "hourly_calendar_row",
             "start_hour",
             "jjj_carbon_kgco2e_per_kwh",
             "jjj_carbon_gco2e_per_kwh",

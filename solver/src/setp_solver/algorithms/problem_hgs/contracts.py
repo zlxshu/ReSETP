@@ -16,6 +16,7 @@ These are causal diagnostics of executed moves, not extra objectives or gates.
 
 from __future__ import annotations
 
+import math
 from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -50,6 +51,7 @@ class CandidateOutcome:
     evaluation: FullEvaluation | None = None
     error_type: str | None = None
     error: str | None = None
+    charging_rejection_reason: str | None = None
     wall_seconds: float = 0.0
     work_accounting: Mapping[str, int] = field(default_factory=dict)
 
@@ -75,6 +77,7 @@ class SearchAccounting:
     accepted_ev_customer_delta: Counter[str] = field(default_factory=Counter)
     accepted_minimum_margin_delta: Counter[str] = field(default_factory=Counter)
     rejected_actions: Counter[str] = field(default_factory=Counter)
+    charging_rejection_reasons: Counter[str] = field(default_factory=Counter)
     no_change_actions: Counter[str] = field(default_factory=Counter)
     full_evaluations: int = 0
     initialization_full_evaluations: int = 0
@@ -96,6 +99,33 @@ class SearchAccounting:
     wall_seconds: float = 0.0
     run_wall_seconds: float = 0.0
     initialization_wall_seconds: float = 0.0
+    schedule_oracle_calls: int = 0
+    schedule_oracle_cache_hits: int = 0
+    schedule_oracle_cache_misses: int = 0
+    schedule_oracle_statuses: Counter[str] = field(default_factory=Counter)
+    schedule_oracle_failure_reasons: Counter[str] = field(default_factory=Counter)
+    schedule_oracle_wall_seconds_samples: list[float] = field(default_factory=list)
+    schedule_oracle_cache_hit_wall_seconds_samples: list[float] = field(default_factory=list)
+    schedule_oracle_cache_miss_wall_seconds_samples: list[float] = field(default_factory=list)
+    schedule_oracle_event_counts: list[int] = field(default_factory=list)
+    schedule_oracle_labels_generated: int = 0
+    schedule_oracle_labels_pruned: int = 0
+    schedule_oracle_slot_pricing_calls: int = 0
+    schedule_oracle_curve_transitions: int = 0
+    schedule_oracle_pricing_mismatches: int = 0
+    schedule_oracle_frontier_sizes: list[int] = field(default_factory=list)
+    schedule_oracle_frontier_cache_bytes: int = 0
+    scheduled_changed_duty_counts: Counter[int] = field(default_factory=Counter)
+    schedule_coordinator_calls: int = 0
+    schedule_coordinator_cache_hits: int = 0
+    schedule_coordinator_cache_misses: int = 0
+    schedule_coordinator_combinations_attempted: int = 0
+    schedule_coordinator_capacity_prunes: int = 0
+    schedule_coordinator_full_candidates: int = 0
+    schedule_coordinator_statuses: Counter[str] = field(default_factory=Counter)
+    schedule_coordinator_wall_seconds_samples: list[float] = field(default_factory=list)
+    schedule_rescued_candidates_by_channel: Counter[str] = field(default_factory=Counter)
+    schedule_rejected_candidates_by_channel_and_status: Counter[str] = field(default_factory=Counter)
 
     def record_outcome(self, outcome: CandidateOutcome) -> None:
         self.proposed_actions[outcome.channel] += 1
@@ -111,6 +141,15 @@ class SearchAccounting:
             self.rejected_actions[
                 f"{outcome.channel}:{outcome.status.value}"
             ] += 1
+            if outcome.status == CandidateStatus.REJECTED_CHARGING:
+                reason = (
+                    "CHARGING_REPAIR_OTHER"
+                    if outcome.charging_rejection_reason is None
+                    else str(outcome.charging_rejection_reason)
+                )
+                self.charging_rejection_reasons[
+                    f"{outcome.channel}:{reason}"
+                ] += 1
 
     def record_acceptance(self, channel: str) -> None:
         self.accepted_actions[channel] += 1
@@ -187,6 +226,67 @@ class SearchAccounting:
             self.population_admissions += 1
             self.record_acceptance("hgs_population")
 
+    def record_schedule_oracle_result(self, result: Any) -> None:
+        """Merge one prototype Oracle call without turning it into a gate."""
+
+        self.schedule_oracle_calls += 1
+        elapsed = float(result.wall_seconds)
+        self.schedule_oracle_wall_seconds_samples.append(elapsed)
+        if bool(result.cache_hit):
+            self.schedule_oracle_cache_hits += 1
+            self.schedule_oracle_cache_hit_wall_seconds_samples.append(elapsed)
+        else:
+            self.schedule_oracle_cache_misses += 1
+            self.schedule_oracle_cache_miss_wall_seconds_samples.append(elapsed)
+        status = str(getattr(result.status, "value", result.status))
+        self.schedule_oracle_statuses[status] += 1
+        if result.failure_reason:
+            self.schedule_oracle_failure_reasons[str(result.failure_reason)] += 1
+        accounting = dict(result.accounting)
+        self.schedule_oracle_event_counts.append(
+            int(accounting.get("schedule_oracle_event_count", 0))
+        )
+        self.schedule_oracle_labels_generated += int(
+            accounting.get("schedule_oracle_labels_generated", 0)
+        )
+        self.schedule_oracle_labels_pruned += int(
+            accounting.get("schedule_oracle_labels_pruned", 0)
+        )
+        self.schedule_oracle_slot_pricing_calls += int(
+            accounting.get("schedule_oracle_slot_pricing_calls", 0)
+        )
+        self.schedule_oracle_curve_transitions += int(
+            accounting.get("schedule_oracle_curve_transitions", 0)
+        )
+        self.schedule_oracle_pricing_mismatches += int(
+            accounting.get("schedule_oracle_pricing_mismatches", 0)
+        )
+        self.schedule_oracle_frontier_sizes.append(len(result.frontier))
+
+    def record_schedule_coordinator_result(
+        self,
+        result: Any,
+        *,
+        changed_duty_count: int,
+    ) -> None:
+        self.schedule_coordinator_calls += 1
+        self.schedule_coordinator_wall_seconds_samples.append(
+            float(result.wall_seconds)
+        )
+        self.scheduled_changed_duty_counts[int(changed_duty_count)] += 1
+        status = str(getattr(result.status, "value", result.status))
+        self.schedule_coordinator_statuses[status] += 1
+        accounting = dict(result.accounting)
+        self.schedule_coordinator_combinations_attempted += int(
+            accounting.get("schedule_coordinator_combinations_attempted", 0)
+        )
+        self.schedule_coordinator_capacity_prunes += int(
+            accounting.get("schedule_coordinator_capacity_prunes", 0)
+        )
+        self.schedule_coordinator_full_candidates += int(
+            accounting.get("schedule_coordinator_full_candidates", 0)
+        )
+
     def record_crossover(self, action: str, work_units: int) -> None:
         work = int(work_units)
         if work < 1:
@@ -231,6 +331,9 @@ class SearchAccounting:
                 sorted(self.accepted_minimum_margin_delta.items())
             ),
             "rejected_actions": dict(sorted(self.rejected_actions.items())),
+            "charging_rejection_reasons": dict(
+                sorted(self.charging_rejection_reasons.items())
+            ),
             "no_change_actions": dict(sorted(self.no_change_actions.items())),
             "full_evaluations": int(self.full_evaluations),
             "initialization_full_evaluations": int(
@@ -268,7 +371,105 @@ class SearchAccounting:
             "total_algorithm_wall_seconds": float(
                 self.initialization_wall_seconds + self.run_wall_seconds
             ),
+            "schedule_oracle_calls": int(self.schedule_oracle_calls),
+            "schedule_oracle_cache_hits": int(self.schedule_oracle_cache_hits),
+            "schedule_oracle_cache_misses": int(self.schedule_oracle_cache_misses),
+            "schedule_oracle_statuses": dict(sorted(self.schedule_oracle_statuses.items())),
+            "schedule_oracle_failure_reasons": dict(
+                sorted(self.schedule_oracle_failure_reasons.items())
+            ),
+            "schedule_oracle_wall_seconds": _sample_summary(
+                self.schedule_oracle_wall_seconds_samples
+            ),
+            "schedule_oracle_cache_hit_wall_seconds": _sample_summary(
+                self.schedule_oracle_cache_hit_wall_seconds_samples
+            ),
+            "schedule_oracle_cache_miss_wall_seconds": _sample_summary(
+                self.schedule_oracle_cache_miss_wall_seconds_samples
+            ),
+            "schedule_oracle_event_counts": _sample_summary(
+                self.schedule_oracle_event_counts
+            ),
+            "schedule_oracle_labels_generated": int(
+                self.schedule_oracle_labels_generated
+            ),
+            "schedule_oracle_labels_pruned": int(
+                self.schedule_oracle_labels_pruned
+            ),
+            "schedule_oracle_slot_pricing_calls": int(
+                self.schedule_oracle_slot_pricing_calls
+            ),
+            "schedule_oracle_curve_transitions": int(
+                self.schedule_oracle_curve_transitions
+            ),
+            "schedule_oracle_pricing_mismatches": int(
+                self.schedule_oracle_pricing_mismatches
+            ),
+            "schedule_oracle_frontier_sizes": _sample_summary(
+                self.schedule_oracle_frontier_sizes
+            ),
+            "schedule_oracle_frontier_cache_bytes": int(
+                self.schedule_oracle_frontier_cache_bytes
+            ),
+            "scheduled_changed_duty_counts": {
+                str(key): int(value)
+                for key, value in sorted(self.scheduled_changed_duty_counts.items())
+            },
+            "schedule_coordinator_calls": int(self.schedule_coordinator_calls),
+            "schedule_coordinator_cache_hits": int(
+                self.schedule_coordinator_cache_hits
+            ),
+            "schedule_coordinator_cache_misses": int(
+                self.schedule_coordinator_cache_misses
+            ),
+            "schedule_coordinator_combinations_attempted": int(
+                self.schedule_coordinator_combinations_attempted
+            ),
+            "schedule_coordinator_capacity_prunes": int(
+                self.schedule_coordinator_capacity_prunes
+            ),
+            "schedule_coordinator_full_candidates": int(
+                self.schedule_coordinator_full_candidates
+            ),
+            "schedule_coordinator_statuses": dict(
+                sorted(self.schedule_coordinator_statuses.items())
+            ),
+            "schedule_coordinator_wall_seconds": _sample_summary(
+                self.schedule_coordinator_wall_seconds_samples
+            ),
+            "schedule_rescued_candidates_by_channel": dict(
+                sorted(self.schedule_rescued_candidates_by_channel.items())
+            ),
+            "schedule_rejected_candidates_by_channel_and_status": dict(
+                sorted(
+                    self.schedule_rejected_candidates_by_channel_and_status.items()
+                )
+            ),
         }
+
+
+def _sample_summary(values: list[float] | list[int]) -> dict[str, float | int | None]:
+    ordered = sorted(float(value) for value in values)
+    if not ordered:
+        return {
+            "samples": 0,
+            "p50": None,
+            "p95": None,
+            "p99": None,
+            "max": None,
+        }
+
+    def percentile(probability: float) -> float:
+        index = int(math.ceil(probability * len(ordered))) - 1
+        return ordered[max(0, min(len(ordered) - 1, index))]
+
+    return {
+        "samples": len(ordered),
+        "p50": percentile(0.50),
+        "p95": percentile(0.95),
+        "p99": percentile(0.99),
+        "max": ordered[-1],
+    }
 
 
 def _ev_customer_count(individual: DutyIndividual) -> int:

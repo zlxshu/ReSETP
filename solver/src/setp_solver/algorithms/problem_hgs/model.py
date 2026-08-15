@@ -20,6 +20,7 @@ import hashlib
 import json
 from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
+from functools import cached_property
 
 from setp_solver.solution import (
     ChargingAction,
@@ -104,6 +105,227 @@ class DutyChargingSession:
 
 
 @dataclass(frozen=True)
+class ScheduleAccountingVector:
+    """Additive schedule-local quantities kept separate for Pareto search."""
+
+    electricity_cost: float = 0.0
+    emissions_kg: float = 0.0
+    occupancy_cost: float = 0.0
+    route_time_cost: float = 0.0
+
+    def __post_init__(self) -> None:
+        values = (
+            float(self.electricity_cost),
+            float(self.emissions_kg),
+            float(self.occupancy_cost),
+            float(self.route_time_cost),
+        )
+        if any(value < -1.0e-9 for value in values):
+            raise ValueError("schedule accounting components cannot be negative")
+
+    @property
+    def dominance_components(self) -> tuple[float, ...]:
+        return (
+            float(self.electricity_cost),
+            float(self.emissions_kg),
+            float(self.occupancy_cost),
+            float(self.route_time_cost),
+        )
+
+
+@dataclass(frozen=True)
+class ScheduledTripWitness:
+    """One fixed DutyTrip bound to an executable clock and battery state."""
+
+    trip_index: int
+    route_signature: str
+    departure_second: float
+    return_second: float
+    start_soc_kwh: float | None
+    end_soc_kwh: float | None
+
+    def __post_init__(self) -> None:
+        if int(self.trip_index) < 1:
+            raise ValueError("scheduled trip index must start at 1")
+        if not str(self.route_signature):
+            raise ValueError("scheduled trip route signature cannot be empty")
+        if float(self.return_second) < float(self.departure_second) - 1.0e-9:
+            raise ValueError("scheduled trip returns before it departs")
+        if (self.start_soc_kwh is None) != (self.end_soc_kwh is None):
+            raise ValueError("scheduled trip SOC endpoints must both be set or absent")
+
+
+@dataclass(frozen=True)
+class ScheduledSOCPoint:
+    """One endpoint in the continuous time--SOC execution ledger."""
+
+    event_index: int
+    event_kind: str
+    trip_index: int
+    node_id: str
+    event_second: float
+    soc_before_kwh: float
+    soc_after_kwh: float
+
+    def __post_init__(self) -> None:
+        if int(self.event_index) < 0:
+            raise ValueError("SOC event index cannot be negative")
+        if int(self.trip_index) < 1:
+            raise ValueError("SOC event trip index must start at 1")
+        if not str(self.event_kind) or not str(self.node_id):
+            raise ValueError("SOC event kind and node id cannot be empty")
+        if min(float(self.soc_before_kwh), float(self.soc_after_kwh)) < -1.0e-7:
+            raise ValueError("SOC event cannot leave the battery below zero")
+
+
+@dataclass(frozen=True)
+class ScheduledChargingSession:
+    """One unambiguous pre-trip, inter-trip, or en-route charge witness."""
+
+    relation: str
+    after_trip_index: int | None
+    before_trip_index: int | None
+    route_trip_index: int | None
+    station_id: str
+    physical_station_id: str
+    charge_start_second: float
+    charge_end_second: float
+    charge_day_offset: int
+    start_energy_kwh: float
+    end_energy_kwh: float
+    energy_kwh: float
+    occupancy_minutes: float
+    charging_curve_id: str
+    locked: bool = False
+
+    def __post_init__(self) -> None:
+        relation = str(self.relation).upper()
+        object.__setattr__(self, "relation", relation)
+        if relation not in {"BEFORE_FIRST", "BETWEEN_TRIPS", "EN_ROUTE"}:
+            raise ValueError("unknown scheduled charging relation")
+        if relation == "BEFORE_FIRST":
+            valid = (
+                self.after_trip_index is None
+                and self.before_trip_index == 1
+                and self.route_trip_index is None
+            )
+        elif relation == "BETWEEN_TRIPS":
+            valid = (
+                self.after_trip_index is not None
+                and self.before_trip_index is not None
+                and int(self.before_trip_index) == int(self.after_trip_index) + 1
+                and self.route_trip_index is None
+            )
+        else:
+            valid = (
+                self.after_trip_index is None
+                and self.before_trip_index is None
+                and self.route_trip_index is not None
+            )
+        if not valid:
+            raise ValueError("scheduled charging relation indices are inconsistent")
+        if not str(self.station_id) or not str(self.physical_station_id):
+            raise ValueError("scheduled charging station identity cannot be empty")
+        if not str(self.charging_curve_id):
+            raise ValueError("scheduled charging curve id cannot be empty")
+        if float(self.energy_kwh) < -1.0e-9:
+            raise ValueError("scheduled charging energy cannot be negative")
+        if float(self.occupancy_minutes) < -1.0e-9:
+            raise ValueError("scheduled charging occupancy cannot be negative")
+        if abs(
+            (float(self.end_energy_kwh) - float(self.start_energy_kwh))
+            - float(self.energy_kwh)
+        ) > 1.0e-7:
+            raise ValueError("scheduled charging energy states do not close")
+        if abs(
+            (float(self.charge_end_second) - float(self.charge_start_second))
+            - float(self.occupancy_minutes) * 60.0
+        ) > 1.0e-6:
+            raise ValueError("scheduled charging clock and occupancy do not close")
+
+    @property
+    def legacy_trip_index(self) -> int:
+        if self.relation == "EN_ROUTE":
+            assert self.route_trip_index is not None
+            return int(self.route_trip_index)
+        assert self.before_trip_index is not None
+        return int(self.before_trip_index)
+
+    def to_legacy(self) -> DutyChargingSession:
+        """Return the sole compatibility projection used by legacy Solution."""
+
+        return DutyChargingSession(
+            trip_index=self.legacy_trip_index,
+            station_id=self.station_id,
+            energy_kwh=float(self.energy_kwh),
+            occupancy_minutes=float(self.occupancy_minutes),
+            charge_start_second=float(self.charge_start_second),
+            charge_day_offset=int(self.charge_day_offset),
+            start_energy_kwh=float(self.start_energy_kwh),
+            end_energy_kwh=float(self.end_energy_kwh),
+            charging_curve_id=self.charging_curve_id,
+            locked=bool(self.locked),
+        )
+
+
+@dataclass(frozen=True)
+class ScheduledDuty:
+    """The single formal execution witness for one physical-vehicle duty."""
+
+    physical_vehicle_id: str
+    vehicle_type: str
+    home_depot_id: str
+    trip_witnesses: tuple[ScheduledTripWitness, ...]
+    soc_points: tuple[ScheduledSOCPoint, ...]
+    charging_sessions: tuple[ScheduledChargingSession, ...]
+    occupancy_signature: tuple[tuple[str, int, int, str], ...]
+    local_accounting_vector: ScheduleAccountingVector
+    schedule_contract_sha256: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "vehicle_type", str(self.vehicle_type).lower())
+        object.__setattr__(self, "trip_witnesses", tuple(self.trip_witnesses))
+        object.__setattr__(self, "soc_points", tuple(self.soc_points))
+        object.__setattr__(self, "charging_sessions", tuple(self.charging_sessions))
+        object.__setattr__(
+            self,
+            "occupancy_signature",
+            tuple(sorted(tuple(item) for item in self.occupancy_signature)),
+        )
+        indices = [int(item.trip_index) for item in self.trip_witnesses]
+        if indices != list(range(1, len(indices) + 1)):
+            raise ValueError("scheduled trip witnesses must be contiguous")
+        event_indices = [int(item.event_index) for item in self.soc_points]
+        if event_indices != list(range(len(event_indices))):
+            raise ValueError("scheduled SOC event indices must be contiguous")
+        for left, right in zip(self.soc_points, self.soc_points[1:]):
+            if abs(float(left.soc_after_kwh) - float(right.soc_before_kwh)) > 1.0e-7:
+                raise ValueError("scheduled SOC points do not form one continuous chain")
+        digest = str(self.schedule_contract_sha256).lower()
+        if len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest):
+            raise ValueError("schedule contract identity must be a SHA-256 digest")
+
+    @cached_property
+    def schedule_fingerprint(self) -> str:
+        payload = _canonical_identity(asdict(self))
+        encoded = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def legacy_charging_sessions(self) -> tuple[DutyChargingSession, ...]:
+        return tuple(
+            sorted(
+                (session.to_legacy() for session in self.charging_sessions),
+                key=_session_key,
+            )
+        )
+
+
+@dataclass(frozen=True)
 class PhysicalVehicleDuty:
     """All trips and charging decisions for one physical vehicle."""
 
@@ -113,6 +335,7 @@ class PhysicalVehicleDuty:
     trips: tuple[DutyTrip, ...]
     charging_sessions: tuple[DutyChargingSession, ...] = ()
     has_dynamic_commitment: bool = False
+    schedule: ScheduledDuty | None = None
 
     def __post_init__(self) -> None:
         vehicle_type = str(self.vehicle_type).lower()
@@ -149,6 +372,32 @@ class PhysicalVehicleDuty:
             for session in self.charging_sessions
         ):
             raise ValueError("charging session refers to a missing duty trip")
+        if self.schedule is not None:
+            schedule = self.schedule
+            if (
+                schedule.physical_vehicle_id != self.physical_vehicle_id
+                or schedule.vehicle_type != self.vehicle_type
+                or schedule.home_depot_id != self.home_depot_id
+            ):
+                raise ValueError("scheduled duty identity disagrees with its vehicle")
+            if len(schedule.trip_witnesses) != len(self.trips):
+                raise ValueError("scheduled duty trip count disagrees with structure")
+            for trip, witness in zip(
+                self.trips,
+                schedule.trip_witnesses,
+                strict=True,
+            ):
+                if (
+                    int(trip.trip_index) != int(witness.trip_index)
+                    or duty_trip_route_signature(trip) != witness.route_signature
+                ):
+                    raise ValueError("scheduled duty route identity disagrees with structure")
+            projected = schedule.legacy_charging_sessions()
+            if self.charging_sessions and self.charging_sessions != projected:
+                raise ValueError(
+                    "legacy charging sessions disagree with ScheduledDuty projection"
+                )
+            object.__setattr__(self, "charging_sessions", projected)
 
     def route_id(self, trip_index: int) -> str:
         return route_trip_vehicle_id(self.physical_vehicle_id, trip_index)
@@ -160,6 +409,23 @@ class PhysicalVehicleDuty:
             for session in self.charging_sessions
             if session.locked
         )
+
+    @cached_property
+    def structure_fingerprint(self) -> str:
+        payload = {
+            "physical_vehicle_id": self.physical_vehicle_id,
+            "vehicle_type": self.vehicle_type,
+            "home_depot_id": self.home_depot_id,
+            "trips": [asdict(trip) for trip in self.trips],
+            "has_dynamic_commitment": bool(self.has_dynamic_commitment),
+        }
+        encoded = json.dumps(
+            _canonical_identity(payload),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -198,11 +464,21 @@ class DutyIndividual:
                 + ", ".join(sorted(overlap))
             )
 
-    @property
+    @cached_property
     def fingerprint(self) -> str:
+        duty_payloads = []
+        for duty in self.duties:
+            payload = asdict(duty)
+            if duty.schedule is None:
+                # Preserve every legacy A0 fingerprint until the Oracle is
+                # explicitly attached in the later integration steps.
+                payload.pop("schedule", None)
+            else:
+                payload["schedule"] = _canonical_identity(payload["schedule"])
+            duty_payloads.append(payload)
         payload = {
             "version": int(self.version),
-            "duties": [asdict(duty) for duty in self.duties],
+            "duties": duty_payloads,
             "unserved_customers": list(self.unserved_customers),
         }
         encoded = json.dumps(
@@ -354,6 +630,38 @@ class DutyIndividual:
             unserved_customers=tuple(unserved_customers),
             source=source,
         )
+
+
+def duty_trip_route_signature(trip: DutyTrip) -> str:
+    """Return the structure-only identity bound into a trip witness."""
+
+    encoded = json.dumps(
+        {
+            "trip_index": int(trip.trip_index),
+            "customer_ids": list(trip.customer_ids),
+            "locked_customer_prefix": list(trip.locked_customer_prefix),
+            "route_visits": list(trip.effective_route_visits),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _canonical_identity(value):
+    """Use IEEE-754 hexadecimal strings for schedule identity floats."""
+
+    if isinstance(value, float):
+        return {"float_hex": float(value).hex()}
+    if isinstance(value, dict):
+        return {
+            str(key): _canonical_identity(item)
+            for key, item in sorted(value.items(), key=lambda row: str(row[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [_canonical_identity(item) for item in value]
+    return value
 
 
 def _parse_route_id(route_id: str) -> tuple[str, int]:

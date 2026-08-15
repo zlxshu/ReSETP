@@ -7,7 +7,7 @@ import pytest
 from setp_solver.charging_curve import NL90_MILD
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.search.dynamic_multitrip_schedule import (
     DynamicAssetState,
     cut_dynamic_certificate_at_trigger,
@@ -60,7 +60,8 @@ def _instance() -> Instance:
 
 
 def _prices() -> PriceParameters:
-    return PriceParameters(
+    return replace(
+        UK_2025_PRICES,
         B_battery_kwh=20.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,

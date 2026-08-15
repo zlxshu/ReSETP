@@ -170,7 +170,7 @@ def selected_loads(day: date) -> tuple[np.ndarray, np.ndarray, dict[str, object]
     if abs(immediate.sum() - forecast.sum()) > 1e-6:
         raise RuntimeError("timing rules deliver different charging energy")
     return immediate, forecast, {
-        "depot_power_kw": power_kw,
+        "depot_site_power_kw_shadow": power_kw,
         "mean_total_energy_kwh": float(immediate.sum()),
         "per_seed_energy_kwh": energies,
     }

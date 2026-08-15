@@ -10,7 +10,7 @@ import pytest
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.charging_curve import L100_CONTROL
 from setp_solver.cost import evaluate
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.dynamic_multitrip_schedule import (
     DYNAMIC_CONTRACT_ID,
@@ -72,7 +72,7 @@ def _formal_221_customer_case():
         json.loads(certificate_path.read_text(encoding="utf-8"))
     )
     prices = replace(
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=0.0,
         cross_site_cost=0.0,
@@ -107,7 +107,7 @@ def test_exact_asset_scheduler_reuses_inherited_id_and_trip_sequence() -> None:
         ]
     )
     prices = replace(
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         B_battery_kwh=20.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -196,7 +196,7 @@ def test_dynamic_ev_route_keeps_public_station_charge_in_exact_ledger() -> None:
         charging_actions=[public],
     )
     prices = replace(
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         B_battery_kwh=10.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -282,7 +282,7 @@ def test_explicit_duty_precedence_prevents_later_trip_from_running_first() -> No
     prepared, certificate = prepare_dynamic_multitrip_solution(
         source,
         instance,
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         asset_states={state.physical_vehicle_id: state},
         stage_start_second=0.0,
         ordered_route_ids=("open-first", "open-second"),
@@ -315,7 +315,7 @@ def test_dynamic_carbon_timing_stays_after_stage_start_and_survives_next_cut() -
         num_ev=1,
     )
     prices = replace(
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         B_battery_kwh=20.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -483,7 +483,7 @@ def test_added_order_is_rejected_when_sole_in_progress_asset_returns_too_late() 
         prepare_dynamic_multitrip_solution(
             added_trip,
             instance,
-            DEFAULT_PRICES,
+            UK_2025_PRICES,
             asset_states={state.physical_vehicle_id: state},
             stage_start_second=1_000.0,
         )
@@ -516,7 +516,7 @@ def test_added_order_waits_for_sole_in_progress_asset_to_return_to_depot() -> No
     prepared, certificate = prepare_dynamic_multitrip_solution(
         added_trip,
         instance,
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         asset_states={state.physical_vehicle_id: state},
         stage_start_second=1_000.0,
     )
@@ -753,7 +753,7 @@ def test_dynamic_scheduler_counts_a_locked_charge_against_one_depot_charger() ->
         ]
     )
     prices = replace(
-        DEFAULT_PRICES,
+        UK_2025_PRICES,
         B_battery_kwh=20.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,

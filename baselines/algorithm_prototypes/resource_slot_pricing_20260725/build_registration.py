@@ -61,7 +61,7 @@ PROTECTED_PATHS = (
     "solver/src/setp_solver/cost.py",
     "solver/src/setp_solver/prices.py",
     "solver/src/setp_solver/search/evaluation.py",
-    "docs/paper_v2/paper_main.tex",
+    "docs/paper_v2/RETIRED_paper_main.tex",
 )
 
 

@@ -148,12 +148,12 @@ class _SearchSession:
         eval_budget: int,
         max_runtime_seconds: float,
         initial_solution: Solution,
-        prices: PriceParameters | None = None,
+        prices: PriceParameters = DEFAULT_PRICES,
         common_flip_preprocess: bool = False,
     ) -> None:
         self.algorithm = str(algorithm)
         self.bundle = bundle
-        effective_prices = prices or DEFAULT_PRICES
+        effective_prices = prices
         self.rng = random.Random(int(seed))
         self.started = time.perf_counter()
         self.max_runtime_seconds = float(max_runtime_seconds)
@@ -506,7 +506,7 @@ def run_metaheuristic_baseline(
     eval_budget: int = 16_000,
     max_runtime_seconds: float = 900.0,
     initial_solution: Solution | None = None,
-    prices: PriceParameters | None = None,
+    prices: PriceParameters = DEFAULT_PRICES,
     common_flip_preprocess: bool = False,
     iwd_velocity_mode: str = "dynamic",
 ) -> BaselineRunResult:
@@ -514,7 +514,7 @@ def run_metaheuristic_baseline(
 
     name = _normalize_algorithm(algorithm)
     bundle = load_search_bundle(bundle_dir)
-    effective_prices = prices or DEFAULT_PRICES
+    effective_prices = prices
     warm = initial_solution or make_shared_initial_solution(bundle, prices=effective_prices)
     session = _SearchSession(
         name,
@@ -617,9 +617,10 @@ def cost_breakdown_row(
     solution: Solution,
     instance: Instance,
     carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
-    metrics = evaluate(solution, instance, carbon_profile, DEFAULT_PRICES)
-    violations = check_solution(solution, instance, DEFAULT_PRICES)
+    metrics = evaluate(solution, instance, carbon_profile, prices)
+    violations = check_solution(solution, instance, prices)
     row: dict[str, Any] = {
         "instance": instance_name,
         "algorithm": algorithm,

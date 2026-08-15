@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from pathlib import Path
 from time import perf_counter
 
-from setp_hgs_kernel import ProblemData, RandomNumberGenerator, Solution
+from setp_hgs_kernel import ProblemData, RandomNumberGenerator, Solution, read
 from setp_hgs_kernel.crossover import ordered_crossover as ox
 from setp_hgs_kernel.crossover import selective_route_exchange as srex
 from setp_hgs_kernel.diversity import broken_pairs_distance
@@ -33,10 +34,30 @@ from setp_hgs_kernel.search import LocalSearch, compute_neighbours
 from setp_hgs_kernel.solve import SolveParams
 
 from .public_assignment import improve_customer_depot_assignment
+from .sisr import (
+    SISRAccounting,
+    SISRParameters,
+    sisr_ruin_recreate,
+)
 from .vidal_compound import (
     improve_implicit_assignment_rotation,
     improve_implicit_customer_relocation,
 )
+
+
+PUBLIC_INSTANCE_SCALE = 1_000
+PUBLIC_INSTANCE_ROUND_FUNC = "exact"
+
+
+def read_public_instance(where: str | Path) -> ProblemData:
+    """Compile a public instance using the verified certificate ruler.
+
+    The copied kernel's ``exact`` reader applies ``np.round(1000 * value)``
+    to distances, travel durations, service durations, and time windows so
+    that every time-related quantity remains in the same integer unit.
+    """
+
+    return read(where, round_func=PUBLIC_INSTANCE_ROUND_FUNC)
 
 
 @dataclass(frozen=True)
@@ -70,6 +91,7 @@ class VidalCompoundAccounting:
 class IntegratedPublicHGSBundle:
     algorithm: IntegratedGeneticAlgorithm[Solution, PublicIntegratedEvaluation]
     vidal_accounting: VidalCompoundAccounting
+    sisr_accounting: SISRAccounting
 
 
 class _VidalCompoundRefiner:
@@ -293,6 +315,8 @@ def build_integrated_public_hgs(
     enable_vidal_compound: bool = True,
     enable_customer_relocation: bool = True,
     refinement_scope: str = "new_incumbent",
+    enable_sisr: bool = False,
+    sisr_parameters: SISRParameters = SISRParameters(),
 ) -> IntegratedPublicHGSBundle:
     """Build the one common HGS loop with public native evaluation."""
 
@@ -324,6 +348,7 @@ def build_integrated_public_hgs(
     )
     penalty_manager = PenaltyManager.init_from(data, parameters.penalty)
     accounting = VidalCompoundAccounting()
+    sisr_accounting = SISRAccounting()
 
     def evaluate(solution: Solution) -> EvaluatedSolution[
         Solution,
@@ -362,6 +387,16 @@ def build_integrated_public_hgs(
         ...,
     ]:
         nonlocal best_refinement_input_objective
+        if enable_sisr:
+            sisr_result = sisr_ruin_recreate(
+                data,
+                candidate.solution,
+                penalty_manager.cost_evaluator(),
+                rng,
+                sisr_accounting,
+                sisr_parameters,
+            )
+            candidate = evaluate(sisr_result.solution)
         if not enable_vidal_compound or not candidate.evaluation.feasible:
             return (candidate,)
         if (
@@ -475,7 +510,11 @@ def build_integrated_public_hgs(
             ),
         ),
     )
-    return IntegratedPublicHGSBundle(algorithm, accounting)
+    return IntegratedPublicHGSBundle(
+        algorithm,
+        accounting,
+        sisr_accounting,
+    )
 
 
 def _public_solution_fingerprint(solution: Solution) -> str:

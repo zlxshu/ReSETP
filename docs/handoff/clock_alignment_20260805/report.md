@@ -41,7 +41,7 @@
 
 **FACT**：`search/charging.py` 和 China81 支持路径均从 `route_timing` 初始化路线时钟；最终路线包含公共站充电动作后，车场动作再次按证书返场时刻重锚，因此不再使用不含公共站占用的 `route_return_arrival_without_charging` 作为最终车场锚点。
 
-**FACT**：China81 补全从 `tariff_carbon_48slot_calendar.csv` 按日期键加载所需 profile，并把显式模式传入动作生成及物理化证书；直接调用 `prepare_multitrip_solution` 的旧接口默认保留 `prev_night`，以不改写其既有归档证书行为。
+**FACT**：China81 补全从 `tariff_carbon_hourly_calendar.csv` 按日期键加载所需 profile，并把显式模式传入动作生成及物理化证书；直接调用 `prepare_multitrip_solution` 的旧接口默认保留 `prev_night`，以不改写其既有归档证书行为。
 
 **FACT**：没有修改碳价、碳数据源、电价、算例、车队合同、目标函数经济含义，也没有放宽既有约束；未修改 `docs/paper_gci_dmm_vrp_20260804/` 或 `docs/paper_v2/`。
 

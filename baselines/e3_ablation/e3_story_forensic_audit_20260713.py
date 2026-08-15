@@ -47,7 +47,7 @@ MISMATCH = {
 OUT = ROOT / "baselines/e3_ablation/e3_story_forensic_audit_20260713"
 SOURCE_COMMIT = "9df03fe85d6f0b3fd7a925b2a4b86a0b35b31b35"
 SCHEDULE_SOURCE = "solver/src/setp_solver/search/multitrip_schedule.py"
-PAPER = ROOT / "docs/paper_submission_final/paper_main.tex"
+PAPER = ROOT / "docs/paper_submission_final/RETIRED_paper_main.tex"
 
 
 def sha256(path: Path) -> str:

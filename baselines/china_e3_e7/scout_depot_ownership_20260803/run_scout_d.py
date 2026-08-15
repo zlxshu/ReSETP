@@ -717,7 +717,7 @@ def prepare() -> None:
             "*.tmp-*",
         ],
         "prohibited_files_unchanged_by_runner": [
-            "docs/paper_v2/paper_main.tex",
+            "docs/paper_v2/RETIRED_paper_main.tex",
             "solver/src/setp_solver/check.py",
             "solver/src/setp_solver/search/evaluation.py",
         ],

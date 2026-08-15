@@ -257,6 +257,9 @@ def prepare_dynamic_candidate(
     individual: DutyIndividual,
     state: DutyDynamicState,
     bundle: China81Bundle,
+    *,
+    minimum_departure_second_by_customer_id: Mapping[str, float] | None = None,
+    shift_id_by_customer_id: Mapping[str, str] | None = None,
 ) -> PreparedDynamicCandidate:
     """Schedule exact Duty assignments and merge them with immutable history."""
 
@@ -297,6 +300,39 @@ def prepare_dynamic_candidate(
             trip.trip_index: open_routes[position].vehicle_id
             for position, trip in enumerate(duty.trips)
         }
+        minimum_departure_second_by_route: dict[str, float] = {}
+        if minimum_departure_second_by_customer_id is not None:
+            for route in open_routes:
+                customer_ids = tuple(
+                    node_id
+                    for node_id in route.node_sequence[1:-1]
+                    if node_id in minimum_departure_second_by_customer_id
+                )
+                shifts = (
+                    {
+                        str(shift_id_by_customer_id[node_id])
+                        for node_id in customer_ids
+                    }
+                    if shift_id_by_customer_id is not None
+                    else set()
+                )
+                floors = {
+                    float(minimum_departure_second_by_customer_id[node_id])
+                    for node_id in customer_ids
+                }
+                one_shift = (
+                    len(shifts) == 1
+                    if shift_id_by_customer_id is not None
+                    else len(floors) == 1
+                )
+                if one_shift:
+                    if len(floors) != 1:
+                        raise ValueError(
+                            "one shift maps to inconsistent departure floors"
+                        )
+                    minimum_departure_second_by_route[route.vehicle_id] = next(
+                        iter(floors)
+                    )
         node_types = {
             node.node_id: node.node_type.lower()
             for node in bundle.instance.nodes
@@ -329,6 +365,9 @@ def prepare_dynamic_candidate(
             stage_start_second=state.cut.trigger_second,
             locked_charging_actions=locked,
             ordered_route_ids=tuple(route.vehicle_id for route in open_routes),
+            minimum_departure_second_by_route=(
+                minimum_departure_second_by_route
+            ),
         )
         _assert_exact_duty_schedule(duty, prepared)
         partial_solutions.append(prepared)

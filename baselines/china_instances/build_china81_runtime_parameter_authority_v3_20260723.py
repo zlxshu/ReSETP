@@ -29,7 +29,7 @@ LEGACY_CALENDAR = (
     REPO
     / "data/ChinaInstances/"
     "china81_stage2_static_inputs_v1_20260718/"
-    "tariff_carbon_48slot_calendar.csv"
+    "tariff_carbon_hourly_calendar.csv"
 )
 TVCI = (
     REPO
@@ -97,7 +97,7 @@ def build() -> dict[str, Any]:
         raise RuntimeError("reviewed Chengdu carbon mapping is not Sichuan")
 
     tvci_rows = {
-        (row["date"], int(row["half_hour_slot"])): row
+        (row["date"], int(row["hourly_calendar_row"])): row
         for row in read_csv(TVCI)
     }
     calendar_rows: list[dict[str, Any]] = []
@@ -106,7 +106,7 @@ def build() -> dict[str, Any]:
         city = legacy["city"].strip().lower()
         mapping = mappings[city]
         diesel = diesel_rows[city]
-        slot = int(legacy["half_hour_slot"])
+        slot = int(legacy["hourly_calendar_row"])
         minute = int(legacy["minute_of_day"])
         if minute != (slot - 1) * 30:
             raise RuntimeError(f"noncanonical slot-minute pair in {city}")
@@ -196,7 +196,7 @@ def build() -> dict[str, Any]:
             }
         )
 
-    calendar_path = OUT / "tariff_carbon_48slot_calendar.csv"
+    calendar_path = OUT / "tariff_carbon_hourly_calendar.csv"
     register_path = OUT / "city_runtime_parameter_register.csv"
     write_csv(calendar_path, calendar_rows)
     write_csv(register_path, register_rows)

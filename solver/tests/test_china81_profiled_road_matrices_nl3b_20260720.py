@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -23,7 +24,7 @@ from setp_solver.instance_loader import (
     VehicleTypeParameters,
     load_profiled_road_matrices,
 )
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.search.dynamic import _rebuild_instance_matrix
 from setp_solver.search.multitrip_schedule import build_multitrip_certificate
 from setp_solver.solution import ChargingAction, Route, Solution
@@ -202,7 +203,7 @@ def _solution() -> Solution:
 
 
 def test_constant_speed_profile_reproduces_legacy_cost_and_clock() -> None:
-    prices = PriceParameters(v_speed_ms=10.0)
+    prices = replace(UK_2025_PRICES, v_speed_ms=10.0)
     legacy = Instance(
         nodes=_nodes(),
         distance_matrix=[[0.0, 1_000.0], [1_000.0, 0.0]],
@@ -239,7 +240,7 @@ def test_constant_speed_profile_reproduces_legacy_cost_and_clock() -> None:
 
 
 def test_public_cv_arc_helper_closes_to_route_fuel() -> None:
-    prices = PriceParameters(v_speed_ms=10.0)
+    prices = replace(UK_2025_PRICES, v_speed_ms=10.0)
     instance = _profiled_instance()
     route_solution = Solution(
         routes=[Route("CV1", "cv", "D0", ["D0", "C1", "D0"])]
@@ -267,7 +268,7 @@ def test_public_cv_arc_helper_closes_to_route_fuel() -> None:
 
 
 def test_duration_drives_clock_and_cv_idle_fuel_but_not_ev_traction() -> None:
-    prices = PriceParameters(v_speed_ms=10.0)
+    prices = replace(UK_2025_PRICES, v_speed_ms=10.0)
     fast = _profiled_instance(duration_s=100.0)
     slow = _profiled_instance(duration_s=200.0)
     cv = Solution(
@@ -405,6 +406,7 @@ def test_china_vehicle_capacity_and_cost_are_type_specific() -> None:
         Solution(routes=[*cv.routes, *ev.routes]),
         instance,
         [],
+        UK_2025_PRICES,
     )
     assert both["cost_km"] == pytest.approx(
         2.0 * 0.78 + 2.0 * 0.67,

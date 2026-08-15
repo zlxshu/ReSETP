@@ -1,0 +1,74 @@
+\documentclass{article}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[a4paper,top=18mm,bottom=18mm,textwidth=4.92in]{geometry}
+\setmainfont{Times New Roman}
+\setCJKmainfont{Songti SC}
+\setCJKsansfont{Heiti SC}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\begin{document}
+\begin{center}
+{\sffamily\fontsize{9pt}{11pt}\selectfont 路线表（示意，非求解结果）}
+\end{center}
+{\fontsize{8pt}{10pt}\selectfont
+路线由 1735 kg 载重上限下的确定性最近邻规则构造。客户序列只列客户，每趟均从表中车场出发并返回该车场。里程是投影平面直线折线里程，不是路网里程。车型为载重口径的示意标签。
+\par\medskip
+{\sffamily (a) 各场单干}\par\smallskip
+\noindent\begin{tabular}{@{}L{1.25cm}L{1.55cm}R{0.55cm}L{5.65cm}R{1.05cm}R{1.05cm}@{}}
+\toprule
+车场 & 车型 & 趟序 & 客户序列 & 载重/kg & 里程/km \\
+\midrule
+顺航场 & 燃油车（示意） & 1 & C024 $\to$ C022 $\to$ C031 $\to$ C035 $\to$ C017 $\to$ C041 $\to$ C042 $\to$ C014 & 1667 & 50.94 \\
+顺航场 & 燃油车（示意） & 2 & C010 & 278 & 49.56 \\
+通州场 & 燃油车（示意） & 1 & C037 $\to$ C044 $\to$ C047 $\to$ C005 $\to$ C046 $\to$ C016 $\to$ C043 & 1667 & 38.99 \\
+通州场 & 燃油车（示意） & 2 & C019 $\to$ C008 $\to$ C025 $\to$ C050 $\to$ C006 $\to$ C020 $\to$ C026 & 1666 & 41.44 \\
+通州场 & 燃油车（示意） & 3 & C033 $\to$ C021 $\to$ C023 $\to$ C038 $\to$ C032 $\to$ C009 & 1597 & 43.51 \\
+通州场 & 燃油车（示意） & 4 & C003 $\to$ C002 $\to$ C012 $\to$ C029 $\to$ C045 $\to$ C048 & 1667 & 41.41 \\
+通州场 & 燃油车（示意） & 5 & C036 $\to$ C039 $\to$ C049 $\to$ C040 $\to$ C013 $\to$ C004 & 1666 & 42.25 \\
+通州场 & 燃油车（示意） & 6 & C018 $\to$ C015 $\to$ C028 $\to$ C030 $\to$ C011 & 1458 & 41.53 \\
+通州场 & 燃油车（示意） & 7 & C007 $\to$ C001 $\to$ C034 $\to$ C027 & 1598 & 42.90 \\
+\bottomrule
+\end{tabular}
+\par\medskip
+{\sffamily (b) 成本最优（示意）}\par\smallskip
+\noindent\begin{tabular}{@{}L{1.25cm}L{1.55cm}R{0.55cm}L{5.65cm}R{1.05cm}R{1.05cm}@{}}
+\toprule
+车场 & 车型 & 趟序 & 客户序列 & 载重/kg & 里程/km \\
+\midrule
+顺航场 & 燃油车（示意） & 1 & C024 $\to$ C022 $\to$ C031 $\to$ C035 $\to$ C017 $\to$ C041 & 1389 & 49.53 \\
+通州场 & 燃油车（示意） & 1 & C037 $\to$ C044 $\to$ C047 $\to$ C005 $\to$ C046 $\to$ C016 $\to$ C043 & 1667 & 38.99 \\
+通州场 & 燃油车（示意） & 2 & C019 $\to$ C008 $\to$ C025 $\to$ C050 $\to$ C006 $\to$ C020 $\to$ C026 & 1666 & 41.44 \\
+通州场 & 燃油车（示意） & 3 & C033 $\to$ C021 $\to$ C023 $\to$ C038 $\to$ C032 $\to$ C009 & 1597 & 43.51 \\
+通州场 & 燃油车（示意） & 4 & C003 $\to$ C002 $\to$ C012 $\to$ C029 $\to$ C045 $\to$ C048 & 1667 & 41.41 \\
+通州场 & 燃油车（示意） & 5 & C036 $\to$ C039 $\to$ C049 $\to$ C040 $\to$ C013 $\to$ C004 & 1666 & 42.25 \\
+通州场 & 燃油车（示意） & 6 & C018 $\to$ C015 $\to$ C028 $\to$ C030 $\to$ C011 $\to$ C042 & 1597 & 50.59 \\
+通州场 & 燃油车（示意） & 7 & C007 $\to$ C001 $\to$ C034 $\to$ C027 & 1598 & 42.90 \\
+通州场 & 燃油车（示意） & 8 & C010 $\to$ C014 & 417 & 48.13 \\
+\bottomrule
+\end{tabular}
+\par\medskip
+{\sffamily (c) 全员不劣（示意）}\par\smallskip
+\noindent\begin{tabular}{@{}L{1.25cm}L{1.55cm}R{0.55cm}L{5.65cm}R{1.05cm}R{1.05cm}@{}}
+\toprule
+车场 & 车型 & 趟序 & 客户序列 & 载重/kg & 里程/km \\
+\midrule
+顺航场 & 燃油车（示意） & 1 & C024 $\to$ C022 $\to$ C031 $\to$ C035 $\to$ C017 $\to$ C041 $\to$ C042 $\to$ C014 & 1667 & 50.94 \\
+顺航场 & 燃油车（示意） & 2 & C010 & 278 & 49.56 \\
+通州场 & 燃油车（示意） & 1 & C037 $\to$ C044 $\to$ C047 $\to$ C005 $\to$ C046 $\to$ C016 $\to$ C043 & 1667 & 38.99 \\
+通州场 & 燃油车（示意） & 2 & C019 $\to$ C008 $\to$ C025 $\to$ C050 $\to$ C006 $\to$ C020 $\to$ C026 & 1666 & 41.44 \\
+通州场 & 燃油车（示意） & 3 & C033 $\to$ C021 $\to$ C023 $\to$ C038 $\to$ C032 $\to$ C009 & 1597 & 43.51 \\
+通州场 & 燃油车（示意） & 4 & C003 $\to$ C002 $\to$ C012 $\to$ C029 $\to$ C045 $\to$ C048 & 1667 & 41.41 \\
+通州场 & 燃油车（示意） & 5 & C036 $\to$ C039 $\to$ C049 $\to$ C040 $\to$ C013 $\to$ C004 & 1666 & 42.25 \\
+通州场 & 燃油车（示意） & 6 & C018 $\to$ C015 $\to$ C028 $\to$ C030 $\to$ C011 & 1458 & 41.53 \\
+通州场 & 燃油车（示意） & 7 & C007 $\to$ C001 $\to$ C034 $\to$ C027 & 1598 & 42.90 \\
+\bottomrule
+\end{tabular}
+\par\medskip
+}
+\end{document}

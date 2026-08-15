@@ -104,7 +104,7 @@ def build() -> dict[str, Any]:
             "carbon_source_column",
             "diesel_zone",
             "scenario_date",
-            "half_hour_slot",
+            "hourly_calendar_row",
         ],
         "coordinate_role": "validate_city_membership_only",
         "electricity_selector": "node_city_to_price_area_id",

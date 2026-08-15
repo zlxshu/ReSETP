@@ -84,6 +84,46 @@ class FrozenMappingIdentity:
 
 
 @dataclass(frozen=True)
+class RebuiltRouteConstraintContract:
+    """Candidate-level two-shift and volume contract for the rebuilt instance."""
+
+    source_id: str
+    customer_shift_by_id: Mapping[str, str]
+    customer_volume_m3_by_id: Mapping[str, float]
+    shift_window_second_by_id: Mapping[str, tuple[float, float]]
+    vehicle_volume_capacity_m3: float
+
+    def __post_init__(self) -> None:
+        if not self.source_id.strip():
+            raise ValueError("rebuilt route constraint source_id cannot be empty")
+        if set(self.customer_shift_by_id) != set(self.customer_volume_m3_by_id):
+            raise ValueError("rebuilt shift and volume customer identities differ")
+        if not self.customer_shift_by_id:
+            raise ValueError("rebuilt route constraint has no customers")
+        if set(self.customer_shift_by_id.values()) != set(
+            self.shift_window_second_by_id
+        ):
+            raise ValueError("rebuilt route constraint shift windows are incomplete")
+        if any(
+            not math.isfinite(float(volume)) or float(volume) < 0.0
+            for volume in self.customer_volume_m3_by_id.values()
+        ):
+            raise ValueError("rebuilt customer volumes must be finite and nonnegative")
+        for start, end in self.shift_window_second_by_id.values():
+            if (
+                not math.isfinite(float(start))
+                or not math.isfinite(float(end))
+                or float(end) <= float(start)
+            ):
+                raise ValueError("rebuilt shift window is invalid")
+        if (
+            not math.isfinite(float(self.vehicle_volume_capacity_m3))
+            or float(self.vehicle_volume_capacity_m3) <= 0.0
+        ):
+            raise ValueError("rebuilt vehicle volume capacity must be positive")
+
+
+@dataclass(frozen=True)
 class DutyEvaluationContext:
     """All external facts required by one full Duty evaluation."""
 
@@ -97,6 +137,9 @@ class DutyEvaluationContext:
     fairness_enabled: bool = True
     incremental_full_truth_sentinel_enabled: bool = True
     dynamic_state: DutyDynamicState | None = None
+    ev_daily_fixed_premium_cny: float = 0.0
+    rebuilt_route_constraints: RebuiltRouteConstraintContract | None = None
+    shift_aware_departure_enabled: bool = False
 
     def __post_init__(self) -> None:
         depots = {
@@ -122,7 +165,8 @@ class DutyEvaluationContext:
                 "independent_profit content disagrees with its frozen identity"
             )
         if (
-            self.bundle.formal_search_allowed
+            self.fairness_enabled
+            and self.bundle.formal_search_allowed
             and not self.independent_profit_identity.externally_frozen
         ):
             raise ValueError(
@@ -139,6 +183,28 @@ class DutyEvaluationContext:
             float(self.carbon_quota_kg)
         ):
             raise ValueError("carbon_quota_kg must be finite or infinite")
+        if (
+            not math.isfinite(float(self.ev_daily_fixed_premium_cny))
+            or float(self.ev_daily_fixed_premium_cny) < 0.0
+        ):
+            raise ValueError("EV daily fixed premium must be finite and nonnegative")
+        if self.rebuilt_route_constraints is not None:
+            customers = {
+                node.node_id
+                for node in self.bundle.instance.nodes
+                if node.node_type.lower() == "c"
+            }
+            if set(self.rebuilt_route_constraints.customer_shift_by_id) != customers:
+                raise ValueError(
+                    "rebuilt route constraint must cover every active customer"
+                )
+        if (
+            self.shift_aware_departure_enabled
+            and self.rebuilt_route_constraints is None
+        ):
+            raise ValueError(
+                "shift-aware departure requires rebuilt route constraints"
+            )
         if self.dynamic_state is not None:
             _validate_dynamic_state_customers(
                 self.dynamic_state,
@@ -320,6 +386,46 @@ def _validate_dynamic_state_customers(
         )
 
 
+def _shift_minimum_departure_second_by_customer(
+    context: DutyEvaluationContext,
+) -> dict[str, float] | None:
+    if not context.shift_aware_departure_enabled:
+        return None
+    contract = context.rebuilt_route_constraints
+    if contract is None:
+        raise ValueError("shift-aware departure has no shift contract")
+    return {
+        customer_id: float(
+            contract.shift_window_second_by_id[str(shift_id)][0]
+        )
+        for customer_id, shift_id in contract.customer_shift_by_id.items()
+    }
+
+
+def _shift_minimum_departure_second_by_route(
+    solution: Solution,
+    context: DutyEvaluationContext,
+) -> dict[str, float] | None:
+    if not context.shift_aware_departure_enabled:
+        return None
+    contract = context.rebuilt_route_constraints
+    if contract is None:
+        raise ValueError("shift-aware departure has no shift contract")
+    minimum_by_route: dict[str, float] = {}
+    for route in solution.routes:
+        shifts = {
+            str(contract.customer_shift_by_id[node_id])
+            for node_id in route.node_sequence[1:-1]
+            if node_id in contract.customer_shift_by_id
+        }
+        if len(shifts) == 1:
+            shift_id = next(iter(shifts))
+            minimum_by_route[route.vehicle_id] = float(
+                contract.shift_window_second_by_id[shift_id][0]
+            )
+    return minimum_by_route
+
+
 class DutyFullEvaluator:
     """Evaluate a Duty individual without allowing hidden vehicle repacking."""
 
@@ -349,6 +455,12 @@ class DutyFullEvaluator:
                 self.context.bundle.instance,
                 self.context.bundle.prices,
                 depot_charge_window_mode=self.context.depot_charge_window_mode,
+                minimum_departure_second_by_route=(
+                    _shift_minimum_departure_second_by_route(
+                        decoded,
+                        self.context,
+                    )
+                ),
             )
             _assert_no_hidden_repair(decoded, prepared)
         else:
@@ -356,6 +468,14 @@ class DutyFullEvaluator:
                 individual,
                 dynamic_state,
                 self.context.bundle,
+                minimum_departure_second_by_customer_id=(
+                    _shift_minimum_departure_second_by_customer(self.context)
+                ),
+                shift_id_by_customer_id=(
+                    None
+                    if self.context.rebuilt_route_constraints is None
+                    else self.context.rebuilt_route_constraints.customer_shift_by_id
+                ),
             )
             prepared = dynamic.full_execution_solution
             certificate = dynamic.future_certificate
@@ -390,17 +510,21 @@ class DutyFullEvaluator:
             self.context.bundle.instance,
             self.context.bundle.prices,
             depot_charge_window_mode=self.context.depot_charge_window_mode,
+            minimum_departure_second_by_route=(
+                _shift_minimum_departure_second_by_route(
+                    decoded,
+                    self.context,
+                )
+            ),
         )
         _assert_no_hidden_repair(decoded, prepared)
         annotated = annotate_cross_site_services(
             prepared,
             self.context.bundle.customer_home_depot,
         )
-        breakdown = evaluate(
+        breakdown = _evaluate_with_context_cost(
             annotated,
-            self.context.bundle.instance,
-            self.context.bundle.time_profile,
-            self.context.bundle.prices,
+            self.context,
             carbon_quota_kg=0.0,
         )
         self.slice_preparation_calls += 1
@@ -443,6 +567,28 @@ class DutyFullEvaluator:
             fairness_context=fairness_context,
             fairness_enabled=bool(self.context.fairness_enabled),
         )
+        if self.context.rebuilt_route_constraints is not None:
+            violations.extend(
+                _rebuilt_route_constraint_violations(
+                    prepared,
+                    certificate,
+                    self.context.rebuilt_route_constraints,
+                    allowed_unscheduled_route_ids=(
+                        frozenset()
+                        if self.context.dynamic_state is None
+                        else frozenset(
+                            {
+                                *self.context.dynamic_state.cut.completed_route_ids,
+                                *self.context.dynamic_state.cut.in_progress_route_ids,
+                                *(
+                                    route.vehicle_id
+                                    for route in self.context.dynamic_state.prior_committed_solution.routes
+                                ),
+                            }
+                        )
+                    ),
+                )
+            )
         if self.context.dynamic_state is not None:
             # The merged full-day Solution is also passed through the static
             # checker, whose route-local battery ledger starts every EV at the
@@ -471,11 +617,9 @@ class DutyFullEvaluator:
         exact_breakdown = dict(
             breakdown
             if breakdown is not None
-            else evaluate(
+            else _evaluate_with_context_cost(
                 prepared,
-                bundle.instance,
-                bundle.time_profile,
-                bundle.prices,
+                self.context,
                 carbon_quota_kg=float(self.context.carbon_quota_kg),
             )
         )
@@ -607,6 +751,12 @@ class DutyIncrementalEvaluator:
             depot_charge_window_mode=(
                 self.full_evaluator.context.depot_charge_window_mode
             ),
+            minimum_departure_second_by_route=(
+                _shift_minimum_departure_second_by_route(
+                    unprepared,
+                    self.full_evaluator.context,
+                )
+            ),
         )
         _assert_no_hidden_repair(unprepared, combined)
         combined = annotate_cross_site_services(
@@ -714,6 +864,10 @@ def _measure_violations(
     for violation in violations:
         magnitude = 1.0
         if violation.type == CAPACITY and violation.vehicle_id in route_by_id:
+            volume_overload = _volume_capacity_magnitude(violation.detail)
+            if volume_overload is not None:
+                measured.append(volume_overload)
+                continue
             route = route_by_id[violation.vehicle_id]
             demand = sum(
                 float(node_lookup[node_id].demand)
@@ -748,6 +902,147 @@ def _measure_violations(
                 magnitude = fleet_overage
         measured.append(float(magnitude))
     return tuple(measured)
+
+
+def _evaluate_with_context_cost(
+    solution: Solution,
+    context: DutyEvaluationContext,
+    *,
+    carbon_quota_kg: float,
+) -> dict[str, float]:
+    """Evaluate every complete candidate with the bundle's exact costs."""
+
+    breakdown = dict(
+        evaluate(
+            solution,
+            context.bundle.instance,
+            context.bundle.time_profile,
+            context.bundle.prices,
+            carbon_quota_kg=carbon_quota_kg,
+        )
+    )
+    if float(context.ev_daily_fixed_premium_cny) > 0.0:
+        cv_fixed = context.bundle.instance.vehicle_fixed_cost_per_day(
+            "cv",
+            fallback=float(context.bundle.prices.vehicle_fixed_cost),
+        )
+        ev_fixed = context.bundle.instance.vehicle_fixed_cost_per_day(
+            "ev",
+            fallback=float(context.bundle.prices.vehicle_fixed_cost),
+        )
+        authority_premium = ev_fixed - cv_fixed
+        configured_premium = float(context.ev_daily_fixed_premium_cny)
+        if not math.isclose(
+            authority_premium,
+            configured_premium,
+            rel_tol=0.0,
+            abs_tol=1.0e-12,
+        ):
+            raise ValueError(
+                "configured EV daily fixed premium disagrees with vehicle authority"
+            )
+        breakdown["cost_fix_ev_premium"] = (
+            float(breakdown["n_veh_ev"]) * authority_premium
+        )
+    return breakdown
+
+
+def _rebuilt_route_constraint_violations(
+    solution: Solution,
+    certificate: MultiTripCertificate,
+    contract: RebuiltRouteConstraintContract,
+    *,
+    allowed_unscheduled_route_ids: frozenset[str] = frozenset(),
+) -> list[Violation]:
+    """Return hard violations for every rebuilt-instance candidate route."""
+
+    scheduled_by_route = {trip.route_id: trip for trip in certificate.trips}
+    violations: list[Violation] = []
+    for route in solution.routes:
+        customers = tuple(
+            node_id
+            for node_id in route.node_sequence[1:-1]
+            if node_id in contract.customer_shift_by_id
+        )
+        if not customers:
+            continue
+        shifts = {
+            str(contract.customer_shift_by_id[customer_id])
+            for customer_id in customers
+        }
+        if len(shifts) != 1:
+            violations.append(
+                Violation(
+                    TIME_WINDOW,
+                    route.vehicle_id,
+                    route.home_depot_id,
+                    "rebuilt route mixes customer shifts: "
+                    + ", ".join(sorted(shifts)),
+                )
+            )
+        volume = sum(
+            float(contract.customer_volume_m3_by_id[customer_id])
+            for customer_id in customers
+        )
+        capacity = float(contract.vehicle_volume_capacity_m3)
+        if volume > capacity + 1.0e-9:
+            violations.append(
+                Violation(
+                    CAPACITY,
+                    route.vehicle_id,
+                    route.home_depot_id,
+                    f"route volume {volume:.12g} m3 > "
+                    f"Q_volume={capacity:.12g} m3",
+                )
+            )
+        if len(shifts) != 1:
+            continue
+        shift_id = next(iter(shifts))
+        start, end = contract.shift_window_second_by_id[shift_id]
+        scheduled = scheduled_by_route.get(route.vehicle_id)
+        if scheduled is None:
+            if route.vehicle_id in allowed_unscheduled_route_ids:
+                continue
+            violations.append(
+                Violation(
+                    TIME_WINDOW,
+                    route.vehicle_id,
+                    shift_id,
+                    "rebuilt route has no scheduled-trip certificate",
+                )
+            )
+            continue
+        if float(scheduled.departure_second) < float(start) - 1.0e-6:
+            early = float(start) - float(scheduled.departure_second)
+            violations.append(
+                Violation(
+                    TIME_WINDOW,
+                    route.vehicle_id,
+                    shift_id,
+                    f"departs before {shift_id} by {early:.12g} s",
+                )
+            )
+        if float(scheduled.return_second) > float(end) + 1.0e-6:
+            late = float(scheduled.return_second) - float(end)
+            violations.append(
+                Violation(
+                    TIME_WINDOW,
+                    route.vehicle_id,
+                    shift_id,
+                    f"returns after {shift_id} end; late by {late:.12g} s",
+                )
+            )
+    return violations
+
+
+def _volume_capacity_magnitude(detail: str) -> float | None:
+    match = re.search(
+        rf"route volume\s+({_NUMBER})\s+m3\s+>\s+Q_volume=({_NUMBER})\s+m3",
+        detail,
+    )
+    if match is None:
+        return None
+    return max(0.0, float(match.group(1)) - float(match.group(2)))
 
 
 _NUMBER = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"

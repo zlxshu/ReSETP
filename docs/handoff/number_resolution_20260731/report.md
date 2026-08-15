@@ -164,7 +164,7 @@ O与MV相对差：(3615.56−3559.61)/3615.56 = **1.5475%**
 
 即尖峰档只在(a) 7/8/9三个整月，或(b) 其余月份中广州当日最高气温≥35℃的高温天才触发。**2025年2月无论如何都不满足这两个条件**（既非7-9月，广州2月也不可能出现35℃高温）。
 
-这与运行时权威日历`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv`（SHA-256 `e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b`）的实际内容完全吻合——本轮独立复算确认：该日历覆盖2025年2月全部28个电网日（12096行），`tariff_period=sharp_peak`的行只有112行，全部属于`shijiazhuang`（河北南网），`guangzhou`/`shenzhen`/`dongguan`/`foshan`四城在整个2月**没有一行**尖峰记录——这不是数据缺失或计算错误，而是正确反映了官方规则本身。
+这与运行时权威日历`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv`（SHA-256 `e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b`）的实际内容完全吻合——本轮独立复算确认：该日历覆盖2025年2月全部28个电网日（12096行），`tariff_period=sharp_peak`的行只有112行，全部属于`shijiazhuang`（河北南网），`guangzhou`/`shenzhen`/`dongguan`/`foshan`四城在整个2月**没有一行**尖峰记录——这不是数据缺失或计算错误，而是正确反映了官方规则本身。
 
 **结论：`tab:tou`表格标题是"2025年2月"，但珠三角和深圳两行列出的1.6521/1.4372是该省/市分时电价年度费率表中的"尖峰"档标称值，该档在2025年2月实际不生效（不满足月份或高温日条件）。把它们原样列入"2025年2月"表格且不加说明，会让读者误以为这是2月实际执行的价格，而实际计算（充电成本、E4实验等）也确实没有使用它们（与河北南网尖峰1.1348被实际使用形成对比）。**
 
@@ -176,7 +176,7 @@ O与MV相对差：(3615.56−3559.61)/3615.56 = **1.5475%**
 
 **问题回顾**：原文"京津冀...时段碳强度绝对极差最大(0.634 kgCO$_2$e/kWh)且日均水平最高(0.560)"、"成渝...日均碳强度仅0.101"三个数字，只有把京津冀内北京+天津+石家庄三城、成渝内成都+重庆两城的2025-02-12全部半小时值**混合池化**才能复算出来，而4.1节方法陈述明确写"京津冀取北京电网、珠三角取广东电网、成渝取重庆电网"的**单一代表电网**口径，两者矛盾。
 
-**复算过程**：用权威日历`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv`（SHA-256同上），按方法节声明的口径，取`date=2025-02-12`且`city=beijing`（京津冀代表）与`city=chongqing`（成渝代表）各48个半小时`carbon_factor_kgco2e_per_kwh`值：
+**复算过程**：用权威日历`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv`（SHA-256同上），按方法节声明的口径，取`date=2025-02-12`且`city=beijing`（京津冀代表）与`city=chongqing`（成渝代表）各48个半小时`carbon_factor_kgco2e_per_kwh`值：
 
 | 代表电网 | 对应城市群 | min | max | 极差 | 日均 |
 |---|---|---:|---:|---:|---:|

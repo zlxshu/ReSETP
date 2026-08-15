@@ -31,7 +31,7 @@ BUILDER = ROOT / "baselines/china_instances/build_china_stage2_static_inputs_202
 CALENDAR = (
     ROOT
     / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/"
-    "tariff_carbon_48slot_calendar.csv"
+    "tariff_carbon_hourly_calendar.csv"
 )
 FACILITIES = (
     ROOT
@@ -260,7 +260,7 @@ def audit() -> tuple[list[dict[str, str]], dict[str, object]]:
     with FACILITIES.open(encoding="utf-8-sig", newline="") as handle:
         facility_rows = list(csv.DictReader(handle))
     shenzhen_facility = next(row for row in facility_rows if row["city"] == "shenzhen")
-    require(float(shenzhen_facility["depot_power_kw"]) == 22.0, "power mismatch")
+    require(float(shenzhen_facility["depot_site_power_kw_shadow"]) == 22.0, "power mismatch")
     require(int(shenzhen_facility["depot_gun_count"]) == 2, "charger count mismatch")
     add(
         "SZ-DEPOT-CHARGING-SCENARIO",

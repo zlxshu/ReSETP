@@ -20,19 +20,26 @@ sum rather than the Cartesian product of legal start times.
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field, replace
 from itertools import chain
 from typing import Any
 
+from setp_solver.charge_timing import (
+    charge_timing_objective_value,
+    select_charge_timing_start,
+)
 from setp_solver.algorithms.resetp_alns.support.charging import (
     curve_knee_strategies,
     repair_route_charging,
     repair_route_charging_candidates,
 )
 from setp_solver.charging_action import _curve_aware_action
+from setp_solver.cost import time_profile_rows_for_node
 from setp_solver.search.multitrip_schedule import (
     STATIC_PREHORIZON_SECONDS,
+    certified_depot_charge_window,
     prepare_multitrip_solution,
     route_timing,
     select_certified_depot_charge_start,
@@ -40,6 +47,7 @@ from setp_solver.search.multitrip_schedule import (
 from setp_solver.solution import ChargingAction, Route, Solution, physical_vehicle_id
 
 from .evaluation import DutyEvaluationContext
+from .frvcpy_adapter import solve_fixed_route_charging
 from .model import (
     DutyChargingSession,
     DutyIndividual,
@@ -50,15 +58,343 @@ from .model import (
 
 
 DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE = "dynamic_depot_only"
+PRESCREEN_CHANNELS = frozenset({"depot_collaboration", "multi_trip"})
+PRESCREEN_NO_DEPARTURE = "no_feasible_departure"
+PRESCREEN_TIME_WINDOW = "time_window"
+PRESCREEN_UNCERTAIN = "uncertain"
+
+CHARGING_REASON_NO_FEASIBLE_WINDOW = "NO_FEASIBLE_WINDOW"
+CHARGING_REASON_INSUFFICIENT_ENERGY = "INSUFFICIENT_ENERGY"
+CHARGING_REASON_NO_FEASIBLE_INSERT = "NO_FEASIBLE_INSERT_FOUND"
+CHARGING_REASON_REPAIR_ATTEMPT_CAP = "REPAIR_ATTEMPT_CAP"
+CHARGING_REASON_SCHEDULE_CONFLICT = "SCHEDULE_CONFLICT"
+CHARGING_REASON_PRESCREEN_REJECT = "PRESCREEN_REJECT"
+CHARGING_REASON_OTHER = "CHARGING_REPAIR_OTHER"
+
+
+def charging_rejection_reason(error: Exception) -> str:
+    """Classify an observed charging failure without changing its decision."""
+
+    explicit = getattr(error, "charging_rejection_reason_code", None)
+    if explicit is not None:
+        return str(explicit)
+    cause = getattr(error, "cause", None)
+    if isinstance(cause, Exception) and cause is not error:
+        return charging_rejection_reason(cause)
+
+    message = str(error).lower()
+    if any(
+        token in message
+        for token in (
+            "attempt cap",
+            "attempt limit",
+            "repair iteration limit",
+            "repair search exhausted",
+        )
+    ):
+        return CHARGING_REASON_REPAIR_ATTEMPT_CAP
+    if any(
+        token in message
+        for token in (
+            "no feasible charging insert",
+            "no charging stations available",
+            "forced public-station path was not fully used",
+            "no charging path",
+        )
+    ):
+        return CHARGING_REASON_NO_FEASIBLE_INSERT
+    if any(
+        token in message
+        for token in (
+            "requires more energy than",
+            "requires more than the battery",
+            "requires ",
+            "battery below zero",
+            "battery falls below zero",
+            "exceeds battery energy bounds",
+            "insufficient energy",
+            "frvcpy found no energy-feasible charging plan",
+        )
+    ) and any(
+        token in message
+        for token in ("battery", " kwh", " b=")
+    ):
+        return CHARGING_REASON_INSUFFICIENT_ENERGY
+    if any(
+        token in message
+        for token in (
+            "no certified depot charging window",
+            "no feasible fixed-route charging window",
+            "latest charging start precedes earliest start",
+            "depot charge does not fit before departure",
+            "no feasible depot charging window",
+        )
+    ):
+        return CHARGING_REASON_NO_FEASIBLE_WINDOW
+    if any(
+        token in message
+        for token in (
+            "no feasible departure time",
+            "time window",
+            "turnaround",
+            "trip overlap",
+            "charging overlap",
+            "overlap or incomplete recharge",
+            "schedule conflict",
+            "no time-feasible charging schedule",
+            "does not fit customer windows",
+        )
+    ):
+        return CHARGING_REASON_SCHEDULE_CONFLICT
+    return CHARGING_REASON_OTHER
 
 
 class ChargingRepairFailure(ValueError):
     """Identify the physical duty whose exact charging repair failed."""
 
-    def __init__(self, duty_id: str, cause: Exception) -> None:
+    def __init__(
+        self,
+        duty_id: str,
+        cause: Exception,
+        *,
+        reason_code: str | None = None,
+    ) -> None:
         self.duty_id = str(duty_id)
         self.cause = cause
+        self.charging_rejection_reason_code = (
+            charging_rejection_reason(cause)
+            if reason_code is None
+            else str(reason_code)
+        )
         super().__init__(f"{self.duty_id}: {cause}")
+
+
+class ChargingPrescreenEquivalenceError(RuntimeError):
+    """Stop immediately if a prescreen rejection survives full repair."""
+
+
+@dataclass
+class ChargingFeasibilityPrescreen:
+    """Reject only route clocks that the full repair itself rejects first.
+
+    The full charging path starts each unlocked EV trip by calling
+    ``route_timing(..., charging_actions=[], validate_battery=False)``.  CV
+    ledger replay uses that same function.  Reusing it here preserves the
+    exact floating-point time-window and departure-time standard; any other
+    failure is deliberately treated as unknown and sent to full repair.
+    """
+
+    context: DutyEvaluationContext
+    policy: ChargingRepairPolicy
+    audit_limit: int = 0
+    checked_by_channel: Counter[str] = field(default_factory=Counter)
+    rejected_by_channel: Counter[str] = field(default_factory=Counter)
+    passed_by_channel: Counter[str] = field(default_factory=Counter)
+    rejected_by_channel_and_reason: Counter[str] = field(
+        default_factory=Counter
+    )
+    route_cache_hits: int = 0
+    route_cache_misses: int = 0
+    audit_sampled: int = 0
+    audit_same_rejection: int = 0
+    _route_cache: dict[
+        tuple[str, str, str, int, tuple[str, ...]],
+        tuple[str, str] | None,
+    ] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if int(self.audit_limit) < 0:
+            raise ValueError("charging prescreen audit limit cannot be negative")
+
+    def screen(
+        self,
+        reference: DutyIndividual,
+        candidate: DutyIndividual,
+        *,
+        changed_duty_ids: frozenset[str],
+        channel: str,
+        preserve_explicit_charging_duty_ids: frozenset[str] = frozenset(),
+    ) -> ChargingRepairFailure | None:
+        """Return the exact full-repair failure, or ``None`` when uncertain."""
+
+        if (
+            channel not in PRESCREEN_CHANNELS
+            or self.context.dynamic_state is not None
+            or self.policy.frvcpy_enabled
+            or preserve_explicit_charging_duty_ids
+        ):
+            return None
+
+        self.checked_by_channel[channel] += 1
+        for duty in candidate.duties:
+            duty_id = duty.physical_vehicle_id
+            if duty_id not in changed_duty_ids:
+                continue
+            for trip in duty.trips:
+                if (
+                    duty.vehicle_type == "ev"
+                    and trip.trip_index in duty.locked_charging_trip_indices
+                ):
+                    continue
+                failure = self._screen_trip(duty, trip)
+                if failure is None:
+                    continue
+                reason, message = failure
+                if reason == PRESCREEN_UNCERTAIN:
+                    self.passed_by_channel[channel] += 1
+                    return None
+                wrapped = ChargingRepairFailure(
+                    duty_id,
+                    ValueError(message),
+                    reason_code=CHARGING_REASON_PRESCREEN_REJECT,
+                )
+                self.rejected_by_channel[channel] += 1
+                self.rejected_by_channel_and_reason[
+                    f"{channel}:{reason}"
+                ] += 1
+                self._audit_rejection(
+                    reference,
+                    candidate,
+                    changed_duty_ids=changed_duty_ids,
+                    expected=wrapped,
+                )
+                return wrapped
+
+        self.passed_by_channel[channel] += 1
+        return None
+
+    def _screen_trip(
+        self,
+        duty: PhysicalVehicleDuty,
+        trip: DutyTrip,
+    ) -> tuple[str, str] | None:
+        route = Route(
+            vehicle_id=duty.route_id(trip.trip_index),
+            vehicle_type=duty.vehicle_type,
+            home_depot_id=duty.home_depot_id,
+            node_sequence=[
+                duty.home_depot_id,
+                *trip.effective_route_visits,
+                duty.home_depot_id,
+            ],
+        )
+        key = (
+            duty.physical_vehicle_id,
+            duty.vehicle_type,
+            duty.home_depot_id,
+            int(trip.trip_index),
+            tuple(route.node_sequence),
+        )
+        if key in self._route_cache:
+            self.route_cache_hits += 1
+            return self._route_cache[key]
+
+        self.route_cache_misses += 1
+        failure: tuple[str, str] | None = None
+        try:
+            route_timing(
+                route,
+                self.context.bundle.instance,
+                self.context.bundle.prices,
+                charging_actions=[],
+                validate_battery=False,
+            )
+        except ValueError as exc:
+            message = str(exc)
+            if " has no feasible departure time" in message:
+                failure = (PRESCREEN_NO_DEPARTURE, message)
+            elif " misses " in message and "'s time window" in message:
+                failure = (PRESCREEN_TIME_WINDOW, message)
+            else:
+                # Unknown means full repair.  A later trip must not mask the
+                # earlier non-target failure that full repair would report.
+                failure = (PRESCREEN_UNCERTAIN, message)
+        self._route_cache[key] = failure
+        return failure
+
+    def _audit_rejection(
+        self,
+        reference: DutyIndividual,
+        candidate: DutyIndividual,
+        *,
+        changed_duty_ids: frozenset[str],
+        expected: ChargingRepairFailure,
+    ) -> None:
+        if self.audit_sampled >= int(self.audit_limit):
+            return
+        self.audit_sampled += 1
+        try:
+            repair_changed_duties(
+                reference,
+                candidate,
+                changed_duty_ids=set(changed_duty_ids),
+                context=self.context,
+                policy=self.policy,
+                cache=None,
+            )
+        except (TypeError, ValueError) as actual:
+            if type(actual) is not type(expected) or str(actual) != str(expected):
+                raise ChargingPrescreenEquivalenceError(
+                    "charging prescreen and full repair rejected differently: "
+                    f"prescreen={type(expected).__name__}: {expected}; "
+                    f"full={type(actual).__name__}: {actual}"
+                ) from actual
+            self.audit_same_rejection += 1
+            return
+        raise ChargingPrescreenEquivalenceError(
+            "charging prescreen rejected a candidate that full repair accepted: "
+            f"{expected}"
+        )
+
+    def statistics(self) -> dict[str, Any]:
+        checked = sum(self.checked_by_channel.values())
+        rejected = sum(self.rejected_by_channel.values())
+        passed = sum(self.passed_by_channel.values())
+        channels = sorted(
+            set(self.checked_by_channel)
+            | set(self.rejected_by_channel)
+            | set(self.passed_by_channel)
+        )
+        return {
+            "enabled": True,
+            "eligible_candidates": int(checked),
+            "rejected_candidates": int(rejected),
+            "rejected_fraction": (
+                0.0 if checked == 0 else float(rejected) / float(checked)
+            ),
+            "entered_full_repair": int(passed),
+            "by_channel": {
+                channel: {
+                    "eligible_candidates": int(
+                        self.checked_by_channel[channel]
+                    ),
+                    "rejected_candidates": int(
+                        self.rejected_by_channel[channel]
+                    ),
+                    "entered_full_repair": int(self.passed_by_channel[channel]),
+                    "reasons": {
+                        reason: int(
+                            self.rejected_by_channel_and_reason[
+                                f"{channel}:{reason}"
+                            ]
+                        )
+                        for reason in (
+                            PRESCREEN_TIME_WINDOW,
+                            PRESCREEN_NO_DEPARTURE,
+                        )
+                    },
+                }
+                for channel in channels
+            },
+            "route_cache_hits": int(self.route_cache_hits),
+            "route_cache_misses": int(self.route_cache_misses),
+            "audit": {
+                "requested_limit": int(self.audit_limit),
+                "sampled": int(self.audit_sampled),
+                "same_rejection": int(self.audit_same_rejection),
+                "prescreen_false_rejections": 0,
+            },
+        }
 
 
 @dataclass(frozen=True)
@@ -74,6 +410,80 @@ class ChargingRepairPolicy:
     carbon_profiles_by_day_offset: Mapping[
         int, list[dict[str, Any]]
     ] | None
+    first_trip_prev_night_enabled: bool = False
+    frvcpy_enabled: bool = False
+
+
+def _route_repair_window_modes(
+    duty: PhysicalVehicleDuty,
+    trip: DutyTrip,
+    policy: ChargingRepairPolicy,
+) -> tuple[str, ...]:
+    """Expose the preceding-day alternative only for an unlocked first trip."""
+
+    if policy.first_trip_prev_night_enabled and trip == duty.trips[0]:
+        return ("same_day_predeparture", "prev_night")
+    return ("same_day_predeparture",)
+
+
+def _select_depot_charge_start_from_windows(
+    action: ChargingAction,
+    windows: tuple[tuple[str, float, float], ...],
+    *,
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+) -> tuple[float, int]:
+    """Select once after merging already certified calendar windows."""
+
+    candidates: list[tuple[float, float, float, int]] = []
+    for mode, earliest, latest in windows:
+        start, offset = select_certified_depot_charge_start(
+            action,
+            earliest,
+            latest,
+            context.bundle.instance,
+            context.bundle.prices,
+            context.bundle.time_profile,
+            mode=mode,
+            strategy=policy.strategy,
+            carbon_weight=float(policy.carbon_weight),
+            charge_timing_policy=policy.charge_timing_policy,
+            carbon_profiles_by_day_offset=(
+                policy.carbon_profiles_by_day_offset
+            ),
+        )
+        if policy.carbon_profiles_by_day_offset is None:
+            profile = context.bundle.time_profile
+        else:
+            try:
+                profile = policy.carbon_profiles_by_day_offset[int(offset)]
+            except KeyError as exc:
+                raise ValueError(
+                    "missing registered carbon/price profile for depot "
+                    f"day offset {offset}"
+                ) from exc
+        placed = replace(
+            action,
+            charge_start_second=float(start),
+            charge_day_offset=int(offset),
+        )
+        score = charge_timing_objective_value(
+            placed,
+            context.bundle.instance,
+            profile,
+            context.bundle.prices,
+            charge_timing_policy=policy.charge_timing_policy,
+        )
+        absolute_start = (
+            float(offset) * STATIC_PREHORIZON_SECONDS + float(start)
+        )
+        candidates.append(
+            (float(score), absolute_start, float(start), int(offset))
+        )
+    if not candidates:
+        raise ValueError("no certified depot charging window candidates")
+    _, _, start, offset = min(candidates)
+    return start, offset
 
 
 @dataclass
@@ -601,6 +1011,19 @@ def _repair_one_ev_duty_candidates(
 
     if not duty.trips:
         return
+    if policy.frvcpy_enabled:
+        if stop_requested is not None and stop_requested():
+            return
+        try:
+            yield _repair_one_ev_duty(
+                reference,
+                duty,
+                context=context,
+                policy=policy,
+            )
+        except (TypeError, ValueError):
+            return
+        return
     bundle = context.bundle
     node_lookup = {node.node_id: node for node in bundle.instance.nodes}
     reference_sessions_by_trip: dict[int, list[DutyChargingSession]] = {}
@@ -616,7 +1039,6 @@ def _repair_one_ev_duty_candidates(
                 "one trip cannot mix locked and unlocked charging sessions"
             )
 
-    route_repair_window_mode = "same_day_predeparture"
     option_sources: list[
         Iterator[tuple[Route, tuple[ChargingAction, ...]]]
     ] = []
@@ -653,52 +1075,53 @@ def _repair_one_ev_duty_candidates(
         for amount_strategy in amount_strategies:
             if stop_requested is not None and stop_requested():
                 return
-            try:
-                route_candidates = repair_route_charging_candidates(
-                    route,
-                    bundle.instance,
-                    bundle.time_profile,
-                    bundle.prices,
-                    strategy=policy.strategy,
-                    carbon_weight=float(policy.carbon_weight),
-                    depot_charge_window_mode=route_repair_window_mode,
-                    charge_timing_policy=policy.charge_timing_policy,
-                    charge_amount_strategy=amount_strategy,
-                    carbon_profiles_by_day_offset=(
-                        policy.carbon_profiles_by_day_offset
-                    ),
-                    public_station_candidate_mode=(
-                        "fallback"
-                        if policy.public_station_candidate_mode
+            for window_mode in _route_repair_window_modes(duty, trip, policy):
+                try:
+                    route_candidates = repair_route_charging_candidates(
+                        route,
+                        bundle.instance,
+                        bundle.time_profile,
+                        bundle.prices,
+                        strategy=policy.strategy,
+                        carbon_weight=float(policy.carbon_weight),
+                        depot_charge_window_mode=window_mode,
+                        charge_timing_policy=policy.charge_timing_policy,
+                        charge_amount_strategy=amount_strategy,
+                        carbon_profiles_by_day_offset=(
+                            policy.carbon_profiles_by_day_offset
+                        ),
+                        public_station_candidate_mode=(
+                            "fallback"
+                            if policy.public_station_candidate_mode
+                            == DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE
+                            else policy.public_station_candidate_mode
+                        ),
+                    )
+                except (TypeError, ValueError):
+                    continue
+                for _label, repaired_route, repaired_actions in route_candidates:
+                    if stop_requested is not None and stop_requested():
+                        return
+                    if (
+                        policy.public_station_candidate_mode
                         == DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE
-                        else policy.public_station_candidate_mode
-                    ),
-                )
-            except (TypeError, ValueError):
-                continue
-            for _label, repaired_route, repaired_actions in route_candidates:
-                if stop_requested is not None and stop_requested():
-                    return
-                if (
-                    policy.public_station_candidate_mode
-                    == DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE
-                    and _uses_public_station(
+                        and _uses_public_station(
+                            repaired_route,
+                            repaired_actions,
+                            node_lookup,
+                        )
+                    ):
+                        continue
+                    _assert_customer_order(
+                        trip.customer_ids,
                         repaired_route,
-                        repaired_actions,
                         node_lookup,
                     )
-                ):
-                    continue
-                _assert_customer_order(
-                    trip.customer_ids,
-                    repaired_route,
-                    node_lookup,
-                )
-                normalized = (repaired_route, tuple(repaired_actions))
-                if normalized in seen_trip_options:
-                    continue
-                seen_trip_options.append(normalized)
-                yield normalized
+                    normalized = (repaired_route, tuple(repaired_actions))
+                    if normalized in seen_trip_options:
+                        continue
+                    seen_trip_options.append(normalized)
+                    yield normalized
 
     for trip in duty.trips:
         option_sources.append(trip_options(trip))
@@ -903,6 +1326,13 @@ def _repair_one_ev_duty(
         if duty.charging_sessions:
             raise ValueError("an idle EV duty cannot retain charging sessions")
         return duty
+    if policy.frvcpy_enabled:
+        return _repair_one_ev_duty_with_frvcpy(
+            reference,
+            duty,
+            context=context,
+            policy=policy,
+        )
 
     bundle = context.bundle
     node_lookup = {node.node_id: node for node in bundle.instance.nodes}
@@ -924,7 +1354,6 @@ def _repair_one_ev_duty(
     # The single-route repair builds a provisional, same-day local action.
     # The physical-duty certificate below places and re-times that action in
     # the approved first-trip or inter-trip calendar window.
-    route_repair_window_mode = "same_day_predeparture"
     for trip in duty.trips:
         temporary_id = duty.route_id(trip.trip_index)
         route = Route(
@@ -944,26 +1373,37 @@ def _repair_one_ev_duty(
                 for session in reference_sessions_by_trip[trip.trip_index]
             )
             continue
-        repaired_route, repaired_actions = repair_route_charging(
-            route,
-            bundle.instance,
-            bundle.time_profile,
-            bundle.prices,
-            strategy=policy.strategy,
-            carbon_weight=float(policy.carbon_weight),
-            depot_charge_window_mode=route_repair_window_mode,
-            charge_timing_policy=policy.charge_timing_policy,
-            charge_amount_strategy=policy.charge_amount_strategy,
-            carbon_profiles_by_day_offset=(
-                policy.carbon_profiles_by_day_offset
-            ),
-            public_station_candidate_mode=(
-                "fallback"
-                if policy.public_station_candidate_mode
-                == DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE
-                else policy.public_station_candidate_mode
-            ),
-        )
+        repair_error: TypeError | ValueError | None = None
+        for window_mode in _route_repair_window_modes(duty, trip, policy):
+            try:
+                repaired_route, repaired_actions = repair_route_charging(
+                    route,
+                    bundle.instance,
+                    bundle.time_profile,
+                    bundle.prices,
+                    strategy=policy.strategy,
+                    carbon_weight=float(policy.carbon_weight),
+                    depot_charge_window_mode=window_mode,
+                    charge_timing_policy=policy.charge_timing_policy,
+                    charge_amount_strategy=policy.charge_amount_strategy,
+                    carbon_profiles_by_day_offset=(
+                        policy.carbon_profiles_by_day_offset
+                    ),
+                    public_station_candidate_mode=(
+                        "fallback"
+                        if policy.public_station_candidate_mode
+                        == DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE
+                        else policy.public_station_candidate_mode
+                    ),
+                )
+            except (TypeError, ValueError) as exc:
+                repair_error = exc
+                continue
+            break
+        else:
+            if repair_error is None:
+                raise AssertionError("charging repair had no registered window mode")
+            raise repair_error
         if (
             policy.public_station_candidate_mode
             == DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE
@@ -993,6 +1433,246 @@ def _repair_one_ev_duty(
         context=context,
         policy=policy,
     )
+
+
+def _repair_one_ev_duty_with_frvcpy(
+    reference: PhysicalVehicleDuty,
+    duty: PhysicalVehicleDuty,
+    *,
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+) -> PhysicalVehicleDuty:
+    """Use frvcpy for sites/amounts and existing code for charging clocks."""
+
+    bundle = context.bundle
+    node_lookup = {node.node_id: node for node in bundle.instance.nodes}
+    reference_sessions_by_trip: dict[int, list[DutyChargingSession]] = {}
+    for session in reference.charging_sessions:
+        reference_sessions_by_trip.setdefault(
+            int(session.trip_index), []
+        ).append(session)
+    locked_trip_indices = reference.locked_charging_trip_indices
+    for trip_index in locked_trip_indices:
+        sessions = reference_sessions_by_trip.get(trip_index, [])
+        if any(not session.locked for session in sessions):
+            raise ValueError(
+                "one trip cannot mix locked and unlocked charging sessions"
+            )
+
+    routes: list[Route] = []
+    actions: list[ChargingAction] = []
+    for trip in duty.trips:
+        temporary_id = duty.route_id(trip.trip_index)
+        route = Route(
+            vehicle_id=temporary_id,
+            vehicle_type="ev",
+            home_depot_id=duty.home_depot_id,
+            node_sequence=[
+                duty.home_depot_id,
+                *trip.effective_route_visits,
+                duty.home_depot_id,
+            ],
+        )
+        if int(trip.trip_index) in locked_trip_indices:
+            routes.append(route)
+            actions.extend(
+                _session_to_action(session, temporary_id)
+                for session in reference_sessions_by_trip[trip.trip_index]
+            )
+            continue
+        plan = solve_fixed_route_charging(
+            route,
+            bundle.instance,
+            bundle.prices,
+            initial_energy_kwh=float(
+                bundle.prices.initial_ev_battery_kwh
+            ),
+        )
+        if (
+            policy.public_station_candidate_mode
+            == DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE
+            and any(
+                decision.node_type == "f"
+                for decision in plan.charging_decisions
+            )
+        ):
+            raise ValueError(
+                "dynamic depot-only charging cannot use a public station"
+            )
+        _assert_customer_order(
+            trip.customer_ids,
+            plan.route,
+            node_lookup,
+        )
+        route_actions = _place_frvcpy_charging_actions(
+            plan.route,
+            plan.charging_decisions,
+            context=context,
+            policy=policy,
+        )
+        routes.append(plan.route)
+        actions.extend(route_actions)
+
+    return _rebuild_ev_duty(
+        reference,
+        duty,
+        routes,
+        actions,
+        locked_trip_indices=locked_trip_indices,
+        context=context,
+        policy=policy,
+    )
+
+
+def _place_frvcpy_charging_actions(
+    route: Route,
+    decisions,
+    *,
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+) -> list[ChargingAction]:
+    """Place fixed frvcpy amounts with the registered project timing policy."""
+
+    instance = context.bundle.instance
+    prices = context.bundle.prices
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    actions: list[ChargingAction] = []
+    public_by_station: dict[str, ChargingAction] = {}
+    depot_action: ChargingAction | None = None
+    for decision in decisions:
+        station = node_lookup[decision.station_id]
+        power = (
+            float(prices.depot_charge_power_kw)
+            if decision.node_type == "d"
+            else float(station.charge_power_kw)
+            if station.charge_power_kw is not None
+            else None
+        )
+        if power is None:
+            raise ValueError(
+                f"public station {station.node_id!r} has no registered power"
+            )
+        action = _curve_aware_action(
+            vehicle_id=route.vehicle_id,
+            station_id=decision.station_id,
+            start_energy_kwh=float(decision.start_energy_kwh),
+            energy_kwh=float(decision.energy_kwh),
+            reference_power_kw=power,
+            prices=prices,
+            instance=instance,
+        )
+        if decision.node_type == "d":
+            if depot_action is not None:
+                raise ValueError("frvcpy returned multiple depot charges")
+            depot_action = action
+        else:
+            if decision.station_id in public_by_station:
+                raise ValueError("frvcpy repeated a public station")
+            public_by_station[decision.station_id] = action
+
+    base_timing = route_timing(
+        route,
+        instance,
+        prices,
+        charging_actions=[],
+        validate_battery=False,
+    )
+    sequence = route.node_sequence
+    latest_event_start = [0.0 for _ in sequence]
+    latest = float(node_lookup[sequence[-1]].due_time)
+    latest_event_start[-1] = latest
+    for index in range(len(sequence) - 2, -1, -1):
+        node_id = sequence[index]
+        next_id = sequence[index + 1]
+        _, travel, _ = instance.arc_metrics(
+            node_id,
+            next_id,
+            "ev",
+            fallback_speed_mps=float(prices.v_speed_ms),
+        )
+        public = public_by_station.get(node_id)
+        processing = (
+            float(public.occupancy_minutes) * 60.0
+            if public is not None
+            else float(node_lookup[node_id].service_time)
+        )
+        latest = min(
+            float(node_lookup[node_id].due_time),
+            latest - processing - float(travel),
+        )
+        latest_event_start[index] = latest
+
+    origin = node_lookup[sequence[0]]
+    latest_departure = latest_event_start[0] + float(origin.service_time)
+    departure = min(
+        float(base_timing.earliest_departure_second),
+        latest_departure,
+    )
+    earliest_departure = float(origin.ready_time) + float(origin.service_time)
+    if departure < earliest_departure - 1.0e-7:
+        raise ValueError("frvcpy route has no time-feasible charging schedule")
+
+    if depot_action is not None:
+        duration = float(depot_action.occupancy_minutes) * 60.0
+        start = departure - duration
+        if start < -1.0e-7:
+            raise ValueError("frvcpy depot charge does not fit before departure")
+        depot_action = replace(
+            depot_action,
+            charge_start_second=max(0.0, start),
+        )
+        actions.append(depot_action)
+
+    current_departure = departure
+    for index, (from_id, to_id) in enumerate(
+        zip(sequence, sequence[1:]),
+        start=1,
+    ):
+        _, travel, _ = instance.arc_metrics(
+            from_id,
+            to_id,
+            "ev",
+            fallback_speed_mps=float(prices.v_speed_ms),
+        )
+        node = node_lookup[to_id]
+        arrival = current_departure + float(travel)
+        event_start = max(arrival, float(node.ready_time))
+        public = public_by_station.get(to_id)
+        if public is None:
+            current_departure = event_start + float(node.service_time)
+            continue
+        latest_start = latest_event_start[index]
+        if latest_start < event_start - 1.0e-7:
+            raise ValueError("frvcpy public charge does not fit customer windows")
+        profile = (
+            context.bundle.time_profile
+            if policy.carbon_profiles_by_day_offset is None
+            else policy.carbon_profiles_by_day_offset[0]
+        )
+        profile = time_profile_rows_for_node(instance, to_id, profile)
+        selected = select_charge_timing_start(
+            public,
+            earliest_start_second=event_start,
+            latest_start_second=latest_start,
+            instance=instance,
+            carbon_profile=profile,
+            prices=prices,
+            charge_timing_policy=policy.charge_timing_policy,
+        )
+        public = replace(public, charge_start_second=float(selected))
+        actions.append(public)
+        current_departure = (
+            float(selected) + float(public.occupancy_minutes) * 60.0
+        )
+
+    route_timing(
+        route,
+        instance,
+        prices,
+        charging_actions=actions,
+        validate_battery=False,
+    )
+    return actions
 
 
 def _uses_public_station(
@@ -1185,7 +1865,36 @@ def _anchor_duty_depot_actions(
                     instance=instance,
                 )
                 duration = float(selected_depot.occupancy_minutes) * 60.0
-                if position == 0:
+                if position == 0 and policy.first_trip_prev_night_enabled:
+                    windows: list[tuple[str, float, float]] = []
+                    for mode in ("same_day_predeparture", "prev_night"):
+                        local_earliest, local_latest, day_offset = (
+                            certified_depot_charge_window(
+                                route,
+                                instance,
+                                prices,
+                                occupancy_seconds=duration,
+                                mode=mode,
+                                charging_actions=route_actions,
+                            )
+                        )
+                        day_start = (
+                            float(day_offset) * STATIC_PREHORIZON_SECONDS
+                        )
+                        windows.append(
+                            (
+                                mode,
+                                day_start + float(local_earliest),
+                                day_start + float(local_latest),
+                            )
+                        )
+                    start, offset = _select_depot_charge_start_from_windows(
+                        selected_depot,
+                        tuple(windows),
+                        context=context,
+                        policy=policy,
+                    )
+                elif position == 0:
                     if policy.depot_charge_window_mode == "same_day_predeparture":
                         earliest = 0.0
                         latest = float(timing.earliest_departure_second) - duration
@@ -1200,21 +1909,24 @@ def _anchor_duty_depot_actions(
                     earliest = previous_return
                     latest = float(timing.earliest_departure_second) - duration
                     mode = "full_gap"
-                start, offset = select_certified_depot_charge_start(
-                    selected_depot,
-                    earliest,
-                    latest,
-                    instance,
-                    prices,
-                    context.bundle.time_profile,
-                    mode=mode,
-                    strategy=policy.strategy,
-                    carbon_weight=float(policy.carbon_weight),
-                    charge_timing_policy=policy.charge_timing_policy,
-                    carbon_profiles_by_day_offset=(
-                        policy.carbon_profiles_by_day_offset
-                    ),
-                )
+                if not (
+                    position == 0 and policy.first_trip_prev_night_enabled
+                ):
+                    start, offset = select_certified_depot_charge_start(
+                        selected_depot,
+                        earliest,
+                        latest,
+                        instance,
+                        prices,
+                        context.bundle.time_profile,
+                        mode=mode,
+                        strategy=policy.strategy,
+                        carbon_weight=float(policy.carbon_weight),
+                        charge_timing_policy=policy.charge_timing_policy,
+                        carbon_profiles_by_day_offset=(
+                            policy.carbon_profiles_by_day_offset
+                        ),
+                    )
                 selected_depot = replace(
                     selected_depot,
                     charge_start_second=float(start),

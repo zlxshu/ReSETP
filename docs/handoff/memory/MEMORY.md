@@ -1985,3 +1985,185 @@ E7正式结果终验
 - `FACT`：私有 PRD50 三个短 seed 的最终机制增量为 -0.006723%、0、0；仅 seed 1 接受一次充电择时。每个 seed 的 3 次交叉虽得到 3 个完整可评价子代，内部另有 95—115 个接收组合因充电补全失败。
 - `INFERENCE`：当前成果只够定位为统一、可运行、可核账的底座；相对冻结 HGS 只有完整问题处理和决策输出能力得到确认，没有性能优势证据，且最终精修存在“HGS 加末端修补”的审稿风险。
 - `PROCESS`：Claude Opus 与 Codex 均反对立即进入 20 分钟或 28 例长跑。每代一个子代不等于单解搜索；无依据的 0.5% 和 80% 数字不登记为门槛。完整收口见 `docs/handoff/memory/integrated_complete_duty_hgs_vertical_slice_20260810.md`。
+
+## 2026-08-10 晚 — 地毯式病灶取证（五个只读证据包）
+
+- 证据入口：`solver/reports/carpet_sweep_20260810/`（public_ruler / private_space / serial_chain_cost / noise_and_headroom）；要点摘录与纠正记录见 `CURRENT_PROJECT_CONTEXT.md`「2026-08-10 晚地毯式取证结果」一节与 `HANDOFF.md` 同日晚条目。
+- 一句话：公开尺子放松时间窗（11/28 真可行、搜索虚快 35%）、私有补全器杀死全部结构移动（313 死因 77% 趟重叠）、择时省钱被证伪（可省恰为 0）、部件效应被噪声淹没（0.007% vs 3.25%）、新增部件时间账从未记录；公开"凭什么赢冻结 HGS"仍无已证实杠杆，唯一贯穿公私线索=时间可行性卡死移动，待带计数短跑证实。
+
+## 2026-08-10 晚 — 公开 ×1000 评价尺子修复与短验证
+
+- 证据入口：`solver/reports/ruler_fix_20260810/`；当前事实见 `CURRENT_PROJECT_CONTEXT.md`「2026-08-10 晚公开评价尺子修复与小规模复核」，时间线见 `HANDOFF.md`「2026-08-10 晚四」。
+- 一句话：公开两臂统一为 `round(1000 × value)` 后，28/28 证书成本零差值还原；六次短跑按原始精度复核 265/265 条路线可行；三题平均吞吐差由修复前自研高 41.416765% 变为修复后低 3.080936%，未跑 28 例或 20 分钟全量。
+
+## 2026-08-10 晚 — P38 机械在线基线完成
+
+- 证据入口：`solver/reports/mechanical_baseline_trial_20260810/`；实现为 `solver/src/setp_solver/algorithms/problem_hgs/mechanical_baseline.py` 与 `solver/scripts/run_mechanical_dynamic_baseline.py`，当前事实和两次失败纠正见 `CURRENT_PROJECT_CONTEXT.md`「陈旧冻结产物与当前充电曲线口径不兼容」一节。
+- 一句话：PRD50 stream 2 的 10 次揭示以 8 次既有路线插入、2 次空闲车直达完成 50/50 客户和 12223/12223 需求；最终成本 2290.788019564487、排放 209.5578843039319 kg、7 辆实体车，历史全程保持，决策日志与最终解复跑逐字节一致；正式实验仍等 P34 A1 订单流。
+
+## 2026-08-10 晚 — P38 候选修复后的真实收口（更正上一条）
+
+- 证据入口：当前固定包 `solver/reports/mechanical_baseline_trial_20260810/`；C045 诊断 `solver/reports/mechanical_baseline_diagnosis_20260810/`；全部历史尝试身份 `solver/reports/attempt_ledger.md`；当前事实见 `CURRENT_PROJECT_CONTEXT.md` 同节，时间线见 `HANDOFF.md`「晚六」。
+- 更正：上一条 50/50 COMPLETE 数字来自旧动态算法日初方案的重认证重放，不是机械基线自行构造日初方案的正式结果。
+- 一句话：EV 首趟 P35 车场预充电与已用车辆追加新趟候选已接通，C045 已越过；正式双跑均在第 9 次揭示 C005 因 30 个插入位置超载、8 个新趟不可行且无未用车而停止。两份决策日志逐字节一致，最后有效阶段 48/48 客户和 11806/11806 需求；固定包如实为 FAILED，正式实验仍等 P34 A1。
+
+## 2026-08-11 — 算法成熟零件串行重组与私有 A0
+
+- 证据入口：`docs/handoff/algorithm_recombination_plan_20260811.md`、`solver/reports/algorithm_recombination_20260811/report.md`；精确决定见 `pending_decisions.md` P43。
+- 一句话：逐移动精确排程 Oracle 已从消融链撤下；真实窗口成本不能精确保持静态弧 O(1)，因此没有硬接。私有消融现只保留关闭推进／碳代理和机制流的“只看路线”A0；成熟零件按出处登记，SP 仍待 P21，未跑正式实验。
+
+## 2026-08-11 — 新台架初始化惯性修复
+
+- 证据入口：`solver/reports/harness_inertia_fix_20260811/report.md`；修复文件为 `solver/scripts/run_component_interaction.py`、`run_private_ablation.py`、`run_mixed_fleet_experiment.py`。
+- 一句话：90/600 秒 0 代由复制内核本地搜索填充 25 成员共享初始种群并提前耗尽臂预算造成；三个受影响台架改为老路径两父代初始化后，PRD50 seed 11 的 120 秒短跑分别恢复到 53、183、16 代并全部降本，动态脚本不共用该接线且仍无生产 Problem-HGS 后端。
+
+## 2026-08-11 凌晨 — 自研部件全部无正增量（算法侧实情）
+
+- 证据入口：（零件交互全因子）、（四台架卡死修复）、（老路径对照）。
+- 一句话：修好台架后首次有效测量显示——复制 HGS 的路线局部搜索独自贡献全部改善（+193.54），充电择时（+0.13）与车型换型（0.00）不仅无增量且拖低总体约 26.68；私有侧自研部件贡献为零或负。备选消车算子被 Codex 以"重复 A3＋历史 0 接受前科"反驳，未实现。算法章当前无已证实自研贡献，三条出路待用户选择。
+
+## 2026-08-11 下午 — 公开 SISR 五题消融判负并停止
+
+- 证据入口：`solver/reports/sisr_public_ablation_20260811/`；实现入口 `solver/src/setp_solver/algorithms/problem_hgs/sisr.py`、`public_search.py`，运行脚本 `solver/scripts/run_sisr_public_ablation.py`。
+- 一句话：五题 seed 11、相同 600 秒上限与相同既有停机逻辑的配对中，SISR 仅 1 胜 4 负，总成本高 0.736%，平均占 CPU 65.11%，四个负题代数降到 A 的 25.51%–57.31%；真尺子和服务覆盖均通过，故按预注册净值条件停止。既有无改善规则使两题 A 臂提前结束、B 实际获得更多时间，完整时长已披露且未补跑。A 组三种子同题极差 0.2492%–1.3241%，说明 1.016% 与 0.990% 的单种子差距不足以定胜负；本轮未扩跑。
+
+## 2026-08-11 晚 — P34 A1 双班次动态数据重建
+
+- 证据入口：`solver/reports/dynamic_stream_rebuild_20260811/report.md`；数据目录 `data/ChinaInstances/china81_dynamic_stream_v1_20260811/`；生成器 `solver/scripts/generate_potential_pool_dynamic_streams.py`。
+- 一句话：71 个广州／佛山真实 OSM 潜在位置生成 50 单构造日（40 初始＋10 动态，上午 3／下午 7）；真实未来与算法情景独立抽样，08:00 减法仍剩 31 候选而非真实 10 单；10/10 动态单出生与实际触发后均可直接服务，过期数 0，未运行求解器或修改静态算例。
+
+## 2026-08-11 晚 — 新算例机制验证 v3 完成与协同预注册否证
+
+- 证据入口：`solver/reports/mechanism_validation_v3_20260811/report.md`；原始合并表 `raw_runs.csv`；短预检 `preflight_seed11/` 与 `preflight_truth_replay.json`；四臂原始包 `factorial_2seed_30s/`。
+- 一句话：C 步显示主货币策略总账降 67.16% 但充电排放升 89.48%；B 步把 50 元 EV 日溢价、11:00 回场和 7.2 m³ 硬约束接入每个候选，41/41 测试通过。预检可行且服务完整；2 种子×4 臂中换型不再恒为 0，但组合相对路线单件只降 0.000% / 3.661%，旧 6.5%–8.6% 未一般化并按预注册不进论文。短测找到混合车队，但未见单调里程分工；未加预算或跑长确认轮。
+- 后续状态：用户在本阶段收口后另行授权补 seed 3/5/7，用 5 种子私有侧噪声重新判定协同效应；后续任务追加同一报告，本索引不预写未完成结果。
+
+## 2026-08-11 晚 — SISR 忠实增量重建与五题重测
+
+- 证据入口：`solver/reports/sisr_incremental_rebuild_20260811/`；核心实现 `solver/src/setp_solver/algorithms/problem_hgs/sisr.py`、`third_party/setp_hgs_kernel/setp_hgs_kernel/cpp/repair/sisr_repair.cpp`、`cpp/search/primitives.cpp`。
+- 一句话：全路线全位置扫描保持不变，候选评价改为缓存三段的完整 `deltaCost<true>()`，PR11A ruin seed 1–100 与完整路线重算 100/100 一致；SISR CPU 从旧版 59.16%–69.83% 降到 7.66%–11.41%。五题重测得到 1 题超过噪声改善、1 题超过噪声变差、3 题噪声内，五题简单净值为负且三个既有慢题代数仍降 16.36%–42.38%，触发预注册条件二停止；全部解真尺子可行、服务完整，未调参或加预算。
+
+## 2026-08-11 晚 — frvcpy 固定路线充电层接线
+
+- 证据入口：`solver/reports/frvcpy_integration_20260811/report.md`；实现 `solver/src/setp_solver/algorithms/problem_hgs/frvcpy_adapter.py`；开关接线 `solver/scripts/run_problem_hgs_private_technical.py --frvcpy-charging`。
+- 一句话：直接加载本地冻结的 Apache-2.0 frvcpy 2020.1035 原算法，它负责固定路线下的站点与连续充电量，现有 `charge_timing`、Duty 整日 SOC 契约和真尺子不变；开关默认关闭且接线前后解哈希相同，3 项新单测与 19 项相邻回归通过，最短吞吐自查未触发 20% 掉速线；未做效果实验。
+
+## 2026-08-11 深夜 — 充电修复主瓶颈提速
+
+- 证据入口：`solver/reports/charging_repair_speedup_20260811/report.md`；实现入口为 `solver/src/setp_solver/charge_timing.py`、`algorithms/resetp_alns/support/charging.py`、`support/carbon_charging.py` 与 `search/multitrip_schedule.py`。
+- 一句话：静态时段/曲线复用、一次分时拆分双结算和完整身份路线缓存把 F00/F11 从 6.6112/13.1470 降到 1.3937/3.2800 秒/循环；seed 11/17/23 解哈希逐位一致，42 项测试通过，三个受保护文件未改。原并行长跑被外部 `SIGKILL` 且因运行中底座改变整体作废；提速计时结束后，长跑任务已另启稳定版本 F00 恢复批次。
+
+## 2026-08-12 — China81 V3 两班次套件重建与 81 行健康表
+
+- 证据入口：`solver/reports/suite_rebuild_20260812/report.md`、`suite_health.csv`；数据 `data/ChinaInstances/china81_suite_v3_20260812/`；建造器 `solver/scripts/build_china81_suite_rebuild_20260812.py`。
+- 一句话：81/81 个新 `-V3-TWO-SHIFT-FS` 算例和 5805 单完成确定性构造；25% 几何门通过 23/81，EDF 完整服务见证通过 74/81，无 FLAG 8/81。全部失败保留，矩阵只引用，正式搜索 0 次，实例/矩阵/受保护文件哈希全量复核通过。
+
+## 2026-08-12 — 动态插入算子
+
+- 证据入口：`solver/reports/dynamic_insertion_operator_20260812/report.md`；实现 `solver/src/setp_solver/algorithms/problem_hgs/dynamic_insertion.py`、冻结内核 `cpp/search/LocalSearch.cpp`；技术开关 `solver/scripts/run_problem_hgs_private_technical.py --dynamic-insertion-operator`。
+- 一句话：新揭示订单改走缓存 `insertFeasible/insertCost` 全位置扫描，只落地硬可行增量最小位置；完成与在途趟整趟冻结，未来后缀接质量、7.2 m³、班次和完整 Duty 评价。默认关闭前后解哈希相同，受控插入服务完整，23 项回归通过；公共待命情景接口拒绝真值文件，未跑效果实验。
+
+## 2026-08-12 — combat 便宜预筛与实验模式关轨迹
+
+- 证据入口：`solver/reports/combat_prescreen_speedup_20260812/report.md`；3 循环等价包 `equivalence_before_3cycles/`、`equivalence_after_3cycles_audit2000/`；5 循环计时包 `combat_5cycles_trajectory_off/`。
+- 一句话：两大 Duty 通道复用完整修复的精确 `route_timing` 预筛，5 循环跳过 86015/113802 个必死候选；2000/2000 抽样复核同样拒绝且误杀 0，最终解、接受顺序和全通道计数不变。轨迹关闭后 combat 从 145.042121 降至 106.562434 秒/循环，减少 26.530009%，但仍未到大批量实验量级；本轮未继续改完整充电修复链。
+
+## 2026-08-12 — P46 成渝、京津冀近场真实车场对重建
+
+- 证据入口：`solver/reports/suite_depotpair_rebuild_20260812/report.md`、`suite_health_54.csv`、`suite_health_v2.csv`；数据 `data/ChinaInstances/china81_depotpair_rebuild_v1_20260812/`；建造器 `solver/scripts/build_suite_depotpair_rebuild_20260812.py`。
+- 一句话：cy 用成都龙泉＋郫都真实园区，jjj 用北京顺航＋通州真实园区，客户从成都／北京冻结 OSM 实名池重锚；两区各 27/27 通过 30%–45% 可争夺判据和 EDF 完整服务见证，珠三角 27 行逐字段不变，临界里程 FLAG 原样保留，矩阵同源补齐且 324 份文件／324 个引用全量核验通过。
+
+## 2026-08-12 — prd 失败例补救与 81 例班次可达性修正
+
+- 证据入口：`solver/reports/suite_prd_fix_20260812/report.md`、`suite_health_v3.csv`、`assignment_changes.csv`；数据 `data/ChinaInstances/china81_suite_prd_fix_v1_20260812/`；建造器 `solver/scripts/build_suite_prd_fix_20260812.py`。
+- 一句话：冻结路网可达性前检把 prd 的 4 个 EDF 失败客户各改分一次，全套 EDF 为 cy/jjj/prd 27/27、27/27、27/27；四个几何失败例保留广州黄埔＋佛山顺德车场对并扩到冻结广州 OSM 池，全部进入 30%–45% 区间。混合关改用 below>0 且 above>0，旧交叠列仅保留对照；三项全过数为 cy/jjj/prd 23/16/10。
+
+## 2026-08-12 — combat v2 根伤修复
+
+- 证据入口：`solver/reports/combat_v2_20260812/report.md`；最终计时包 `combat_v2_5cycles_final/`；四个闭合包 `closure_*_final/`；默认等价包 `default_before_3cycles/`、`default_after_omitted_3cycles/`。
+- 一句话：combat 接入 V3 体积／班次代理域和班次感知电价，四个机制组完成全通路真轨迹闭合；默认解哈希逐位不变。最终 5 循环为 59.850019 秒/循环，完整修复量从 27787 降到 13272；充电拒绝绝对数减半但占比仍为 88.2105%。Q2 班次加权电价 0.6198584733 与红队逐车表一致，92 项测试通过，保护文件未改。
+
+## 2026-08-12 — China81 公共充电站恢复与效果核验
+
+- 证据入口：`solver/reports/station_restore_20260812/report.md`、`station_counts.csv`、`before_after.csv`、`replay_rows.csv`；生成脚本 `solver/scripts/build_suite_depotpair_rebuild_20260812.py`、`build_suite_prd_fix_20260812.py`。
+- 一句话：81/81 例按既有 `facilities.csv` 恢复车场城市 station，客户／车场几何和 18 个健康字段零差异，120/120 站加载为 `f`；但同代码同种子 20 循环的交叉充电拒绝率仍为 98.709677%、最后改进仍在第 7 循环，冻结 100 个交叉后代仍 0/100 翻可行。数据缺陷已修，指定短测未见搜索改善。
+
+## 2026-08-12 — 设计方法定案：图表中心倒推链条＋两手抓
+
+- 证据入口：`docs/paper_gci_dmm_vrp_20260804/figure_first_design_chain_20260812.md`（用户原话与项目应用）；技能 `~/.codex/skills/global-academic-figure-first-design/SKILL.md`（通用方法单源）；决定册 P49/P50/P51。
+- 一句话：用户定下"主题→图表壳→效应规格→算法算例针对性设计→施工→回填"的倒推链条与算法两手抓路线（公开改内核求优势、私有做问题算子创新），并纠正"五步走顺序"系代理自排；本轮纯文档落盘，无实验无代码改动，当前位置为链条第二步（图表壳清单），三项开工缺口已登记。
+
+## 2026-08-12 — 全仓库中国化审计与图表母版重锚
+
+- 证据入口：`docs/handoff/china_localization_repo_audit_20260812.md`（17 项台账，含"改了会作废哪些实验"栏）；`docs/paper_gci_dmm_vrp_20260804/journal_convention_contract_20260812.md`（7 篇同刊 N/N 共性表）；`figure_shell_spec_20260812.md`（图表壳三档规格）；`china_standard_residue_ledger_20260812.md`（文档侧残留）；`paper_template_setp_20260812/`（可编译模板底稿）。
+- 一句话：全仓库只读审计查出 17 项中国化问题，其中 A14 是"数据文件写 60 kW、天花板按 22 kW 算"的实质错误，已使事实源中午休择时三个数作废；当前可入文正式实验受影响 0 组（缺陷在正式实验开跑前查出）。图表总母版按用户"机制堆砌"表态由陈婉茹上调为陈雨蝶，七机制逐个成节各配一控制变量表，主力产物是表不是图。
+
+## 2026-08-12 — 中国化参数修复与 60 kW 午休重算
+
+- 证据入口：`docs/handoff/param_fix_20260812/report.md`；A14 机器可复核包 `solver/reports/instance_rebuild_60kw_recompute_20260812/`；原审计 `docs/handoff/china_localization_repo_audit_20260812.md`。
+- 一句话：用户授权的“乙档 + 算”已收口：A14 用 60 kW 登记曲线重算为 362.8009090909 kWh / 194.1347664545 元 / 55.6899395455 kgCO2e，瓶颈是午休时长+高 SOC 降功率；柴油 EF 按中国指南页 10–11/15/60 改为 2.6419028944 kgCO2/L；EV 能耗由车型档案传入评价参数并 fail-fast，基础车场默认改 60 kW。三个受保护文件未改，77 项定向回归通过，正式实验 0。
+
+## 2026-08-12 — 基础默认值 H1/H3 修复与 H2 保护红线
+
+- 证据入口：`docs/handoff/base_defaults_fix_20260812/report.md`（`BASEFIX_DONE`）；上一轮入口 `docs/handoff/param_fix_20260812/report.md`；中国化台账 `docs/handoff/china_localization_repo_audit_20260812.md`。
+- 一句话：基础 China81 EV 非能源里程成本已从 0.6700 下沉为已定 0.9145 元/km，已覆盖私有／V3 路径防重复计费并用解哈希与浮点位串证明原行为不变；无场景英国四值改为 fail-closed，合法英国路径显式使用 `UK_2025_PRICES`。固定成本 170/220 需改受保护 `cost.py:170`，已依用户红线停止；三个受保护文件哈希一致，无正式实验。
+
+## 2026-08-12 — 车型固定成本与利润／公平成本口径修复
+
+- 证据入口：`docs/handoff/cost_model_fix_20260812/report.md`（`COSTFIX_DONE`）；前置审计 `docs/handoff/unit_value_audit_20260812/report.md`；授权来源 `docs/paper_gci_dmm_vrp_20260804/pending_decisions.md` P43-F/P43-H/P43-I 及用户当日后续窄授权。
+- 一句话：用户窄授权下，受保护 `cost.py` 仅固定成本 statement 改为从车型档案取 CV170/EV220；精确总账、利润账与两条路线代理统一，外层 50 不双算，利润柴油价和路线时间成本与精确账闭合。纯 CV 逐位不变、3CV/5EV 增 250；本轮 84 项测试通过、正式实验 0；56 个 V3 搜索目录、15 个 V3 利润包，以及 176 个无外层补费的旧 EV 固定解（149 个有 margin、27 个无 margin）的精确作废边界见报告。
+
+## 2026-08-13 — P55 浮点权威值常量化
+
+- 证据入口：`docs/handoff/float_constant_fix_20260813/report.md`（`FLOATFIX_DONE`）；实现 `solver/src/setp_solver/china81.py`、`private_instance_rebuild_20260811.py` 与私有构建器；回归 `solver/tests/test_authoritative_float_constants.py`。
+- 一句话：4 处 `0.6700+0.2445→0.9145`／`170+50→220` 权威值重构已改为最终常量；固定 EV 解的参数位串从 `…4de` 改为 `…4dd`，结构哈希不变但含评价记录的 SHA 改变。11 个旧 private EV 包保留、未覆盖；公共逐槽总价链因批准边界不明登记为 UNKNOWN。40 项回归通过，正式搜索 0，三个受保护文件未改。
+
+## 2026-08-13 — 图表定形、算例几何换场、参数六修
+
+- 证据入口：`docs/paper_gci_dmm_vrp_20260804/` 下 `figure_shell_spec_20260812.md`（含四条验收线与全部更正）、`collaboration_layout_survey_20260813.md`（12 篇版式实测）、`fairness_literature_and_table_20260812.md`、`figure_shells_20260813/`、`route_map_probe_20260813/`；`solver/reports/depot_relocate_jjj_20260813/`（1378 对穷举与互斥发现）、`cost_model_fix_20260812/`、`float_constant_fix_20260813/`、`slot_date_alignment_20260812/`、`unit_value_audit_20260812/`。
+- 一句话：表定 10 张图定 5–6 张、每张均有同刊对应物；试画路线图暴露统一算例几何缺陷（车场到客户距离是客户间距离的 5.3 倍），穷举 1378 对真实车场组合发现"分成均衡"与"可争夺 30–45%"互斥，用户拍板换 25/25 车场对并放宽自设上限；参数侧修六处含受保护文件授权改动一处，两次拦下双算。
+
+## 2026-08-13 — P56 统一算例换车场重建
+
+- 证据入口：`solver/reports/instance_depot_swap_jjj_20260813/report.md`（`SWAPDONE`）；数据 `data/ChinaInstances/china81_instance_depot_swap_jjj_v1_20260813/`；构建器 `solver/scripts/build_instance_depot_swap_jjj_20260813.py`。
+- 一句话：jjj 50c 只换为两处用户指定的真实北京园区，客户固有字段逐项零差异；冻结有向 OSRM 正式可争夺 39/50、EDF 50/50 与 13264/13264 kg、混合临界带 2/2/4，三关全过；正式搜索 0，旧实例和三个保护文件未改。
+
+## 2026-08-13 — P47/P28 新算例运行前预检停止
+
+- 证据入口：`solver/reports/convergence_and_p28_baseline_20260813/report.md`（`HALT_CALIB_P28_PREFLIGHT`）；当前状态同步见 `docs/handoff/CURRENT_PROJECT_CONTEXT.md` 文末。
+- 一句话：新算例责任归属与需求复核为 24／6667 kg、26／6597 kg，但专用加载器尚未接成正式搜索上下文，现有 runner 无 `DEPOTSWAP` 分支；当前 Python 3.14 环境也不能加载 CPython 3.13 冻结内核。按前一步不合格即停的合同，求解器未启动，没有曲线、预算、种子结果、P28 冻结值或伪造四件套，三个保护文件未改。
+
+## 2026-08-14 — 新增 29 篇文献取证：三张待定图表解封，两条旧判断推翻
+
+- 证据入口：`docs/paper_gci_dmm_vrp_20260804/` 下 `carbon_charging_figure_survey_20260814.md`（碳强度×充电 14 篇逐图，含三问直答）、`mixedfleet_costshare_figure_survey_20260814.md`（混合车队 4 篇＋协同分配 11 篇逐图，含五问直答）、`novelty_positioning_20260814.md`（与 Shi 等 2025 的分界）、`journal_precedent_and_effect_magnitude_20260814.md`（同刊三张表体例＋带分母的效应量级）；决定登记见 `pending_decisions.md` 的 P58／P59／P60。
+- 一句话：用户新增 37 条（去重 29 篇）正好压在三个挂账上；**"碳强度＋充电负荷三层叠图无先例"与"公平分配表在本刊无先例"两条旧判断均被推翻**（前者 14 篇中 3 篇 10 图命中，后者饶卫振等 2022 就发在本刊 42(10)、其表 9 即所需体例），三张图表壳按 P58／P59／P60 定案；同时确认最接近的 Shi 等 2025 把电动车当零排放，本文分界句为"充电时刻在他们那里只搬动成本、在本文里直接搬动排放"，并因此为 c^tr = 0 取得文献出处。
+- **未结自查（最高优先级）**：Du 等 2025（Applied Energy 397:126196，常州）同分母口径下充电碳排放只降 **5.70%**，本文 P51 同层报 **50.8%**，差约 9 倍；本文电网碳强度日内振幅未核之前该数不得对外报。
+- **方法更正**：中文期刊 PDF 多为扫描件，`pdftotext` 抽取不可信（出版商摘要里确证有的词 0 命中），取证一律改为 `pdftoppm` 渲染后目视；据坏抽取器得出的"不存在"不成立。
+
+## 2026-08-14（同日续）— 图 3 体裁错误被用户推翻；新算例不可行根因定位；模板误报可行
+
+- 证据入口：设计线唯一入口 `docs/paper_gci_dmm_vrp_20260804/figure_design_open_items_20260814.md`（新会话先读）；修复线 `solver/reports/depotswap_witness_replay_20260814/report.md`（`WITNESS_ROOTCAUSE_DEPOT_WINDOW_RELOAD`）、`depotswap_smoke2_diagnosis_20260814/report.md`、`report_template_feasibility_fix_20260814/report.md`；当前状态见 `docs/handoff/CURRENT_PROJECT_CONTEXT.md` 文末。
+- 一句话：用户判定图 3「只模仿了皮、没模仿人家为服务内容而做的针对性设计，不知道怎么插进正文」，**P58 体例实质作废**（文献事实仍有效，P59／P60 不受影响）；体裁错配的量化依据＝本文只有 8 辆电动车 4 个桩、Du 是常州全市，48 格堆叠负荷柱在本文规模下绝大多数为零。
+- **48 槽已澄清**：`tariff_carbon_hourly_calendar.csv` 文件名＋列名 `hourly_calendar_row`／`minute_of_day`＋行数 12096＝9 城×28 天×48 槽，三重印证；48 槽＝30 分钟网格、中国数据，**"英国残留"说法系本代理错误**。图表与正文文字层是否仍有小时口径表述未逐处核查。
+- **新算例不可行的根因**：接线丢了车场时间窗——构建态 08:00–19:00，通用加载器重建成 06:00–22:00，`Route` 无发车时刻字段，评价器遂以 06:00 为下限倒推出早于班次起点的发车。基础检查器 0 违规，3 条全部出自班次提前发车检查。另有独立问题：搜索把 16 趟压成 9 条，而体积下界是 14 趟。
+- **模板误报可行**：`run_problem_hgs_private_technical.py` 原第 3156 行把「判定可行」硬编码在 f-string 里、根本没读布尔值；已修。**Claude review 另查出两处未修副本**（`run_duty_hgs_private_technical.py:898`、`finalize_metro_rebuild_20260812.py:199`），已派第二轮。已确认污染面 2 个结果包，只列不改。
+
+## 2026-08-14（收官）— 新算例首次跑出可行解；修复轨六项闭合；P62 只跑新 china81
+
+- 证据入口：`solver/reports/` 下 `shift_aware_departure_20260814/report.md`（`SHIFT_TIMING_OK`，P61 落地）、`depotswap_trip_compression_recheck_20260814/report.md`（`COMPRESSION_RESOLVED`）、`revert_old_lane_shift_flag_20260814/report.md`（旧线路开关已撤）、`report_template_feasibility_fix2_20260814/report.md`（模板全仓清完）；当前状态与接手指引见 `docs/handoff/CURRENT_PROJECT_CONTEXT.md` **文件开头的红色区块**（不在文末）。
+- 一句话：`cn-jjj-50c-01-V3-TWO-SHIFT-DEPOTSWAP` **第一次跑出可行解**——400 循环、532.24 秒，16 条路线进 16 条出、0 违规、50/50 客户、13264.0/13264.0 kg、成本 2470.4677；修复轨六项按序闭合（环境本没坏／接线／车场窗口／上下班时间／趟数压缩／模板误报）。
+- **P62（用户严令）**：只跑新 china81，旧线路一律不碰，**连"只加载旧算例数据做断言"的单元测试用例也不许跑**（回归覆盖固定缺口＝37 passed/2 deselected，是裁定不是遗漏）。本代理两处越界已清理：误跑 PRDFIX／METRO 的两个结果包已删、全仓重扫无残留；P61 开关误接三条旧线路致受影响算例 1→164，已撤回 1 个。
+- **污染面结论**：210 个可核对结果目录中「文字说可行、数据说不可行」只有 2 个且均为当日新产生，**历史论文数字未被污染**。
+- **接手第一件事**：核 50.8%（本文 P51 充电账）对 5.70%（Du 等 2025 常州，同分母）差 9 倍——是算术题不是数据审计，先核"50.8% 的基线在怎么充电"。核完前 5.1 节占位。
+- **下一步主线**：收敛标定 → 定预算 → P28 独立经营基准（三张图表数据与 P60 公平表第一行的源头），前置障碍已清完，用户尚未下令启动。
+
+## 2026-08-15 — 逐格车场对搜索完成；China81 V2 闭合
+
+- 证据入口：`solver/reports/depot_pair_search_28cells_20260815/report.md`、`depot_pair_search_log.csv`、`suite_health_v2.csv`；数据入口：`data/ChinaInstances/china81_final_suite_v2_20260815/`。
+- 一句话：28 个空缺格与 jjj/50/01 主算例共 29 个目标组已逐格完整枚举扩展车场池，`DEPOT_SEARCH_COMPLETE`、`missing_rows=0`；81/81 实例均 witness PASS、checker 0、临界带上下两侧均有车，未启动正式搜索。
+- 主算例由旧 `DEPOTSWAP`（25% 可争夺比例 0.78）替换为 `cn-jjj-50c-01-DEPOTSEARCH-aed5c1867f`（0.98，路网往返 3.50993904395 km）；52 个旧格保留，29 个新目标入选。
+
+## 2026-08-15 — 字段与文件改名重构
+
+- 证据入口：`solver/reports/field_rename_20260815/report.md`、`docs/handoff/字段改名映射_20260815.md`。
+- 一句话：活动小时日历、有限模式车桩字段、设施功率影子字段及 B2 元数据字段已一次改名；旧名只留在历史结果、迁移说明和集中兼容读取层。四条当前 V3 线路无搜索完整评价的解序列化 SHA-256 逐位一致，保护文件未改。

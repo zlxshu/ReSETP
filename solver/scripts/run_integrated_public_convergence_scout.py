@@ -13,6 +13,10 @@ from importlib.metadata import version
 from pathlib import Path
 
 
+PUBLIC_INSTANCE_ROUND_FUNC = "exact"
+PUBLIC_INSTANCE_SCALE = 1_000
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -76,11 +80,6 @@ def main() -> int:
     parser.add_argument("--max-iterations", type=int)
     parser.add_argument("--max-runtime-seconds", type=float, default=1200.0)
     parser.add_argument(
-        "--round-func",
-        choices=("round", "exact"),
-        default="round",
-    )
-    parser.add_argument(
         "--implementation",
         choices=("independent", "frozen_pyvrp"),
         required=True,
@@ -131,7 +130,6 @@ def main() -> int:
     else:
         if importlib.util.find_spec("pyvrp") is not None:
             raise RuntimeError("independent environment contains PyVRP")
-        from setp_hgs_kernel import read
         from setp_hgs_kernel.stop import (
             MaxIterations,
             MaxRuntime,
@@ -140,6 +138,7 @@ def main() -> int:
         )
         from setp_solver.algorithms.problem_hgs.public_search import (
             build_integrated_public_hgs,
+            read_public_instance,
         )
 
         if version("setp-hgs-kernel") != "0.12.2":
@@ -167,7 +166,8 @@ def main() -> int:
             "no_improvement": args.no_improvement,
             "max_iterations": args.max_iterations,
             "max_runtime_seconds": args.max_runtime_seconds,
-            "round_func": args.round_func,
+            "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
+            "integer_scale": PUBLIC_INSTANCE_SCALE,
             "compound_mode": args.compound_mode,
             "refinement_scope": args.refinement_scope,
             "instance_sha256": _sha256(instance_path),
@@ -175,7 +175,11 @@ def main() -> int:
             "runner_sha256": _sha256(Path(__file__).resolve()),
         },
     )
-    data = read(instance_path, round_func=args.round_func)
+    data = (
+        read(instance_path, round_func=PUBLIC_INSTANCE_ROUND_FUNC)
+        if args.implementation == "frozen_pyvrp"
+        else read_public_instance(instance_path)
+    )
     stop = MultipleCriteria(
         [
             (

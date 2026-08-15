@@ -36,6 +36,30 @@ Cost insertCost(Route::Node *U,
                 CostEvaluator const &costEvaluator);
 
 /**
+ * Tests whether inserting U after V yields a feasible route. This uses the
+ * same cached three-segment proposal as insertCost().
+ */
+bool insertFeasible(Route::Node *U,
+                    Route::Node *V,
+                    ProblemData const &data);
+
+/**
+ * Evaluates the exact delta cost of inserting a reload depot after V. The
+ * cached route prefix and suffix are joined with a one-depot reset segment.
+ */
+Cost insertReloadCost(Route::Node *V,
+                      size_t depot,
+                      ProblemData const &data,
+                      CostEvaluator const &costEvaluator);
+
+/**
+ * Tests the kernel constraints after inserting a reload depot after V.
+ */
+bool insertReloadFeasible(Route::Node *V,
+                          size_t depot,
+                          ProblemData const &data);
+
+/**
  * Evaluates the delta cost of inserting U in the place of V. The evaluation is
  * exact.
  *

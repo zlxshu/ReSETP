@@ -7,6 +7,7 @@ v4 2026-08-08: formal complete DCREX replaces the prototype crossover.
 """
 
 from .charging import ChargingRepairPolicy
+from .bi_objective_population import BI_OBJECTIVE, SINGLE_OBJECTIVE
 from .dcrex import DCREXController, InsertionOperator
 from .dynamic import (
     DutyDynamicState,
@@ -20,8 +21,20 @@ from .model import (
     DutyIndividual,
     DutyTrip,
     PhysicalVehicleDuty,
+    ScheduleAccountingVector,
+    ScheduledChargingSession,
+    ScheduledDuty,
+    ScheduledSOCPoint,
+    ScheduledTripWitness,
+)
+from .schedule_oracle import (
+    OracleStatus,
+    ScheduleCoordinator,
+    ScheduleOracleContext,
+    SingleDutyScheduleOracle,
 )
 from .runner import (
+    BiObjectiveSolutionRecord,
     ProblemHGSRunProvenance,
     ProblemHGSRunResult,
     ProblemHGSSearchParameters,
@@ -34,6 +47,9 @@ from .runner import (
 from .stopping import MaxIterations
 
 __all__ = [
+    "BI_OBJECTIVE",
+    "SINGLE_OBJECTIVE",
+    "BiObjectiveSolutionRecord",
     "ChargingRepairPolicy",
     "DCREXController",
     "DutyChargingSession",
@@ -49,6 +65,15 @@ __all__ = [
     "InsertionOperator",
     "MaxIterations",
     "PhysicalVehicleDuty",
+    "ScheduleAccountingVector",
+    "ScheduleCoordinator",
+    "ScheduleOracleContext",
+    "ScheduledChargingSession",
+    "ScheduledDuty",
+    "ScheduledSOCPoint",
+    "ScheduledTripWitness",
+    "SingleDutyScheduleOracle",
+    "OracleStatus",
     "PreparedDynamicCandidate",
     "future_individual_from_cut",
     "mapping_sha256",

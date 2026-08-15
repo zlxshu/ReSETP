@@ -199,7 +199,7 @@ def _slot_index() -> dict[tuple[str, int, int], list[float]]:
         for row in csv.DictReader(handle):
             key = (row["arm"], int(row["budget"]), int(row["seed"]))
             result.setdefault(key, [0.0] * 48)[
-                int(row["half_hour_slot"]) - 1
+                int(row["hourly_calendar_row"]) - 1
             ] = float(row["charging_kwh"])
     if any(len(values) != 48 for values in result.values()):
         raise RuntimeError("slot distribution does not contain 48 slots")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rewrite constraints: every constraint gets its own equation environment."""
 
-filepath = "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/paper_main.tex"
+filepath = "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/RETIRED_paper_main.tex"
 with open(filepath, 'r') as f:
     content = f.read()
 

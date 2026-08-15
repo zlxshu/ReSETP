@@ -206,7 +206,7 @@
     },
     {
       "check_id": "A3-09",
-      "evidence": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_48slot_calendar.csv",
+      "evidence": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_hourly_calendar.csv",
       "expected": "12096 rows; 9 cities x 28 days x 48 unique slots",
       "impact": "",
       "lane": "A3",
@@ -218,7 +218,7 @@
     },
     {
       "check_id": "A3-07",
-      "evidence": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_48slot_calendar.csv",
+      "evidence": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_hourly_calendar.csv",
       "expected": "energy + service fee = total for all 12096 rows",
       "impact": "",
       "lane": "A3",
@@ -242,7 +242,7 @@
     },
     {
       "check_id": "A3-02",
-      "evidence": "data/ChinaPrices/china_2025_02_tariff_register_v3.json; data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_48slot_calendar.csv",
+      "evidence": "data/ChinaPrices/china_2025_02_tariff_register_v3.json; data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_hourly_calendar.csv",
       "expected": "v3 numeric row and semantic class consumed by runtime authority chain",
       "impact": "Numbers match, but evidence semantics and authority lineage are stale.",
       "lane": "A3",
@@ -278,7 +278,7 @@
     },
     {
       "check_id": "A3-04",
-      "evidence": "data/ChinaPrices/china_2025_02_tariff_register_v2.json; data/ChinaPrices/china_2025_02_tariff_register_v3.json; data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_48slot_calendar.csv",
+      "evidence": "data/ChinaPrices/china_2025_02_tariff_register_v2.json; data/ChinaPrices/china_2025_02_tariff_register_v3.json; data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_hourly_calendar.csv",
       "expected": "depot and public energy components match the selected city/area/period row for every calendar record",
       "impact": "",
       "lane": "A3",
@@ -290,7 +290,7 @@
     },
     {
       "check_id": "A3-05",
-      "evidence": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_48slot_calendar.csv; data/ChinaInstances/china_parameter_lock_v2_20260718.json",
+      "evidence": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_hourly_calendar.csv; data/ChinaInstances/china_parameter_lock_v2_20260718.json",
       "expected": "uniform 0.4 CNY/kWh is explicitly labelled a constructed-scenario proxy, never a city tariff or observed station quotation",
       "impact": "The proxy is transparent, but it still requires a preregistered sensitivity before any robustness claim.",
       "lane": "A3",
@@ -423,7 +423,7 @@
     {
       "check_id": "A4R-FI-03",
       "evidence": "baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/runtime_boundary_checks.csv; china81.py::_load_time_profile; cost.py profile lookup",
-      "expected": "half_hour_slot s starts at exactly (s-1)*1800 seconds",
+      "expected": "hourly_calendar_row s starts at exactly (s-1)*1800 seconds",
       "impact": "Malformed formal calendar can silently shift settlement.",
       "lane": "A4",
       "observed": "rejected",
@@ -1228,7 +1228,7 @@
     },
     {
       "check_id": "A3-02",
-      "evidence": "data/ChinaPrices/china_2025_02_tariff_register_v3.json; data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_48slot_calendar.csv",
+      "evidence": "data/ChinaPrices/china_2025_02_tariff_register_v3.json; data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/tariff_carbon_hourly_calendar.csv",
       "expected": "v3 numeric row and semantic class consumed by runtime authority chain",
       "impact": "Numbers match, but evidence semantics and authority lineage are stale.",
       "lane": "A3",

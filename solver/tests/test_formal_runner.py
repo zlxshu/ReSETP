@@ -11,7 +11,7 @@ from unittest.mock import patch
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.profit import infer_customer_home_depots
 from setp_solver.profit import calculate_depot_profits
 from setp_solver.solution import ChargingAction, Route, Solution
@@ -553,9 +553,9 @@ class FormalRunnerTests(unittest.TestCase):
             charging_actions=[action],
         )
 
-        zero_metrics = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "zero_gamma"), DEFAULT_PRICES, carbon_quota_kg=math.inf)
-        mean_metrics = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "mean_gamma"), DEFAULT_PRICES, carbon_quota_kg=math.inf)
-        actual_metrics = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "actual_gamma"), DEFAULT_PRICES, carbon_quota_kg=math.inf)
+        zero_metrics = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "zero_gamma"), UK_2025_PRICES, carbon_quota_kg=math.inf)
+        mean_metrics = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "mean_gamma"), UK_2025_PRICES, carbon_quota_kg=math.inf)
+        actual_metrics = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "actual_gamma"), UK_2025_PRICES, carbon_quota_kg=math.inf)
 
         self.assertEqual(zero_metrics["E_ev_indirect"], 0.0)
         self.assertAlmostEqual(mean_metrics["E_ev_indirect"], 10.0 * mean_gamma / 1000.0, places=9)
@@ -571,12 +571,12 @@ class FormalRunnerTests(unittest.TestCase):
             routes=[Route("EV1", "ev", _first_depot_id(bundle), [_first_depot_id(bundle), _first_customer_id(bundle), _first_depot_id(bundle)])],
             charging_actions=[action],
         )
-        metrics = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "mean_gamma"), DEFAULT_PRICES, carbon_quota_kg=math.inf)
+        metrics = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "mean_gamma"), UK_2025_PRICES, carbon_quota_kg=math.inf)
         self.assertEqual(metrics["cost_carbon"], 0.0)
 
         emissions = float(metrics["E_total"])
-        buy = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "mean_gamma"), DEFAULT_PRICES, carbon_quota_kg=emissions - 0.1)
-        sell = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "mean_gamma"), DEFAULT_PRICES, carbon_quota_kg=emissions + 0.1)
+        buy = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "mean_gamma"), UK_2025_PRICES, carbon_quota_kg=emissions - 0.1)
+        sell = evaluate(solution, bundle.instance, _derive_carbon_profile(bundle.carbon_profile, "mean_gamma"), UK_2025_PRICES, carbon_quota_kg=emissions + 0.1)
 
         self.assertGreater(buy["cost_carbon"], 0.0)
         self.assertLess(sell["cost_carbon"], 0.0)
@@ -594,9 +594,9 @@ class FormalRunnerTests(unittest.TestCase):
         no_trade_prices = _prices_with_carbon_price_factor(0.0)
 
         no_trade = evaluate(solution, bundle.instance, profile, no_trade_prices, carbon_quota_kg=0.0)
-        finite_trade = evaluate(solution, bundle.instance, profile, DEFAULT_PRICES, carbon_quota_kg=float(no_trade["E_total"]) - 0.1)
-        ce_inf = evaluate(solution, bundle.instance, profile, DEFAULT_PRICES, carbon_quota_kg=math.inf)
-        depot_rows = calculate_depot_profits(solution, bundle.instance, profile, DEFAULT_PRICES, carbon_quota_kg=math.inf)
+        finite_trade = evaluate(solution, bundle.instance, profile, UK_2025_PRICES, carbon_quota_kg=float(no_trade["E_total"]) - 0.1)
+        ce_inf = evaluate(solution, bundle.instance, profile, UK_2025_PRICES, carbon_quota_kg=math.inf)
+        depot_rows = calculate_depot_profits(solution, bundle.instance, profile, UK_2025_PRICES, carbon_quota_kg=math.inf)
 
         self.assertGreater(no_trade["E_total"], 0.0)
         self.assertEqual(no_trade["cost_carbon"], 0.0)
@@ -615,12 +615,17 @@ class FormalRunnerTests(unittest.TestCase):
         raw = Solution(routes=[Route("CV1", "cv", other_depot, [other_depot, customer_id, other_depot])])
 
         derived = _derive_cross_site_services(raw, bundle.instance, owners)
-        metrics = evaluate(derived, bundle.instance, bundle.carbon_profile)
+        metrics = evaluate(
+            derived,
+            bundle.instance,
+            bundle.carbon_profile,
+            UK_2025_PRICES,
+        )
 
         self.assertEqual(len(derived.cross_site_services), 1)
         self.assertEqual(derived.cross_site_services[0].customer_id, customer_id)
         self.assertEqual(derived.cross_site_services[0].served_by_depot_id, other_depot)
-        self.assertEqual(metrics["cost_transship"], DEFAULT_PRICES.cross_site_cost)
+        self.assertEqual(metrics["cost_transship"], UK_2025_PRICES.cross_site_cost)
 
     # v2026-06-12: W2a runner variants encode real ablation semantics, not display labels.
     def test_e3_variant_specs_lock_real_ablation_semantics(self) -> None:
@@ -763,7 +768,7 @@ class FormalRunnerTests(unittest.TestCase):
         route_nodes = {node_id for route in chunk.routes for node_id in route.node_sequence}
         self.assertNotIn("F1", route_nodes)
         self.assertTrue(all(action.station_id in route_nodes for action in chunk.charging_actions))
-        self.assertEqual(check_solution(chunk, _subinstance_for_test(instance, {"C1"}), DEFAULT_PRICES), [])
+        self.assertEqual(check_solution(chunk, _subinstance_for_test(instance, {"C1"}), UK_2025_PRICES), [])
 
     # v2026-06-13: R2 E7 committed chunks are checked as closed routes, so a
     # subset whose current demand exceeds Q must be split before final assembly.
@@ -786,7 +791,7 @@ class FormalRunnerTests(unittest.TestCase):
         )
 
         self.assertEqual(len(chunk.routes), 2)
-        self.assertEqual(check_solution(chunk, _subinstance_for_test(instance, {"C1", "C2"}), DEFAULT_PRICES), [])
+        self.assertEqual(check_solution(chunk, _subinstance_for_test(instance, {"C1", "C2"}), UK_2025_PRICES), [])
 
     # v2026-06-13: R2 E7 EV chunk extraction must rebuild charging for the
     # shortened route because inherited actions no longer match the route body.
@@ -806,7 +811,7 @@ class FormalRunnerTests(unittest.TestCase):
         )
 
         self.assertTrue(chunk.charging_actions)
-        self.assertEqual(check_solution(chunk, _subinstance_for_test(instance, {"C1"}), DEFAULT_PRICES), [])
+        self.assertEqual(check_solution(chunk, _subinstance_for_test(instance, {"C1"}), UK_2025_PRICES), [])
 
     # v2026-06-13: R2 E7 must not report success when the final assembled dynamic
     # control fails the same checker used by the static control.
@@ -897,6 +902,7 @@ class FormalRunnerTests(unittest.TestCase):
             stage_eval_budget=3,
             stage_max_runtime_seconds=60.0,
             params=RollingParameters(delta_t_seconds=3600.0, q_bar=2),
+            prices=UK_2025_PRICES,
         )
 
         self.assertEqual(report["dynamic_final_control"]["scorer"], "setp_solver.cost.evaluate")
@@ -910,6 +916,7 @@ class FormalRunnerTests(unittest.TestCase):
             eval_budget=5,
             max_runtime_seconds=60.0,
             params=RollingParameters(stages=3, delta_t_seconds=3600.0),
+            prices=UK_2025_PRICES,
         )
 
         self.assertTrue(report["all_assertions_pass"])

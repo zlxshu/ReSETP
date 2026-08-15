@@ -52,7 +52,7 @@ PROTECTED = (
     REPO / "solver/src/setp_solver/check.py",
     REPO / "solver/src/setp_solver/search/evaluation.py",
     REPO / "solver/src/setp_solver/prices.py",
-    REPO / "docs/paper_submission_final/paper_main.tex",
+    REPO / "docs/paper_submission_final/RETIRED_paper_main.tex",
 )
 SCREEN_INSTANCE = "PR17A"
 DEVELOPMENT = ("PR11A", "PR17A", "PR21A")

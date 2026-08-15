@@ -854,7 +854,7 @@ def protected_diff() -> list[str]:
         "solver/src/setp_solver/check.py",
         "solver/src/setp_solver/search/evaluation.py",
         "solver/src/setp_solver/prices.py",
-        "docs/paper_submission_final/paper_main.tex",
+        "docs/paper_submission_final/RETIRED_paper_main.tex",
         "solver/src/setp_solver/search/feasible_repair.py",
         "solver/src/setp_solver/search/resetp_alns",
         "solver/src/setp_solver/search/alns_wouda.py",

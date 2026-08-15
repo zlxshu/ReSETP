@@ -345,7 +345,7 @@ def gate1_d2a(stage: Path) -> dict[str, Any]:
                     "num_cv": route_count,
                     "num_ev": main_ev,
                     "total_fleet_cap": route_count + main_ev,
-                    "depot_charger_count": DEPOT_CHARGER_COUNT,
+                    "configured_depot_gun_count_if_finite": DEPOT_CHARGER_COUNT,
                     "depot_charge_power_kw": "22.0",
                     "fleet_parameter_class": (
                         "CONSTRUCTED_DEMAND_TIME_WINDOW_ROAD_SCENARIO"

@@ -70,7 +70,7 @@ def slot_rows() -> list[dict[str, str]]:
 
 
 def nonzero_slots(rows: list[dict[str, str]]) -> list[int]:
-    return [int(row["half_hour_slot"]) for row in rows if abs(float(row["charging_kwh"])) > 1.0e-9]
+    return [int(row["hourly_calendar_row"]) for row in rows if abs(float(row["charging_kwh"])) > 1.0e-9]
 
 
 def fmt_slots(slots: list[int]) -> str:
@@ -102,7 +102,7 @@ def main() -> int:
         new = current[run_key]
         previous = old[run_key]
         slots = slot_index.get(run_key, [])
-        midday = sum(float(row["charging_kwh"]) for row in slots if 25 <= int(row["half_hour_slot"]) <= 30)
+        midday = sum(float(row["charging_kwh"]) for row in slots if 25 <= int(row["hourly_calendar_row"]) <= 30)
         paired.append(
             {
                 "run_id": new["run_id"],

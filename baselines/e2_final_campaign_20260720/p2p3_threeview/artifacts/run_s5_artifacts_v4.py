@@ -423,7 +423,7 @@ def _figure3_v4() -> dict[str, Any]:
             output_rows.append({
                 "region": region,
                 "date": date,
-                "half_hour_slot": item["half_hour_slot"],
+                "hourly_calendar_row": item["hourly_calendar_row"],
                 "time_hour": f"{time_hour:.2f}",
                 "raw_source_value": item[region],
                 "carbon_intensity_gCO2_per_kWh": f"{value:.6f}",
@@ -450,7 +450,7 @@ def _figure3_v4() -> dict[str, Any]:
     fig.savefig(OUT / "figure3_carbon_profile_v4.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
     fields = [
-        "region", "date", "half_hour_slot", "time_hour",
+        "region", "date", "hourly_calendar_row", "time_hour",
         "raw_source_value", "carbon_intensity_gCO2_per_kWh",
     ]
     _write_csv(OUT / "figure3_carbon_profile_v4.csv", output_rows, fields)

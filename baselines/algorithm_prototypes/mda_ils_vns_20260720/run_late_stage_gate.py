@@ -45,7 +45,7 @@ PROTECTED = (
     REPO / "solver/src/setp_solver/check.py",
     REPO / "solver/src/setp_solver/search/evaluation.py",
     REPO / "solver/src/setp_solver/prices.py",
-    REPO / "docs/paper_submission_final/paper_main.tex",
+    REPO / "docs/paper_submission_final/RETIRED_paper_main.tex",
 )
 BEHAVIOUR_INSTANCE = "PR11A"
 BEHAVIOUR_ITERATIONS = (5, 100, 1000)

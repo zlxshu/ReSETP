@@ -183,7 +183,7 @@ def source_paths() -> list[Path]:
             (REPO / "baselines/china_e3_e7/run_formal_fleet_levels_xb_20260802.py").resolve(),
             (REPO / "baselines/china_e3_e7/formal_dynamic_dispatch_20260802_runner.py").resolve(),
             (REPO / "baselines/china_e3_e7/e7_o1_replanning_20260801/policy.py").resolve(),
-            (REPO / "docs/paper_submission_final/paper_main.tex").resolve(),
+            (REPO / "docs/paper_submission_final/RETIRED_paper_main.tex").resolve(),
             (AUTHORITY / "fleet_caps.csv").resolve(),
             (AUTHORITY / "metadata.json").resolve(),
             (AUTHORITY / "decision.json").resolve(),
@@ -317,7 +317,7 @@ def prepare(output: Path) -> None:
         "git_commit": git("rev-parse", "HEAD"),
         "git_branch": git("branch", "--show-current"),
         "protected_files_not_modified": [
-            "docs/paper_submission_final/paper_main.tex",
+            "docs/paper_submission_final/RETIRED_paper_main.tex",
             "solver/src/setp_solver/check.py",
             "solver/src/setp_solver/search/evaluation.py",
         ],
@@ -396,7 +396,7 @@ def prepare_retry(output: Path) -> None:
         "input_tree_sha256": canonical_sha(inputs),
         "git_commit": git("rev-parse", "HEAD"),
         "git_branch": git("branch", "--show-current"),
-        "protected_files_not_modified": ["docs/paper_submission_final/paper_main.tex", "solver/src/setp_solver/check.py", "solver/src/setp_solver/search/evaluation.py"],
+        "protected_files_not_modified": ["docs/paper_submission_final/RETIRED_paper_main.tex", "solver/src/setp_solver/check.py", "solver/src/setp_solver/search/evaluation.py"],
         "no_rescue": {"change_seed": False, "change_instance": False, "increase_budget": False},
     }
     write_json(output / "preregistration.json", prereg)

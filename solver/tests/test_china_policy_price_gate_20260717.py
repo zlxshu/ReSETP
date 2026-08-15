@@ -7,6 +7,10 @@ import math
 from collections import Counter
 from pathlib import Path
 
+from baselines.e4_e5.build_china_policy_price_gate_20260717 import (
+    emission_rows,
+)
+
 
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = ROOT / "baselines/e4_e5/china_policy_price_gate_20260717"
@@ -96,3 +100,9 @@ def test_diesel_emission_factor_recomputes_from_the_frozen_formula() -> None:
     assert math.isclose(actual, expected_kgco2_per_l, rel_tol=0.0, abs_tol=5e-9)
     assert rows["Shanghai purchased electricity annual average"]["value"] == "0.5737"
     assert "not TVCI" in rows["Shanghai purchased electricity annual average"]["boundary"]
+
+
+def test_current_builder_uses_official_diesel_density_and_heat_value() -> None:
+    rows = {row["factor"]: row for row in emission_rows()}
+    actual = float(rows["diesel combustion"]["value"])
+    assert actual == 2.6419028944

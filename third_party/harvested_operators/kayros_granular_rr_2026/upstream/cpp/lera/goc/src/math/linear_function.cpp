@@ -1,0 +1,245 @@
+//
+// Created by Gonzalo Lera Romero.
+// Grupo de Optimizacion Combinatoria (GOC).
+// Departamento de Computacion - Universidad de Buenos Aires.
+//
+
+#include "goc/math/linear_function.h"
+
+#include <vector>
+
+#include "goc/exception/exception_utils.h"
+#include "goc/math/number_utils.h"
+#include "goc/string/string_utils.h"
+
+using namespace std;
+using namespace nlohmann;
+
+namespace goc
+{
+LinearFunction::LinearFunction(const Point2D& p1, const Point2D& p2)
+    : domain(p1.x, p2.x), image(min(p1.y, p2.y), max(p1.y, p2.y))
+{
+    if (epsilon_equal(p2.x, p1.x))
+    {
+        // Zero-width piece (M5.9): a genuine value jump (vertical) when the
+        // endpoints differ, else a single point. A vertical is marked
+        // slope = INFTY so it is distinguishable from a plateau (slope 0) — goc
+        // used to collapse both to slope 0, which destroyed step structure
+        // (AddPiece then merged the "vertical" into the neighbouring plateau).
+        // Its intercept holds the left-continuous value = the incoming (p1)
+        // endpoint, so Value returns the pre-jump value.
+        slope = epsilon_equal(p1.y, p2.y) ? 0.0 : INFTY;
+        intercept = p1.y;
+    }
+    else
+    {
+        slope = (p2.y - p1.y) / (p2.x - p1.x);
+        if (epsilon_equal(slope, 0.0)) slope = 0.0;
+        intercept = p2.y - slope * p2.x;
+    }
+    // Fix for numerical errors.
+    if (domain.left != INFTY && domain.left > domain.right)
+        domain.left = domain.right;
+}
+
+double LinearFunction::Value(double x) const
+{
+    if (is_vertical()) return intercept; // vertical (jump or choice): attained/representative value
+    return slope * x + intercept;
+}
+
+std::pair<double, double> LinearFunction::sweep_endpoints() const
+{
+    if (is_vertical())
+    {
+        double incoming = intercept;
+        double outgoing = (incoming == image.left) ? image.right : image.left;
+        return {incoming, outgoing};
+    }
+    return {Value(domain.left), Value(domain.right)};
+}
+
+double LinearFunction::operator()(double x) const
+{
+    return Value(x);
+}
+
+double LinearFunction::PreValue(double y) const
+{
+    if (!image.Includes(y)) fail(STR(y) + " is not in the image " + STR(image));
+    if (is_vertical()) return domain.left; // vertical (jump or choice): every y in the image maps to the single x
+    if (epsilon_equal(slope, 0.0)) return domain.right;
+    return (y - intercept) / slope;
+}
+
+bool LinearFunction::Intersects(const LinearFunction& f) const
+{
+    // M5.9: a vertical (value jump at x0) crosses f iff x0 is in f's domain and
+    // f(x0) lies within the jump's image span. Intersection() below returns x0.
+    if (is_vertical() || f.is_vertical())
+    {
+        const LinearFunction& vert = is_vertical() ? *this : f;
+        const LinearFunction& other = is_vertical() ? f : *this;
+        double x0 = vert.domain.left;
+        return other.domain.Includes(x0) && vert.image.Includes(other.Value(x0));
+    }
+    // If both pieces have the same slope, check if they have the same intercept.
+    if (epsilon_equal(slope, f.slope)) return epsilon_equal(intercept, f.intercept);
+    // Otherwise check if intersection is inside both functions domains.
+    double intersection = Intersection(f);
+    return domain.Includes(intersection) && f.domain.Includes(intersection);
+}
+
+double LinearFunction::Intersection(const LinearFunction& l) const
+{
+    // M5.9: a vertical (slope INFTY) crosses at its own abscissa x0; the generic
+    // (l.intercept - intercept)/(slope - l.slope) divides by INFTY -> ~0, wrong.
+    if (is_vertical()) return domain.left;
+    if (l.is_vertical()) return l.domain.left;
+    double denominator = slope - l.slope;
+    if (epsilon_equal(denominator, 0.0))
+    {
+        if (epsilon_equal(intercept, l.intercept)) return domain.left;
+        return epsilon_smaller(intercept, l.intercept) ? INFTY : -INFTY;
+    }
+    return (l.intercept - intercept) / denominator;
+}
+
+LinearFunction LinearFunction::Inverse() const
+{
+    return LinearFunction({min(image), PreValue(min(image))}, {max(image), PreValue(max(image))});
+}
+
+LinearFunction LinearFunction::RestrictDomain(const Interval& domain) const
+{
+    // M5.9: a vertical is a zero-width piece; if its abscissa is inside the
+    // restriction it survives verbatim (the two-point reconstruction below
+    // would collapse it to its attained value). Callers skip non-intersecting
+    // pieces beforehand.
+    if (is_vertical()) return *this;
+    double left = max(this->domain.left, domain.left);
+    double right = min(this->domain.right, domain.right);
+    return LinearFunction({left, Value(left)}, {right, Value(right)});
+}
+
+LinearFunction LinearFunction::RestrictImage(const Interval& image) const
+{
+    // M5.9: clip a vertical's span to the image restriction; the attained
+    // value clamps into the surviving span; the kind is preserved. The generic
+    // PreValue path below would collapse the piece.
+    if (is_vertical())
+    {
+        double lo = max(this->image.left, image.left);
+        double hi = min(this->image.right, image.right);
+        if (lo > hi) fail("Linear function is empty");
+        double att = min(hi, max(lo, intercept));
+        double other = (intercept == this->image.left) ? hi : lo;
+        LinearFunction v(Point2D(domain.left, att), Point2D(domain.left, other));
+        return is_choice_vertical() ? v.as_choice_vertical() : v;
+    }
+    if (epsilon_equal(slope, 0.0))
+    {
+        if (image.Includes(intercept)) return *this;
+        else fail("Linear function is empty");
+    }
+    double left = max(this->image.left, image.left);
+    double right = min(this->image.right, image.right);
+    double pre_left = PreValue(left), pre_right = PreValue(right);
+    if (pre_left > pre_right) swap(pre_left, pre_right);
+    return LinearFunction({pre_left, left}, {pre_right, right});
+}
+
+void LinearFunction::Print(ostream& os) const
+{
+    os << "{" << Point2D(domain.left, Value(domain.left)) << "->" << Point2D(domain.right, Value(domain.right)) << "}";
+}
+
+bool LinearFunction::operator==(const LinearFunction& f) const
+{
+    return domain == f.domain && image == f.image && epsilon_equal(slope, f.slope) && epsilon_equal(intercept, f.intercept);
+}
+
+bool LinearFunction::operator!=(const LinearFunction& f) const
+{
+    return !(*this == f);
+}
+
+void from_json(const json& j, LinearFunction& f)
+{
+    f = LinearFunction(j[0], j[1]);
+}
+
+void to_json(json& j, const LinearFunction& f)
+{
+    j = vector<Point2D>();
+    j.push_back(Point2D(f.domain.left, f.Value(f.domain.left)));
+    j.push_back(Point2D(f.domain.right, f.Value(f.domain.right)));
+}
+
+// The (incoming, outgoing) endpoints of a piece over the overlap [l, r]. For a
+// vertical (value jump, l == r) both image endpoints are returned; for an
+// ordinary piece the restriction Value(l), Value(r). M5.9: pairing incoming with
+// incoming and outgoing with outgoing preserves jumps under pointwise arithmetic
+// that would otherwise collapse to a single Value().
+static inline std::pair<double, double> sweep_over(const LinearFunction& f, double l, double r)
+{
+    if (f.is_vertical()) return f.sweep_endpoints();
+    return {f.Value(l), f.Value(r)};
+}
+
+// M5.9 (13.2): the kind of a vertical produced by combining pieces. If either
+// operand is a JUMP the result is a jump (conservative: attained-only
+// domination, no min-strengthening); a choice combined with continuous stays a
+// choice. Applied only when the RESULT is itself a vertical.
+static inline LinearFunction propagate_kind(LinearFunction r, const LinearFunction& f, const LinearFunction& g)
+{
+    if (!r.is_vertical()) return r;
+    bool jump = f.is_jump_vertical() || g.is_jump_vertical();
+    if (!jump && (f.is_choice_vertical() || g.is_choice_vertical())) return r.as_choice_vertical();
+    return r;
+}
+
+LinearFunction operator+(const LinearFunction& f, const LinearFunction& g)
+{
+    if (!f.domain.Intersects(g.domain)) return LinearFunction(Point2D(0.0, 0.0), Point2D(-1.0, 0.0));
+    double l = max(f.domain.left, g.domain.left);
+    double r = min(f.domain.right, g.domain.right);
+    auto [f_in, f_out] = sweep_over(f, l, r);
+    auto [g_in, g_out] = sweep_over(g, l, r);
+    return propagate_kind(LinearFunction(Point2D(l, f_in+g_in), Point2D(r, f_out+g_out)), f, g);
+}
+
+// Returns: h(x) = f(x)*g(x).
+// Precondition: dom(f) == dom(g).
+LinearFunction operator*(const LinearFunction& f, const LinearFunction& g)
+{
+    if (!f.domain.Intersects(g.domain)) return LinearFunction(Point2D(0.0, 0.0), Point2D(-1.0, 0.0));
+    double l = max(f.domain.left, g.domain.left);
+    double r = min(f.domain.right, g.domain.right);
+    auto [f_in, f_out] = sweep_over(f, l, r);
+    auto [g_in, g_out] = sweep_over(g, l, r);
+    return propagate_kind(LinearFunction(Point2D(l, f_in*g_in), Point2D(r, f_out*g_out)), f, g);
+}
+
+// Returns: h(x) = f(x)+a.
+LinearFunction operator+(const LinearFunction& f, double a)
+{
+    auto [lo, hi] = f.sweep_endpoints();
+    return propagate_kind(LinearFunction(Point2D(f.domain.left, lo + a), Point2D(f.domain.right, hi + a)), f, f);
+}
+
+// Returns: h(x) = f(x)*a.
+LinearFunction operator*(const LinearFunction& f, double a)
+{
+    auto [lo, hi] = f.sweep_endpoints();
+    return propagate_kind(LinearFunction(Point2D(f.domain.left, lo * a), Point2D(f.domain.right, hi * a)), f, f);
+}
+
+std::size_t LinearFunction::memory_footprint_bytes() const {
+    // no dynamic members
+    return sizeof(*this);
+}
+
+
+} // namespace goc

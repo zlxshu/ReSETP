@@ -19,7 +19,7 @@
 - `:1040` 第 4 节写"调度使用预测序列，排放结算使用实际序列"。
 
 但数据只有一条序列：
-`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv`
+`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv`
 **只有一列** `carbon_factor_kgco2e_per_kwh`；`solver/src/setp_solver/china81.py:817` 把同一个值
 直接标成 `forecast_gco2_per_kwh`。
 

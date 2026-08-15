@@ -140,7 +140,7 @@
 
 建议形式为双面板。面板(a)保留三个城市群典型日的 48 时段碳强度曲线；面板(b)用全分母 `action_timing_audit.csv` 聚合 ASAP 与 CARBON 的能量加权开始时刻分布，必要时按城市群分面，不挑单个有利会话。图注必须说明路径、车辆、客户服务、充电量完全固定，只有开始时刻改变。
 
-数据现已具备：`action_timing_audit.csv` 有 44,072 个会话日电量、合法窗口、两臂开始时刻和排放；冻结碳曲线在 `data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_48slot_calendar.csv`。目前缺的是正式成图，不缺实验。该图不可替代的内容是“能量从哪些时段移到哪些时段”，而不是再次显示 54.97%。
+数据现已具备：`action_timing_audit.csv` 有 44,072 个会话日电量、合法窗口、两臂开始时刻和排放；冻结碳曲线在 `data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_hourly_calendar.csv`。目前缺的是正式成图，不缺实验。该图不可替代的内容是“能量从哪些时段移到哪些时段”，而不是再次显示 54.97%。
 
 ### 6.2 必要缺口 2：E7 认证结果主表
 

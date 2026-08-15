@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 
 import setp_solver.algorithms.resetp_alns.support.charging as charging_module
@@ -26,7 +28,7 @@ from setp_solver.algorithms.resetp_alns.support.charging import (
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.search.evaluation import EvalBudget, EvaluationContext
 from setp_solver.solution import ChargingAction, Route, Solution
 
@@ -50,7 +52,8 @@ def _profile(*gammas: float) -> list[dict[str, object]]:
 
 
 def test_curve_knee_amounts_come_from_the_input_curve() -> None:
-    prices = PriceParameters(
+    prices = replace(
+        UK_2025_PRICES,
         charging_curve_id="test_two_knees",
         charging_soc_breakpoints=(0.0, 0.8, 0.9, 1.0),
         charging_relative_powers=(1.0, 0.5, 0.25),
@@ -95,7 +98,7 @@ def test_full_interval_timing_does_not_confuse_green_start_with_green_charge() -
 
 def test_station_choice_uses_one_monetary_objective_instead_of_carbon_first() -> None:
     profile = _profile(500.0, 500.0, 50.0, 50.0)
-    prices = PriceParameters()
+    prices = UK_2025_PRICES
     near_dirty = ChargeOption(
         station_id="F_NEAR",
         node_type="f",
@@ -149,8 +152,8 @@ def test_zero_carbon_weight_is_a_real_earliest_feasible_ablation() -> None:
         power_kw=60.0,
     )
 
-    naive = select_charge_option([option], _instance(), profile, PriceParameters(), carbon_weight=0.0)
-    aware = select_charge_option([option], _instance(), profile, PriceParameters(), carbon_weight=1.0)
+    naive = select_charge_option([option], _instance(), profile, UK_2025_PRICES, carbon_weight=0.0)
+    aware = select_charge_option([option], _instance(), profile, UK_2025_PRICES, carbon_weight=1.0)
 
     assert naive.timing.start_second == 0.0
     assert aware.timing.start_second == 3600.0
@@ -191,7 +194,7 @@ def test_integrated_route_repair_inserts_station_and_remains_fully_feasible() ->
         ],
     )
     profile = _profile(300.0, 250.0, 200.0, 50.0, 100.0, *([150.0] * 13))
-    prices = PriceParameters(B_battery_kwh=80.0)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=80.0)
     route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
 
     repaired, actions = repair_route_charging(
@@ -223,7 +226,7 @@ def test_parallel_repair_keeps_equal_launch_energy_station_alternatives() -> Non
         ],
     )
     profile = _profile(300.0, 250.0, 200.0, 50.0, 100.0, *([150.0] * 13))
-    prices = PriceParameters(B_battery_kwh=80.0)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=80.0)
     route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
 
     candidates = repair_route_charging_candidates(
@@ -298,7 +301,7 @@ def test_parallel_repair_continues_when_default_candidate_fails(
         route,
         instance,
         _profile(100.0),
-        PriceParameters(initial_ev_battery_kwh=80.0),
+        replace(UK_2025_PRICES, initial_ev_battery_kwh=80.0),
         public_station_candidate_mode="parallel",
     )
 
@@ -343,7 +346,7 @@ def test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation() ->
         ],
     )
     profile = _profile(300.0, 250.0, 200.0, 50.0, 100.0, *([150.0] * 13))
-    prices = PriceParameters(B_battery_kwh=80.0)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=80.0)
     route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
     legacy_route, legacy_actions = repair_route_charging(route, instance, profile, prices, strategy="legacy")
     legacy_solution = Solution(routes=[legacy_route], charging_actions=legacy_actions)

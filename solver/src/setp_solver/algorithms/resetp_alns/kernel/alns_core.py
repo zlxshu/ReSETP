@@ -157,6 +157,7 @@ def run_alns_wouda(
     initial = initial_solution or build_initial_solution(
         bundle.instance,
         bundle.carbon_profile,
+        prices,
         fleet_limits=FleetLimits(search_policy.max_cv, search_policy.max_ev, limits.source),
         # v2026-06-12: N0/N1 natural-adoption probes can disable the charging
         # witness without changing the default E5 guard or frozen model logic.

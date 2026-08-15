@@ -12,7 +12,7 @@
 |---|---:|---|---|---|
 | `baselines/china_e3_e7/e4_carbon_timing_20260729/action_timing_audit.csv` | 44,072 | `task_id`、`instance_id`、`region`、`seed`、`grid_date`、`action_index`、`energy_kwh`、合法窗口、两臂开始时刻、两臂实际排放 | `a93cf85d31bcf11d3e37571379c50e488297eec5780be1087057b26d23269497` | 与 E4 `artifact_hashes.json` 一致 |
 | `baselines/china_e3_e7/e4_carbon_timing_20260729/raw_runs.csv` | 11,340 | 解、日期、会话数、电量、两臂充电排放、系统排放、充电电费和完整模型成本 | `530f2b89f3a03ea10b6ac53b3945cc98ac75018ac5e37db74fa6fc82a46fd3f4` | 与 E4 `artifact_hashes.json` 一致 |
-| `data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_48slot_calendar.csv` | 12,096 | 城市、区域、日期、半小时槽、日内分钟、碳强度、碳源列 | `54acbdc757c8a3a3b097d1e39cd35294e795ca2c1711bd56b12bc3b9af9b1c0b` | 与 E4 登记的 `calendar_sha256` 一致 |
+| `data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_hourly_calendar.csv` | 12,096 | 城市、区域、日期、半小时槽、日内分钟、碳强度、碳源列 | `54acbdc757c8a3a3b097d1e39cd35294e795ca2c1711bd56b12bc3b9af9b1c0b` | 与 E4 登记的 `calendar_sha256` 一致 |
 
 三个输入的必需字段均齐全且无空值。44,072 个会话日动作键唯一；按 `task_id × instance_id × seed × grid_date` 聚合后，与 11,340 个配对解--日的会话数和充电电量逐行一致。两臂开始时刻均位于各自合法窗口和当日 0--24 h 范围内，正电量行 44,072 行。
 

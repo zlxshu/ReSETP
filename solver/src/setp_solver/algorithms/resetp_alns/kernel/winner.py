@@ -1474,6 +1474,7 @@ def run_e2_alns_scan_bridge(
     *,
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     """Run the 09b GLNS scan-bridge ALNS candidate."""
 
@@ -1489,6 +1490,7 @@ def run_e2_alns_scan_bridge(
         bundle_dir,
         cfg,
         initial_solution=initial_solution,
+        prices=prices,
         variant_flags=flags,
         variant_id="e2_alns_scan_bridge",
     )
@@ -1499,6 +1501,7 @@ def run_e2_alns_sa_acceptance(
     *,
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
+    prices: PriceParameters = DEFAULT_PRICES,
     mode: str = "autofit",
 ) -> dict[str, Any]:
     """Run the 09c E2 ALNS candidate with standard SA acceptance."""
@@ -1516,6 +1519,7 @@ def run_e2_alns_sa_acceptance(
         bundle_dir,
         cfg,
         initial_solution=initial_solution,
+        prices=prices,
         variant_flags=flags,
         variant_id=f"e2_alns_sa_{normalized_mode}",
     )

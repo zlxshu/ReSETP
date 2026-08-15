@@ -81,7 +81,7 @@ LOCKED_SOURCES = (
     REPO / "baselines/china_e3_e7/watch_e5_report_20260729.py",
     REPO / "docs/handoff/contract_e5e7_blind_01_20260728/report.md",
     REPO / "docs/handoff/advisor_instance_selection_01_20260729/report.md",
-    REPO / "docs/paper_v2/paper_main.tex",
+    REPO / "docs/paper_v2/RETIRED_paper_main.tex",
     PROTOTYPE / "epochal_hgs.py",
     PROTOTYPE / "route_pool_sp.py",
     PROTOTYPE / "pyvrp_adapter.py",

@@ -206,7 +206,7 @@ def main() -> int:
         sample_profile_rows.append(
             {
                 "slot_index_0_based": int(slot.slot_index),
-                "half_hour_slot": int(row["half_hour_slot"]),
+                "hourly_calendar_row": int(row["hourly_calendar_row"]),
                 "date": row["date"],
                 "city": row["city"],
                 "horizon_second_start": row["horizon_second_start"],

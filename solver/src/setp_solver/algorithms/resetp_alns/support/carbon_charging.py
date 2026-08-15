@@ -19,7 +19,9 @@ import math
 from typing import Iterable
 
 from setp_solver.charge_timing import (
+    ChargeTimingContexts,
     DEFAULT_CHARGE_TIMING_POLICY,
+    charge_timing_objective_value,
     select_charge_timing_start,
     validate_charge_timing_policy,
 )
@@ -255,6 +257,7 @@ def score_charge_option(
     *,
     carbon_weight: float = 1.0,
     charge_timing_policy: str | None = None,
+    timing_contexts: ChargeTimingContexts | None = None,
 ) -> ScoredChargeOption:
     """Score station and timing with the same monetary units as the model."""
 
@@ -276,14 +279,26 @@ def score_charge_option(
             carbon_profile=carbon_profile,
             prices=prices,
             charge_timing_policy=effective_timing_policy,
+            timing_contexts=timing_contexts,
         )
         timing = ChargeTimingChoice(
             start_second=start,
-            carbon_kg=charging_action_emissions_kg(
-                option.action_at(start),
-                instance,
-                carbon_profile,
-                prices,
+            carbon_kg=(
+                charging_action_emissions_kg(
+                    option.action_at(start),
+                    instance,
+                    carbon_profile,
+                    prices,
+                )
+                if timing_contexts is None
+                else charge_timing_objective_value(
+                    option.action_at(start),
+                    instance,
+                    carbon_profile,
+                    prices,
+                    charge_timing_policy="carbon_min",
+                    timing_contexts=timing_contexts,
+                )
             ),
             candidates_evaluated=-1,
         )
@@ -296,6 +311,7 @@ def score_charge_option(
             carbon_profile=carbon_profile,
             prices=prices,
             charge_timing_policy=effective_timing_policy,
+            timing_contexts=timing_contexts,
         )
         timing = ChargeTimingChoice(
             start_second=start,
@@ -310,11 +326,23 @@ def score_charge_option(
             candidates_evaluated=-1,
         )
     is_depot = option.node_type.lower() == "d"
-    electricity_cost = charging_action_electricity_cost(
-        option.action_at(timing.start_second),
-        instance,
-        carbon_profile,
-        prices,
+    placed_action = option.action_at(timing.start_second)
+    electricity_cost = (
+        charging_action_electricity_cost(
+            placed_action,
+            instance,
+            carbon_profile,
+            prices,
+        )
+        if timing_contexts is None
+        else charge_timing_objective_value(
+            placed_action,
+            instance,
+            carbon_profile,
+            prices,
+            charge_timing_policy="cost_min",
+            timing_contexts=timing_contexts,
+        )
     )
     occupancy_cost = 0.0 if is_depot else option.occupancy_seconds / 60.0 * float(prices.occupancy_fee)
     detour_cost = float(option.detour_m) / 1000.0 * float(prices.c_km)
@@ -355,6 +383,7 @@ def select_charge_option(
     *,
     carbon_weight: float = 1.0,
     charge_timing_policy: str | None = None,
+    timing_contexts: ChargeTimingContexts | None = None,
 ) -> ScoredChargeOption:
     """Choose a station and time by complete incremental model cost."""
 
@@ -366,6 +395,7 @@ def select_charge_option(
             prices,
             carbon_weight=carbon_weight,
             charge_timing_policy=charge_timing_policy,
+            timing_contexts=timing_contexts,
         )
         for option in options
     ]

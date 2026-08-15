@@ -14,7 +14,7 @@ import numpy as np
 import setp_solver.search.metaheuristic_baselines as meta_baselines
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.search.alns_crush import INSTANCE_DIRS
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.candidates import make_shared_initial_solution
@@ -33,7 +33,7 @@ class MetaheuristicBaselineTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.bundle = load_search_bundle(INSTANCE)
-        cls.warm = make_shared_initial_solution(cls.bundle)
+        cls.warm = make_shared_initial_solution(cls.bundle, prices=UK_2025_PRICES)
 
     def test_gold_environment(self) -> None:
         self.assertEqual(str(Path(sys.executable)), SYSTEM_PYTHON)
@@ -49,6 +49,7 @@ class MetaheuristicBaselineTest(unittest.TestCase):
                     eval_budget=8,
                     max_runtime_seconds=120.0,
                     initial_solution=self.warm,
+                    prices=UK_2025_PRICES,
                 )
                 self.assertEqual(result.status, "OK")
                 self.assertEqual(result.evals, 8)
@@ -56,18 +57,19 @@ class MetaheuristicBaselineTest(unittest.TestCase):
                 self.assertEqual(result.violation_count, 0)
                 self.assertIsNotNone(result.best_solution)
                 assert result.best_solution is not None
-                self.assertEqual(check_solution(result.best_solution, self.bundle.instance, DEFAULT_PRICES), [])
-                cost = evaluate(result.best_solution, self.bundle.instance, self.bundle.carbon_profile, DEFAULT_PRICES)["total_cost"]
+                self.assertEqual(check_solution(result.best_solution, self.bundle.instance, UK_2025_PRICES), [])
+                cost = evaluate(result.best_solution, self.bundle.instance, self.bundle.carbon_profile, UK_2025_PRICES)["total_cost"]
                 self.assertTrue(math.isfinite(float(cost)))
 
-    def test_lns_default_prices_match_explicit_default(self) -> None:
-        implicit = run_metaheuristic_baseline(
+    def test_lns_named_uk_prices_are_reproducible(self) -> None:
+        first = run_metaheuristic_baseline(
             "LNS",
             INSTANCE,
             seed=2,
             eval_budget=4,
             max_runtime_seconds=120.0,
             initial_solution=self.warm,
+            prices=UK_2025_PRICES,
         )
         explicit = run_metaheuristic_baseline(
             "LNS",
@@ -76,16 +78,16 @@ class MetaheuristicBaselineTest(unittest.TestCase):
             eval_budget=4,
             max_runtime_seconds=120.0,
             initial_solution=self.warm,
-            prices=DEFAULT_PRICES,
+            prices=UK_2025_PRICES,
         )
 
-        self.assertEqual(implicit.status, explicit.status)
-        self.assertEqual(implicit.evals, explicit.evals)
-        self.assertEqual(implicit.violation_count, explicit.violation_count)
-        self.assertAlmostEqual(float(implicit.best_cost), float(explicit.best_cost))
+        self.assertEqual(first.status, explicit.status)
+        self.assertEqual(first.evals, explicit.evals)
+        self.assertEqual(first.violation_count, explicit.violation_count)
+        self.assertAlmostEqual(float(first.best_cost), float(explicit.best_cost))
 
     def test_lns_prices_override_reaches_search_context(self) -> None:
-        override = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+        override = replace(UK_2025_PRICES, B_battery_kwh=280.0)
         captured_batteries: list[float] = []
         real_context = meta_baselines.EvaluationContext
 
@@ -124,6 +126,7 @@ class MetaheuristicBaselineTest(unittest.TestCase):
                     eval_budget=2,
                     max_runtime_seconds=120.0,
                     algorithms=["GA"],
+                    prices=UK_2025_PRICES,
                 )
                 self.assertEqual(profile["gate"], "PROFILE_COMPLETE")
                 self.assertTrue((out / "profile" / "profile_report.md").exists())
@@ -137,6 +140,7 @@ class MetaheuristicBaselineTest(unittest.TestCase):
                     eval_budget=2,
                     max_runtime_seconds=120.0,
                     algorithms=["GA"],
+                    prices=UK_2025_PRICES,
                 )
                 self.assertEqual(run["gate"], "OK")
                 self.assertTrue((out / "formal" / "convergence_curves.csv").exists())
@@ -158,6 +162,7 @@ class MetaheuristicBaselineTest(unittest.TestCase):
                     eval_budget=16_000,
                     max_runtime_seconds=900.0,
                     initial_solution=self.warm,
+                    prices=UK_2025_PRICES,
                 )
                 self.assertEqual(result.status, "OK")
                 self.assertEqual(result.evals, 16_000)

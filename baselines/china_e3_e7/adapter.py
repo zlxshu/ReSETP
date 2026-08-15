@@ -291,7 +291,7 @@ def preflight(repo_root: Path = ROOT) -> dict[str, Any]:
         for relative in all_source_paths(contract)
         if not (repo_root / relative).is_file()
     ]
-    paper = repo_root / "docs/paper_v2/paper_main.tex"
+    paper = repo_root / "docs/paper_v2/RETIRED_paper_main.tex"
     paper_text = paper.read_text(encoding="utf-8") if paper.is_file() else ""
     paper_hooks = {
         "paper_present": paper.is_file(),

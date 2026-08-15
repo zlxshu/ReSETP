@@ -6,6 +6,6 @@ A4R-03,P0,PASS,charging action crossing 24:00,errors=[],23:59:30--00:00:30 split
 A4R-04,P0,PASS,depot/public price-field selection,errors=[],same-city public minus depot cost equals 0.4 CNY/kWh proxy,one 0.1 kWh depot/public pair per city at 06:00
 A4R-FI-01,P0,PASS,fault injection: one missing time-varying price field,rejected,formal China81 settlement fails closed,china81.py::_load_time_profile on a temporary malformed calendar
 A4R-FI-02,P0,PASS,fault injection: city labels removed from formal profile,rejected,formal China81 profile cannot downgrade to shared-profile mode,china81.py::_load_time_profile on a temporary malformed calendar
-A4R-FI-03,P0,PASS,fault injection: slot id and local-time start disagree,rejected,half_hour_slot s starts at exactly (s-1)*1800 seconds,china81.py::_load_time_profile; cost.py profile lookup
+A4R-FI-03,P0,PASS,fault injection: slot id and local-time start disagree,rejected,hourly_calendar_row s starts at exactly (s-1)*1800 seconds,china81.py::_load_time_profile; cost.py profile lookup
 A4R-HARD-01,P2,PASS,hardening: low-level settlement receives partial price rows,rejected,formal caller must validate first; preferably expose an explicit strict mode instead of silently using the historical fallback,cost.py::charging_action_electricity_cost
 A4R-FI-04,P0,PASS,fault injection: requested date absent from calendar,rejected,loader fails closed,china81.py::_load_time_profile

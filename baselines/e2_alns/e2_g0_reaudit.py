@@ -641,7 +641,7 @@ def scenario_compliance_audit() -> dict[str, Any]:
             hit_groups["tests"].append(hit)
         elif path.startswith("docs/handoff/") or path == "HANDOFF.md":
             hit_groups["handoff_or_memory"].append(hit)
-        elif path == "docs/paper_submission_final/paper_main.tex":
+        elif path == "docs/paper_submission_final/RETIRED_paper_main.tex":
             hit_groups["paper_main"].append(hit)
         elif path.startswith("docs/paper_submission_final/generated_tables/"):
             hit_groups["paper_generated_tables"].append(hit)
@@ -658,7 +658,7 @@ def scenario_compliance_audit() -> dict[str, Any]:
         else:
             hit_groups["other"].append(hit)
     prices_text = (REPO_ROOT / "solver/src/setp_solver/prices.py").read_text(encoding="utf-8")
-    paper_text = (REPO_ROOT / "docs/paper_submission_final/paper_main.tex").read_text(encoding="utf-8")
+    paper_text = (REPO_ROOT / "docs/paper_submission_final/RETIRED_paper_main.tex").read_text(encoding="utf-8")
     default_ok = (
         abs(float(DEFAULT_PRICES.B_battery_kwh) - 80.0) <= 1e-12
         and abs(float(DEFAULT_PRICES.Q_capacity) - 3650.0) <= 1e-12
@@ -1033,7 +1033,7 @@ def protected_diff() -> list[str]:
         "solver/src/setp_solver/check.py",
         "solver/src/setp_solver/search/evaluation.py",
         "solver/src/setp_solver/prices.py",
-        "docs/paper_submission_final/paper_main.tex",
+        "docs/paper_submission_final/RETIRED_paper_main.tex",
         "solver/src/setp_solver/search/feasible_repair.py",
         "solver/src/setp_solver/search/resetp_alns",
         "solver/src/setp_solver/search/alns_wouda.py",

@@ -96,7 +96,7 @@ def build_rows() -> list[dict[str, object]]:
             record: dict[str, object] = {
                 "date": slot_timestamp.date().isoformat(),
                 "day_index": slot_timestamp.timetuple().tm_yday,
-                "half_hour_slot": slot_timestamp.hour * 2 + half_hour_offset // 30 + 1,
+                "hourly_calendar_row": slot_timestamp.hour * 2 + half_hour_offset // 30 + 1,
                 "hour_of_day": slot_timestamp.hour,
                 "minute": slot_timestamp.minute,
                 "source_hour_index": hour_index,

@@ -48,7 +48,7 @@ B_battery_kwh = 80.0  # kWh, EV 电池容量。Goeke(2015)Table 4 / Davis & Figl
 # 代理, 论文须如实表述为 proxy。
 # ---------------------------------------------------------------------------
 
-diesel_price = 1.4331  # £/L, 英国政府周度道路燃油价 ULSD 2025-11 真值。参考文献: 英国能源安全与净零部. 道路燃油周度价格[EB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/statistics/weekly-road-fuel-prices.
+UK_2025_DIESEL_PRICE_GBP_PER_L = 1.4331  # £/L, 英国政府周度道路燃油价 ULSD 2025-11 真值。参考文献: 英国能源安全与净零部. 道路燃油周度价格[EB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/statistics/weekly-road-fuel-prices.
 electricity_price = 0.82  # £/kWh, 公共快充代理值, GRIDSERVE 2025-11 DC 充电 82-89p/kWh 取低端。参考文献: GRIDSERVE. Charging tariffs[EB/OL]. (2025)[2026-06-11]. https://www.gridserve.com/.
 # v2026-06-12: Q2 separates public-station and depot pre-departure charging prices.
 station_electricity_price = electricity_price  # £/kWh, public station charging price; kept equal to legacy electricity_price.
@@ -61,9 +61,9 @@ initial_ev_battery_kwh = 0.0  # kWh, paper bbar default for fresh static Q2/Q3 s
 charging_curve_id = L100_CONTROL.curve_id
 charging_soc_breakpoints = L100_CONTROL.soc_breakpoints
 charging_relative_powers = L100_CONTROL.relative_powers
-carbon_price = 0.05034  # £/kgCO2e, 主值, 折合 £50.34/tCO2e, UK ETS 2025 二级市场约 £50/t。参考文献: International Carbon Action Partnership. UK Emissions Trading System[EB/OL]. [2026-06-11]. https://icapcarbonaction.com/en/ets/uk-emissions-trading-scheme-uk-ets.
-carbon_price_low = 0.04184  # £/kgCO2e, 敏感性低值, 折合 £41.84/tCO2e, UK ETS 2025 民事处罚碳价官方真值。参考文献: 英国能源安全与净零部. UK ETS civil penalty carbon price 2025[EB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/participating-in-the-uk-ets/how-to-comply-with-the-uk-ets.
-diesel_ef = 2.57082  # kgCO2e/L, 英国 2025 温室气体转换因子, 零售柴油(含约 3% 生物柴油混合)真值。参考文献: 英国环境食品与乡村事务部, 能源安全与净零部. 2025 government greenhouse gas conversion factors for company reporting[DB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025.
+UK_2025_CARBON_PRICE_GBP_PER_KG = 0.05034  # £/kgCO2e, 主值, 折合 £50.34/tCO2e, UK ETS 2025 二级市场约 £50/t。参考文献: International Carbon Action Partnership. UK Emissions Trading System[EB/OL]. [2026-06-11]. https://icapcarbonaction.com/en/ets/uk-emissions-trading-scheme-uk-ets.
+UK_2025_CARBON_PRICE_LOW_GBP_PER_KG = 0.04184  # £/kgCO2e, 敏感性低值, 折合 £41.84/tCO2e, UK ETS 2025 民事处罚碳价官方真值。参考文献: 英国能源安全与净零部. UK ETS civil penalty carbon price 2025[EB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/participating-in-the-uk-ets/how-to-comply-with-the-uk-ets.
+UK_2025_DIESEL_EF_KG_PER_L = 2.57082  # kgCO2e/L, 英国 2025 温室气体转换因子, 零售柴油(含约 3% 生物柴油混合)真值。参考文献: 英国环境食品与乡村事务部, 能源安全与净零部. 2025 government greenhouse gas conversion factors for company reporting[DB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025.
 vehicle_fixed_cost = 80.0  # £/班次, 中型柴油货车单班次启用成本代理值, 英国货车日租代理。参考文献: 代理值说明, 研究情景参数, 需在论文中明确标为 proxy.
 occupancy_fee = 0.50  # £/min, 公共充电桩超时占用费代理值, 英国快充网络。参考文献: 代理值说明, 研究情景参数, 需在论文中明确标为 proxy.
 # 主值=完全共享基线；95 为历史上无来源的高摩擦代理，只保留在 0/10/25/50/95 敏感性轴。
@@ -92,6 +92,28 @@ c_km = 0.35  # £/km, 非能源里程成本代理值, 由英国货车总运营�
 
 
 @dataclass(frozen=True)
+class _ExplicitScenarioValueRequired:
+    """Sentinel that rejects a scenario-sensitive value without a context."""
+
+    field_name: str
+
+    def __float__(self) -> float:
+        raise ValueError(
+            f"{self.field_name} requires an explicit scenario price set; "
+            "use UK_2025_PRICES for the historical UK case or pass the "
+            "active bundle prices"
+        )
+
+
+_EXPLICIT_DIESEL_PRICE = _ExplicitScenarioValueRequired("diesel_price")
+_EXPLICIT_CARBON_PRICE = _ExplicitScenarioValueRequired("carbon_price")
+_EXPLICIT_CARBON_PRICE_LOW = _ExplicitScenarioValueRequired(
+    "carbon_price_low"
+)
+_EXPLICIT_DIESEL_EF = _ExplicitScenarioValueRequired("diesel_ef")
+
+
+@dataclass(frozen=True)
 class PriceParameters:
     g0: float = g0
     rho_a: float = rho_a
@@ -115,7 +137,9 @@ class PriceParameters:
     alpha_e: float = alpha_e
     B_battery_kwh: float = B_battery_kwh
     initial_ev_battery_kwh: float = initial_ev_battery_kwh
-    diesel_price: float = diesel_price
+    diesel_price: float | _ExplicitScenarioValueRequired = (
+        _EXPLICIT_DIESEL_PRICE
+    )
     # China81 diesel-price trace (documentation only; no default changes here):
     # the superseded runtime snapshot used Beijing/Tianjin/Shijiazhuang
     # 6.87 CNY/L, Guangzhou/Shenzhen/Dongguan/Foshan 6.83 CNY/L, and
@@ -130,7 +154,8 @@ class PriceParameters:
     # derivation) recorded, with file hashes, in
     # baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/
     # diesel_price_2025_02_12_source_register.csv.  China81 loads these through
-    # its explicit city/date/slot authority; DEFAULT_PRICES remains unchanged.
+    # its explicit city/date/slot authority; the no-context DEFAULT_PRICES
+    # deliberately carries no scenario-sensitive value for these fields.
     # Optional route-origin city overrides. The empty tuple preserves every
     # historical/default scenario; China81 formal bundles provide a complete
     # nine-city tuple and fail closed when a route-origin city is absent.
@@ -139,9 +164,13 @@ class PriceParameters:
     station_electricity_price: float = station_electricity_price
     depot_electricity_price: float = depot_electricity_price
     depot_charge_power_kw: float = depot_charge_power_kw
-    carbon_price: float = carbon_price
-    carbon_price_low: float = carbon_price_low
-    diesel_ef: float = diesel_ef
+    carbon_price: float | _ExplicitScenarioValueRequired = (
+        _EXPLICIT_CARBON_PRICE
+    )
+    carbon_price_low: float | _ExplicitScenarioValueRequired = (
+        _EXPLICIT_CARBON_PRICE_LOW
+    )
+    diesel_ef: float | _ExplicitScenarioValueRequired = _EXPLICIT_DIESEL_EF
     vehicle_fixed_cost: float = vehicle_fixed_cost
     # Disabled by default. E5-P1 sets 75 CNY/h only in its sensitivity bundle.
     route_time_cost_per_hour: float = 0.0
@@ -173,11 +202,20 @@ class PriceParameters:
 
     @property
     def diesel_emission_factor(self) -> float:
-        return self.diesel_ef
+        return float(self.diesel_ef)
 
     @property
     def unit_distance_cost_per_meter(self) -> float:
         return self.c_km / 1000.0
 
 
+# No-context calls retain the historical name for API compatibility, but the
+# four scenario-sensitive UK fields above are fail-closed.  Historical UK
+# replay and UK-labelled reporting must opt into this named object explicitly.
 DEFAULT_PRICES = PriceParameters()
+UK_2025_PRICES = PriceParameters(
+    diesel_price=UK_2025_DIESEL_PRICE_GBP_PER_L,
+    carbon_price=UK_2025_CARBON_PRICE_GBP_PER_KG,
+    carbon_price_low=UK_2025_CARBON_PRICE_LOW_GBP_PER_KG,
+    diesel_ef=UK_2025_DIESEL_EF_KG_PER_L,
+)

@@ -14,7 +14,7 @@
     "scenario_id": "CN_DEPOT_DC_120KW_TWO_SEPARATE_UNITS_PROBE",
     "charger_power_kw_per_charge_action": 120.0,
     "existing_depot_service_positions": 2,
-    "maximum_simultaneous_depot_power_kw_if_both_positions_are_used": 240.0,
+    "maximum_simultaneous_depot_site_power_kw_shadow_if_both_positions_are_used": 240.0,
     "topology_interpretation": "Two separate 120 kW units. It is not interpreted as two guns each drawing 120 kW from one shared 120 kW dual-gun unit.",
     "unchanged_public_station_power_kw": 60.0,
     "source_class": "CONSTRUCTED_SENSITIVITY_SCENARIO",
@@ -168,13 +168,13 @@
       {
         "arm": "L100_control",
         "curve": "constant power",
-        "depot_power_kw": 120.0,
+        "depot_site_power_kw_shadow": 120.0,
         "tariff": "frozen fast-charge tariff overlay"
       },
       {
         "arm": "M17_FAST_SHAPE_SCALED_120KW_PWL",
         "curve": "frozen Montoya fast shape",
-        "depot_power_kw": 120.0,
+        "depot_site_power_kw_shadow": 120.0,
         "tariff": "same frozen fast-charge tariff overlay"
       }
     ],

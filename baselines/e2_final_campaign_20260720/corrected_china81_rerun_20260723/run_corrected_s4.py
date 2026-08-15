@@ -466,7 +466,7 @@ def settlement_trace(solution: Solution, bundle: Any) -> dict[str, Any]:
                     ),
                     "diesel_zone": row["diesel_zone"],
                     "scenario_date": row["date"],
-                    "half_hour_slot": int(row["half_hour_slot"]),
+                    "hourly_calendar_row": int(row["hourly_calendar_row"]),
                     "energy_kwh": float(slot.y_skt_kwh),
                     "electricity_price_field": price_field,
                     "electricity_price_cny_per_kwh": float(

@@ -12,10 +12,12 @@ from dataclasses import asdict
 from pathlib import Path
 from time import perf_counter
 
-from setp_hgs_kernel import read
 from setp_hgs_kernel.stop import MaxIterations
 from setp_solver.algorithms.problem_hgs.public_search import (
+    PUBLIC_INSTANCE_ROUND_FUNC,
+    PUBLIC_INSTANCE_SCALE,
     build_integrated_public_hgs,
+    read_public_instance,
 )
 
 
@@ -73,10 +75,10 @@ def _route_sha256(solution) -> str:
 
 
 def _run_one(
-    task: tuple[str, str, int, int, str],
+    task: tuple[str, str, int, int],
 ) -> list[dict[str, object]]:
-    instance, path, seed, iterations, round_func = task
-    data = read(Path(path), round_func=round_func)
+    instance, path, seed, iterations = task
+    data = read_public_instance(Path(path))
     rows = []
     arms = (
         ("copied_loop", False, False),
@@ -131,11 +133,6 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=11)
     parser.add_argument("--workers", type=int, default=6)
     parser.add_argument("--instances", nargs="*")
-    parser.add_argument(
-        "--round-func",
-        choices=("round", "exact"),
-        default="round",
-    )
     args = parser.parse_args()
     if args.iterations < 1 or args.workers < 1:
         raise ValueError("iterations and workers must be positive")
@@ -166,7 +163,8 @@ def main() -> int:
             "seed": args.seed,
             "iterations": args.iterations,
             "workers": args.workers,
-            "round_func": args.round_func,
+            "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
+            "integer_scale": PUBLIC_INSTANCE_SCALE,
             "runner_sha256": _sha256(Path(__file__).resolve()),
             "public_search_sha256": _sha256(
                 repo
@@ -184,7 +182,6 @@ def main() -> int:
             str(source / f"{instance}.vrp"),
             args.seed,
             args.iterations,
-            args.round_func,
         )
         for instance in instances
     )

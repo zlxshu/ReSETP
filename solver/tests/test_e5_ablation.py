@@ -5,7 +5,7 @@ import unittest
 
 from setp_solver.check import check_solution
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.search.charging import (
     _fixed_charge_latest,
     replay_fixed_route_charging,
@@ -95,7 +95,11 @@ class E5ChargingAblationTests(unittest.TestCase):
 
     # v2026-06-12: S0 report is the E5 figure source: 48 slots per policy and strong return-charge delta.
     def test_r1_ablation_report_replays_last_a_routes_with_48_slot_tables(self) -> None:
-        report = run_e5_charging_ablation(Q1_BUNDLE_DIR, REAL_BUDGET_REPORT)
+        report = run_e5_charging_ablation(
+            Q1_BUNDLE_DIR,
+            REAL_BUDGET_REPORT,
+            prices=UK_2025_PRICES,
+        )
 
         self.assertEqual(report["slot_count"], 48)
         self.assertEqual(len(report["carbon_aware"]["slot_y_skt"]), 48)
@@ -107,7 +111,11 @@ class E5ChargingAblationTests(unittest.TestCase):
 
     # v2026-06-12: R2 must explain remaining CV routes with explicit flip economics and swap counts.
     def test_r2_ev_adoption_diagnostic_reports_three_cv_flips_and_swap_counts(self) -> None:
-        diagnostic = run_ev_adoption_diagnostic(Q1_BUNDLE_DIR, REAL_BUDGET_REPORT)
+        diagnostic = run_ev_adoption_diagnostic(
+            Q1_BUNDLE_DIR,
+            REAL_BUDGET_REPORT,
+            prices=UK_2025_PRICES,
+        )
 
         self.assertEqual([row["sample"] for row in diagnostic["cv_route_flips"]], ["short", "mid", "long"])
         self.assertEqual(len(diagnostic["cv_route_flips"]), 3)

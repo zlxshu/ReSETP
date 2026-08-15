@@ -88,7 +88,7 @@
     }
   ],
   "calendar_contract": {
-    "approved_wrapper": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv",
+    "approved_wrapper": "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv",
     "approved_wrapper_sha256": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b",
     "offset_rule": {
       "-1": "2025-02-11",
@@ -100,7 +100,7 @@
       "city",
       "region",
       "date",
-      "half_hour_slot",
+      "hourly_calendar_row",
       "minute_of_day",
       "tariff_period",
       "depot_energy_cny_per_kwh",
@@ -122,7 +122,7 @@
     "shared_timing_projection_sha256": "162f3b9709f13d278867c8b9d9a5d22ff2fda48962188512166ca9ff50f81175",
     "shared_timing_rows_equal": true,
     "status": "PASS_E4_ALIGNED_DUAL_DAY_CALENDAR",
-    "timing_authority": "data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_48slot_calendar.csv",
+    "timing_authority": "data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_hourly_calendar.csv",
     "timing_authority_sha256": "54acbdc757c8a3a3b097d1e39cd35294e795ca2c1711bd56b12bc3b9af9b1c0b"
   },
   "checks": [
@@ -514,8 +514,8 @@
     "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e7_events/cn-prd-50c-01-V2-LOCATIONS/stream_seed3.json": "3738e22146ba73fb26504687cb2a5ca97fa64e8627968f9423e1d378f8a6a434",
     "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e7_events/cn-prd-50c-01-V2-LOCATIONS/stream_seed4.json": "b55b49de70f9277aff78990dcaa3d7f20632fe2ed996a85e6ad1ae900bf762a3",
     "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e7_events/cn-prd-50c-01-V2-LOCATIONS/stream_seed5.json": "9e800f4dd22ad25d62b615d58c236676a5d275a82d48fa4cb79c1f352b5fd989",
-    "data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_48slot_calendar.csv": "54acbdc757c8a3a3b097d1e39cd35294e795ca2c1711bd56b12bc3b9af9b1c0b",
-    "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b"
+    "data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_hourly_calendar.csv": "54acbdc757c8a3a3b097d1e39cd35294e795ca2c1711bd56b12bc3b9af9b1c0b",
+    "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b"
   },
   "owner_manifest": {
     "rows": [
@@ -894,7 +894,7 @@
         "diesel_price_cny_per_l",
         "diesel_zone",
         "forecast_gco2_per_kwh",
-        "half_hour_slot",
+        "hourly_calendar_row",
         "horizon_second_start",
         "joint_key_status",
         "price_area_id",
@@ -958,7 +958,7 @@
         "diesel_price_cny_per_l",
         "diesel_zone",
         "forecast_gco2_per_kwh",
-        "half_hour_slot",
+        "hourly_calendar_row",
         "horizon_second_start",
         "joint_key_status",
         "price_area_id",
@@ -1022,7 +1022,7 @@
         "diesel_price_cny_per_l",
         "diesel_zone",
         "forecast_gco2_per_kwh",
-        "half_hour_slot",
+        "hourly_calendar_row",
         "horizon_second_start",
         "joint_key_status",
         "price_area_id",

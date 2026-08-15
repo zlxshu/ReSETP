@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# scikit-build-core / CMake
+_skbuild/
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+build-lera*/
+
+# Compiled extensions
+*.so
+*.pyd
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Nix
+result
+result-*
+
+# uv (lockfile not tracked: kayros is a library, deps are resolved by pyproject)
+uv.lock
+
+# cibuildwheel output (local wheel builds, e.g. the plan-13 M9 vNext arm).
+# Published wheels come from CI, never from a working tree.
+wheelhouse/
+
+# Experiment output trees are workspace data, not library source: the plan-13
+# probes are run from here and their records belong in the workspace.
+outputs/

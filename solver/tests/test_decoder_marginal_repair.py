@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.search.bundle import SearchBundle
 from setp_solver.search import metaheuristic_baselines as mb
 from setp_solver.solution import Solution
@@ -56,7 +56,7 @@ def _absolute_distance_append(customer_id: str, plans: dict[str, list[list[str]]
 class DecoderMarginalRepairTest(unittest.TestCase):
     def test_absolute_distance_reproducer_splits_adjacent_customers(self) -> None:
         bundle = _two_customer_bundle()
-        session = mb._SearchSession("GA", bundle, 1, 8, 120.0, Solution(), prices=DEFAULT_PRICES)
+        session = mb._SearchSession("GA", bundle, 1, 8, 120.0, Solution(), prices=UK_2025_PRICES)
         plans: dict[str, list[list[str]]] = {"D0": []}
 
         for customer_id in ("C1", "C2"):
@@ -66,7 +66,7 @@ class DecoderMarginalRepairTest(unittest.TestCase):
 
     def test_decoder_uses_marginal_route_cost_and_merges_adjacent_customers(self) -> None:
         bundle = _two_customer_bundle()
-        session = mb._SearchSession("GA", bundle, 1, 8, 120.0, Solution(), prices=DEFAULT_PRICES)
+        session = mb._SearchSession("GA", bundle, 1, 8, 120.0, Solution(), prices=UK_2025_PRICES)
         plans: dict[str, list[list[str]]] = {"D0": []}
 
         for customer_id in ("C1", "C2"):

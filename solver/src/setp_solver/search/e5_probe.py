@@ -82,6 +82,7 @@ def run_e5_probe(
     enforce_k0: bool | None = None,
     policy: SearchPolicy | None = None,
     allow_zero_charge: bool = False,
+    prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
 ) -> E5ProbeResult:
     """Run carbon-on vs carbon-price-zero ALNS probes and aggregate slots.
 
@@ -103,6 +104,7 @@ def run_e5_probe(
         policy=probe_policy,
         eval_budget=eval_budget if real_budget_mode else None,
         max_runtime_seconds=max_runtime_seconds,
+        prices=prices,
     )
     carbon_off = run_alns_wouda(
         bundle_dir,
@@ -112,11 +114,26 @@ def run_e5_probe(
         policy=probe_policy,
         eval_budget=eval_budget if real_budget_mode else None,
         max_runtime_seconds=max_runtime_seconds,
+        prices=prices,
     )
     if check_k0:
         _assert_k0_improved(carbon_on, carbon_off)
-    on_result = _scenario("A_carbon_on", carbon_on, carbon_on.best_solution, bundle.instance, bundle.carbon_profile)
-    off_result = _scenario("B_carbon_weight_zero", carbon_off, carbon_off.best_solution, bundle.instance, bundle.carbon_profile)
+    on_result = _scenario(
+        "A_carbon_on",
+        carbon_on,
+        carbon_on.best_solution,
+        bundle.instance,
+        bundle.carbon_profile,
+        prices,
+    )
+    off_result = _scenario(
+        "B_carbon_weight_zero",
+        carbon_off,
+        carbon_off.best_solution,
+        bundle.instance,
+        bundle.carbon_profile,
+        prices,
+    )
     # v2026-06-12: N2 natural-adoption stake probes must report zero-charge
     # tables instead of stopping early; default behavior stays guarded.
     if not allow_zero_charge and (on_result.total_charge_kwh <= 1e-9 or off_result.total_charge_kwh <= 1e-9):

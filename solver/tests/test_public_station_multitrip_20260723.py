@@ -8,7 +8,7 @@ from setp_solver.charging_curve import NL90_MILD
 from setp_solver.check import check_solution
 from setp_solver.cost import _arc_loads, ev_instance_arc_energy_kwh
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.search.certificate_execution import (
     build_certificate_execution_ledger,
 )
@@ -71,7 +71,8 @@ def _public_charge_case() -> tuple[Solution, Instance, PriceParameters]:
         "D0",
         ["D0", "F1", "C1", "D0"],
     )
-    probe = PriceParameters(
+    probe = replace(
+        UK_2025_PRICES,
         charging_curve_id=NL90_MILD.curve_id,
         charging_soc_breakpoints=NL90_MILD.soc_breakpoints,
         charging_relative_powers=NL90_MILD.relative_powers,

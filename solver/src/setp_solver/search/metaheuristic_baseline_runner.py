@@ -21,7 +21,7 @@ from typing import Any
 import numpy as np
 
 from ..check import check_solution
-from ..prices import DEFAULT_PRICES
+from ..prices import DEFAULT_PRICES, UK_2025_PRICES, PriceParameters
 from . import candidates as candidates_module
 from . import evaluation as evaluation_module
 from . import metaheuristic_baselines as baseline_module
@@ -61,6 +61,7 @@ def run_all(
     auto_runtime_fallback: bool = False,
     speed_probe_eval_budget: int = DEFAULT_PROFILE_EVAL_BUDGET,
     algorithms: list[str] | None = None,
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     _ensure_environment()
     root = Path(repo_root)
@@ -78,22 +79,24 @@ def run_all(
         auto_runtime_fallback=auto_runtime_fallback,
         speed_probe_eval_budget=int(speed_probe_eval_budget),
         target_eval_budget=int(eval_budget),
+        prices=prices,
     )
     started = time.perf_counter()
 
-    tasks: list[tuple[str, str, str, int, int, float]] = []
+    tasks: list[tuple[str, str, str, int, int, float, PriceParameters]] = []
     for instance_name, rel_dir in selected.items():
         bundle_dir = str(root / rel_dir)
         for seed in seeds:
-            tasks.append(("fair-SA", instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps["fair-SA"]))
-            tasks.append(("winner-kernel ALNS", instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps["winner-kernel ALNS"]))
+            tasks.append(("fair-SA", instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps["fair-SA"], prices))
+            tasks.append(("winner-kernel ALNS", instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps["winner-kernel ALNS"], prices))
             for algorithm in selected_algorithms:
-                tasks.append((algorithm, instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps.get(algorithm, float(max_runtime_seconds))))
+                tasks.append((algorithm, instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps.get(algorithm, float(max_runtime_seconds)), prices))
 
     results, fallback_reruns = _run_parallel_with_fallback(
         tasks,
         fallback_max_runtime_seconds=fallback_max_runtime_seconds,
         auto_runtime_fallback=auto_runtime_fallback,
+        prices=prices,
     )
 
     return _write_formal_results(
@@ -111,6 +114,7 @@ def run_all(
         started=started,
         fallback_reruns=fallback_reruns,
         previous_output_dir=None,
+        prices=prices,
     )
 
 
@@ -120,6 +124,7 @@ def run_fallback_completion(
     output_dir: str | Path,
     *,
     fallback_max_runtime_seconds: float = DEFAULT_FALLBACK_MAX_RUNTIME_SECONDS,
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     _ensure_environment()
     root = Path(repo_root)
@@ -131,7 +136,7 @@ def run_fallback_completion(
     manifest = json.loads((previous / "manifest.json").read_text(encoding="utf-8"))
     raw_rows = _read_csv(previous / "raw_runs.csv")
     results = [_result_from_raw_row(previous, row) for row in raw_rows]
-    tasks: list[tuple[str, str, str, int, int, float]] = []
+    tasks: list[tuple[str, str, str, int, int, float, PriceParameters]] = []
     old_by_key = {_result_key(result): result for result in results}
     for result in results:
         if (
@@ -150,6 +155,7 @@ def run_fallback_completion(
                     int(result["seed"]),
                     int(result["eval_budget"]),
                     float(fallback_max_runtime_seconds),
+                    prices,
                 )
             )
 
@@ -201,6 +207,7 @@ def run_fallback_completion(
         fallback_reruns=fallback_reruns,
         previous_output_dir=str(previous),
         elapsed_seconds_override=elapsed_override,
+        prices=prices,
     )
 
 
@@ -221,6 +228,7 @@ def _write_formal_results(
     fallback_reruns: list[dict[str, Any]],
     previous_output_dir: str | None,
     elapsed_seconds_override: float | None = None,
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     raw_rows: list[dict[str, Any]] = []
@@ -233,7 +241,15 @@ def _write_formal_results(
             continue
         bundle = load_search_bundle(result["bundle_dir"])
         solution = _solution_from_result(result)
-        row = cost_breakdown_row(result["instance"], result["algorithm"], int(result["seed"]), solution, bundle.instance, bundle.carbon_profile)
+        row = cost_breakdown_row(
+            result["instance"],
+            result["algorithm"],
+            int(result["seed"]),
+            solution,
+            bundle.instance,
+            bundle.carbon_profile,
+            prices,
+        )
         row.update(
             {
                 "variant": "metaheuristic_baseline",
@@ -292,6 +308,7 @@ def run_profile(
     eval_budget: int = DEFAULT_PROFILE_EVAL_BUDGET,
     max_runtime_seconds: float = 300.0,
     algorithms: list[str] | None = None,
+    prices: PriceParameters = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     _ensure_environment()
     root = Path(repo_root)
@@ -312,6 +329,7 @@ def run_profile(
             int(seed),
             int(eval_budget),
             float(max_runtime_seconds),
+            prices,
         )
         summaries.append(result["summary"])
         rows.extend(result["buckets"])
@@ -335,10 +353,12 @@ def run_profile(
     return {"gate": "PROFILE_COMPLETE", "manifest": str(out / "manifest.json")}
 
 
-def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
-    algorithm, instance_name, bundle_dir, seed, eval_budget, max_runtime_seconds = task
+def _run_task(
+    task: tuple[str, str, str, int, int, float, PriceParameters],
+) -> dict[str, Any]:
+    algorithm, instance_name, bundle_dir, seed, eval_budget, max_runtime_seconds, prices = task
     bundle = load_search_bundle(bundle_dir)
-    warm = make_shared_initial_solution(bundle)
+    warm = make_shared_initial_solution(bundle, prices=prices)
     started = time.perf_counter()
     if algorithm == "fair-SA":
         run = run_candidate(
@@ -348,6 +368,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
             eval_budget=eval_budget,
             max_runtime_seconds=max_runtime_seconds,
             initial_solution=warm,
+            prices=prices,
         )
         solution = run.best_solution
         status = "OK" if solution is not None and int(run.evals) >= int(eval_budget) else run.status
@@ -361,6 +382,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
             bundle_dir,
             config=WinnerKernelConfig(seed=seed, eval_budget=eval_budget, max_runtime_seconds=max_runtime_seconds),
             initial_solution=warm,
+            prices=prices,
         )
         solution = run["best_solution"]
         status = "OK" if run["feasible"] and int(run["evaluations"]) >= int(eval_budget) else "HALT_WINNER_INCOMPARABLE"
@@ -377,6 +399,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
             eval_budget=eval_budget,
             max_runtime_seconds=max_runtime_seconds,
             initial_solution=warm,
+            prices=prices,
         )
         solution = run.best_solution
         status = run.status
@@ -385,7 +408,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
         best_cost = run.best_cost
         elapsed = float(run.elapsed_seconds)
         history = list(run.history)
-    violations = check_solution(solution, bundle.instance, DEFAULT_PRICES) if solution is not None else []
+    violations = check_solution(solution, bundle.instance, prices) if solution is not None else []
     if solution is not None and violations:
         status = "HALT_VIOLATIONS"
     if evaluations < int(eval_budget):
@@ -408,7 +431,9 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
     }
 
 
-def _run_parallel(tasks: list[tuple[str, str, str, int, int, float]]) -> list[dict[str, Any]]:
+def _run_parallel(
+    tasks: list[tuple[str, str, str, int, int, float, PriceParameters]],
+) -> list[dict[str, Any]]:
     max_workers = max(1, min(len(tasks), int(os.environ.get("SETP_META_PARALLEL_WORKERS", os.cpu_count() or 2))))
     if max_workers == 1:
         return [_run_task(task) for task in tasks]
@@ -421,16 +446,17 @@ def _run_parallel(tasks: list[tuple[str, str, str, int, int, float]]) -> list[di
 
 
 def _run_parallel_with_fallback(
-    tasks: list[tuple[str, str, str, int, int, float]],
+    tasks: list[tuple[str, str, str, int, int, float, PriceParameters]],
     *,
     fallback_max_runtime_seconds: float | None,
     auto_runtime_fallback: bool,
+    prices: PriceParameters,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     results = _run_parallel(tasks)
     if not auto_runtime_fallback or fallback_max_runtime_seconds is None:
         return results, []
     fallback_cap = float(fallback_max_runtime_seconds)
-    fallback_tasks: list[tuple[str, str, str, int, int, float]] = []
+    fallback_tasks: list[tuple[str, str, str, int, int, float, PriceParameters]] = []
     for result in results:
         if (
             result["status"] == "HALT_RUNTIME_UNDER_EVAL"
@@ -445,6 +471,7 @@ def _run_parallel_with_fallback(
                     int(result["seed"]),
                     int(result["eval_budget"]),
                     fallback_cap,
+                    prices,
                 )
             )
     if not fallback_tasks:
@@ -485,6 +512,7 @@ def _runtime_caps(
     auto_runtime_fallback: bool,
     speed_probe_eval_budget: int,
     target_eval_budget: int,
+    prices: PriceParameters,
 ) -> dict[str, float]:
     caps = {"fair-SA": float(max_runtime_seconds), "winner-kernel ALNS": float(max_runtime_seconds)}
     caps.update({algorithm: float(max_runtime_seconds) for algorithm in algorithms})
@@ -494,7 +522,7 @@ def _runtime_caps(
         return caps
     bundle_dir = root / selected["L-main"]
     bundle = load_search_bundle(bundle_dir)
-    warm = make_shared_initial_solution(bundle)
+    warm = make_shared_initial_solution(bundle, prices=prices)
     for algorithm in algorithms:
         started = time.perf_counter()
         result = run_metaheuristic_baseline(
@@ -504,6 +532,7 @@ def _runtime_caps(
             eval_budget=int(speed_probe_eval_budget),
             max_runtime_seconds=max(60.0, float(fallback_max_runtime_seconds)),
             initial_solution=warm,
+            prices=prices,
         )
         elapsed = max(1e-9, time.perf_counter() - started)
         evals_per_second = float(result.evals) / elapsed
@@ -547,9 +576,10 @@ def _profile_one(
     seed: int,
     eval_budget: int,
     max_runtime_seconds: float,
+    prices: PriceParameters,
 ) -> dict[str, Any]:
     bundle = load_search_bundle(bundle_dir)
-    warm = make_shared_initial_solution(bundle)
+    warm = make_shared_initial_solution(bundle, prices=prices)
     with _profile_timers() as timers:
         started = time.perf_counter()
         if algorithm == "winner-kernel ALNS":
@@ -557,6 +587,7 @@ def _profile_one(
                 bundle_dir,
                 config=WinnerKernelConfig(seed=seed, eval_budget=eval_budget, max_runtime_seconds=max_runtime_seconds),
                 initial_solution=warm,
+                prices=prices,
             )
             evals = int(run["evaluations"])
             status = "OK" if run["feasible"] else "HALT_WINNER_INCOMPARABLE"
@@ -569,6 +600,7 @@ def _profile_one(
                 eval_budget=eval_budget,
                 max_runtime_seconds=max_runtime_seconds,
                 initial_solution=warm,
+                prices=prices,
             )
             evals = int(result.evals)
             status = result.status
@@ -999,6 +1031,7 @@ def main(argv: list[str] | None = None) -> int:
             eval_budget=args.speed_probe_eval_budget,
             max_runtime_seconds=args.max_runtime_seconds,
             algorithms=selected_algorithms or list(PROFILE_ALGORITHMS),
+            prices=UK_2025_PRICES,
         )
         print(f"GATE METAHEURISTIC_BASELINES_PROFILE {result['gate']} {json.dumps(result, ensure_ascii=False)}")
         return 0
@@ -1010,6 +1043,7 @@ def main(argv: list[str] | None = None) -> int:
             args.previous_output_dir,
             args.output_dir,
             fallback_max_runtime_seconds=args.fallback_max_runtime_seconds,
+            prices=UK_2025_PRICES,
         )
         print(f"GATE METAHEURISTIC_BASELINES_FALLBACK {result['gate']} {json.dumps(result, ensure_ascii=False)}")
         return 0
@@ -1024,6 +1058,7 @@ def main(argv: list[str] | None = None) -> int:
         auto_runtime_fallback=args.auto_runtime_fallback,
         speed_probe_eval_budget=args.speed_probe_eval_budget,
         algorithms=selected_algorithms,
+        prices=UK_2025_PRICES,
     )
     print(f"GATE METAHEURISTIC_BASELINES {result['gate']} {json.dumps(result, ensure_ascii=False)}")
     return 0

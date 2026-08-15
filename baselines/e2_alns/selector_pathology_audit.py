@@ -41,7 +41,7 @@ PROTECTED_PATHS = (
     "solver/src/setp_solver/search/evaluation.py",
     "solver/src/setp_solver/prices.py",
     "solver/src/setp_solver/search/feasible_repair.py",
-    "docs/paper_submission_final/paper_main.tex",
+    "docs/paper_submission_final/RETIRED_paper_main.tex",
 )
 REQUIRED_SOURCE_FILES = (
     REPO_ROOT / "solver/src/setp_solver/search/resetp_alns/select.py",

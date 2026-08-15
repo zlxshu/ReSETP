@@ -191,7 +191,7 @@ def certify_plan(plan_path: Path, output_root: Path) -> dict[str, Any]:
         "plan_sha256": verified.file_sha256(plan_path),
         "solution_sha256": plan["solution_sha256"],
         "common_nonlinear_curve": asdict(cfg.FAST_CURVE),
-        "depot_power_kw": cfg.DEPOT_POWER_KW,
+        "depot_site_power_kw_shadow": cfg.DEPOT_POWER_KW,
         "planning_physics_feasible": bool(planning_check["feasible"]),
         "planning_physics_violations": planning_check["violations"],
         "planning_full_model_total_cost_cny": (

@@ -16,6 +16,7 @@ from itertools import permutations
 from typing import Any
 
 from setp_solver.charge_timing import (
+    ChargeTimingContexts,
     DEFAULT_CHARGE_TIMING_POLICY,
     select_charge_timing_start,
     validate_charge_timing_policy,
@@ -60,6 +61,156 @@ CHARGE_AMOUNT_STRATEGIES = (
 CURVE_KNEE_STRATEGY_PREFIX = "curve_knee_"
 PUBLIC_STATION_CANDIDATE_MODES = frozenset({"fallback", "parallel"})
 DEFAULT_PUBLIC_STATION_CANDIDATE_MODE = "fallback"
+
+
+class ChargingRepairRuntime:
+    """Solve-local static timing data and deterministic route repair results."""
+
+    def __init__(
+        self,
+        instance: Instance,
+        gamma_profile: list[dict[str, Any]],
+        prices: PriceParameters | dict[str, float] | Any,
+        carbon_profiles_by_day_offset: Mapping[
+            int, list[dict[str, Any]]
+        ] | None,
+    ) -> None:
+        self.instance = instance
+        self.gamma_profile = gamma_profile
+        self.prices = prices
+        self.carbon_profiles_by_day_offset = carbon_profiles_by_day_offset
+        self.timing_contexts = ChargeTimingContexts(instance, prices)
+        self._candidate_cache: dict[
+            tuple[Any, ...],
+            tuple[tuple[str, Route, tuple[ChargingAction, ...]], ...],
+        ] = {}
+        self.hits = 0
+        self.misses = 0
+
+    def assert_matches(
+        self,
+        instance: Instance,
+        gamma_profile: list[dict[str, Any]],
+        prices: PriceParameters | dict[str, float] | Any,
+        carbon_profiles_by_day_offset: Mapping[
+            int, list[dict[str, Any]]
+        ] | None,
+    ) -> None:
+        if (
+            instance is not self.instance
+            or gamma_profile is not self.gamma_profile
+            or prices is not self.prices
+            or carbon_profiles_by_day_offset
+            is not self.carbon_profiles_by_day_offset
+        ):
+            raise ValueError("charging repair runtime was reused with other inputs")
+
+    @staticmethod
+    def candidate_key(
+        route: Route,
+        *,
+        strategy: str,
+        carbon_weight: float,
+        depot_charge_window_mode: str,
+        charge_timing_policy: str,
+        charge_amount_strategy: str,
+        public_station_candidate_mode: str,
+    ) -> tuple[Any, ...]:
+        return (
+            route.vehicle_id,
+            route.vehicle_type,
+            route.home_depot_id,
+            tuple(route.node_sequence),
+            strategy,
+            float(carbon_weight),
+            depot_charge_window_mode,
+            charge_timing_policy,
+            charge_amount_strategy,
+            public_station_candidate_mode,
+        )
+
+    def get_candidates(
+        self,
+        key: tuple[Any, ...],
+    ) -> list[tuple[str, Route, list[ChargingAction]]] | None:
+        cached = self._candidate_cache.get(key)
+        if cached is None:
+            self.misses += 1
+            return None
+        self.hits += 1
+        return [
+            (
+                label,
+                replace(repaired, node_sequence=list(repaired.node_sequence)),
+                list(actions),
+            )
+            for label, repaired, actions in cached
+        ]
+
+    def put_candidates(
+        self,
+        key: tuple[Any, ...],
+        candidates: list[tuple[str, Route, list[ChargingAction]]],
+    ) -> list[tuple[str, Route, list[ChargingAction]]]:
+        self._candidate_cache[key] = tuple(
+            (
+                label,
+                replace(repaired, node_sequence=list(repaired.node_sequence)),
+                tuple(actions),
+            )
+            for label, repaired, actions in candidates
+        )
+        return candidates
+
+
+_CHARGING_REPAIR_RUNTIMES: dict[
+    tuple[int, int, int, int],
+    tuple[
+        Instance,
+        list[dict[str, Any]],
+        PriceParameters | dict[str, float] | Any,
+        Mapping[int, list[dict[str, Any]]] | None,
+        ChargingRepairRuntime,
+    ],
+] = {}
+
+
+def _get_charging_repair_runtime(
+    instance: Instance,
+    gamma_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, float] | Any,
+    carbon_profiles_by_day_offset: Mapping[
+        int, list[dict[str, Any]]
+    ] | None,
+) -> ChargingRepairRuntime:
+    key = (
+        id(instance),
+        id(gamma_profile),
+        id(prices),
+        id(carbon_profiles_by_day_offset),
+    )
+    cached = _CHARGING_REPAIR_RUNTIMES.get(key)
+    if cached is not None and (
+        cached[0] is instance
+        and cached[1] is gamma_profile
+        and cached[2] is prices
+        and cached[3] is carbon_profiles_by_day_offset
+    ):
+        return cached[4]
+    runtime = ChargingRepairRuntime(
+        instance,
+        gamma_profile,
+        prices,
+        carbon_profiles_by_day_offset,
+    )
+    _CHARGING_REPAIR_RUNTIMES[key] = (
+        instance,
+        gamma_profile,
+        prices,
+        carbon_profiles_by_day_offset,
+        runtime,
+    )
+    return runtime
 
 
 def validate_public_station_candidate_mode(mode: str) -> str:
@@ -445,6 +596,41 @@ def repair_route_charging_candidates(
     """Build the legacy depot path and, when enabled, a public-only path."""
 
     validate_public_station_candidate_mode(public_station_candidate_mode)
+    runtime = _get_charging_repair_runtime(
+        instance,
+        gamma_profile,
+        prices,
+        carbon_profiles_by_day_offset,
+    )
+    cache_key: tuple[Any, ...] | None = None
+    timing_contexts: ChargeTimingContexts | None = None
+    if runtime is not None:
+        runtime.assert_matches(
+            instance,
+            gamma_profile,
+            prices,
+            carbon_profiles_by_day_offset,
+        )
+        cache_key = runtime.candidate_key(
+            route,
+            strategy=strategy,
+            carbon_weight=carbon_weight,
+            depot_charge_window_mode=depot_charge_window_mode,
+            charge_timing_policy=charge_timing_policy,
+            charge_amount_strategy=charge_amount_strategy,
+            public_station_candidate_mode=public_station_candidate_mode,
+        )
+        cached_candidates = runtime.get_candidates(cache_key)
+        if cached_candidates is not None:
+            return cached_candidates
+        timing_contexts = runtime.timing_contexts
+
+    def finish(
+        result: list[tuple[str, Route, list[ChargingAction]]],
+    ) -> list[tuple[str, Route, list[ChargingAction]]]:
+        if runtime is None or cache_key is None:
+            return result
+        return runtime.put_candidates(cache_key, result)
     candidates: list[tuple[str, Route, list[ChargingAction]]] = []
     fallback_error: ValueError | None = None
     try:
@@ -460,6 +646,7 @@ def repair_route_charging_candidates(
             charge_amount_strategy=charge_amount_strategy,
             carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
             depot_precharge_target_kwh=None,
+            timing_contexts=timing_contexts,
         )
     except ValueError as exc:
         fallback_error = exc
@@ -468,10 +655,10 @@ def repair_route_charging_candidates(
     if public_station_candidate_mode == DEFAULT_PUBLIC_STATION_CANDIDATE_MODE:
         if fallback_error is not None:
             raise fallback_error
-        return candidates
+        return finish(candidates)
     node_types = {node.node_id: node.node_type.lower() for node in instance.nodes}
     if route.vehicle_type.lower() != "ev" or not route.node_sequence:
-        return candidates
+        return finish(candidates)
     node_lookup = {node.node_id: node for node in instance.nodes}
     remaining_customers = [
         node_id
@@ -490,7 +677,16 @@ def repair_route_charging_candidates(
     start_node = route.node_sequence[0]
     station_by_id = {station.node_id: station for station in stations}
     station_ids = tuple(station_by_id)
-    for path_length in range(1, len(station_ids) + 1):
+    # A forced parallel path launches with exactly enough depot energy to
+    # reach its first station.  At that station ``coverage_targets`` is every
+    # remaining target and ``charge_amount_target_kwh`` is never below that
+    # complete remaining-route energy.  A second public insertion therefore
+    # cannot occur; longer forced paths always reach the fail-closed
+    # ``station_insertions < len(forced_station_path)`` check below.  Do not
+    # enumerate those guaranteed rejections: with a metropolitan station pool
+    # the former all-length permutation loop was factorial while producing the
+    # exact same accepted candidate list.
+    for path_length in range(1, min(len(station_ids), 1) + 1):
         for station_path in permutations(station_ids, path_length):
             station = station_by_id[station_path[0]]
             launch_target = max(
@@ -519,6 +715,7 @@ def repair_route_charging_candidates(
                     carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
                     depot_precharge_target_kwh=launch_target,
                     forced_station_path=station_path,
+                    timing_contexts=timing_contexts,
                 )
             except ValueError:
                 continue
@@ -544,7 +741,7 @@ def repair_route_charging_candidates(
             )
     if not candidates and fallback_error is not None:
         raise fallback_error
-    return candidates
+    return finish(candidates)
 
 
 def _repair_route_charging_candidate(
@@ -561,6 +758,7 @@ def _repair_route_charging_candidate(
     carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None,
     depot_precharge_target_kwh: float | None,
     forced_station_path: tuple[str, ...] = (),
+    timing_contexts: ChargeTimingContexts | None = None,
 ) -> tuple[Route, list[ChargingAction]]:
     """Build one charging path without changing any feasibility rule."""
 
@@ -605,6 +803,7 @@ def _repair_route_charging_candidate(
         charge_amount_strategy=charge_amount_strategy,
         carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
         target_charge_level_kwh=depot_precharge_target_kwh,
+        timing_contexts=timing_contexts,
     )
     if depot_action is not None:
         actions.append(depot_action)
@@ -670,6 +869,7 @@ def _repair_route_charging_candidate(
                     if station_insertions < len(forced_station_path)
                     else None
                 ),
+                timing_contexts=timing_contexts,
             )
             if candidate is None:
                 if battery + 1e-9 < needed_direct:
@@ -717,6 +917,7 @@ def _repair_route_charging_candidate(
         strategy=strategy,
         carbon_weight=carbon_weight,
         charge_timing_policy=charge_timing_policy,
+        timing_contexts=timing_contexts,
     )
     return repaired_route, actions
 
@@ -937,6 +1138,7 @@ def _depot_precharge_action(
     charge_amount_strategy: str = "just_enough",
     carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
     target_charge_level_kwh: float | None = None,
+    timing_contexts: ChargeTimingContexts | None = None,
 ) -> ChargingAction | None:
     depot_id = route.node_sequence[0]
     depot = node_lookup[depot_id]
@@ -1005,6 +1207,7 @@ def _depot_precharge_action(
         carbon_weight=carbon_weight,
         charge_timing_policy=charge_timing_policy,
         carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+        timing_contexts=timing_contexts,
     )
     return replace(
         action,
@@ -1025,6 +1228,7 @@ def _reanchor_depot_actions(
     strategy: str,
     carbon_weight: float = 1.0,
     charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
+    timing_contexts: ChargeTimingContexts | None = None,
 ) -> list[ChargingAction]:
     """Recompute depot charging against the final certificate route clock."""
 
@@ -1063,6 +1267,7 @@ def _reanchor_depot_actions(
         carbon_weight=carbon_weight,
         charge_timing_policy=charge_timing_policy,
         carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+        timing_contexts=timing_contexts,
     )
     updated = list(actions)
     updated[index] = replace(
@@ -1204,6 +1409,7 @@ def _best_station_insert(
     charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
     charge_amount_strategy: str = "just_enough",
     forced_station_id: str | None = None,
+    timing_contexts: ChargeTimingContexts | None = None,
 ) -> tuple[str, ChargingAction, float, float, float] | None:
     best: tuple[float, float, str, ChargingAction, float, float, float] | None = None
     refined: list[tuple[ChargeOption, float, float]] = []
@@ -1376,6 +1582,7 @@ def _best_station_insert(
                 carbon_profile=gamma_profile,
                 prices=prices,
                 charge_timing_policy=charge_timing_policy,
+                timing_contexts=timing_contexts,
             )
         depart = charge_start + occupancy_sec
         action = replace(action, charge_start_second=charge_start)
@@ -1394,6 +1601,7 @@ def _best_station_insert(
             prices,
             carbon_weight=carbon_weight,
             charge_timing_policy=charge_timing_policy,
+            timing_contexts=timing_contexts,
         )
         option = scored.option
         _, arrive, battery_after = next(item for item in refined if item[0] == option)

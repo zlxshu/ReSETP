@@ -69,7 +69,7 @@
     {
       "check_id": "A4R-FI-03",
       "evidence": "china81.py::_load_time_profile; cost.py profile lookup",
-      "expected": "half_hour_slot s starts at exactly (s-1)*1800 seconds",
+      "expected": "hourly_calendar_row s starts at exactly (s-1)*1800 seconds",
       "observed": "rejected",
       "severity": "P0",
       "status": "PASS",

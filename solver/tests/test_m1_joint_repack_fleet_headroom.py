@@ -17,7 +17,7 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (
     e2_alns_throughput_flags,
 )
 from setp_solver.check import check_solution
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import UK_2025_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.candidates import _apply_path_operator_outcome, make_shared_initial_solution
 from setp_solver.search.evaluation import EvaluationContext, model_cost
@@ -53,13 +53,13 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from baselines.e2_alns.m1_joint_repack_fleet_headroom import greedy_fleet_closure
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
         before = model_cost(start, context)
 
         outcome = greedy_fleet_closure(start, context)
 
-        self.assertFalse(check_solution(outcome.solution, bundle.instance, DEFAULT_PRICES))
+        self.assertFalse(check_solution(outcome.solution, bundle.instance, UK_2025_PRICES))
         self.assertLessEqual(outcome.cost, before + 1e-9)
         self.assertEqual(outcome.accepted_flips, len(outcome.trace_rows))
 
@@ -67,8 +67,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from baselines.e2_alns.m1_joint_repack_fleet_headroom import repack_candidates
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
 
         rows = repack_candidates(start, context, random.Random(7), trials=2)
 
@@ -88,7 +88,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
     def test_vehicle_flip_is_a_safe_noop_when_instance_has_no_ev_fleet(self) -> None:
         bundle = load_search_bundle(instance_abs_dir(REPO_ROOT, "L-main-threeshift-15c-01"))
-        prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+        prices = replace(UK_2025_PRICES, B_battery_kwh=280.0)
         start = build_initial_solution(
             bundle.instance,
             bundle.carbon_profile,
@@ -107,7 +107,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
     def test_t3_local_search_full_scores_are_budgeted_one_to_one(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         flags = e2_alns_throughput_flags()
         flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"] = "1"
 
@@ -116,7 +116,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
             bundle.instance,
             bundle.carbon_profile,
             config=WinnerKernelConfig(seed=1, eval_budget=12, max_runtime_seconds=30.0),
-            prices=DEFAULT_PRICES,
+            prices=UK_2025_PRICES,
             variant_flags=flags,
         )
 
@@ -127,7 +127,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
     def test_scan_rebuild_cannot_push_loop_past_exact_budget(self) -> None:
         bundle = load_search_bundle(instance_abs_dir(REPO_ROOT, "L-main-threeshift-50c-01"))
-        prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+        prices = replace(UK_2025_PRICES, B_battery_kwh=280.0)
         start = build_initial_solution(
             bundle.instance,
             bundle.carbon_profile,
@@ -179,8 +179,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         import setp_solver.algorithms.resetp_alns.kernel.alns_core as core
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
         state = core.AlnsState(
             start,
             context,
@@ -222,7 +222,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         import setp_solver.algorithms.resetp_alns.operators.feasible_repair as repair
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
         cached = {idx: repair.route_customers(route, bundle.instance) for idx, route in enumerate(start.routes)}
 
@@ -235,7 +235,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         import setp_solver.algorithms.resetp_alns.operators.feasible_repair as repair
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
         customers = {idx: repair.route_customers(route, bundle.instance) for idx, route in enumerate(start.routes)}
         proximity = {
@@ -271,8 +271,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         import setp_solver.algorithms.resetp_alns.operators.feasible_repair as repair
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
         customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
         options = repair.enumerate_feasible_insertions(
             start,
@@ -339,7 +339,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         phase_results = [
             AlnsRunResult(start, start, 10.0, 9.0, 400, True),
             AlnsRunResult(start, start, 9.0, 5.0, 200, True),
@@ -352,7 +352,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
                 bundle.instance,
                 bundle.carbon_profile,
                 config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
-                prices=DEFAULT_PRICES,
+                prices=UK_2025_PRICES,
             )
 
         self.assertEqual([call.kwargs["config"].eval_budget for call in phase_run.call_args_list], [400, 200, 400])
@@ -370,7 +370,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         phase_result = AlnsRunResult(start, start, 10.0, 8.0, 1000, True)
 
         with patch.object(winner, "_run_winner_kernel_loop", return_value=phase_result) as phase_run:
@@ -379,7 +379,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
                 bundle.instance,
                 bundle.carbon_profile,
                 config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
-                prices=DEFAULT_PRICES,
+                prices=UK_2025_PRICES,
                 enable_staged_search=False,
             )
 
@@ -396,7 +396,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         phase_results = [
             AlnsRunResult(start, start, 10.0, 9.0, 400, True),
             AlnsRunResult(start, start, 9.0, 7.0, 100, True),
@@ -410,7 +410,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
                 bundle.instance,
                 bundle.carbon_profile,
                 config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
-                prices=DEFAULT_PRICES,
+                prices=UK_2025_PRICES,
                 middle_restarts=2,
             )
 
@@ -429,7 +429,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult, SearchPolicy
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         policy = SearchPolicy(require_charging_signal=False, max_cv=10, max_ev=0)
         phase_results = [
             AlnsRunResult(start, start, 10.0, 9.0, 400, True),
@@ -443,7 +443,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
                 bundle.instance,
                 bundle.carbon_profile,
                 config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
-                prices=DEFAULT_PRICES,
+                prices=UK_2025_PRICES,
                 policy=policy,
             )
 
@@ -454,7 +454,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         phase_results = [
             AlnsRunResult(start, start, 10.0, 9.0, 400, True),
             AlnsRunResult(start, start, 9.0, 8.0, 200, True),
@@ -468,7 +468,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
                 bundle.instance,
                 bundle.carbon_profile,
                 config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
-                prices=DEFAULT_PRICES,
+                prices=UK_2025_PRICES,
                 carbon_weight=0.5,
                 carbon_quota_kg=123.0,
                 fairness_enabled=True,
@@ -498,7 +498,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         context = EvaluationContext(
             bundle.instance,
             bundle.carbon_profile,
-            prices=DEFAULT_PRICES,
+            prices=UK_2025_PRICES,
             customer_home_depot={customer.node_id: depots[0]},
         )
 
@@ -515,8 +515,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         )
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
-        prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        prices = replace(UK_2025_PRICES, B_battery_kwh=280.0)
 
         result = run_staged_alns_lns_hybrid(
             bundle.bundle_dir,
@@ -557,8 +557,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from setp_solver.search.evaluation import EvaluationContext, model_cost
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
-        cost = model_cost(start, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES))
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        cost = model_cost(start, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES))
         alns_result = {
             "best_solution": start,
             "best_cost": cost,
@@ -585,7 +585,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
                 bundle.bundle_dir,
                 config=winner.WinnerKernelConfig(seed=3, eval_budget=1000, max_runtime_seconds=30.0),
                 initial_solution=start,
-                prices=DEFAULT_PRICES,
+                prices=UK_2025_PRICES,
             )
 
         self.assertEqual(result["evaluations"], 1000)
@@ -600,8 +600,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         from setp_solver.search.evaluation import EvaluationContext, model_cost
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
-        cost = model_cost(start, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES))
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        cost = model_cost(start, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES))
 
         def alns_result_for(call_config: winner.WinnerKernelConfig) -> dict[str, object]:
             return {
@@ -632,7 +632,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
                 bundle.bundle_dir,
                 config=winner.WinnerKernelConfig(seed=3, eval_budget=1600, max_runtime_seconds=30.0),
                 initial_solution=start,
-                prices=DEFAULT_PRICES,
+                prices=UK_2025_PRICES,
             )
 
         self.assertEqual(result["evaluations"], 1600)
@@ -667,14 +667,14 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         )
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        start = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
         config = WinnerKernelConfig(seed=1, eval_budget=2, max_runtime_seconds=30.0)
 
         aware = run_staged_carbon_schedule_pair(
             bundle.bundle_dir,
             config=config,
             initial_solution=start,
-            prices=DEFAULT_PRICES,
+            prices=UK_2025_PRICES,
         )
         naive = aware["charging_ablation_result"]
 

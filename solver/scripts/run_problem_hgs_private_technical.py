@@ -14,27 +14,55 @@ import hashlib
 import importlib
 import importlib.util
 import json
+import os
 import platform
 import random
 import subprocess
 import sys
 import traceback
+from contextlib import nullcontext
 from dataclasses import asdict, replace
 from importlib import metadata as importlib_metadata
+from itertools import permutations
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from types import MappingProxyType, SimpleNamespace
+from typing import Any, Mapping, Sequence
 
-from setp_solver.algorithms.problem_hgs.charging import ChargingRepairPolicy
+from setp_solver.algorithms.problem_hgs.bi_objective_population import (
+    BI_OBJECTIVE,
+    POPULATION_OBJECTIVE_MODES,
+    SINGLE_OBJECTIVE,
+)
+from setp_solver.algorithms.problem_hgs.charging import (
+    ChargingRepairPolicy,
+    charging_rejection_reason,
+    repair_changed_duties,
+)
 from setp_solver.algorithms.problem_hgs.contracts import CandidateStatus
+from setp_solver.algorithms.problem_hgs.dynamic import (
+    DutyDynamicState,
+    future_individual_from_cut,
+)
+from setp_solver.algorithms.problem_hgs.dynamic_insertion import (
+    DynamicInsertionOperator,
+)
 from setp_solver.algorithms.problem_hgs.education import evaluate_move
 from setp_solver.algorithms.problem_hgs.evaluation import (
     DutyEvaluationContext,
     DutyFullEvaluator,
     FrozenMappingIdentity,
+    RebuiltRouteConstraintContract,
     mapping_sha256,
 )
-from setp_solver.algorithms.problem_hgs.model import DutyIndividual, PhysicalVehicleDuty
+from setp_solver.algorithms.problem_hgs.fleet_registry import (
+    register_all_vehicle_slots,
+)
+from setp_solver.algorithms.problem_hgs.frvcpy_adapter import (
+    FRVCPY_COMMIT,
+    FRVCPY_SOURCE_SHA256,
+)
+from setp_solver.algorithms.problem_hgs.model import DutyIndividual
 from setp_solver.algorithms.problem_hgs.operators import (
     ReverseSegmentMove,
     generate_problem_moves,
@@ -60,11 +88,46 @@ from setp_solver.algorithms.problem_hgs.runner import (
     population_sha256,
     run_integrated_problem_hgs,
 )
-from setp_solver.china81 import load_china81_bundle
+from setp_solver.algorithms.problem_hgs.schedule_capture import (
+    ScheduleCaptureRecord,
+    schedule_capture_sink,
+)
+from setp_solver.charge_timing import CHARGE_TIMING_POLICIES
+from setp_solver.china81 import (
+    CHINA81_HORIZON_END_SECOND,
+    CHINA81_HORIZON_START_SECOND,
+    ENDOGENOUS_FLEET_PARAMETERS,
+    FIXED_25_PERCENT_FLEET_PARAMETERS,
+    China81FleetParameterClass,
+    China81Bundle,
+    _china_prices,
+    _china_vehicle_parameters,
+    _city_runtime_binding_from_profile,
+    _diesel_price_map_from_profile,
+    _load_time_profile,
+    load_china81_bundle,
+)
 from setp_solver.china81_completion import complete_china81_route_skeleton
+from setp_solver.instance_loader import Instance, Node, RoadProfileMatrices
+from setp_solver.model_config import (
+    DEPOT_CHARGER_CAPACITY_UNBOUNDED,
+    ModelConfig,
+)
 from setp_solver.profit import calculate_depot_profits
 from setp_solver.search.multitrip_schedule import (
     DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
+    prepare_multitrip_solution,
+    route_timing,
+)
+from setp_solver.search.fleet import route_ev_energy_summary
+from setp_solver.cost import time_profile_rows_for_node
+from setp_solver.field_rename_compat import (
+    configured_depot_gun_count,
+    resolve_calendar_path,
+)
+from setp_solver.search.dynamic_multitrip_schedule import (
+    DynamicAssetState,
+    cut_certificate_at_trigger,
 )
 from setp_solver.search.metaheuristic_baselines import solution_to_dict
 from setp_solver.solution import Route, Solution
@@ -76,6 +139,20 @@ PROTECTED = (
     "solver/src/setp_solver/cost.py",
     "solver/src/setp_solver/check.py",
     "solver/src/setp_solver/search/evaluation.py",
+)
+FLEET_PARAMETER_CLASSES = {
+    "fixed25": FIXED_25_PERCENT_FLEET_PARAMETERS,
+    "endogenous": ENDOGENOUS_FLEET_PARAMETERS,
+}
+MECHANISM_NAMES = frozenset(
+    {"cross_depot", "multi_trip", "type_exchange", "charge_timing"}
+)
+DEPOT_SWAP_INSTANCE_ID = "cn-jjj-50c-01-V3-TWO-SHIFT-DEPOTSWAP"
+DEPOT_SWAP_PACKAGE = Path(
+    "data/ChinaInstances/china81_instance_depot_swap_jjj_v1_20260813"
+)
+DEPOT_SWAP_RUNTIME_PARAMETER_AUTHORITY = Path(
+    "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723"
 )
 
 
@@ -92,6 +169,189 @@ def _json(path: Path, payload: Any) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
+
+
+def _format_full_evaluation_result(
+    *,
+    feasible: bool,
+    violation_count: int,
+) -> str:
+    status = "可行" if feasible else "不可行"
+    return f"完整评价判定{status}，违规数为 {violation_count}"
+
+
+def _probe_charging_candidate(
+    record: ScheduleCaptureRecord,
+    *,
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+) -> dict[str, Any]:
+    """Replay one captured raw candidate without changing search decisions."""
+
+    try:
+        repaired = repair_changed_duties(
+            record.reference,
+            record.raw_candidate,
+            changed_duty_ids=set(record.changed_duty_ids),
+            context=context,
+            policy=policy,
+            cache=None,
+        )
+        full = DutyFullEvaluator(context).evaluate(repaired)
+    except (TypeError, ValueError) as error:
+        return {
+            "feasible": False,
+            "reason_code": charging_rejection_reason(error),
+            "error_type": type(error).__name__,
+            "error": str(error),
+            "repaired_fingerprint": None,
+            "full_evaluation_feasible": None,
+        }
+    if not full.feasible:
+        return {
+            "feasible": False,
+            "reason_code": "FULL_EVALUATION_INFEASIBLE",
+            "error_type": "FullEvaluation",
+            "error": "; ".join(
+                str(asdict(violation)) for violation in full.violations
+            ),
+            "repaired_fingerprint": repaired.fingerprint,
+            "full_evaluation_feasible": False,
+        }
+    return {
+        "feasible": True,
+        "reason_code": None,
+        "error_type": None,
+        "error": None,
+        "repaired_fingerprint": repaired.fingerprint,
+        "full_evaluation_feasible": True,
+    }
+
+
+def _write_charging_diagnosis_probe(
+    records: list[ScheduleCaptureRecord],
+    *,
+    output: Path,
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+) -> None:
+    """Save raw crossover failures, then run relaxed and frvcpy replays."""
+
+    output.mkdir(parents=True, exist_ok=True)
+    snapshots = output / "duty_crossover_rejected_candidates.jsonl"
+    relaxed_context = replace(context, depot_charge_window_mode="full_gap")
+    relaxed_policy = replace(
+        policy,
+        depot_charge_window_mode="full_gap",
+        first_trip_prev_night_enabled=True,
+    )
+    frvcpy_policy = replace(relaxed_policy, frvcpy_enabled=True)
+    rows: list[dict[str, Any]] = []
+    with snapshots.open("x", encoding="utf-8") as handle:
+        for index, record in enumerate(records, start=1):
+            case_id = f"DCX-{index:03d}"
+            handle.write(
+                json.dumps(
+                    {
+                        "case_id": case_id,
+                        "capture_order": index,
+                        "iteration": record.iteration,
+                        "channel": record.channel,
+                        "action_id": record.action_id,
+                        "reference_fingerprint": record.reference.fingerprint,
+                        "raw_candidate_fingerprint": (
+                            record.raw_candidate.fingerprint
+                        ),
+                        "changed_duty_ids": sorted(record.changed_duty_ids),
+                        "original_error_type": record.a0_error_type,
+                        "original_error": record.a0_error,
+                        "reference": asdict(record.reference),
+                        "raw_candidate": asdict(record.raw_candidate),
+                    },
+                    ensure_ascii=False,
+                    allow_nan=False,
+                )
+                + "\n"
+            )
+    for index, record in enumerate(records, start=1):
+        case_id = f"DCX-{index:03d}"
+        original = _probe_charging_candidate(
+            record,
+            context=context,
+            policy=policy,
+        )
+        relaxed = _probe_charging_candidate(
+            record,
+            context=relaxed_context,
+            policy=relaxed_policy,
+        )
+        frvcpy = _probe_charging_candidate(
+            record,
+            context=relaxed_context,
+            policy=frvcpy_policy,
+        )
+        rows.append(
+            {
+                "case_id": case_id,
+                "capture_order": index,
+                "iteration": record.iteration,
+                "raw_candidate_fingerprint": (
+                    record.raw_candidate.fingerprint
+                ),
+                "changed_duty_ids": ";".join(
+                    sorted(record.changed_duty_ids)
+                ),
+                "original_reason_code": charging_rejection_reason(
+                    ValueError(record.a0_error or "")
+                ),
+                "original_error_type": record.a0_error_type,
+                "original_error": record.a0_error,
+                "original_replay_feasible_60kw": original["feasible"],
+                "original_replay_reason_code": original["reason_code"],
+                "relaxed_window_mode": "full_gap",
+                "relaxed_prev_night_enabled": True,
+                "relaxed_60kw_feasible": relaxed["feasible"],
+                "relaxed_60kw_reason_code": relaxed["reason_code"],
+                "became_feasible_60kw": (
+                    not bool(original["feasible"])
+                    and bool(relaxed["feasible"])
+                ),
+                "higher_power_scenario_available": False,
+                "frvcpy_feasible_60kw": frvcpy["feasible"],
+                "frvcpy_reason_code": frvcpy["reason_code"],
+                "frvcpy_overruled_self_repair": (
+                    not bool(original["feasible"])
+                    and bool(frvcpy["feasible"])
+                ),
+            }
+        )
+    fields = tuple(rows[0]) if rows else (
+        "case_id",
+        "capture_order",
+        "iteration",
+        "raw_candidate_fingerprint",
+        "changed_duty_ids",
+        "original_reason_code",
+        "original_error_type",
+        "original_error",
+        "original_replay_feasible_60kw",
+        "original_replay_reason_code",
+        "relaxed_window_mode",
+        "relaxed_prev_night_enabled",
+        "relaxed_60kw_feasible",
+        "relaxed_60kw_reason_code",
+        "became_feasible_60kw",
+        "higher_power_scenario_available",
+        "frvcpy_feasible_60kw",
+        "frvcpy_reason_code",
+        "frvcpy_overruled_self_repair",
+    )
+    with (output / "relaxation_probe.csv").open(
+        "x", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def _write_failure_package(output: Path, error: Exception) -> bool:
@@ -174,23 +434,33 @@ def _git(repo: Path, *args: str) -> str:
     ).stdout.strip()
 
 
-def _policy(evaluator: DutyFullEvaluator) -> ChargingRepairPolicy:
+def _policy(
+    evaluator: DutyFullEvaluator,
+    *,
+    first_trip_prev_night_enabled: bool = False,
+    charge_timing_policy: str = "cost_plus_carbon",
+    frvcpy_enabled: bool = False,
+) -> ChargingRepairPolicy:
     return ChargingRepairPolicy(
         strategy="integrated",
         carbon_weight=1.0,
         depot_charge_window_mode=evaluator.context.depot_charge_window_mode,
-        charge_timing_policy="cost_plus_carbon",
+        charge_timing_policy=charge_timing_policy,
         charge_amount_strategy="just_enough",
         public_station_candidate_mode="parallel",
         carbon_profiles_by_day_offset=None,
+        first_trip_prev_night_enabled=first_trip_prev_night_enabled,
+        frvcpy_enabled=frvcpy_enabled,
     )
 
 
 def _parameters(
     *,
+    random_seed: int = SEED,
     stagnation_patience: int = 500,
     crossover_mode: str = "fast_only",
-    population_mode: str = "technical_two_parent",
+    population_mode: str = "copied_hgs_defaults",
+    objective_mode: str = SINGLE_OBJECTIVE,
 ) -> ProblemHGSSearchParameters:
     if population_mode == "copied_hgs_defaults":
         population = PopulationParameters.copied_hgs_defaults()
@@ -207,7 +477,7 @@ def _parameters(
     else:
         raise ValueError(f"unknown population mode: {population_mode}")
     return ProblemHGSSearchParameters(
-        random_seed=SEED,
+        random_seed=int(random_seed),
         population=population,
         penalties=PenaltyParameters(
             initial_penalty_per_unit=100.0,
@@ -221,7 +491,27 @@ def _parameters(
         ),
         stagnation_patience=stagnation_patience,
         crossover_mode=crossover_mode,
+        objective_mode=objective_mode,
     )
+
+
+def _effective_population_metadata(
+    mode: str,
+    population: PopulationParameters,
+) -> dict[str, Any]:
+    """Record the named mode and every effective population parameter."""
+
+    return {
+        "mode": mode,
+        "min_pop_size": population.min_pop_size,
+        "generation_size": population.generation_size,
+        "max_pop_size": population.max_pop_size,
+        "num_elite": population.num_elite,
+        "num_close": population.num_close,
+        "tournament_size": population.tournament_size,
+        "lb_diversity": population.lb_diversity,
+        "ub_diversity": population.ub_diversity,
+    }
 
 
 def _installed_version(distribution: str) -> str | None:
@@ -327,8 +617,137 @@ def _source_provenance(
     }
 
 
-def _build_context(repo: Path, instance_id: str = INSTANCE_ID):
-    bundle = load_china81_bundle(repo, instance_id)
+def _build_context(
+    repo: Path,
+    instance_id: str = INSTANCE_ID,
+    *,
+    fleet_parameters: China81FleetParameterClass = (
+        FIXED_25_PERCENT_FLEET_PARAMETERS
+    ),
+    depot_charging_scenario_name: str = "60kw",
+):
+    if instance_id == DEPOT_SWAP_INSTANCE_ID:
+        if depot_charging_scenario_name != "60kw":
+            raise ValueError(
+                "DEPOTSWAP instance is frozen at the 60 kW depot scenario"
+            )
+        return _build_depot_swap_context(
+            repo,
+            instance_id,
+            fleet_parameters=fleet_parameters,
+        )
+    if instance_id.endswith("-V3-TWO-SHIFT-FS"):
+        if depot_charging_scenario_name != "60kw":
+            raise ValueError("FS suite is frozen at the 60 kW depot scenario")
+        return _build_saved_suite_context(
+            repo,
+            instance_id,
+            package_root=repo / "data/ChinaInstances/china81_suite_v3_20260812",
+            report_root=repo / "solver/reports/suite_rebuild_20260812",
+            fleet_parameters=fleet_parameters,
+        )
+    if instance_id.endswith("-V3-TWO-SHIFT-DP"):
+        if depot_charging_scenario_name != "60kw":
+            raise ValueError("DP suite is frozen at the 60 kW depot scenario")
+        return _build_saved_suite_context(
+            repo,
+            instance_id,
+            package_root=repo / "data/ChinaInstances/china81_depotpair_rebuild_v1_20260812",
+            report_root=repo / "solver/reports/suite_depotpair_rebuild_20260812",
+            fleet_parameters=fleet_parameters,
+        )
+    if instance_id.endswith("-V3-TWO-SHIFT-METRO"):
+        if depot_charging_scenario_name != "60kw":
+            raise ValueError("METRO suite is frozen at the 60 kW depot scenario")
+        return _build_saved_suite_context(
+            repo,
+            instance_id,
+            package_root=repo / "data/ChinaInstances/china81_metro_suite_v1_20260812",
+            report_root=repo / "solver/reports/metro_rebuild_20260812",
+            fleet_parameters=fleet_parameters,
+        )
+    if instance_id.endswith("-V3-TWO-SHIFT-PRDFIX"):
+        if depot_charging_scenario_name != "60kw":
+            raise ValueError("PRDFIX suite is frozen at the 60 kW depot scenario")
+        return _build_saved_suite_context(
+            repo,
+            instance_id,
+            package_root=repo / "data/ChinaInstances/china81_suite_prd_fix_v1_20260812",
+            report_root=repo / "solver/reports/suite_prd_fix_20260812",
+            fleet_parameters=fleet_parameters,
+        )
+
+    from setp_solver.private_instance_rebuild_20260811 import (
+        DEPOT_CHARGING_SCENARIOS,
+        EV_DAILY_FIXED_PREMIUM_CNY,
+        INSTANCE_ID as REBUILT_INSTANCE_ID,
+        load_private_instance_rebuild,
+    )
+
+    if instance_id == REBUILT_INSTANCE_ID:
+        rebuilt = load_private_instance_rebuild(
+            repo,
+            fleet_parameters=fleet_parameters,
+            depot_charging_scenario=DEPOT_CHARGING_SCENARIOS[
+                depot_charging_scenario_name
+            ],
+        )
+        bundle = rebuilt.china81
+        skeleton = _private_rebuild_health_witness_initial(repo, bundle)
+        individual = _with_registered_idle_duties(
+            DutyIndividual.from_solution(skeleton),
+            bundle,
+        )
+        neutral = {
+            node.node_id: 1.0
+            for node in bundle.instance.nodes
+            if node.node_type.lower() == "d"
+        }
+        shift_windows = {
+            shift_id: (
+                float(row["start_minute"]) * 60.0,
+                float(row["end_minute"]) * 60.0,
+            )
+            for shift_id, row in rebuilt.shift_contract["shifts"].items()
+        }
+        context = DutyEvaluationContext(
+            bundle=bundle,
+            independent_profit=neutral,
+            independent_profit_identity=FrozenMappingIdentity(
+                source_id="fairness-disabled-neutral-not-pi0",
+                value_sha256=mapping_sha256(neutral),
+                externally_frozen=False,
+            ),
+            prior_profit={depot_id: 0.0 for depot_id in neutral},
+            theta=0.0,
+            carbon_quota_kg=0.0,
+            depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
+            fairness_enabled=False,
+            ev_daily_fixed_premium_cny=EV_DAILY_FIXED_PREMIUM_CNY,
+            shift_aware_departure_enabled=True,
+            rebuilt_route_constraints=RebuiltRouteConstraintContract(
+                source_id="china81_private_rebuild_v1_20260811/shift_contract.json",
+                customer_shift_by_id={
+                    customer_id: str(row["shift_id"])
+                    for customer_id, row in rebuilt.orders_by_customer.items()
+                },
+                customer_volume_m3_by_id={
+                    customer_id: float(row["source_volume_m3"])
+                    for customer_id, row in rebuilt.orders_by_customer.items()
+                },
+                shift_window_second_by_id=shift_windows,
+                vehicle_volume_capacity_m3=float(
+                    rebuilt.shift_contract["vehicle_volume_capacity_m3"]
+                ),
+            ),
+        )
+        return bundle, individual, neutral, context
+
+    bundle = load_china81_bundle(
+        repo,
+        instance_id,
+        fleet_parameters=fleet_parameters,
+    )
     skeleton = _registered_finite_fleet_initial(repo, bundle)
     completed = complete_china81_route_skeleton(skeleton, bundle).solution
     individual = _with_registered_idle_duties(
@@ -357,6 +776,1508 @@ def _build_context(repo: Path, instance_id: str = INSTANCE_ID):
         depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
     )
     return bundle, individual, pi0, context
+
+
+def _csv_rows(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _suite_matrix_from_reference(
+    path: Path,
+    *,
+    target_node_ids: Sequence[str],
+    source_node_by_target: Mapping[str, str],
+) -> tuple[tuple[float, ...], ...]:
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        rows = list(csv.reader(handle))
+    if not rows or len(rows[0]) < 2 or not rows[0][0].strip():
+        raise ValueError(f"suite matrix has no row-id corner cell: {path}")
+    column_ids = rows[0][1:]
+    values = {
+        row[0]: {column_id: float(value) for column_id, value in zip(column_ids, row[1:], strict=True)}
+        for row in rows[1:]
+    }
+    source_ids = [source_node_by_target[node_id] for node_id in target_node_ids]
+    if set(source_ids) != set(column_ids) or set(values) != set(column_ids):
+        raise ValueError(f"suite matrix node identity differs from source mapping: {path}")
+    return tuple(
+        tuple(values[left][right] for right in source_ids)
+        for left in source_ids
+    )
+
+
+def _load_v3_suite_bundle(
+    repo: Path,
+    *,
+    package_root: Path,
+    instance_id: str,
+    fleet_parameters: China81FleetParameterClass,
+) -> tuple[China81Bundle, Mapping[str, Mapping[str, str]]]:
+    """Load a V3 suite only from its sealed package and shared runtime authority.
+
+    The construction scripts retain historical source identities for
+    provenance, but a runtime lane must not call the generic China81 loader on
+    an old V2 instance or old finite-fleet authority.  This adapter therefore
+    reads the target package's nodes, orders, fleet caps, and matrix reference
+    directly, then joins the approved shared runtime parameter calendar.
+    """
+
+    from setp_solver.china81 import FLEET_CAP_SEMANTICS
+
+    saved_root = package_root / "instances" / instance_id
+    catalog_rows = [
+        row
+        for row in _csv_rows(package_root / "instance_catalog.csv")
+        if row["instance_id"] == instance_id
+    ]
+    if len(catalog_rows) != 1:
+        raise ValueError(f"V3 suite catalog row is not unique for {instance_id}")
+    catalog = catalog_rows[0]
+    node_rows = _csv_rows(saved_root / "nodes.csv")
+    order_rows = _csv_rows(saved_root / "orders.csv")
+    orders_by_customer = {
+        row["customer_id"]: row for row in order_rows
+    }
+    if len(orders_by_customer) != len(order_rows):
+        raise ValueError(f"V3 suite has duplicate customers for {instance_id}")
+    expected_customers = int(catalog["customer_count"])
+    if len(order_rows) != expected_customers:
+        raise ValueError(f"V3 suite order count disagrees for {instance_id}")
+
+    fleet_rows = [
+        row
+        for row in _csv_rows(package_root / "fleet_caps.csv")
+        if row["instance_id"] == instance_id
+    ]
+    if not fleet_rows:
+        raise ValueError(f"V3 suite fleet rows are missing for {instance_id}")
+    fleet_caps = MappingProxyType(
+        {
+            row["depot_id"]: MappingProxyType(
+                dict(fleet_parameters.depot_caps(row))
+            )
+            for row in fleet_rows
+        }
+    )
+    if {row["fleet_parameter_class"] for row in fleet_rows} != {
+        fleet_parameters.parameter_class_id
+    }:
+        raise ValueError(f"V3 suite fleet class disagrees for {instance_id}")
+
+    facilities_path = package_root / "facilities.csv"
+    if not facilities_path.is_file():
+        facilities_path = package_root / "source_pools" / "facilities.csv"
+    facilities = {
+        row["city"].strip().lower(): row
+        for row in _csv_rows(facilities_path)
+    }
+    station_assignments = {
+        row["station_id"]: row
+        for row in (
+            _csv_rows(package_root / "station_parameter_assignments.csv")
+            if (package_root / "station_parameter_assignments.csv").is_file()
+            else []
+        )
+    }
+    customer_home_depot = MappingProxyType(
+        {
+            customer_id: str(row["home_depot_id"])
+            for customer_id, row in orders_by_customer.items()
+        }
+    )
+    nodes: list[Node] = []
+    for row in node_rows:
+        node_id = str(row["node_id"])
+        node_type = str(row["node_type"]).strip().lower()
+        city = str(row["city"]).strip().lower()
+        common = {
+            "node_id": node_id,
+            "x": float(row["longitude"]),
+            "y": float(row["latitude"]),
+            "city": city,
+        }
+        facility = facilities[city]
+        if node_type == "depot":
+            fleet = next(item for item in fleet_rows if item["depot_id"] == node_id)
+            nodes.append(
+                Node(
+                    node_type="d",
+                    ready_time=float(CHINA81_HORIZON_START_SECOND),
+                    due_time=float(CHINA81_HORIZON_END_SECOND),
+                    charge_power_kw=float(fleet["depot_charge_power_kw"]),
+                    station_chargers=None,
+                    **common,
+                )
+            )
+        elif node_type == "station":
+            station = station_assignments.get(node_id)
+            nodes.append(
+                Node(
+                    node_type="f",
+                    ready_time=float(CHINA81_HORIZON_START_SECOND),
+                    due_time=float(CHINA81_HORIZON_END_SECOND),
+                    charge_power_kw=float(
+                        station["power_kw"]
+                        if station is not None
+                        else facility["station_power_kw"]
+                    ),
+                    station_chargers=int(
+                        station["gun_count"]
+                        if station is not None
+                        else facility["station_gun_count"]
+                    ),
+                    **common,
+                )
+            )
+        elif node_type == "customer":
+            order = orders_by_customer[node_id]
+            nodes.append(
+                Node(
+                    node_type="c",
+                    demand=float(order["demand_kg"]),
+                    ready_time=float(order["time_window_early_minute"]) * 60.0,
+                    due_time=float(order["time_window_late_minute"]) * 60.0,
+                    service_time=float(order["service_minutes"]) * 60.0,
+                    **common,
+                )
+            )
+        else:
+            raise ValueError(f"V3 suite has unsupported node type {node_type!r}")
+
+    source_mapping = {
+        row["new_node_id"]: row["source_node_id"]
+        for row in _csv_rows(saved_root / "source_mapping.csv")
+    }
+    target_node_ids = [node.node_id for node in nodes]
+    if set(source_mapping) != set(target_node_ids):
+        raise ValueError(f"V3 suite source mapping is incomplete for {instance_id}")
+    reference = json.loads(
+        (saved_root / "matrix_reference.json").read_text(encoding="utf-8")
+    )
+    matrix_authority = repo / str(reference["source_authority"])
+    if not matrix_authority.is_dir():
+        # DP's reference was written against a temporary construction path;
+        # the sealed package contains the same frozen matrix under this path.
+        matrix_authority = package_root / "directed_matrices"
+    matrix_instance_id = str(reference["source_instance_id"])
+    matrix_root = matrix_authority / "instances" / matrix_instance_id
+    profiles = {
+        profile: RoadProfileMatrices(
+            distance_m=_suite_matrix_from_reference(
+                matrix_root / profile / "road_distance_m.csv",
+                target_node_ids=target_node_ids,
+                source_node_by_target=source_mapping,
+            ),
+            duration_s=_suite_matrix_from_reference(
+                matrix_root / profile / "road_duration_s.csv",
+                target_node_ids=target_node_ids,
+                source_node_by_target=source_mapping,
+            ),
+            sum_v2d_m3_s2=_suite_matrix_from_reference(
+                matrix_root / profile / "road_sum_v2d_m3_s2.csv",
+                target_node_ids=target_node_ids,
+                source_node_by_target=source_mapping,
+            ),
+        )
+        for profile in ("cv", "ev")
+    }
+    cost_contract_path = package_root / "vehicle_cost_contract.json"
+    if cost_contract_path.is_file():
+        cost_contract = json.loads(
+            cost_contract_path.read_text(encoding="utf-8")
+        )
+        fixed_costs = {
+            "cv": float(cost_contract["cv"]["daily_fixed_cny"]),
+            "ev": float(cost_contract["ev"]["daily_fixed_cny"]),
+        }
+    else:
+        cost_rows = {
+            row["vehicle_type"]: row
+            for row in _csv_rows(
+                repo
+                / "data/ChinaInstances/china81_private_rebuild_v1_20260811/vehicle_costs.csv"
+            )
+        }
+        fixed_costs = {
+            "cv": float(cost_rows["cv"]["effective_daily_fixed_cost_cny"]),
+            "ev": float(cost_rows["ev"]["effective_daily_fixed_cost_cny"]),
+        }
+    vehicle_parameters = _china_vehicle_parameters(fixed_costs)
+    num_cv = sum(int(caps["num_cv"]) for caps in fleet_caps.values())
+    num_ev = sum(int(caps["num_ev"]) for caps in fleet_caps.values())
+    instance = Instance(
+        nodes=nodes,
+        distance_matrix=[list(row) for row in profiles["cv"].distance_m],
+        num_cv=num_cv,
+        num_ev=num_ev,
+        road_profiles=profiles,
+        vehicle_parameters=vehicle_parameters,
+        demand_mass_per_unit_kg=1.0,
+    )
+    cities = {
+        str(node.city).strip().lower()
+        for node in nodes
+        if node.city is not None
+    }
+    runtime_root = repo / "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723"
+    time_profile = _load_time_profile(
+        resolve_calendar_path(runtime_root),
+        cities=cities,
+        date="2025-02-12",
+        require_explicit_mapping=True,
+    )
+    runtime_binding = _city_runtime_binding_from_profile(
+        time_profile,
+        cities=cities,
+        date="2025-02-12",
+    )
+    diesel_prices = _diesel_price_map_from_profile(
+        time_profile,
+        cities=cities,
+        date="2025-02-12",
+    )
+    prices = _china_prices(
+        time_profile,
+        diesel_price_by_city=diesel_prices,
+        vehicle_parameters=vehicle_parameters,
+    )
+    charger_scenario = MappingProxyType(
+        {
+            node.node_id: MappingProxyType(
+                {
+                    "charger_count": (
+                        configured_depot_gun_count(
+                            next(
+                                item
+                                for item in fleet_rows
+                                if item["depot_id"] == node.node_id
+                            )
+                        )
+                        if node.node_type == "d"
+                        else int(node.station_chargers or 0)
+                    ),
+                    "active_concurrency_limit": (
+                        "UNBOUNDED" if node.node_type == "d" else int(node.station_chargers or 0)
+                    ),
+                    "capacity_mode": "unbounded" if node.node_type == "d" else "finite_instance",
+                    "charge_power_kw": float(node.charge_power_kw),
+                    "parameter_class": (
+                        next(item for item in fleet_rows if item["depot_id"] == node.node_id)["charger_parameter_class"]
+                        if node.node_type == "d"
+                        else (
+                            station_assignments[node.node_id]["parameter_class"]
+                            if node.node_id in station_assignments
+                            else facilities[str(node.city)]["station_parameter_class"]
+                        )
+                    ),
+                }
+            )
+            for node in nodes
+            if node.node_type in {"d", "f"}
+        }
+    )
+    bundle = China81Bundle(
+        instance_id=instance_id,
+        region=str(catalog["region"]).strip().lower(),
+        date="2025-02-12",
+        instance=instance,
+        time_profile=time_profile,
+        prices=prices,
+        source_paths=MappingProxyType(
+            {
+                "catalog": str((package_root / "instance_catalog.csv").relative_to(repo)),
+                "nodes": str((saved_root / "nodes.csv").relative_to(repo)),
+                "orders": str((saved_root / "orders.csv").relative_to(repo)),
+                "road_matrices": str(matrix_root.relative_to(repo)),
+                "tariff_carbon_calendar": str(
+                    resolve_calendar_path(runtime_root).relative_to(repo)
+                ),
+                "vehicle_cost_authority": str(
+                    (cost_contract_path if cost_contract_path.is_file() else repo / "data/ChinaInstances/china81_private_rebuild_v1_20260811/vehicle_costs.csv").relative_to(repo)
+                ),
+                "finite_fleet_authority": str((package_root / "fleet_caps.csv").relative_to(repo)),
+                "facilities": str(facilities_path.relative_to(repo)),
+            }
+        ),
+        customer_home_depot=customer_home_depot,
+        price_area_by_city=MappingProxyType(
+            {city: runtime_binding[city]["price_area_id"] for city in sorted(cities)}
+        ),
+        carbon_source_column_by_city=MappingProxyType(
+            {city: runtime_binding[city]["carbon_source_column"] for city in sorted(cities)}
+        ),
+        diesel_zone_by_city=MappingProxyType(
+            {city: runtime_binding[city]["diesel_zone"] for city in sorted(cities)}
+        ),
+        diesel_price_by_city=MappingProxyType(diesel_prices),
+        fleet_caps_by_depot=fleet_caps,
+        fleet_parameter_class_id=fleet_parameters.parameter_class_id,
+        has_additional_total_fleet_cap=fleet_parameters.has_additional_total_fleet_cap,
+        charger_scenario_by_node=charger_scenario,
+        fleet_cap_semantics=FLEET_CAP_SEMANTICS,
+        diesel_price_source_id="CHINA-E3-FORMAL-RELEASE-001__2025-02-12_CITY_DEPOT_PRICE",
+        static_input_authority=str(package_root.relative_to(repo)),
+        road_matrix_authority=str(matrix_authority.relative_to(repo)),
+        runtime_parameter_authority=str(runtime_root.relative_to(repo)),
+        fleet_authority=str(package_root.relative_to(repo)),
+        model_config=MappingProxyType(ModelConfig().as_metadata()),
+        formal_search_allowed=False,
+    )
+    return bundle, orders_by_customer
+
+
+def _assert_saved_suite_replay(
+    built_nodes: Sequence[Mapping[str, Any]],
+    saved_nodes: Sequence[Mapping[str, Any]],
+    built_orders: Sequence[Mapping[str, Any]],
+    saved_orders: Sequence[Mapping[str, Any]],
+    *,
+    label: str,
+) -> None:
+    node_fields = ("node_id", "node_type", "city", "latitude", "longitude")
+    if [tuple(str(row[field]) for field in node_fields) for row in built_nodes] != [
+        tuple(str(row[field]) for field in node_fields) for row in saved_nodes
+    ]:
+        raise RuntimeError(f"{label} runtime rebuild differs from saved nodes")
+    built_by_customer = {str(row["customer_id"]): row for row in built_orders}
+    saved_by_customer = {str(row["customer_id"]): row for row in saved_orders}
+    if set(built_by_customer) != set(saved_by_customer):
+        raise RuntimeError(f"{label} runtime rebuild customer identities differ")
+    exact_fields = (
+        "home_depot_id",
+        "shift_id",
+        "source_instance_id_location",
+        "source_customer_id_location",
+    )
+    numeric_fields = (
+        "time_window_early_minute",
+        "time_window_late_minute",
+        "source_volume_m3",
+        "demand_kg",
+    )
+    for customer_id, built_row in built_by_customer.items():
+        saved_row = saved_by_customer[customer_id]
+        for field in exact_fields:
+            if str(built_row[field]) != str(saved_row[field]):
+                raise RuntimeError(
+                    f"{label} saved order identity differs for {customer_id}/{field}"
+                )
+        for field in numeric_fields:
+            if abs(float(built_row[field]) - float(saved_row[field])) > 1.0e-9:
+                raise RuntimeError(
+                    f"{label} saved order value differs for {customer_id}/{field}"
+                )
+
+
+def _suite_context_from_built(
+    repo: Path,
+    instance_id: str,
+    *,
+    package_root: Path,
+    report_root: Path,
+    built: Any,
+    template: Any,
+    matrix_authority: str,
+    fleet_parameters: China81FleetParameterClass,
+):
+    """Turn one saved V3 two-shift construction into a private context."""
+
+    from setp_solver.private_instance_rebuild_20260811 import (
+        EV_DAILY_FIXED_PREMIUM_CNY,
+    )
+
+    saved_root = package_root / "instances" / instance_id
+    shift_contract = json.loads(
+        (saved_root / "shift_contract.json").read_text(encoding="utf-8")
+    )
+    shift_windows = {
+        shift_id: (
+            float(row["start_minute"]) * 60.0,
+            float(row["end_minute"]) * 60.0,
+        )
+        for shift_id, row in shift_contract["shifts"].items()
+    }
+    fleet_rows = [
+        row
+        for row in _csv_rows(package_root / "fleet_caps.csv")
+        if row["instance_id"] == instance_id
+    ]
+    if not fleet_rows:
+        raise ValueError(f"suite fleet rows are missing for {instance_id}")
+    if {row["fleet_parameter_class"] for row in fleet_rows} != {
+        fleet_parameters.parameter_class_id
+    }:
+        raise ValueError(f"suite fleet class disagrees for {instance_id}")
+    fleet_caps = MappingProxyType(
+        {
+            row["depot_id"]: MappingProxyType(
+                {
+                    "num_cv": int(row["base_all_cv_routes_Rd"]),
+                    "num_ev": int(row["base_all_ev_routes_Re"]),
+                    "total_fleet_cap": (
+                        int(row["base_all_cv_routes_Rd"])
+                        + int(row["base_all_ev_routes_Re"])
+                    ),
+                }
+            )
+            for row in fleet_rows
+        }
+    )
+    instance = replace(
+        built.instance,
+        num_cv=sum(caps["num_cv"] for caps in fleet_caps.values()),
+        num_ev=sum(caps["num_ev"] for caps in fleet_caps.values()),
+    )
+    if instance.num_cv < 1 or instance.num_ev < 1:
+        raise ValueError(f"suite fleet caps have no active mixed fleet for {instance_id}")
+    charger_scenario = MappingProxyType(
+        {
+            row["depot_id"]: MappingProxyType(
+                {
+                    "charger_count": configured_depot_gun_count(row),
+                    "active_concurrency_limit": "UNBOUNDED",
+                    "capacity_mode": "unbounded",
+                    "charge_power_kw": float(row["depot_charge_power_kw"]),
+                    "parameter_class": row["charger_parameter_class"],
+                }
+            )
+            for row in fleet_rows
+        }
+    )
+    bundle = replace(
+        template,
+        instance_id=instance_id,
+        region=built.identity.region,
+        instance=instance,
+        time_profile=list(built.time_profile),
+        prices=built.prices,
+        source_paths=MappingProxyType(
+            {
+                **dict(template.source_paths),
+                "suite": str(package_root.relative_to(repo)),
+                "instance": str(saved_root.relative_to(repo)),
+                "matrix_reference": str(
+                    (saved_root / "matrix_reference.json").relative_to(repo)
+                ),
+                "health_witness_routes": str(
+                    (report_root / "health_witness_routes.csv").relative_to(repo)
+                ),
+                "shift_contract": str(
+                    (saved_root / "shift_contract.json").relative_to(repo)
+                ),
+            }
+        ),
+        customer_home_depot=built.customer_home_depot,
+        fleet_caps_by_depot=fleet_caps,
+        fleet_parameter_class_id=fleet_parameters.parameter_class_id,
+        has_additional_total_fleet_cap=fleet_parameters.has_additional_total_fleet_cap,
+        charger_scenario_by_node=charger_scenario,
+        static_input_authority=str(package_root.relative_to(repo)),
+        road_matrix_authority=matrix_authority,
+        fleet_authority=str(package_root.relative_to(repo)),
+        formal_search_allowed=False,
+    )
+    witness_rows = [
+        row
+        for row in _csv_rows(report_root / "health_witness_routes.csv")
+        if row["instance_id"] == instance_id
+    ]
+    if not witness_rows or {row["witness_status"] for row in witness_rows} != {"PASS"}:
+        raise ValueError(f"suite saved health witness is absent or failed for {instance_id}")
+    skeleton = Solution(
+        routes=[
+            Route(
+                vehicle_id=(
+                    str(row["physical_vehicle_id"]).rsplit("_", 1)[0]
+                    + "_"
+                    + str(int(str(row["physical_vehicle_id"]).rsplit("_", 1)[1]))
+                    + (
+                        "#" + str(row["route_vehicle_id"]).split("#", 1)[1]
+                        if "#" in str(row["route_vehicle_id"])
+                        else ""
+                    )
+                ),
+                vehicle_type=(
+                    "ev"
+                    if str(row["physical_vehicle_id"]).startswith("EV_")
+                    else "cv"
+                ),
+                home_depot_id=str(row["depot_id"]),
+                node_sequence=[
+                    str(row["depot_id"]),
+                    *str(row["customers"]).split("|"),
+                    str(row["depot_id"]),
+                ],
+            )
+            for row in witness_rows
+        ]
+    )
+    individual = _with_registered_idle_duties(
+        DutyIndividual.from_solution(skeleton),
+        bundle,
+    )
+    neutral = {
+        node.node_id: 1.0
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "d"
+    }
+    context = DutyEvaluationContext(
+        bundle=bundle,
+        independent_profit=neutral,
+        independent_profit_identity=FrozenMappingIdentity(
+            source_id="fairness-disabled-neutral-not-pi0",
+            value_sha256=mapping_sha256(neutral),
+            externally_frozen=False,
+        ),
+        prior_profit={depot_id: 0.0 for depot_id in neutral},
+        theta=0.0,
+        carbon_quota_kg=0.0,
+        depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
+        fairness_enabled=False,
+        ev_daily_fixed_premium_cny=EV_DAILY_FIXED_PREMIUM_CNY,
+        shift_aware_departure_enabled=True,
+        rebuilt_route_constraints=RebuiltRouteConstraintContract(
+            source_id=str((saved_root / "shift_contract.json").relative_to(repo)),
+            customer_shift_by_id={
+                customer_id: str(row["shift_id"])
+                for customer_id, row in built.orders_by_customer.items()
+            },
+            customer_volume_m3_by_id={
+                customer_id: float(row["source_volume_m3"])
+                for customer_id, row in built.orders_by_customer.items()
+            },
+            shift_window_second_by_id=shift_windows,
+            vehicle_volume_capacity_m3=float(
+                shift_contract["vehicle_volume_capacity_m3"]
+            ),
+        ),
+    )
+    return bundle, individual, neutral, context
+
+
+def _build_saved_suite_context(
+    repo: Path,
+    instance_id: str,
+    *,
+    package_root: Path,
+    report_root: Path,
+    fleet_parameters: China81FleetParameterClass,
+):
+    """Load any sealed V3 two-shift suite through its package contract."""
+
+    bundle, orders_by_customer = _load_v3_suite_bundle(
+        repo,
+        package_root=package_root,
+        instance_id=instance_id,
+        fleet_parameters=fleet_parameters,
+    )
+    return _suite_context_from_built(
+        repo,
+        instance_id,
+        package_root=package_root,
+        report_root=report_root,
+        built=SimpleNamespace(
+            identity=SimpleNamespace(region=bundle.region),
+            instance=bundle.instance,
+            time_profile=bundle.time_profile,
+            prices=bundle.prices,
+            source_bundle=bundle,
+            customer_home_depot=bundle.customer_home_depot,
+            orders_by_customer=orders_by_customer,
+        ),
+        template=bundle,
+        matrix_authority=bundle.road_matrix_authority,
+        fleet_parameters=fleet_parameters,
+    )
+
+
+def _build_fs_suite_context(
+    repo: Path,
+    instance_id: str,
+    *,
+    fleet_parameters: China81FleetParameterClass,
+):
+    """Load one saved FS suite instance without loading an old V2 lane."""
+    package_root = repo / "data/ChinaInstances/china81_suite_v3_20260812"
+    report_root = repo / "solver/reports/suite_rebuild_20260812"
+    bundle, orders_by_customer = _load_v3_suite_bundle(
+        repo,
+        package_root=package_root,
+        instance_id=instance_id,
+        fleet_parameters=fleet_parameters,
+    )
+    return _suite_context_from_built(
+        repo,
+        instance_id,
+        package_root=package_root,
+        report_root=report_root,
+        built=SimpleNamespace(
+            identity=SimpleNamespace(region=bundle.region),
+            instance=bundle.instance,
+            time_profile=bundle.time_profile,
+            prices=bundle.prices,
+            source_bundle=bundle,
+            customer_home_depot=bundle.customer_home_depot,
+            orders_by_customer=orders_by_customer,
+        ),
+        template=bundle,
+        matrix_authority=bundle.road_matrix_authority,
+        fleet_parameters=fleet_parameters,
+    )
+
+
+def _build_dp_suite_context(
+    repo: Path,
+    instance_id: str,
+    *,
+    fleet_parameters: China81FleetParameterClass,
+):
+    """Load one saved DP suite instance without loading an old V2 lane."""
+    package_root = repo / "data/ChinaInstances/china81_depotpair_rebuild_v1_20260812"
+    report_root = repo / "solver/reports/suite_depotpair_rebuild_20260812"
+    bundle, orders_by_customer = _load_v3_suite_bundle(
+        repo,
+        package_root=package_root,
+        instance_id=instance_id,
+        fleet_parameters=fleet_parameters,
+    )
+    return _suite_context_from_built(
+        repo,
+        instance_id,
+        package_root=package_root,
+        report_root=report_root,
+        built=SimpleNamespace(
+            identity=SimpleNamespace(region=bundle.region),
+            instance=bundle.instance,
+            time_profile=bundle.time_profile,
+            prices=bundle.prices,
+            source_bundle=bundle,
+            customer_home_depot=bundle.customer_home_depot,
+            orders_by_customer=orders_by_customer,
+        ),
+        template=bundle,
+        matrix_authority=bundle.road_matrix_authority,
+        fleet_parameters=fleet_parameters,
+    )
+
+
+def _build_depot_swap_context(
+    repo: Path,
+    instance_id: str,
+    *,
+    fleet_parameters: China81FleetParameterClass,
+):
+    """Load the saved P56 same-city depot swap through the China81 bundle."""
+
+    package_root = repo / DEPOT_SWAP_PACKAGE
+    saved_root = package_root / "instances" / instance_id
+
+    metadata = json.loads(
+        (package_root / "metadata.json").read_text(encoding="utf-8")
+    )
+    expected_authorities = {
+        "static_input_authority": str(DEPOT_SWAP_PACKAGE),
+        "finite_fleet_authority": str(DEPOT_SWAP_PACKAGE),
+        "road_matrix_authority": str(
+            DEPOT_SWAP_PACKAGE / "directed_matrices"
+        ),
+    }
+    for field, expected in expected_authorities.items():
+        if str(metadata.get(field, "")) != expected:
+            raise ValueError(
+                f"DEPOTSWAP metadata {field} disagrees with the saved package"
+            )
+
+    with (package_root / "instance_catalog.csv").open(
+        newline="", encoding="utf-8-sig"
+    ) as handle:
+        catalog_rows = [
+            row
+            for row in csv.DictReader(handle)
+            if row["instance_id"] == instance_id
+        ]
+    if len(catalog_rows) != 1:
+        raise ValueError("DEPOTSWAP catalog row is not unique")
+    catalog = catalog_rows[0]
+    if not str(catalog.get("matrix_source_instance_id", "")).strip():
+        raise ValueError("DEPOTSWAP catalog has no matrix source identity")
+
+    with (package_root / "fleet_caps.csv").open(
+        newline="", encoding="utf-8-sig"
+    ) as handle:
+        fleet_rows = [
+            row
+            for row in csv.DictReader(handle)
+            if row["instance_id"] == instance_id
+        ]
+    if len(fleet_rows) != int(catalog["depot_count"]):
+        raise ValueError("DEPOTSWAP fleet rows do not cover every depot")
+    fleet_parameter_classes = {
+        str(row["fleet_parameter_class"]).strip()
+        for row in fleet_rows
+    }
+    if fleet_parameter_classes != {fleet_parameters.parameter_class_id}:
+        raise ValueError(
+            "DEPOTSWAP runner fleet class disagrees with fleet_caps.csv"
+        )
+    charger_capacity_defaults = {
+        str(row["depot_charger_capacity_default"]).strip().upper()
+        for row in fleet_rows
+    }
+    if charger_capacity_defaults != {"UNBOUNDED"}:
+        raise ValueError(
+            "DEPOTSWAP charger capacity mode is absent or inconsistent"
+        )
+
+    script = repo / "solver/scripts/build_instance_depot_swap_jjj_20260813.py"
+    spec = importlib.util.spec_from_file_location(
+        "problem_hgs_depot_swap_adapter_20260814",
+        script,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import DEPOTSWAP adapter: {script}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    built = module.load_saved_depot_swap_built(package_root)
+    if built.identity.new_instance_id != instance_id:
+        raise ValueError("DEPOTSWAP dedicated adapter returned another instance")
+
+    runtime_dates = {
+        str(row["date"]).strip()
+        for row in built.time_profile
+    }
+    runtime_cities = {
+        str(row["city"]).strip().lower()
+        for row in built.time_profile
+    }
+    if len(runtime_dates) != 1 or not runtime_cities:
+        raise ValueError(
+            "DEPOTSWAP inherited runtime profile identity is incomplete"
+        )
+    built_depot_time_windows = {
+        node.node_id: (float(node.ready_time), float(node.due_time))
+        for node in built.instance.nodes
+        if node.node_type.lower() == "d"
+    }
+    if not built_depot_time_windows:
+        raise ValueError("DEPOTSWAP dedicated adapter returned no depot windows")
+
+    source_instance = Path(str(metadata.get("source_instance", "")))
+    if not source_instance.name:
+        raise ValueError("DEPOTSWAP metadata has no source instance identity")
+    source_metadata_path = repo / source_instance.parent.parent / "metadata.json"
+    source_metadata = json.loads(
+        source_metadata_path.read_text(encoding="utf-8")
+    )
+    formal_search_allowed = source_metadata.get("formal_search_allowed")
+    if type(formal_search_allowed) is not bool:
+        raise TypeError("DEPOTSWAP source package has no formal-search identity")
+
+    bundle = load_china81_bundle(
+        repo,
+        instance_id,
+        date=next(iter(runtime_dates)),
+        static_input_authority=metadata["static_input_authority"],
+        road_matrix_authority=metadata["road_matrix_authority"],
+        runtime_parameter_authority=DEPOT_SWAP_RUNTIME_PARAMETER_AUTHORITY,
+        fleet_authority=metadata["finite_fleet_authority"],
+        fleet_parameters=fleet_parameters,
+        model_config=ModelConfig(
+            strict_multitrip=True,
+            depot_charger_capacity_mode=DEPOT_CHARGER_CAPACITY_UNBOUNDED,
+        ),
+        matrix_source_from_catalog=True,
+        customer_home_depot_from_orders=True,
+        runtime_cities=runtime_cities,
+        depot_time_windows=built_depot_time_windows,
+    )
+    bundle = replace(
+        bundle,
+        formal_search_allowed=formal_search_allowed,
+        source_paths=MappingProxyType(
+            {
+                **dict(bundle.source_paths),
+                "dedicated_adapter": str(script.relative_to(repo)),
+                "matrix_reference": str(
+                    (saved_root / "matrix_reference.json").relative_to(repo)
+                ),
+                "health_witness_routes": str(
+                    (package_root / "health_witness_routes.csv").relative_to(repo)
+                ),
+                "shift_contract": str(
+                    (saved_root / "shift_contract.json").relative_to(repo)
+                ),
+                "vehicle_cost_contract": str(
+                    (package_root / "vehicle_cost_contract.json").relative_to(repo)
+                ),
+            }
+        ),
+    )
+    if list(bundle.time_profile) != [dict(row) for row in built.time_profile]:
+        raise RuntimeError(
+            "DEPOTSWAP runtime tariff/carbon profile differs from construction"
+        )
+    if bundle.prices != built.prices:
+        raise RuntimeError("DEPOTSWAP runtime prices differ from construction")
+    if dict(bundle.customer_home_depot) != dict(built.customer_home_depot):
+        raise RuntimeError(
+            "DEPOTSWAP explicit customer depots differ from construction"
+        )
+    runtime_depot_time_windows = {
+        node.node_id: (float(node.ready_time), float(node.due_time))
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "d"
+    }
+    if runtime_depot_time_windows != built_depot_time_windows:
+        raise RuntimeError(
+            "DEPOTSWAP runtime depot windows differ from construction"
+        )
+    if (
+        bundle.instance.num_cv != built.instance.num_cv
+        or bundle.instance.num_ev != built.instance.num_ev
+    ):
+        raise RuntimeError("DEPOTSWAP runtime fleet totals differ from construction")
+    for row in fleet_rows:
+        scenario = bundle.charger_scenario_by_node.get(row["depot_id"])
+        expected = {
+            "charger_count": configured_depot_gun_count(row),
+            "active_concurrency_limit": DEPOT_CHARGER_CAPACITY_UNBOUNDED,
+            "capacity_mode": DEPOT_CHARGER_CAPACITY_UNBOUNDED,
+            "charge_power_kw": float(row["depot_charge_power_kw"]),
+            "parameter_class": row["charger_parameter_class"],
+        }
+        if scenario is None or dict(scenario) != expected:
+            raise RuntimeError(
+                f"DEPOTSWAP charger scenario differs for {row['depot_id']}"
+            )
+
+    with (package_root / "health_witness_routes.csv").open(
+        newline="", encoding="utf-8-sig"
+    ) as handle:
+        witness_rows = [
+            row
+            for row in csv.DictReader(handle)
+            if row["instance_id"] == instance_id
+        ]
+    if (
+        not witness_rows
+        or {row["witness_status"] for row in witness_rows} != {"PASS"}
+    ):
+        raise ValueError("DEPOTSWAP saved health witness is absent or failed")
+    skeleton = Solution(
+        routes=[
+            Route(
+                vehicle_id=(
+                    str(row["physical_vehicle_id"]).rsplit("_", 1)[0]
+                    + "_"
+                    + str(int(str(row["physical_vehicle_id"]).rsplit("_", 1)[1]))
+                    + (
+                        "#" + str(row["route_vehicle_id"]).split("#", 1)[1]
+                        if "#" in str(row["route_vehicle_id"])
+                        else ""
+                    )
+                ),
+                vehicle_type=(
+                    "ev"
+                    if str(row["physical_vehicle_id"]).startswith("EV_")
+                    else "cv"
+                ),
+                home_depot_id=str(row["depot_id"]),
+                node_sequence=[
+                    str(row["depot_id"]),
+                    *str(row["customers"]).split("|"),
+                    str(row["depot_id"]),
+                ],
+            )
+            for row in witness_rows
+        ]
+    )
+    expected_customers = {
+        node.node_id
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "c"
+    }
+    served_customers = [
+        customer
+        for route in skeleton.routes
+        for customer in route.node_sequence[1:-1]
+    ]
+    if (
+        len(served_customers) != len(set(served_customers))
+        or set(served_customers) != expected_customers
+    ):
+        raise ValueError(
+            "DEPOTSWAP saved health witness does not cover customers exactly once"
+        )
+    individual = _with_registered_idle_duties(
+        DutyIndividual.from_solution(skeleton),
+        bundle,
+    )
+    neutral = {
+        node.node_id: 1.0
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "d"
+    }
+    shift_contract = json.loads(
+        (saved_root / "shift_contract.json").read_text(encoding="utf-8")
+    )
+    shift_windows = {
+        shift_id: (
+            float(row["start_minute"]) * 60.0,
+            float(row["end_minute"]) * 60.0,
+        )
+        for shift_id, row in shift_contract["shifts"].items()
+    }
+    vehicle_cost_contract = json.loads(
+        (package_root / "vehicle_cost_contract.json").read_text(encoding="utf-8")
+    )
+    ev_daily_fixed_premium_cny = float(
+        vehicle_cost_contract["ev"]["daily_fixed_premium_vs_cv_cny"]
+    )
+    context = DutyEvaluationContext(
+        bundle=bundle,
+        independent_profit=neutral,
+        independent_profit_identity=FrozenMappingIdentity(
+            source_id="fairness-disabled-neutral-not-pi0",
+            value_sha256=mapping_sha256(neutral),
+            externally_frozen=False,
+        ),
+        prior_profit={depot_id: 0.0 for depot_id in neutral},
+        theta=0.0,
+        carbon_quota_kg=0.0,
+        depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
+        fairness_enabled=False,
+        ev_daily_fixed_premium_cny=ev_daily_fixed_premium_cny,
+        shift_aware_departure_enabled=True,
+        rebuilt_route_constraints=RebuiltRouteConstraintContract(
+            source_id=str((saved_root / "shift_contract.json").relative_to(repo)),
+            customer_shift_by_id={
+                customer_id: str(row["shift_id"])
+                for customer_id, row in built.orders_by_customer.items()
+            },
+            customer_volume_m3_by_id={
+                customer_id: float(row["source_volume_m3"])
+                for customer_id, row in built.orders_by_customer.items()
+            },
+            shift_window_second_by_id=shift_windows,
+            vehicle_volume_capacity_m3=float(
+                shift_contract["vehicle_volume_capacity_m3"]
+            ),
+        ),
+    )
+    return bundle, individual, neutral, context
+
+
+def _build_prdfix_suite_context(
+    repo: Path,
+    instance_id: str,
+    *,
+    fleet_parameters: China81FleetParameterClass,
+):
+    """Read the frozen PRDFIX suite through its deterministic build adapter."""
+
+    from setp_solver.private_instance_rebuild_20260811 import (
+        EV_DAILY_FIXED_PREMIUM_CNY,
+    )
+
+    script = repo / "solver/scripts/build_suite_prd_fix_20260812.py"
+    spec = importlib.util.spec_from_file_location(
+        "convergence_prdfix_suite_adapter_20260812",
+        script,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import PRDFIX suite adapter: {script}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    suite_root = repo / "data/ChinaInstances/china81_suite_prd_fix_v1_20260812"
+    report_root = repo / "solver/reports/suite_prd_fix_20260812"
+    health_rows = module.read_csv(report_root / "suite_health_v3.csv")
+    matches = [row for row in health_rows if row["instance_id"] == instance_id]
+    if len(matches) != 1:
+        raise ValueError(f"PRDFIX health table is not unique for {instance_id}")
+    health = matches[0]
+    source_id = str(health["source_instance_id"])
+    region = str(health["region"])
+    size = int(health["customer_count"])
+    replicate = str(health["replicate"])
+    prior_matches = [
+        row
+        for row in module.read_csv(module.SOURCE_HEALTH)
+        if row["source_instance_id"] == source_id
+    ]
+    if len(prior_matches) != 1:
+        raise ValueError(f"prior depot-pair health row is not unique for {source_id}")
+    prior_health = prior_matches[0]
+    geometry, _, _ = module.source_geometry(prior_health, module.SOURCE_DP)
+    template = module.dp.load_china81_bundle(
+        repo,
+        f"cn-{region}-200c-{replicate}-V2-LOCATIONS",
+        fleet_parameters=fleet_parameters,
+    )
+    source_bundle = module.load_existing_dp_bundle(
+        health,
+        template,
+        geometry.home_depot_by_source_customer,
+    )
+    module.base.SOURCE_STATIC = module.SOURCE_DP / "source_pools"
+    module.base.SOURCE_MATRICES = module.SOURCE_DP / "directed_matrices"
+    built = module.base.build_instance(
+        module.new_identity(region, size, replicate),
+        module.base.source_orders_by_instance()[source_id],
+        geometry,
+        module.OneBundleCache(source_bundle),
+    )
+    saved_root = suite_root / "instances" / instance_id
+    saved_nodes = module.read_csv(saved_root / "nodes.csv")
+    saved_orders = module.read_csv(saved_root / "orders.csv")
+    if [dict(row) for row in built.node_rows] != saved_nodes:
+        raise RuntimeError("PRDFIX runtime rebuild differs from saved nodes.csv")
+    rebuilt_orders = [
+        {key: str(value) for key, value in row.items()}
+        for row in built.order_rows
+    ]
+    if rebuilt_orders != saved_orders:
+        raise RuntimeError("PRDFIX runtime rebuild differs from saved orders.csv")
+
+    fleet_rows = [
+        row
+        for row in module.read_csv(suite_root / "fleet_caps.csv")
+        if row["instance_id"] == instance_id
+    ]
+    depot_ids = {
+        node.node_id for node in built.instance.nodes if node.node_type == "d"
+    }
+    if {row["depot_id"] for row in fleet_rows} != depot_ids:
+        raise RuntimeError("PRDFIX fleet rows disagree with runtime depots")
+    fleet_caps = MappingProxyType(
+        {
+            row["depot_id"]: MappingProxyType(
+                {
+                    "num_cv": int(row["base_all_cv_routes_Rd"]),
+                    "num_ev": int(row["base_all_ev_routes_Re"]),
+                    "total_fleet_cap": (
+                        int(row["base_all_cv_routes_Rd"])
+                        + int(row["base_all_ev_routes_Re"])
+                    ),
+                }
+            )
+            for row in fleet_rows
+        }
+    )
+    if not any(
+        caps["num_cv"] > 0 and caps["num_ev"] > 0
+        for caps in fleet_caps.values()
+    ):
+        raise ValueError("PRDFIX endogenous fleet has no active mixed depot")
+    instance = replace(
+        built.instance,
+        num_cv=sum(caps["num_cv"] for caps in fleet_caps.values()),
+        num_ev=sum(caps["num_ev"] for caps in fleet_caps.values()),
+    )
+    charger_scenario = MappingProxyType(
+        {
+            row["depot_id"]: MappingProxyType(
+                {
+                    "charger_count": configured_depot_gun_count(row),
+                    "active_concurrency_limit": "UNBOUNDED",
+                    "capacity_mode": "unbounded",
+                    "charge_power_kw": float(row["depot_charge_power_kw"]),
+                    "parameter_class": row["charger_parameter_class"],
+                }
+            )
+            for row in fleet_rows
+        }
+    )
+    bundle = replace(
+        template,
+        instance_id=instance_id,
+        region=region,
+        instance=instance,
+        time_profile=list(built.time_profile),
+        prices=built.prices,
+        source_paths=MappingProxyType(
+            {
+                **dict(template.source_paths),
+                "suite": str(suite_root.relative_to(repo)),
+                "instance": str(saved_root.relative_to(repo)),
+                "matrix_reference": str(
+                    (saved_root / "matrix_reference.json").relative_to(repo)
+                ),
+                "health_witness_routes": str(
+                    (report_root / "health_witness_routes.csv").relative_to(repo)
+                ),
+            }
+        ),
+        customer_home_depot=built.customer_home_depot,
+        fleet_caps_by_depot=fleet_caps,
+        fleet_parameter_class_id=fleet_parameters.parameter_class_id,
+        has_additional_total_fleet_cap=(
+            fleet_parameters.has_additional_total_fleet_cap
+        ),
+        charger_scenario_by_node=charger_scenario,
+        static_input_authority=str(suite_root.relative_to(repo)),
+        road_matrix_authority=str(
+            (module.SOURCE_DP / "directed_matrices").relative_to(repo)
+        ),
+        fleet_authority=str(suite_root.relative_to(repo)),
+        formal_search_allowed=False,
+    )
+
+    witness_rows = [
+        row
+        for row in module.read_csv(report_root / "health_witness_routes.csv")
+        if row["instance_id"] == instance_id
+    ]
+    if not witness_rows or {row["witness_status"] for row in witness_rows} != {"PASS"}:
+        raise ValueError("PRDFIX saved health witness is absent or failed")
+    skeleton = Solution(
+        routes=[
+            Route(
+                vehicle_id=(
+                    str(row["physical_vehicle_id"]).rsplit("_", 1)[0]
+                    + "_"
+                    + str(int(str(row["physical_vehicle_id"]).rsplit("_", 1)[1]))
+                    + (
+                        "#" + str(row["route_vehicle_id"]).split("#", 1)[1]
+                        if "#" in str(row["route_vehicle_id"])
+                        else ""
+                    )
+                ),
+                vehicle_type=(
+                    "ev"
+                    if str(row["physical_vehicle_id"]).startswith("EV_")
+                    else "cv"
+                ),
+                home_depot_id=str(row["depot_id"]),
+                node_sequence=[
+                    str(row["depot_id"]),
+                    *str(row["customers"]).split("|"),
+                    str(row["depot_id"]),
+                ],
+            )
+            for row in witness_rows
+        ]
+    )
+    individual = _with_registered_idle_duties(
+        DutyIndividual.from_solution(skeleton),
+        bundle,
+    )
+    neutral = {
+        node.node_id: 1.0
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "d"
+    }
+    shift_contract = json.loads(
+        (saved_root / "shift_contract.json").read_text(encoding="utf-8")
+    )
+    shift_windows = {
+        shift_id: (
+            float(row["start_minute"]) * 60.0,
+            float(row["end_minute"]) * 60.0,
+        )
+        for shift_id, row in shift_contract["shifts"].items()
+    }
+    context = DutyEvaluationContext(
+        bundle=bundle,
+        independent_profit=neutral,
+        independent_profit_identity=FrozenMappingIdentity(
+            source_id="fairness-disabled-neutral-not-pi0",
+            value_sha256=mapping_sha256(neutral),
+            externally_frozen=False,
+        ),
+        prior_profit={depot_id: 0.0 for depot_id in neutral},
+        theta=0.0,
+        carbon_quota_kg=0.0,
+        depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
+        fairness_enabled=False,
+        ev_daily_fixed_premium_cny=EV_DAILY_FIXED_PREMIUM_CNY,
+        shift_aware_departure_enabled=True,
+        rebuilt_route_constraints=RebuiltRouteConstraintContract(
+            source_id=str((saved_root / "shift_contract.json").relative_to(repo)),
+            customer_shift_by_id={
+                customer_id: str(row["shift_id"])
+                for customer_id, row in built.orders_by_customer.items()
+            },
+            customer_volume_m3_by_id={
+                customer_id: float(row["source_volume_m3"])
+                for customer_id, row in built.orders_by_customer.items()
+            },
+            shift_window_second_by_id=shift_windows,
+            vehicle_volume_capacity_m3=float(
+                shift_contract["vehicle_volume_capacity_m3"]
+            ),
+        ),
+    )
+    return bundle, individual, neutral, context
+
+
+def _close_metro_initial_clock(
+    initial: DutyIndividual,
+    context: DutyEvaluationContext,
+) -> tuple[DutyIndividual, dict[str, Any]]:
+    """Close one lost saved clock without changing the METRO instance.
+
+    The saved health witness carries exact departure minutes, while the legacy
+    ``Route`` adapter does not.  If replay exposes exactly one shift-start
+    violation, enumerate equal-size one-customer exchanges between routes in
+    that same registered shift.  Route orders and partner routes are visited
+    in lexical order, and the first exact-full-model feasible candidate wins;
+    objective values never participate in selection.
+    """
+
+    evaluator = DutyFullEvaluator(context)
+    base = evaluator.evaluate(initial)
+    evidence: dict[str, Any] = {
+        "applied": False,
+        "selection_rule": (
+            "first lexicographic same-shift one-customer exchange and route "
+            "orders passing the existing route clock and exact full evaluator; "
+            "cost ignored"
+        ),
+        "base_feasible": bool(base.feasible),
+        "base_violations": [asdict(item) for item in base.violations],
+        "route_clock_candidates": 0,
+        "exact_full_candidates": 0,
+        "exact_full_evaluations_including_base": int(evaluator.full_calls),
+    }
+    if base.feasible:
+        return initial, evidence
+    if len(base.violations) != 1:
+        raise RuntimeError(
+            "METRO initial clock closure requires exactly one replay violation"
+        )
+    violation = base.violations[0]
+    if violation.type != "TIME_WINDOW" or "#T" not in violation.vehicle_id:
+        raise RuntimeError(
+            "METRO initial clock closure received a non-clock violation"
+        )
+    target_duty_id, trip_suffix = violation.vehicle_id.rsplit("#T", 1)
+    target_trip_index = int(trip_suffix)
+    duty_by_id = {
+        duty.physical_vehicle_id: duty for duty in initial.duties
+    }
+    target_duty = duty_by_id.get(target_duty_id)
+    if target_duty is None or target_trip_index > len(target_duty.trips):
+        raise RuntimeError("METRO clock violation refers to an absent duty trip")
+    target_trip = target_duty.trips[target_trip_index - 1]
+    contract = context.rebuilt_route_constraints
+    if contract is None:
+        raise RuntimeError("METRO clock closure needs the rebuilt shift contract")
+    target_shifts = {
+        contract.customer_shift_by_id[customer]
+        for customer in target_trip.customer_ids
+    }
+    if len(target_shifts) != 1:
+        raise RuntimeError("METRO target route crosses registered shifts")
+    shift_id = next(iter(target_shifts))
+    shift_start, shift_end = contract.shift_window_second_by_id[shift_id]
+
+    partners = []
+    for duty in initial.duties:
+        for trip in duty.trips:
+            if (
+                duty.physical_vehicle_id == target_duty_id
+                and trip.trip_index == target_trip_index
+            ) or not trip.customer_ids:
+                continue
+            shifts = {
+                contract.customer_shift_by_id[customer]
+                for customer in trip.customer_ids
+            }
+            if shifts == {shift_id}:
+                partners.append((duty, trip))
+    partners.sort(
+        key=lambda item: (item[0].physical_vehicle_id, item[1].trip_index)
+    )
+
+    order_cache: dict[tuple[str, tuple[str, ...]], tuple[tuple[str, ...], ...]] = {}
+
+    def feasible_orders(
+        depot_id: str,
+        customers: tuple[str, ...],
+    ) -> tuple[tuple[str, ...], ...]:
+        key = (depot_id, tuple(sorted(customers)))
+        cached = order_cache.get(key)
+        if cached is not None:
+            return cached
+        accepted = []
+        for order in permutations(key[1]):
+            try:
+                timing = route_timing(
+                    Route(
+                        vehicle_id="CV_METRO_CLOCK_CHECK#T1",
+                        vehicle_type="cv",
+                        home_depot_id=depot_id,
+                        node_sequence=[depot_id, *order, depot_id],
+                    ),
+                    context.bundle.instance,
+                    context.bundle.prices,
+                    validate_battery=False,
+                )
+            except ValueError:
+                continue
+            if (
+                timing.earliest_departure_second >= float(shift_start) - 1.0e-6
+                and timing.return_second <= float(shift_end) + 1.0e-6
+            ):
+                accepted.append(tuple(order))
+        result = tuple(accepted)
+        order_cache[key] = result
+        return result
+
+    for partner_duty, partner_trip in partners:
+        for target_customer in sorted(target_trip.customer_ids):
+            for partner_customer in sorted(partner_trip.customer_ids):
+                target_customers = tuple(
+                    customer
+                    for customer in target_trip.customer_ids
+                    if customer != target_customer
+                ) + (partner_customer,)
+                partner_customers = tuple(
+                    customer
+                    for customer in partner_trip.customer_ids
+                    if customer != partner_customer
+                ) + (target_customer,)
+                target_orders = feasible_orders(
+                    target_duty.home_depot_id,
+                    target_customers,
+                )
+                partner_orders = feasible_orders(
+                    partner_duty.home_depot_id,
+                    partner_customers,
+                )
+                evidence["route_clock_candidates"] += (
+                    len(target_orders) * len(partner_orders)
+                )
+                for target_order in target_orders:
+                    for partner_order in partner_orders:
+                        rebuilt_duties = []
+                        for duty in initial.duties:
+                            rebuilt_trips = []
+                            for trip in duty.trips:
+                                identity = (
+                                    duty.physical_vehicle_id,
+                                    trip.trip_index,
+                                )
+                                if identity == (
+                                    target_duty_id,
+                                    target_trip_index,
+                                ):
+                                    rebuilt_trips.append(
+                                        replace(
+                                            trip,
+                                            customer_ids=target_order,
+                                            route_visits=(),
+                                        )
+                                    )
+                                elif identity == (
+                                    partner_duty.physical_vehicle_id,
+                                    partner_trip.trip_index,
+                                ):
+                                    rebuilt_trips.append(
+                                        replace(
+                                            trip,
+                                            customer_ids=partner_order,
+                                            route_visits=(),
+                                        )
+                                    )
+                                else:
+                                    rebuilt_trips.append(trip)
+                            rebuilt_duties.append(
+                                replace(
+                                    duty,
+                                    trips=tuple(rebuilt_trips),
+                                    schedule=None,
+                                )
+                            )
+                        candidate = replace(
+                            initial,
+                            duties=tuple(rebuilt_duties),
+                            source="metro-exact-clock-closure",
+                        )
+                        evidence["exact_full_candidates"] += 1
+                        evaluation = evaluator.evaluate(candidate)
+                        if not evaluation.feasible:
+                            continue
+                        evidence.update(
+                            {
+                                "applied": True,
+                                "target_duty_id": target_duty_id,
+                                "target_trip_index": target_trip_index,
+                                "partner_duty_id": (
+                                    partner_duty.physical_vehicle_id
+                                ),
+                                "partner_trip_index": partner_trip.trip_index,
+                                "exchanged_customers": {
+                                    target_duty_id: target_customer,
+                                    partner_duty.physical_vehicle_id: (
+                                        partner_customer
+                                    ),
+                                },
+                                "target_order": list(target_order),
+                                "partner_order": list(partner_order),
+                                "selected_fingerprint": candidate.fingerprint,
+                                "selected_feasible": True,
+                                "selected_cost_observed_after_selection": (
+                                    evaluation.total_cost
+                                ),
+                                "exact_full_evaluations_including_base": int(
+                                    evaluator.full_calls
+                                ),
+                            }
+                        )
+                        return candidate, evidence
+    evidence["exact_full_evaluations_including_base"] = int(
+        evaluator.full_calls
+    )
+    raise RuntimeError(
+        "METRO initial clock could not be closed by the registered shift replay"
+    )
+
+
+def _private_rebuild_health_witness_initial(repo: Path, bundle) -> Solution:
+    """Load the frozen seed-11 health witness without invoking a solver."""
+
+    path = (
+        repo
+        / "solver/reports/instance_rebuild_20260811/health_witness_routes.csv"
+    )
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        rows = list(csv.DictReader(handle))
+    if not rows:
+        raise ValueError("rebuilt health witness is empty")
+    if {str(row["seed"]) for row in rows} != {"11"}:
+        raise ValueError("rebuilt health witness must be the frozen seed-11 route set")
+    routes = [
+        Route(
+            vehicle_id=str(row["route_vehicle_id"]),
+            vehicle_type=(
+                "ev"
+                if str(row["physical_vehicle_id"]).startswith("EV_")
+                else "cv"
+            ),
+            home_depot_id=str(row["depot_id"]),
+            node_sequence=[
+                str(row["depot_id"]),
+                *str(row["customers"]).split("|"),
+                str(row["depot_id"]),
+            ],
+        )
+        for row in rows
+    ]
+    served = [node_id for route in routes for node_id in route.node_sequence[1:-1]]
+    expected = {
+        node.node_id
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "c"
+    }
+    if len(served) != len(set(served)) or set(served) != expected:
+        raise ValueError("rebuilt health witness does not cover customers exactly once")
+    return Solution(routes=routes)
 
 
 def _registered_finite_fleet_initial(repo: Path, bundle) -> Solution:
@@ -407,40 +2328,358 @@ def _with_registered_idle_duties(
     bundle,
 ) -> DutyIndividual:
     """Represent every registered vehicle, including currently idle assets."""
+    return register_all_vehicle_slots(individual, bundle)
 
-    by_id = {
-        duty.physical_vehicle_id: duty for duty in individual.duties
-    }
-    for depot_id, caps in sorted(bundle.fleet_caps_by_depot.items()):
-        expected_ids = set()
-        for vehicle_type, cap_field in (("cv", "num_cv"), ("ev", "num_ev")):
-            for index in range(1, int(caps[cap_field]) + 1):
-                vehicle_id = f"{vehicle_type.upper()}_{depot_id}_{index}"
-                expected_ids.add(vehicle_id)
-                if vehicle_id not in by_id:
-                    by_id[vehicle_id] = PhysicalVehicleDuty(
-                        physical_vehicle_id=vehicle_id,
-                        vehicle_type=vehicle_type,
-                        home_depot_id=depot_id,
-                        trips=(),
-                    )
-        actual_ids = {
-            duty.physical_vehicle_id
-            for duty in individual.duties
-            if duty.home_depot_id == depot_id
-        }
-        unexpected = actual_ids.difference(expected_ids)
-        if unexpected:
-            raise RuntimeError(
-                "completed solution uses unregistered physical vehicles: "
-                + ", ".join(sorted(unexpected))
+
+def _dynamic_insertion_technical_cut(
+    bundle,
+    initial: DutyIndividual,
+    context: DutyEvaluationContext,
+) -> tuple[DutyIndividual, DutyEvaluationContext, str]:
+    """Build one controlled 13:00 reveal without reading a truth stream."""
+
+    target_asset = "CV_D_guangzhou_4"
+    rebuilt_duties = []
+    revealed = None
+    for duty in initial.duties:
+        if duty.physical_vehicle_id != target_asset:
+            rebuilt_duties.append(duty)
+            continue
+        if not duty.trips or not duty.trips[0].customer_ids:
+            raise ValueError("dynamic insertion probe target duty is empty")
+        trip = duty.trips[0]
+        revealed = trip.customer_ids[-1]
+        rebuilt_duties.append(
+            replace(
+                duty,
+                trips=(
+                    replace(
+                        trip,
+                        customer_ids=trip.customer_ids[:-1],
+                    ),
+                ),
             )
-        if len(expected_ids) > int(caps["total_fleet_cap"]):
-            raise RuntimeError("typed fleet caps exceed the total fleet cap")
-    return replace(
-        individual,
-        duties=tuple(by_id[duty_id] for duty_id in sorted(by_id)),
+        )
+    if revealed is None:
+        raise ValueError("dynamic insertion probe target asset is absent")
+
+    partial = replace(
+        initial,
+        duties=tuple(rebuilt_duties),
+        unserved_customers=(revealed,),
+        source="dynamic-insertion-technical-cut",
     )
+    source_solution, source_certificate = prepare_multitrip_solution(
+        partial.to_solution(),
+        bundle.instance,
+        bundle.prices,
+        depot_charge_window_mode=context.depot_charge_window_mode,
+    )
+    trigger = 46_800.0
+    cut = cut_certificate_at_trigger(
+        source_solution,
+        source_certificate,
+        bundle.instance,
+        bundle.prices,
+        trigger_second=trigger,
+    )
+    battery_capacity = bundle.instance.battery_capacity_kwh(
+        fallback=bundle.prices.B_battery_kwh
+    )
+    assets = {
+        duty.physical_vehicle_id: cut.asset_states.get(
+            duty.physical_vehicle_id,
+            DynamicAssetState(
+                duty.physical_vehicle_id,
+                duty.vehicle_type,
+                duty.home_depot_id,
+                trigger,
+                battery_capacity if duty.vehicle_type == "ev" else 0.0,
+                1,
+            ),
+        )
+        for duty in initial.duties
+    }
+    customer_ids = {
+        node.node_id
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "c"
+    }
+    committed_route_ids = {
+        *cut.completed_route_ids,
+        *cut.in_progress_route_ids,
+    }
+    committed_customers = {
+        node_id
+        for route in source_solution.routes
+        if route.vehicle_id in committed_route_ids
+        for node_id in route.node_sequence[1:-1]
+        if node_id in customer_ids
+    }
+    state = DutyDynamicState(
+        source_solution=source_solution,
+        cut=cut,
+        asset_states=MappingProxyType(assets),
+        future_customer_ids=frozenset(
+            customer_ids.difference(committed_customers)
+        ),
+        customer_appearance_second={
+            customer_id: trigger if customer_id == revealed else 0.0
+            for customer_id in customer_ids
+        },
+        charging_strategy="aware",
+        charging_intensity_field="forecast_gco2_per_kwh",
+    )
+    future = future_individual_from_cut(
+        state,
+        source_certificate,
+        bundle.instance,
+    )
+    return (
+        future,
+        replace(
+            context,
+            dynamic_state=state,
+            incremental_full_truth_sentinel_enabled=False,
+        ),
+        revealed,
+    )
+
+
+def _parse_mechanism_off(value: str) -> frozenset[str]:
+    requested = frozenset(
+        item.strip() for item in str(value).split(",") if item.strip()
+    )
+    unknown = sorted(requested.difference(MECHANISM_NAMES))
+    if unknown:
+        raise ValueError("unknown mechanism group(s): " + ", ".join(unknown))
+    return requested
+
+
+def _customer_structure(
+    individual: DutyIndividual,
+) -> tuple[dict[str, str], dict[str, str]]:
+    depot_by_customer: dict[str, str] = {}
+    type_by_customer: dict[str, str] = {}
+    for duty in individual.duties:
+        for trip in duty.trips:
+            for customer in trip.customer_ids:
+                depot_by_customer[customer] = duty.home_depot_id
+                type_by_customer[customer] = duty.vehicle_type
+    return depot_by_customer, type_by_customer
+
+
+def _string_mapping_sha256(values: Mapping[str, str]) -> str:
+    payload = json.dumps(
+        sorted((str(key), str(value)) for key, value in values.items()),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _shift_aware_ev_proxy_validation(
+    individual: DutyIndividual,
+    route_engine: IndependentKernelDutyRouteProposalEngine,
+    context: DutyEvaluationContext,
+) -> dict[str, object]:
+    contract = context.rebuilt_route_constraints
+    if contract is None or not route_engine.shift_aware_ev_proxy:
+        return {"enabled": False}
+    proxy = route_engine.shift_aware_ev_proxy
+    per_vehicle: dict[str, dict[str, object]] = {}
+    fleet_energy = 0.0
+    fleet_cost = 0.0
+    fleet_old_cost = 0.0
+    for duty in individual.duties:
+        if not duty.trips:
+            continue
+        energy_by_shift: dict[str, float] = {}
+        for trip in duty.trips:
+            shifts = {
+                contract.customer_shift_by_id[customer]
+                for customer in trip.customer_ids
+            }
+            if len(shifts) != 1:
+                raise ValueError(
+                    "shift-aware proxy validation found a mixed-shift trip"
+                )
+            shift_id = next(iter(shifts))
+            route = Route(
+                vehicle_id=duty.physical_vehicle_id,
+                vehicle_type="ev",
+                home_depot_id=duty.home_depot_id,
+                node_sequence=[
+                    duty.home_depot_id,
+                    *trip.customer_ids,
+                    duty.home_depot_id,
+                ],
+            )
+            energy_by_shift[shift_id] = (
+                energy_by_shift.get(shift_id, 0.0)
+                + float(
+                    route_ev_energy_summary(
+                        route,
+                        context.bundle.instance,
+                        context.bundle.prices,
+                    ).ev_kwh
+                )
+            )
+        energy = sum(energy_by_shift.values())
+        electricity_cost = sum(
+            shift_energy
+            * float(
+                proxy[duty.home_depot_id][shift_id][
+                    "electricity_cny_per_kwh"
+                ]
+            )
+            for shift_id, shift_energy in energy_by_shift.items()
+        )
+        rows = time_profile_rows_for_node(
+            context.bundle.instance,
+            duty.home_depot_id,
+            context.bundle.time_profile,
+        )
+        old_rate = sum(
+            float(row["depot_energy_cny_per_kwh"]) for row in rows
+        ) / len(rows)
+        unit_rate = electricity_cost / energy
+        per_vehicle[duty.physical_vehicle_id] = {
+            "energy_kwh_by_shift": energy_by_shift,
+            "energy_kwh": energy,
+            "electricity_cost_cny": electricity_cost,
+            "unit_electricity_cny_per_kwh": unit_rate,
+            # Compatibility key: this is the equal-duration daily mean of TOU
+            # category prices stored on 48 half-hour integration-grid rows.
+            "old_48_slot_mean_cny_per_kwh": old_rate,
+        }
+        fleet_energy += energy
+        fleet_cost += electricity_cost
+        fleet_old_cost += energy * old_rate
+    old_fleet_rate = fleet_old_cost / fleet_energy
+    fleet_rate = fleet_cost / fleet_energy
+    return {
+        "enabled": True,
+        "criterion": (
+            "AM energy uses the lowest-carbon pre-first-trip slot; PM energy "
+            "uses the lowest-carbon inter-shift lunch slot; vehicle and fleet "
+            "rates are route-EV-energy weighted"
+        ),
+        "per_vehicle": per_vehicle,
+        "fleet_energy_kwh": fleet_energy,
+        "fleet_unit_electricity_cny_per_kwh": fleet_rate,
+        "old_48_slot_mean_cny_per_kwh": old_fleet_rate,
+        "relative_change": fleet_rate / old_fleet_rate - 1.0,
+    }
+
+
+def _mechanism_closure_violations(
+    reference: DutyIndividual,
+    candidate: DutyIndividual,
+    mechanism_enabled: Mapping[str, bool],
+) -> tuple[str, ...]:
+    reference_depot, reference_type = _customer_structure(reference)
+    candidate_depot, candidate_type = _customer_structure(candidate)
+    violations: list[str] = []
+    if not mechanism_enabled["cross_depot"]:
+        changed = sorted(
+            customer
+            for customer, depot_id in reference_depot.items()
+            if candidate_depot.get(customer) != depot_id
+        )
+        if changed:
+            violations.append("cross_depot:" + ",".join(changed))
+    if not mechanism_enabled["type_exchange"]:
+        changed = sorted(
+            customer
+            for customer, vehicle_type in reference_type.items()
+            if candidate_type.get(customer) != vehicle_type
+        )
+        if changed:
+            violations.append("type_exchange:" + ",".join(changed))
+    if not mechanism_enabled["multi_trip"]:
+        changed = sorted(
+            duty.physical_vehicle_id
+            for duty in candidate.duties
+            if len(duty.trips) > 1
+        )
+        if changed:
+            violations.append("multi_trip:" + ",".join(changed))
+    return tuple(violations)
+
+
+def _move_mechanism_enabled(
+    channel: str,
+    mechanism_enabled: Mapping[str, bool],
+) -> bool:
+    mechanism_by_channel = {
+        "depot_collaboration": "cross_depot",
+        "fairness_cross_depot": "cross_depot",
+        "multi_trip": "multi_trip",
+        "whole_duty_type_exchange": "type_exchange",
+        "time_varying_carbon_charge": "charge_timing",
+    }
+    mechanism = mechanism_by_channel.get(str(channel))
+    return mechanism is None or bool(mechanism_enabled[mechanism])
+
+
+def _single_trip_initial(individual: DutyIndividual) -> DutyIndividual:
+    """Place every existing trip on one same-type, same-depot idle asset."""
+
+    if any(
+        trip.locked_customer_prefix
+        or trip.trip_index in duty.locked_charging_trip_indices
+        or any(session.locked for session in duty.charging_sessions)
+        for duty in individual.duties
+        for trip in duty.trips
+    ):
+        raise ValueError("single-trip initialization cannot rewrite locked Duty")
+    duties = list(individual.duties)
+    idle_by_group: dict[tuple[str, str], list[int]] = {}
+    for index, duty in enumerate(duties):
+        if not duty.trips:
+            idle_by_group.setdefault(
+                (duty.home_depot_id, duty.vehicle_type), []
+            ).append(index)
+    for index, duty in enumerate(tuple(duties)):
+        if len(duty.trips) <= 1:
+            continue
+        group = (duty.home_depot_id, duty.vehicle_type)
+        extras = duty.trips[1:]
+        available = idle_by_group.get(group, [])
+        if len(available) < len(extras):
+            raise ValueError(
+                "single-trip initialization lacks same-type, same-depot idle assets"
+            )
+        duties[index] = replace(
+            duty,
+            trips=(replace(duty.trips[0], trip_index=1),),
+            charging_sessions=(),
+        )
+        for trip in extras:
+            receiver_index = available.pop(0)
+            receiver = duties[receiver_index]
+            duties[receiver_index] = replace(
+                receiver,
+                trips=(
+                    replace(
+                        trip,
+                        trip_index=1,
+                        locked_customer_prefix=(),
+                    ),
+                ),
+                charging_sessions=(),
+            )
+    result = DutyIndividual(
+        duties=tuple(duties),
+        unserved_customers=individual.unserved_customers,
+        source=individual.source + ":single-trip-mechanism-off",
+    )
+    if any(len(duty.trips) > 1 for duty in result.duties):
+        raise RuntimeError("single-trip initialization remained multi-trip")
+    if _customer_structure(result) != _customer_structure(individual):
+        raise RuntimeError("single-trip initialization changed customer structure")
+    return result
 
 
 def _prepare_population(
@@ -449,7 +2688,9 @@ def _prepare_population(
     policy: ChargingRepairPolicy,
     parameters: ProblemHGSSearchParameters | None = None,
     *,
+    random_seed: int = SEED,
     require_distinct_selection: bool = True,
+    mechanism_enabled: Mapping[str, bool] | None = None,
 ):
     initial_evaluation = evaluator.evaluate(initial)
     reversible = next(
@@ -498,6 +2739,11 @@ def _prepare_population(
         generate_problem_moves(initial, initial_evaluation, evaluator.context.bundle.instance),
         start=1,
     ):
+        if mechanism_enabled is not None and not _move_mechanism_enabled(
+            move.channel,
+            mechanism_enabled,
+        ):
+            continue
         outcome = evaluate_move(
             initial,
             move,
@@ -519,6 +2765,14 @@ def _prepare_population(
             and outcome.candidate is not None
             and outcome.evaluation is not None
             and outcome.candidate.fingerprint != initial.fingerprint
+            and (
+                mechanism_enabled is None
+                or not _mechanism_closure_violations(
+                    initial,
+                    outcome.candidate,
+                    mechanism_enabled,
+                )
+            )
         ):
             second = outcome.candidate
             second_evaluation = outcome.evaluation
@@ -527,19 +2781,21 @@ def _prepare_population(
         raise RuntimeError("no deterministic, fully evaluated distinct second parent")
 
     candidates = (initial, second)
-    parameters = parameters or _parameters()
+    parameters = parameters or _parameters(random_seed=random_seed)
     penalties = AdaptivePenaltyManager(parameters.penalties)
     population = DutyPopulation(parameters.population, penalties)
     population.add(initial, initial_evaluation)
     population.add(second, second_evaluation)
-    left, right = population.select(random.Random(SEED))
+    left, right = population.select(random.Random(random_seed))
     selected = {
         "left_fingerprint": left.individual.fingerprint,
         "right_fingerprint": right.individual.fingerprint,
         "distinct": left.individual.fingerprint != right.individual.fingerprint,
     }
     if require_distinct_selection and not selected["distinct"]:
-        raise RuntimeError("seed 11 did not select structurally distinct parents")
+        raise RuntimeError(
+            f"seed {random_seed} did not select structurally distinct parents"
+        )
     return (
         candidates,
         initial_evaluation,
@@ -554,24 +2810,86 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("--instance-id", default=INSTANCE_ID)
+    parser.add_argument("--seed", type=int, default=SEED)
+    parser.add_argument("--convergence-csv", type=Path)
     parser.add_argument("--iterations", type=int, default=1)
     parser.add_argument("--max-runtime-seconds", type=float, default=1200.0)
     parser.add_argument("--stagnation-patience", type=int, default=500)
     parser.add_argument(
         "--population-mode",
         choices=("technical_two_parent", "copied_hgs_defaults"),
-        default="technical_two_parent",
+        default="copied_hgs_defaults",
     )
     parser.add_argument(
         "--crossover-mode",
         choices=("fast_only", "hybrid"),
         default="fast_only",
     )
+    parser.add_argument(
+        "--objective-mode",
+        choices=tuple(sorted(POPULATION_OBJECTIVE_MODES)),
+        default=SINGLE_OBJECTIVE,
+    )
     parser.add_argument("--arm", default=ARM)
+    parser.add_argument(
+        "--fleet-parameter-class",
+        choices=tuple(FLEET_PARAMETER_CLASSES),
+        default="fixed25",
+    )
+    parser.add_argument(
+        "--depot-charging-scenario",
+        choices=("60kw", "22kw"),
+        default="60kw",
+        help="rebuilt private-instance depot power/registered-curve pairing",
+    )
     parser.add_argument("--disable-truth-sentinel", action="store_true")
+    parser.add_argument(
+        "--trajectory",
+        choices=("full", "off"),
+        default="off",
+        help="full writes the per-candidate diagnostic trace; experiment default is off",
+    )
     parser.add_argument("--stream-trajectory", action="store_true")
     parser.add_argument("--no-retain-trajectory", action="store_true")
     parser.add_argument("--stderr-capture-state", default="caller_not_declared")
+    parser.add_argument(
+        "--first-trip-prev-night",
+        action="store_true",
+        help=(
+            "merge previous-day and same-day predeparture charging candidates "
+            "for the first trip of each physical-vehicle duty"
+        ),
+    )
+    parser.add_argument(
+        "--charge-timing-policy",
+        choices=tuple(sorted(CHARGE_TIMING_POLICIES)),
+        default="cost_plus_carbon",
+        help="charging-start policy used by both paired arms",
+    )
+    parser.add_argument(
+        "--frvcpy-charging",
+        action="store_true",
+        help=(
+            "use pinned frvcpy for fixed-route charging sites and amounts; "
+            "default keeps the existing charging repair"
+        ),
+    )
+    parser.add_argument(
+        "--depot-assignment-operator",
+        action="store_true",
+        help=(
+            "enable incremental cross-depot prefix/suffix migration into an "
+            "empty same-vehicle-class duty"
+        ),
+    )
+    parser.add_argument(
+        "--dynamic-insertion-operator",
+        action="store_true",
+        help=(
+            "technical V3 cut: insert one newly revealed PM order through "
+            "the cached incremental dynamic operator; default is disabled"
+        ),
+    )
     parser.add_argument(
         "--proposal-mode",
         choices=(
@@ -582,6 +2900,52 @@ def main() -> int:
         ),
         default="system",
     )
+    parser.add_argument(
+        "--proposal-config",
+        choices=("default", "combat"),
+        default="default",
+        help=(
+            "named technical wiring configuration; combat enables the five "
+            "Duty mechanism channels, DepotSplit, and first-trip prev_night"
+        ),
+    )
+    parser.add_argument(
+        "--mechanism-off",
+        default="",
+        help=(
+            "comma-separated closed mechanism groups: cross_depot,"
+            "multi_trip,type_exchange,charge_timing"
+        ),
+    )
+    parser.add_argument(
+        "--charging-prescreen",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "exact route-clock prescreen; defaults on for combat and off for "
+            "other proposal configurations"
+        ),
+    )
+    parser.add_argument(
+        "--prescreen-audit-sample",
+        type=int,
+        default=0,
+        help="number of prescreen rejections to replay through full charging repair",
+    )
+    parser.add_argument(
+        "--charging-diagnosis-capture-limit",
+        type=int,
+        default=0,
+        help=(
+            "save and replay the first N rejected duty-crossover raw candidates; "
+            "default zero leaves search and outputs unchanged"
+        ),
+    )
+    parser.add_argument(
+        "--charging-diagnosis-output-dir",
+        type=Path,
+        help="directory for raw crossover snapshots and relaxation_probe.csv",
+    )
     args = parser.parse_args()
     if args.iterations < 1:
         raise ValueError("technical iteration count must be positive")
@@ -589,6 +2953,17 @@ def main() -> int:
         raise ValueError("technical stagnation patience must be positive")
     if args.max_runtime_seconds <= 0.0:
         raise ValueError("maximum runtime must be positive")
+    if args.prescreen_audit_sample < 0:
+        raise ValueError("prescreen audit sample cannot be negative")
+    if args.charging_diagnosis_capture_limit < 0:
+        raise ValueError("charging diagnosis capture limit cannot be negative")
+    if bool(args.charging_diagnosis_capture_limit) != bool(
+        args.charging_diagnosis_output_dir
+    ):
+        raise ValueError(
+            "charging diagnosis capture limit and output directory must be "
+            "provided together"
+        )
     if any(
         name == "pyvrp" or name.startswith("pyvrp.")
         for name in sys.modules
@@ -599,6 +2974,41 @@ def main() -> int:
 
     repo = Path(__file__).resolve().parents[2]
     output = args.output_dir.resolve()
+    combat_enabled = args.proposal_config == "combat"
+    mechanism_off = _parse_mechanism_off(args.mechanism_off)
+    mechanism_enabled = {
+        name: name not in mechanism_off for name in sorted(MECHANISM_NAMES)
+    }
+    trajectory_mode = "full" if args.stream_trajectory else args.trajectory
+    charging_prescreen_enabled = (
+        combat_enabled
+        if args.charging_prescreen is None
+        else bool(args.charging_prescreen)
+    )
+    if args.prescreen_audit_sample and not charging_prescreen_enabled:
+        raise ValueError("prescreen audit requires charging prescreen to be enabled")
+    effective_first_trip_prev_night = bool(
+        args.first_trip_prev_night or combat_enabled
+    )
+    effective_depot_assignment_operator = bool(
+        args.depot_assignment_operator or combat_enabled
+    )
+    effective_charge_timing_policy = (
+        args.charge_timing_policy
+        if mechanism_enabled["charge_timing"]
+        else "asap"
+    )
+    parameters = _parameters(
+        random_seed=args.seed,
+        stagnation_patience=args.stagnation_patience,
+        crossover_mode=args.crossover_mode,
+        population_mode=args.population_mode,
+        objective_mode=args.objective_mode,
+    )
+    effective_population = _effective_population_metadata(
+        args.population_mode,
+        parameters.population,
+    )
     code_provenance = _source_provenance(
         repo,
         output_path=output,
@@ -615,36 +3025,131 @@ def main() -> int:
             "code_provenance": code_provenance,
             "requested_instance_id": args.instance_id,
             "requested_proposal_mode": args.proposal_mode,
+            "requested_proposal_config": args.proposal_config,
+            "requested_mechanism_off": sorted(mechanism_off),
+            "effective_mechanism_enabled": mechanism_enabled,
             "requested_iterations": args.iterations,
             "requested_max_runtime_seconds": args.max_runtime_seconds,
             "requested_stagnation_patience": args.stagnation_patience,
             "requested_population_mode": args.population_mode,
+            "effective_population": effective_population,
             "requested_crossover_mode": args.crossover_mode,
+            "requested_objective_mode": args.objective_mode,
+            "requested_fleet_parameter_class": args.fleet_parameter_class,
+            "requested_depot_charging_scenario": (
+                args.depot_charging_scenario
+            ),
             "requested_truth_sentinel_enabled": not args.disable_truth_sentinel,
-            "requested_trajectory_streaming": args.stream_trajectory,
-            "requested_trajectory_retention": not args.no_retain_trajectory,
+            "requested_trajectory_mode": args.trajectory,
+            "effective_trajectory_mode": trajectory_mode,
+            "legacy_stream_trajectory": args.stream_trajectory,
+            "legacy_no_retain_trajectory": args.no_retain_trajectory,
+            "requested_charging_prescreen": args.charging_prescreen,
+            "effective_charging_prescreen": charging_prescreen_enabled,
+            "prescreen_audit_sample": args.prescreen_audit_sample,
+            "requested_first_trip_prev_night": args.first_trip_prev_night,
+            "effective_first_trip_prev_night": (
+                effective_first_trip_prev_night
+            ),
+            "requested_charge_timing_policy": args.charge_timing_policy,
+            "effective_charge_timing_policy": effective_charge_timing_policy,
+            "requested_frvcpy_charging": args.frvcpy_charging,
+            "requested_depot_assignment_operator": (
+                args.depot_assignment_operator
+            ),
+            "effective_depot_assignment_operator": (
+                effective_depot_assignment_operator
+            ),
+            "requested_dynamic_insertion_operator": (
+                args.dynamic_insertion_operator
+            ),
         },
     )
 
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
-    bundle, initial, pi0, context = _build_context(repo, args.instance_id)
+    bundle, initial, pi0, context = _build_context(
+        repo,
+        args.instance_id,
+        fleet_parameters=FLEET_PARAMETER_CLASSES[
+            args.fleet_parameter_class
+        ],
+        depot_charging_scenario_name=args.depot_charging_scenario,
+    )
+    if effective_first_trip_prev_night:
+        context = replace(
+            context,
+            depot_charge_window_mode="full_gap",
+        )
     if args.disable_truth_sentinel:
         context = replace(
             context,
             incremental_full_truth_sentinel_enabled=False,
         )
+    dynamic_revealed_customer = None
+    if args.dynamic_insertion_operator:
+        initial, context, dynamic_revealed_customer = (
+            _dynamic_insertion_technical_cut(
+                bundle,
+                initial,
+                context,
+            )
+        )
+    if not mechanism_enabled["multi_trip"]:
+        initial = _single_trip_initial(initial)
+    metro_initial_clock_closure = None
+    if args.instance_id.endswith("-V3-TWO-SHIFT-METRO"):
+        initial, metro_initial_clock_closure = _close_metro_initial_clock(
+            initial,
+            context,
+        )
+    mechanism_reference = initial
     evaluator = DutyFullEvaluator(context)
-    policy = _policy(evaluator)
-    parameters = _parameters(
-        stagnation_patience=args.stagnation_patience,
-        crossover_mode=args.crossover_mode,
-        population_mode=args.population_mode,
+    policy = _policy(
+        evaluator,
+        first_trip_prev_night_enabled=effective_first_trip_prev_night,
+        charge_timing_policy=effective_charge_timing_policy,
+        frvcpy_enabled=args.frvcpy_charging,
     )
+    dynamic_insertion_diagnostic = None
+    if args.dynamic_insertion_operator:
+        inserted = DynamicInsertionOperator(
+            enabled=True,
+            random_seed=args.seed,
+        ).apply(
+            initial,
+            evaluator=evaluator,
+            charging_policy=policy,
+            newly_revealed_customer_ids=(dynamic_revealed_customer,),
+        )
+        initial = inserted.individual
+        dynamic_insertion_diagnostic = asdict(inserted.accounting)
+    route_engine_options: dict[str, bool] = {}
+    if combat_enabled:
+        route_engine_options.update(
+            rebuilt_volume_capacity_enabled=True,
+            rebuilt_shift_neighbours_only=True,
+            shift_aware_ev_unit_cost_enabled=True,
+        )
+    if not mechanism_enabled["cross_depot"]:
+        route_engine_options["cross_depot_enabled"] = False
+    if not mechanism_enabled["multi_trip"]:
+        route_engine_options["multi_trip_enabled"] = False
+    if not mechanism_enabled["type_exchange"]:
+        route_engine_options["type_exchange_enabled"] = False
     route_engine = IndependentKernelDutyRouteProposalEngine(
         evaluator.context,
         initial,
-        random_seed=SEED,
+        random_seed=args.seed,
         stream_role="main_route",
+        depot_assignment_operator_enabled=(
+            effective_depot_assignment_operator
+        ),
+        **route_engine_options,
+    )
+    shift_proxy_validation = _shift_aware_ev_proxy_validation(
+        initial,
+        route_engine,
+        evaluator.context,
     )
     initialization_started = perf_counter()
     initialization_full_calls_before = evaluator.full_calls
@@ -661,7 +3166,11 @@ def main() -> int:
             evaluator,
             policy,
             parameters,
+            random_seed=args.seed,
             require_distinct_selection=False,
+            mechanism_enabled=(
+                mechanism_enabled if mechanism_off else None
+            ),
         )
         initialization_summary = {
             "requested_size": 2,
@@ -675,7 +3184,7 @@ def main() -> int:
             charging_policy=policy,
             route_engine=route_engine,
             requested_size=parameters.population.min_pop_size,
-            random_seed=SEED,
+            random_seed=args.seed,
             max_random_attempts=None,
             stop_requested=lambda: (
                 perf_counter() - initialization_started
@@ -703,7 +3212,7 @@ def main() -> int:
             strict=True,
         ):
             precheck_population.add(candidate, evaluation)
-        left, right = precheck_population.select(random.Random(SEED))
+        left, right = precheck_population.select(random.Random(args.seed))
         selected = {
             "left_fingerprint": left.individual.fingerprint,
             "right_fingerprint": right.individual.fingerprint,
@@ -719,8 +3228,21 @@ def main() -> int:
     initialization_full_evaluations = (
         evaluator.full_calls - initialization_full_calls_before
     )
-    mechanism_engine = MechanismProposalEngine(evaluator.context, policy)
-    if args.proposal_mode == "legacy":
+    mechanism_engine = MechanismProposalEngine(
+        evaluator.context,
+        policy,
+        include_charging_candidates=mechanism_enabled["charge_timing"],
+        include_structural_channels=combat_enabled,
+        cross_depot_enabled=mechanism_enabled["cross_depot"],
+        multi_trip_enabled=mechanism_enabled["multi_trip"],
+        type_exchange_enabled=mechanism_enabled["type_exchange"],
+    )
+    if combat_enabled:
+        proposal_engine = SequentialProposalEngine(
+            (route_engine, mechanism_engine),
+            source_id="problem-hgs-combat-all-duty-channels-v1",
+        )
+    elif args.proposal_mode == "legacy":
         proposal_engine = LegacyCompleteProposalEngine()
     elif args.proposal_mode == "route_only":
         proposal_engine = SequentialProposalEngine((route_engine,))
@@ -739,7 +3261,7 @@ def main() -> int:
     }
     trajectory_handle = None
     trajectory_sink = None
-    if args.stream_trajectory:
+    if trajectory_mode == "full":
         trajectory_handle = trajectory_path.open("w", encoding="utf-8")
 
         def trajectory_sink(rows) -> None:
@@ -759,31 +3281,123 @@ def main() -> int:
                 )
             trajectory_handle.flush()
 
-    try:
-        result = run_integrated_problem_hgs(
-            candidates,
-            evaluator=evaluator,
-            charging_policy=policy,
-            parameters=parameters,
-            initial_population_identity=identity,
-            stop=lambda state: (
-                state.iterations >= args.iterations
-                or state.elapsed_seconds >= args.max_runtime_seconds
-            ),
-            arm=args.arm,
-            route_engine=route_engine,
-            trajectory_sink=trajectory_sink,
-            retain_trajectory=not args.no_retain_trajectory,
-            proposal_engine=proposal_engine,
-            initial_evaluations=initial_evaluations,
-            initialization_full_evaluation_count=(
-                initialization_full_evaluations
-            ),
-            initialization_wall_seconds=initialization_wall_seconds,
+    convergence_path = (
+        args.convergence_csv.resolve()
+        if args.convergence_csv is not None
+        else output / "convergence.csv"
+    )
+    convergence_path.parent.mkdir(parents=True, exist_ok=True)
+    convergence_handle = convergence_path.open(
+        "x", encoding="utf-8", newline=""
+    )
+    convergence_writer = csv.DictWriter(
+        convergence_handle,
+        fieldnames=("cycle", "wall_seconds", "best_total_cost"),
+        lineterminator="\n",
+    )
+    convergence_writer.writeheader()
+    convergence_handle.flush()
+    os.fsync(convergence_handle.fileno())
+    last_logged_best: float | None = None
+
+    def stop_and_record(state) -> bool:
+        nonlocal last_logged_best
+        if state.best_cost is not None and (
+            last_logged_best is None
+            or float(state.best_cost) < last_logged_best
+        ):
+            last_logged_best = float(state.best_cost)
+            convergence_writer.writerow(
+                {
+                    "cycle": int(state.iterations),
+                    "wall_seconds": f"{float(state.elapsed_seconds):.9f}",
+                    "best_total_cost": f"{last_logged_best:.12f}",
+                }
+            )
+            convergence_handle.flush()
+            os.fsync(convergence_handle.fileno())
+        return (
+            state.iterations >= args.iterations
+            or state.elapsed_seconds >= args.max_runtime_seconds
         )
+
+    captured_charging_rejections: list[ScheduleCaptureRecord] = []
+
+    def capture_charging_rejection(record: ScheduleCaptureRecord) -> None:
+        if (
+            len(captured_charging_rejections)
+            >= args.charging_diagnosis_capture_limit
+            or record.channel != "duty_crossover"
+            or record.a0_status != "INFEASIBLE"
+        ):
+            return
+        captured_charging_rejections.append(record)
+
+    capture_context = (
+        schedule_capture_sink(capture_charging_rejection)
+        if args.charging_diagnosis_capture_limit
+        else nullcontext()
+    )
+    try:
+        with capture_context:
+            result = run_integrated_problem_hgs(
+                candidates,
+                evaluator=evaluator,
+                charging_policy=policy,
+                parameters=parameters,
+                initial_population_identity=identity,
+                stop=stop_and_record,
+                arm=args.arm,
+                route_engine=route_engine,
+                trajectory_sink=trajectory_sink,
+                retain_trajectory=False,
+                proposal_engine=proposal_engine,
+                initial_evaluations=initial_evaluations,
+                initialization_full_evaluation_count=(
+                    initialization_full_evaluations
+                ),
+                initialization_wall_seconds=initialization_wall_seconds,
+                charging_prescreen_enabled=charging_prescreen_enabled,
+                charging_prescreen_audit_limit=args.prescreen_audit_sample,
+                cross_depot_enabled=mechanism_enabled["cross_depot"],
+                multi_trip_enabled=mechanism_enabled["multi_trip"],
+                type_exchange_enabled=mechanism_enabled["type_exchange"],
+            )
     finally:
         if trajectory_handle is not None:
             trajectory_handle.close()
+        convergence_handle.close()
+
+    if args.charging_diagnosis_capture_limit:
+        assert args.charging_diagnosis_output_dir is not None
+        _write_charging_diagnosis_probe(
+            captured_charging_rejections,
+            output=args.charging_diagnosis_output_dir.resolve(),
+            context=evaluator.context,
+            policy=policy,
+        )
+
+    if (
+        last_logged_best is None
+        or float(result.best_evaluation.total_cost) < last_logged_best
+    ):
+        with convergence_path.open("a", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=("cycle", "wall_seconds", "best_total_cost"),
+                lineterminator="\n",
+            )
+            writer.writerow(
+                {
+                    "cycle": int(result.iterations),
+                    "wall_seconds": f"{float(result.accounting.run_wall_seconds):.9f}",
+                    "best_total_cost": (
+                        f"{float(result.best_evaluation.total_cost):.12f}"
+                    ),
+                }
+            )
+            handle.flush()
+            os.fsync(handle.fileno())
     if any(
         name == "pyvrp" or name.startswith("pyvrp.")
         for name in sys.modules
@@ -798,20 +3412,55 @@ def main() -> int:
         and row["before_fingerprint"] != row["after_fingerprint"]
         for row in crossover_rows
     )
-    served = {
-        customer
-        for duty in result.best.duties
-        for trip in duty.trips
-        for customer in trip.customer_ids
-    }
+    if trajectory_mode == "off":
+        crossover_changed = bool(result.accounting.crossover_actions)
     customer_nodes = {
         node.node_id: node
         for node in bundle.instance.nodes
         if node.node_type.lower() == "c"
     }
+    if args.dynamic_insertion_operator:
+        served = {
+            node_id
+            for route in result.best_evaluation.prepared_solution.routes
+            for node_id in route.node_sequence[1:-1]
+            if node_id in customer_nodes
+        }
+    else:
+        served = {
+            customer
+            for duty in result.best.duties
+            for trip in duty.trips
+            for customer in trip.customer_ids
+        }
     served_demand = sum(float(customer_nodes[item].demand) for item in served)
     total_demand = sum(float(node.demand) for node in customer_nodes.values())
     protected_after = {path: _sha256(repo / path) for path in PROTECTED}
+    closure_violations = _mechanism_closure_violations(
+        mechanism_reference,
+        result.best,
+        mechanism_enabled,
+    )
+    forbidden_channels_by_mechanism = {
+        "cross_depot": ("depot_collaboration", "fairness_cross_depot"),
+        "multi_trip": ("multi_trip",),
+        "type_exchange": ("whole_duty_type_exchange",),
+        "charge_timing": ("time_varying_carbon_charge",),
+    }
+    forbidden_proposed_actions = {
+        mechanism: {
+            channel: int(result.accounting.proposed_actions.get(channel, 0))
+            for channel in forbidden_channels_by_mechanism[mechanism]
+        }
+        for mechanism in sorted(mechanism_off)
+    }
+    forbidden_proposed_nonzero = {
+        mechanism: counts
+        for mechanism, counts in forbidden_proposed_actions.items()
+        if any(counts.values())
+    }
+    reference_depot, reference_type = _customer_structure(mechanism_reference)
+    final_depot, final_type = _customer_structure(result.best)
 
     failure_reasons = []
     if not initial_evaluation.feasible:
@@ -845,6 +3494,21 @@ def main() -> int:
         failure_reasons.append("disabled full-truth sentinel was still exercised")
     if protected_before != protected_after:
         failure_reasons.append("a protected evaluator file changed during the run")
+    if closure_violations:
+        failure_reasons.append(
+            "disabled mechanism structural closure failed: "
+            + "; ".join(closure_violations)
+        )
+    if forbidden_proposed_nonzero:
+        failure_reasons.append(
+            "disabled mechanism emitted named actions: "
+            + repr(forbidden_proposed_nonzero)
+        )
+    if (
+        not mechanism_enabled["charge_timing"]
+        and policy.charge_timing_policy != "asap"
+    ):
+        failure_reasons.append("disabled charge timing did not force asap")
     verdict = (
         "TECHNICAL_TRIAL_COMPLETE" if not failure_reasons
         else "TECHNICAL_TRIAL_FAILED"
@@ -858,26 +3522,140 @@ def main() -> int:
         "formal_search_allowed": bool(bundle.formal_search_allowed),
         "machine": "M1 formal-number machine, but this output is diagnostic only",
         "code_provenance": code_provenance,
-        "random_seed": SEED,
-        "iterations": args.iterations,
+        "random_seed": args.seed,
+        "iterations": result.iterations,
+        "requested_iteration_ceiling": args.iterations,
         "max_runtime_seconds": args.max_runtime_seconds,
         "stop_semantics": (
             "technical fixed-iteration stop with the user-set 20-minute hard ceiling"
         ),
         "stagnation_patience": parameters.stagnation_patience,
         "crossover_mode": parameters.crossover_mode,
-        "trajectory_streamed_incrementally": args.stream_trajectory,
-        "trajectory_retained_in_memory": not args.no_retain_trajectory,
+        "objective_mode": result.objective_mode,
+        "trajectory_mode": trajectory_mode,
+        "trajectory_streamed_incrementally": trajectory_mode == "full",
+        "trajectory_retained_in_memory": False,
         "trajectory_rows_streamed": stream_summary["rows"],
+        "convergence_csv": str(convergence_path),
+        "charging_prescreen": (
+            result.charging_prescreen_accounting
+            if result.charging_prescreen_accounting is not None
+            else {"enabled": False}
+        ),
+        "charging_diagnosis_capture": {
+            "requested_limit": int(args.charging_diagnosis_capture_limit),
+            "captured": len(captured_charging_rejections),
+            "output_dir": (
+                None
+                if args.charging_diagnosis_output_dir is None
+                else str(args.charging_diagnosis_output_dir.resolve())
+            ),
+        },
         "incremental_full_truth_sentinel_enabled": (
             context.incremental_full_truth_sentinel_enabled
         ),
         "best_evaluation_source": result.best_evaluation.source,
         "parameters": asdict(parameters),
         "population_mode": args.population_mode,
+        "effective_population": effective_population,
         "initial_population": initialization_summary,
+        "metro_initial_clock_closure": metro_initial_clock_closure,
         "charging_policy": asdict(policy),
+        "frvcpy_provenance": {
+            "enabled": bool(policy.frvcpy_enabled),
+            "source": "INFORMSJoC/2020.1035 harvested local snapshot",
+            "commit": FRVCPY_COMMIT,
+            "license": "Apache-2.0",
+            "source_sha256": FRVCPY_SOURCE_SHA256,
+        },
         "proposal_mode": args.proposal_mode,
+        "proposal_config": args.proposal_config,
+        "mechanism_off": sorted(mechanism_off),
+        "mechanism_enabled": mechanism_enabled,
+        "mechanism_closure": {
+            "violations": list(closure_violations),
+            "forbidden_named_proposed_actions": forbidden_proposed_actions,
+            "reference_customer_depot_sha256": _string_mapping_sha256(
+                reference_depot
+            ),
+            "final_customer_depot_sha256": _string_mapping_sha256(final_depot),
+            "reference_customer_type_sha256": _string_mapping_sha256(reference_type),
+            "final_customer_type_sha256": _string_mapping_sha256(final_type),
+            "reference_max_trips_per_duty": max(
+                (len(duty.trips) for duty in mechanism_reference.duties),
+                default=0,
+            ),
+            "final_max_trips_per_duty": max(
+                (len(duty.trips) for duty in result.best.duties),
+                default=0,
+            ),
+            "effective_charge_timing_policy": policy.charge_timing_policy,
+        },
+        "combat_configuration": {
+            "enabled": combat_enabled,
+            "duty_channels": [
+                "depot_collaboration",
+                "fairness_cross_depot",
+                "multi_trip",
+                "time_varying_carbon_charge",
+                "whole_duty_type_exchange",
+            ] if combat_enabled else [],
+            "depot_split_enabled": route_engine.depot_assignment_statistics[
+                "enabled"
+            ],
+            "rebuilt_volume_capacity_enabled": combat_enabled,
+            "rebuilt_shift_neighbours_only": combat_enabled,
+            "shift_aware_ev_unit_cost_enabled": combat_enabled,
+            "shift_aware_ev_proxy": route_engine.shift_aware_ev_proxy,
+            "shift_aware_ev_proxy_validation": shift_proxy_validation,
+            "node_operators": list(route_engine.node_operator_names),
+            "native_reload_contract": {
+                "max_reloads": sorted(
+                    {
+                        int(
+                            route_engine.data.vehicle_type(index).max_reloads
+                        )
+                        for index in range(
+                            route_engine.data.num_vehicle_types
+                        )
+                    }
+                ),
+                "reload_depot_counts": sorted(
+                    {
+                        len(
+                            route_engine.data.vehicle_type(index).reload_depots
+                        )
+                        for index in range(
+                            route_engine.data.num_vehicle_types
+                        )
+                    }
+                ),
+            },
+            "first_trip_prev_night_enabled": (
+                effective_first_trip_prev_night
+            ),
+        },
+        "depot_assignment_operator": (
+            route_engine.depot_assignment_statistics
+        ),
+        "dynamic_insertion_operator": {
+            "enabled": bool(args.dynamic_insertion_operator),
+            "revealed_customer_id": dynamic_revealed_customer,
+            "trigger_second": (
+                46_800.0 if args.dynamic_insertion_operator else None
+            ),
+            "accounting": dynamic_insertion_diagnostic,
+            "truth_artifacts_read": [],
+        },
+        "fleet_parameter_class": args.fleet_parameter_class,
+        "fleet_parameter_class_id": bundle.fleet_parameter_class_id,
+        "has_additional_total_fleet_cap": (
+            bundle.has_additional_total_fleet_cap
+        ),
+        "fleet_caps_by_depot": {
+            depot_id: dict(caps)
+            for depot_id, caps in bundle.fleet_caps_by_depot.items()
+        },
         "pi0": {
             "values": pi0,
             "sha256": mapping_sha256(pi0),
@@ -924,7 +3702,7 @@ def main() -> int:
         writer.writerow(
             {
                 "instance_id": args.instance_id,
-                "seed": SEED,
+                "seed": args.seed,
                 "iterations": result.iterations,
                 "termination_status": result.termination_status,
                 "initial_feasible": initial_evaluation.feasible,
@@ -967,14 +3745,6 @@ def main() -> int:
         "user_decision_changed": False,
     }
     _json(output / "decision.json", decision)
-    if not args.stream_trajectory:
-        trajectory_path.write_text(
-            "".join(
-                json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n"
-                for row in trajectory
-            ),
-            encoding="utf-8",
-        )
     _json(
         output / "best_solution.json",
         {
@@ -991,8 +3761,33 @@ def main() -> int:
                 ),
             },
             "accounting": result.accounting.to_dict(),
+            "charging_prescreen": result.charging_prescreen_accounting,
             "provenance": asdict(result.provenance),
         },
+    )
+    if result.objective_mode == BI_OBJECTIVE:
+        _json(
+            output / "pareto_front.json",
+            {
+                "objective_mode": result.objective_mode,
+                "points": [
+                    point.to_dict() for point in result.non_dominated_set
+                ],
+                "cost_priority_fingerprint": (
+                    None
+                    if result.cost_priority_point is None
+                    else result.cost_priority_point.individual.fingerprint
+                ),
+                "emissions_priority_fingerprint": (
+                    None
+                    if result.emissions_priority_point is None
+                    else result.emissions_priority_point.individual.fingerprint
+                ),
+            },
+        )
+    full_evaluation_result = _format_full_evaluation_result(
+        feasible=result.best_evaluation.feasible,
+        violation_count=len(result.best_evaluation.violations),
     )
     report = f"""# Problem-HGS 真实输入单轮技术试跑报告
 
@@ -1000,7 +3795,7 @@ def main() -> int:
 
 本轮判定：`{verdict}`。这是一轮接线和内部一致性检查，不是算法对比实验，也没有替用户确定正式算例、收敛迭代数或论文结论。
 
-真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；完整评价判定可行，违规数为 {len(result.best_evaluation.violations)}。本轮候选方式为 `{args.proposal_mode}`。完整真值哨兵开关为 `{context.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹增量写盘为 `{args.stream_trajectory}`，内存保留为 `{not args.no_retain_trajectory}`。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
+真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；{full_evaluation_result}。本轮候选方式为 `{args.proposal_mode}`，具名配置为 `{args.proposal_config}`。完整真值哨兵开关为 `{context.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹模式为 `{trajectory_mode}`，内存保留为 `False`。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
 
 初始成本为 {initial_evaluation.total_cost:.12f}，本轮保存解成本为 {result.best_evaluation.total_cost:.12f}。这个差值只用于排查运行过程，不能据此宣称 Problem-HGS 更优，因为本轮只有一个种子、一个循环，也没有同预算强基线。
 
@@ -1014,14 +3809,14 @@ def main() -> int:
 
 ## 交付前九条自检
 
-1. 每个 `FACT` 是否都指到了文件行号 / 产物哈希 / 论文页码？——本报告事实来自同包的 `raw_runs.csv`、`metadata.json`、`trajectory.jsonl`、`best_solution.json`；包内哈希将在 `artifact_hashes.json` 登记。没有把无出处判断写成 FACT。
+1. 每个 `FACT` 是否都指到了文件行号 / 产物哈希 / 论文页码？——本报告事实来自同包的 `raw_runs.csv`、`metadata.json`、`best_solution.json`，诊断模式另有 `trajectory.jsonl`；包内哈希将在 `artifact_hashes.json` 登记。没有把无出处判断写成 FACT。
 2. 有没有把自己的建议或担忧写成“已决”或“状态”？——没有。本轮只给技术试跑判定，没有改变任何用户决定。
 3. 改动范围有没有超出任务文本？——没有。仅增加试跑入口和本次试跑产物；没有开始正式算法比较。
 4. 有没有碰受保护文件？——未碰；三个受保护文件运行前后哈希一致，具体值见 `metadata.json`。
 5. 待决事项是否转成了 2–4 个具体候选并写清代价？——本轮没有新增需要用户拍板的选择；停止方式和 Pi0 生成方法已经由用户决定，本轮没有替用户选择正式算例或冻结具体数值。
 6. 有没有用自造词或内部任务号跟用户说话？——报告仅使用项目已有术语；“单轮技术试跑”已解释为接线和一致性检查。
 7. 失败、跳过、超时、异常结果有没有如实保留？——已保留反转前两个客户导致时间窗失败；没有超时；结束状态按实际结果记录。
-8. 四件套齐了吗？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json`、`report.md` 齐全，另附 `trajectory.jsonl` 和 `best_solution.json`。
+8. 四件套齐了吗？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json`、`report.md` 齐全，另附 `best_solution.json`；只有 `trajectory=full` 才附 `trajectory.jsonl`。
 9. `HANDOFF.md` 变更日志和 `docs/handoff/memory/` 同步了吗？——试跑产物生成后将在本任务收尾时同步，最终提交前复核。
 """
     (output / "report.md").write_text(report, encoding="utf-8")

@@ -23,7 +23,7 @@ from typing import Any, Callable
 
 from ..check import check_solution
 from ..cost import evaluate
-from ..prices import DEFAULT_PRICES, PriceParameters
+from ..prices import UK_2025_PRICES, PriceParameters
 from ..profit import calculate_depot_profits
 from ..solution import (
     CrossSiteService,
@@ -199,7 +199,7 @@ def compute_default_carbon_quota(
         carbon_quota_kg=math.inf,
     )
     elapsed_seconds = time.perf_counter() - started
-    metrics = evaluate(result.best_solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES, carbon_quota_kg=math.inf)
+    metrics = evaluate(result.best_solution, bundle.instance, bundle.carbon_profile, UK_2025_PRICES, carbon_quota_kg=math.inf)
     payload = {
         "schema_version": "setp-carbon-quota-baseline.v1",
         "build_note": "v2026-06-12: Z0a no-quota CE baseline; default CE is 80 percent of E_total.",
@@ -210,7 +210,7 @@ def compute_default_carbon_quota(
         "evaluations": int(result.evaluations),
         "actual_evals": int(result.evaluations),
         "elapsed_seconds": elapsed_seconds,
-        "feasible": bool(result.feasible and not check_solution(result.best_solution, bundle.instance, DEFAULT_PRICES)),
+        "feasible": bool(result.feasible and not check_solution(result.best_solution, bundle.instance, UK_2025_PRICES)),
         "baseline_emissions_kg": float(metrics["E_total"]),
         "default_ce_kg": float(metrics["E_total"]) * 0.8,
         "metrics": metrics,
@@ -795,15 +795,16 @@ def _run_algorithm_once(
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
         initial_solution=initial_solution,
+        prices=UK_2025_PRICES,
     )
     best_solution = result.best_solution
     metrics = (
-        evaluate(best_solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)
+        evaluate(best_solution, bundle.instance, bundle.carbon_profile, UK_2025_PRICES)
         if best_solution is not None
         else {}
     )
     violations = (
-        check_solution(best_solution, bundle.instance, DEFAULT_PRICES)
+        check_solution(best_solution, bundle.instance, UK_2025_PRICES)
         if best_solution is not None
         else []
     )
@@ -924,7 +925,10 @@ def _prices_with_carbon_price_factor(factor: float) -> PriceParameters:
     it is not the primary E3 switch.
     """
 
-    return dataclass_replace(DEFAULT_PRICES, carbon_price=DEFAULT_PRICES.carbon_price * float(factor))
+    return dataclass_replace(
+        UK_2025_PRICES,
+        carbon_price=float(UK_2025_PRICES.carbon_price) * float(factor),
+    )
 
 
 def _write_e3_derived_bundle(source_bundle_dir: str | Path, target_dir: str | Path, carbon_profile_mode: str) -> Path:
@@ -960,7 +964,7 @@ def _run_alns_metrics(
     policy: SearchPolicy,
     carbon_quota_kg: float = 0.0,
     carbon_weight: float = 1.0,
-    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    prices: PriceParameters | dict[str, float] | Any = UK_2025_PRICES,
     annotate_cross_site: bool = False,
     initial_solution: Solution | None = None,
     seed_recipe: str = "default_construction",
@@ -1018,7 +1022,12 @@ def _run_e4_once(
     price_factor: float,
     quota_factor: float,
 ) -> dict[str, Any]:
-    prices = dataclass_replace(DEFAULT_PRICES, carbon_price=DEFAULT_PRICES.carbon_price * float(price_factor))
+    prices = dataclass_replace(
+        UK_2025_PRICES,
+        carbon_price=(
+            float(UK_2025_PRICES.carbon_price) * float(price_factor)
+        ),
+    )
     result = _run_alns_metrics(
         bundle_dir,
         seed=seed,
@@ -1828,7 +1837,12 @@ def _write_e2_solution_outputs(repo_root: Path, output_dir: Path, run_rows: list
     bundle_dir = repo_root / INSTANCE_DIRS[best["instance"]]
     bundle = load_search_bundle(bundle_dir)
     solution = _solution_from_dict(_solution_payload_from_result(best["result"]))
-    metrics = best["result"].get("metrics") or evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)
+    metrics = best["result"].get("metrics") or evaluate(
+        solution,
+        bundle.instance,
+        bundle.carbon_profile,
+        UK_2025_PRICES,
+    )
     rows = [
         {"metric": "e2_best total_cost", "value": round(float(metrics["total_cost"]), 3), "share_pct": ""},
         {"metric": "e2_best total_carbon_kg", "value": round(float(metrics["E_total"]), 3), "share_pct": ""},
@@ -2176,7 +2190,7 @@ def _f3_from_e5(report: dict[str, Any]) -> list[dict[str, Any]]:
 def _prices_with_theta(theta: float) -> PriceParameters:
     from dataclasses import replace
 
-    return replace(DEFAULT_PRICES, fairness_theta=float(theta))
+    return replace(UK_2025_PRICES, fairness_theta=float(theta))
 
 
 def _min_ratio(ratios: dict[str, float]) -> float:

@@ -11,7 +11,7 @@ import fitz
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PAPER = ROOT / "docs/paper_submission_final/paper_main.tex"
+PAPER = ROOT / "docs/paper_submission_final/RETIRED_paper_main.tex"
 OUT = ROOT / "docs/paper_submission_final/visual_contract_audit_20260716.json"
 TEXT_WIDTH_PT = (210.0 - 22.5 - 22.5) * 72.0 / 25.4
 MIN_FINAL_FONT_PT = 7.9  # numerical tolerance around the journal's nominal 8 pt

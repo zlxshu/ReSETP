@@ -205,7 +205,7 @@ def load_china81_bundle(
         parameter_root = parameter_root.resolve()
         authority_id = str(parameter_root.relative_to(root))
         require_explicit_mapping = True
-    calendar_path = parameter_root / "tariff_carbon_48slot_calendar.csv"
+    calendar_path = parameter_root / "tariff_carbon_hourly_calendar.csv"
     catalog_matches = [
         row
         for row in _read_csv(catalog_path)
@@ -575,7 +575,7 @@ def _node_from_rows(
             ready_time=float(CHINA81_HORIZON_START_SECOND),
             due_time=float(CHINA81_HORIZON_END_SECOND),
             charge_power_kw=float(fleet["depot_charge_power_kw"]),
-            station_chargers=int(fleet["depot_charger_count"]),
+            station_chargers=int(fleet["configured_depot_gun_count_if_finite"]),
             **common,
         )
     if node_type == "station":
@@ -708,7 +708,7 @@ def _load_time_profile(
     for row in selected:
         by_city[row["city"].strip().lower()].append(row)
     for city, rows in by_city.items():
-        slots = sorted(int(row["half_hour_slot"]) for row in rows)
+        slots = sorted(int(row["hourly_calendar_row"]) for row in rows)
         if slots != list(range(1, 49)):
             raise ValueError(
                 f"China81 calendar must contain 48 unique slots for "
@@ -721,7 +721,7 @@ def _load_time_profile(
                 f"China81 calendar uses an unregistered city {city!r}"
             ) from exc
         for row in rows:
-            slot = int(row["half_hour_slot"])
+            slot = int(row["hourly_calendar_row"])
             minute = int(row["minute_of_day"])
             expected_minute = (slot - 1) * 30
             if minute != expected_minute:
@@ -808,8 +808,8 @@ def _load_time_profile(
                 "city": row["city"].strip().lower(),
                 "region": row["region"].strip().lower(),
                 "date": row["date"],
-                "time_index": int(row["half_hour_slot"]),
-                "half_hour_slot": int(row["half_hour_slot"]),
+                "time_index": int(row["hourly_calendar_row"]),
+                "hourly_calendar_row": int(row["hourly_calendar_row"]),
                 "horizon_second_start": (
                     float(row["minute_of_day"]) * 60.0
                 ),

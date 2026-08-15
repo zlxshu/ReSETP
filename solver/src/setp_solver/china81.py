@@ -15,10 +15,9 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Mapping, Protocol
 
 from .charging_curve import (
-    M17_22KW_NORMAL_PWL,
     M17_FAST_SHAPE_SCALED_60KW_PWL,
 )
 from .instance_loader import (
@@ -26,6 +25,11 @@ from .instance_loader import (
     Node,
     VehicleTypeParameters,
     load_profiled_road_matrices,
+)
+from .field_rename_compat import (
+    calendar_row_number,
+    configured_depot_gun_count,
+    resolve_calendar_path,
 )
 from .model_config import (
     DEPOT_CHARGER_CAPACITY_FINITE_INSTANCE,
@@ -40,6 +44,68 @@ CHINA81_HORIZON_END_SECOND = 22 * 60 * 60
 FLEET_CAP_SEMANTICS = (
     "FINITE_CONSTRUCTED_FLEET_AUTHORITY_REQUIRED_FOR_FORMAL_SEARCH"
 )
+CHINA81_CARBON_PRICE_CNY_PER_KG = 0.07502
+CHINA81_CARBON_PRICE_LOW_CNY_PER_KG = 0.05632
+CHINA81_DIESEL_EF_KG_PER_L = 2.6419028944
+CV_FIXED_CNY_PER_DAY = 170.0
+EV_FIXED_CNY_PER_DAY = 220.0
+EV_NON_ENERGY_CNY_PER_KM = 0.9145
+
+
+class China81FleetParameterClass(Protocol):
+    """Select one explicit interpretation of the frozen fleet-cap columns."""
+
+    parameter_class_id: str
+    has_additional_total_fleet_cap: bool
+
+    def depot_caps(self, row: Mapping[str, str]) -> Mapping[str, int]: ...
+
+
+@dataclass(frozen=True)
+class Fixed25PercentFleetParameters:
+    """Existing default: read the authority's frozen 25-percent fleet columns."""
+
+    parameter_class_id: str = (
+        "DERIVED_FIXED_TOTAL_MULTITRIP_ZERO_SEARCH_AUTHORITY"
+    )
+    has_additional_total_fleet_cap: bool = True
+
+    def depot_caps(self, row: Mapping[str, str]) -> Mapping[str, int]:
+        return MappingProxyType(
+            {
+                "num_cv": int(row["num_cv"]),
+                "num_ev": int(row["num_ev"]),
+                "total_fleet_cap": int(row["total_fleet_cap"]),
+            }
+        )
+
+
+@dataclass(frozen=True)
+class EndogenousFleetParameters:
+    """Approved Rd/Re type caps with no tighter total-fleet constraint."""
+
+    parameter_class_id: str = "ENDOGENOUS_RD_RE_NO_ADDITIONAL_TOTAL_CAP"
+    has_additional_total_fleet_cap: bool = False
+
+    def depot_caps(self, row: Mapping[str, str]) -> Mapping[str, int]:
+        num_cv = int(row["base_all_cv_routes_Rd"])
+        num_ev = int(row["base_all_ev_routes_Re"])
+        if num_cv < 1 or num_ev < 1:
+            raise ValueError("China81 endogenous fleet requires positive Rd and Re")
+        return MappingProxyType(
+            {
+                "num_cv": num_cv,
+                "num_ev": num_ev,
+                # Existing evaluators consume this compatibility field.  The
+                # sum of the two type caps is redundant, so it imposes no
+                # additional restriction beyond num_cv and num_ev.
+                "total_fleet_cap": num_cv + num_ev,
+            }
+        )
+
+
+FIXED_25_PERCENT_FLEET_PARAMETERS = Fixed25PercentFleetParameters()
+ENDOGENOUS_FLEET_PARAMETERS = EndogenousFleetParameters()
 
 _STATIC_INPUT_RELATIVE = Path(
     "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723"
@@ -52,6 +118,9 @@ _ORDER_RELATIVE = Path(
 )
 _VEHICLE_LOCK_RELATIVE = Path(
     "data/ChinaInstances/china_parameter_lock_v2_20260718.json"
+)
+_VEHICLE_COST_AUTHORITY_RELATIVE = Path(
+    "data/ChinaInstances/china81_private_rebuild_v1_20260811/vehicle_costs.csv"
 )
 _RUNTIME_PARAMETER_AUTHORITY_RELATIVE = Path(
     "data/ChinaInstances/"
@@ -158,6 +227,8 @@ class China81Bundle:
     diesel_zone_by_city: Mapping[str, str]
     diesel_price_by_city: Mapping[str, float]
     fleet_caps_by_depot: Mapping[str, Mapping[str, int]]
+    fleet_parameter_class_id: str
+    has_additional_total_fleet_cap: bool
     charger_scenario_by_node: Mapping[str, Mapping[str, float | int | str]]
     fleet_cap_semantics: str
     diesel_price_source_id: str
@@ -167,6 +238,81 @@ class China81Bundle:
     fleet_authority: str
     model_config: Mapping[str, object]
     formal_search_allowed: bool = False
+
+    def __post_init__(self) -> None:
+        """Fail closed if China81 profiles and prices are mixed or diverge."""
+
+        actual_city_prices = dict(self.prices.diesel_price_by_city)
+        expected_city_prices = dict(self.diesel_price_by_city)
+        if not actual_city_prices or actual_city_prices != expected_city_prices:
+            raise ValueError(
+                "China81 prices require the bundle's explicit city diesel "
+                "price map"
+            )
+        expected_diesel_price = sum(expected_city_prices.values()) / len(
+            expected_city_prices
+        )
+        if not math.isclose(
+            float(self.prices.diesel_price),
+            expected_diesel_price,
+            rel_tol=0.0,
+            abs_tol=1.0e-12,
+        ):
+            raise ValueError(
+                "China81 prices require explicit diesel_price="
+                f"{expected_diesel_price}"
+            )
+        expected_core = {
+            "carbon_price": CHINA81_CARBON_PRICE_CNY_PER_KG,
+            "carbon_price_low": CHINA81_CARBON_PRICE_LOW_CNY_PER_KG,
+            "diesel_ef": CHINA81_DIESEL_EF_KG_PER_L,
+        }
+        for field_name, expected_value in expected_core.items():
+            if not math.isclose(
+                float(getattr(self.prices, field_name)),
+                expected_value,
+                rel_tol=0.0,
+                abs_tol=1.0e-12,
+            ):
+                raise ValueError(
+                    f"China81 prices require explicit {field_name}="
+                    f"{expected_value}"
+                )
+
+        vehicle_parameters = self.instance.vehicle_parameters
+        if vehicle_parameters is None:
+            return
+        cv = vehicle_parameters.get("cv")
+        ev = vehicle_parameters.get("ev")
+        if cv is None or ev is None or ev.traction_energy_multiplier is None:
+            raise ValueError(
+                "profiled China81 bundle requires an EV traction multiplier"
+            )
+        if not math.isclose(
+            float(ev.traction_energy_multiplier),
+            float(self.prices.alpha_e),
+            rel_tol=0.0,
+            abs_tol=1.0e-12,
+        ):
+            raise ValueError(
+                "EV profile traction multiplier disagrees with prices.alpha_e"
+            )
+        if (
+            cv.fixed_cost_per_physical_vehicle_day is None
+            or ev.fixed_cost_per_physical_vehicle_day is None
+        ):
+            raise ValueError(
+                "profiled China81 bundle requires per-type vehicle fixed costs"
+            )
+        if not math.isclose(
+            float(self.prices.vehicle_fixed_cost),
+            float(cv.fixed_cost_per_physical_vehicle_day),
+            rel_tol=0.0,
+            abs_tol=1.0e-12,
+        ):
+            raise ValueError(
+                "China81 compatibility vehicle fixed cost must equal the CV cost"
+            )
 
 
 def load_china81_bundle(
@@ -178,7 +324,14 @@ def load_china81_bundle(
     road_matrix_authority: str | Path | None = None,
     runtime_parameter_authority: str | Path | None = None,
     fleet_authority: str | Path | None = None,
+    fleet_parameters: China81FleetParameterClass = (
+        FIXED_25_PERCENT_FLEET_PARAMETERS
+    ),
     model_config: ModelConfig | None = None,
+    matrix_source_from_catalog: bool = False,
+    customer_home_depot_from_orders: bool = False,
+    runtime_cities: set[str] | frozenset[str] | None = None,
+    depot_time_windows: Mapping[str, tuple[float, float]] | None = None,
 ) -> China81Bundle:
     """Join one frozen China81 instance, rejecting missing or mixed inputs."""
 
@@ -194,7 +347,6 @@ def load_china81_bundle(
         road_matrix_authority,
         _MATRIX_RELATIVE,
     )
-    matrix_root = matrix_authority / "instances" / instance_id
     nodes_path = static_root / "instances" / instance_id / "nodes.csv"
     catalog_path = static_root / "instance_catalog.csv"
     static_metadata_path = static_root / "metadata.json"
@@ -224,7 +376,7 @@ def load_china81_bundle(
         parameter_root = parameter_root.resolve()
         authority_id = str(parameter_root.relative_to(root))
         require_explicit_mapping = True
-    calendar_path = parameter_root / "tariff_carbon_48slot_calendar.csv"
+    calendar_path = resolve_calendar_path(parameter_root)
     catalog_matches = [
         row
         for row in _read_csv(catalog_path)
@@ -238,6 +390,16 @@ def load_china81_bundle(
     region = catalog["region"].strip().lower()
     if region not in {"jjj", "prd", "cy"}:
         raise ValueError(f"unsupported China81 region {region!r}")
+    matrix_instance_id = instance_id
+    if matrix_source_from_catalog:
+        matrix_instance_id = str(
+            catalog.get("matrix_source_instance_id", "")
+        ).strip()
+        if not matrix_instance_id:
+            raise ValueError(
+                f"China81 catalog has no matrix source for {instance_id}"
+            )
+    matrix_root = matrix_authority / "instances" / matrix_instance_id
     fleet_root = _resolve_authority(
         root,
         fleet_authority,
@@ -256,6 +418,12 @@ def load_china81_bundle(
         raise ValueError(
             f"China81 finite fleet authority is incomplete for {instance_id}"
         )
+    fleet_caps_by_depot = MappingProxyType(
+        {
+            depot_id: fleet_parameters.depot_caps(row)
+            for depot_id, row in sorted(fleet_by_depot.items())
+        }
+    )
 
     node_rows = _read_csv(nodes_path)
     if static_input_authority is not None:
@@ -285,6 +453,18 @@ def load_china81_bundle(
         row["city"].strip().lower(): row
         for row in _read_csv(static_root / "facilities.csv")
     }
+    depot_ids_in_rows = {
+        row["node_id"]
+        for row in node_rows
+        if row["node_type"].strip().lower() == "depot"
+    }
+    if (
+        depot_time_windows is not None
+        and set(depot_time_windows) != depot_ids_in_rows
+    ):
+        raise ValueError(
+            f"China81 explicit depot time windows disagree for {instance_id}"
+        )
     nodes = [
         _node_from_rows(
             row,
@@ -294,6 +474,7 @@ def load_china81_bundle(
             depot_charger_capacity_mode=(
                 resolved_model_config.depot_charger_capacity_mode
             ),
+            depot_time_windows=depot_time_windows,
         )
         for row in node_rows
     ]
@@ -320,7 +501,9 @@ def load_china81_bundle(
         )
 
     road_profiles = load_profiled_road_matrices(matrix_root, nodes)
-    vehicle_parameters = _china_vehicle_parameters()
+    vehicle_cost_path = root / _VEHICLE_COST_AUTHORITY_RELATIVE
+    vehicle_fixed_costs = _load_vehicle_fixed_costs(vehicle_cost_path)
+    vehicle_parameters = _china_vehicle_parameters(vehicle_fixed_costs)
     depots_in_nodes = {
         node.node_id
         for node in nodes
@@ -330,8 +513,14 @@ def load_china81_bundle(
         raise ValueError(
             f"China81 finite fleet depots disagree for {instance_id}"
         )
-    num_cv = sum(int(row["num_cv"]) for row in fleet_rows)
-    num_ev = sum(int(row["num_ev"]) for row in fleet_rows)
+    num_cv = sum(
+        int(caps["num_cv"])
+        for caps in fleet_caps_by_depot.values()
+    )
+    num_ev = sum(
+        int(caps["num_ev"])
+        for caps in fleet_caps_by_depot.values()
+    )
     if num_cv < 1 or num_ev < 1:
         raise ValueError(
             f"China81 finite fleet has a nonpositive type cap for {instance_id}"
@@ -349,11 +538,22 @@ def load_china81_bundle(
         demand_mass_per_unit_kg=1.0,
     )
 
-    cities = {
+    node_cities = {
         str(node.city).strip().lower()
         for node in nodes
         if node.city is not None
     }
+    cities = node_cities
+    if runtime_cities is not None:
+        cities = {
+            str(city).strip().lower()
+            for city in runtime_cities
+            if str(city).strip()
+        }
+        if not cities or not node_cities.issubset(cities):
+            raise ValueError(
+                f"China81 runtime city scope does not cover {instance_id}"
+            )
     time_profile = _load_time_profile(
         calendar_path,
         cities=cities,
@@ -373,28 +573,48 @@ def load_china81_bundle(
     prices = _china_prices(
         time_profile,
         diesel_price_by_city=diesel_price_values,
+        vehicle_parameters=vehicle_parameters,
     )
-    depots_by_city: dict[str, str] = {}
-    for node in nodes:
-        if node.node_type != "d":
-            continue
-        assert node.city is not None
-        city = str(node.city).strip().lower()
-        if city in depots_by_city:
-            raise ValueError(
-                f"China81 instance {instance_id} has multiple depots for {city}"
-            )
-        depots_by_city[city] = node.node_id
-    if set(depots_by_city) != cities:
-        raise ValueError(
-            f"China81 instance {instance_id} has no unique depot for every city"
-        )
-    customer_home_depot = MappingProxyType(
-        {
-            node.node_id: depots_by_city[str(node.city).strip().lower()]
+    if customer_home_depot_from_orders:
+        explicit_homes = {
+            node.node_id: str(
+                orders_by_customer[node.node_id].get("home_depot_id", "")
+            ).strip()
             for node in customer_nodes
         }
-    )
+        if any(not depot_id for depot_id in explicit_homes.values()):
+            raise ValueError(
+                f"China81 explicit customer depot is missing for {instance_id}"
+            )
+        unknown_depots = set(explicit_homes.values()).difference(depots_in_nodes)
+        if unknown_depots:
+            raise ValueError(
+                f"China81 explicit customer depot is unknown for {instance_id}: "
+                f"{sorted(unknown_depots)!r}"
+            )
+        customer_home_depot = MappingProxyType(explicit_homes)
+    else:
+        depots_by_city: dict[str, str] = {}
+        for node in nodes:
+            if node.node_type != "d":
+                continue
+            assert node.city is not None
+            city = str(node.city).strip().lower()
+            if city in depots_by_city:
+                raise ValueError(
+                    f"China81 instance {instance_id} has multiple depots for {city}"
+                )
+            depots_by_city[city] = node.node_id
+        if set(depots_by_city) != node_cities:
+            raise ValueError(
+                f"China81 instance {instance_id} has no unique depot for every city"
+            )
+        customer_home_depot = MappingProxyType(
+            {
+                node.node_id: depots_by_city[str(node.city).strip().lower()]
+                for node in customer_nodes
+            }
+        )
     price_area_by_city = MappingProxyType(
         {
             city: city_runtime_binding[city]["price_area_id"]
@@ -416,24 +636,12 @@ def load_china81_bundle(
     diesel_price_by_city = MappingProxyType(
         diesel_price_values
     )
-    fleet_caps_by_depot = MappingProxyType(
-        {
-            depot_id: MappingProxyType(
-                {
-                    "num_cv": int(row["num_cv"]),
-                    "num_ev": int(row["num_ev"]),
-                    "total_fleet_cap": int(row["total_fleet_cap"]),
-                }
-            )
-            for depot_id, row in sorted(fleet_by_depot.items())
-        }
-    )
     charger_scenario_by_node = MappingProxyType(
         {
             node.node_id: MappingProxyType(
                 {
                     "charger_count": (
-                        int(fleet_by_depot[node.node_id]["depot_charger_count"])
+                        configured_depot_gun_count(fleet_by_depot[node.node_id])
                         if node.node_type == "d"
                         else int(node.station_chargers or 0)
                     ),
@@ -473,6 +681,9 @@ def load_china81_bundle(
             "road_matrices": str(matrix_root.relative_to(root)),
             "tariff_carbon_calendar": str(calendar_path.relative_to(root)),
             "vehicle_parameter_lock": str(_VEHICLE_LOCK_RELATIVE),
+            "vehicle_cost_authority": str(
+                vehicle_cost_path.relative_to(root)
+            ),
             "finite_fleet_authority": str(
                 (fleet_root / "fleet_caps.csv").relative_to(root)
             ),
@@ -495,6 +706,10 @@ def load_china81_bundle(
         diesel_zone_by_city=diesel_zone_by_city,
         diesel_price_by_city=diesel_price_by_city,
         fleet_caps_by_depot=fleet_caps_by_depot,
+        fleet_parameter_class_id=fleet_parameters.parameter_class_id,
+        has_additional_total_fleet_cap=(
+            fleet_parameters.has_additional_total_fleet_cap
+        ),
         charger_scenario_by_node=charger_scenario_by_node,
         fleet_cap_semantics=FLEET_CAP_SEMANTICS,
         diesel_price_source_id=(
@@ -513,6 +728,39 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
         raise ValueError(f"required China81 input is missing: {path}")
     with path.open(newline="", encoding="utf-8-sig") as handle:
         return list(csv.DictReader(handle))
+
+
+def _load_vehicle_fixed_costs(path: Path) -> Mapping[str, float]:
+    rows = _read_csv(path)
+    by_type = {
+        str(row.get("vehicle_type", "")).strip().lower(): row
+        for row in rows
+    }
+    if set(by_type) != {"cv", "ev"} or len(rows) != 2:
+        raise ValueError("vehicle-cost authority must contain exactly CV and EV")
+    approved_effective_costs = {
+        "cv": CV_FIXED_CNY_PER_DAY,
+        "ev": EV_FIXED_CNY_PER_DAY,
+    }
+    costs: dict[str, float] = {}
+    for vehicle_type, row in by_type.items():
+        if not str(row.get("source", "")).strip():
+            raise ValueError(
+                f"{vehicle_type} vehicle fixed cost has no authority source"
+            )
+        effective = float(row["effective_daily_fixed_cost_cny"])
+        if not math.isfinite(effective) or effective <= 0.0:
+            raise ValueError(
+                f"{vehicle_type} vehicle fixed-cost authority is invalid"
+            )
+        approved = approved_effective_costs[vehicle_type]
+        if effective != approved:
+            raise ValueError(
+                f"{vehicle_type} vehicle fixed-cost authority disagrees with "
+                f"approved final constant {approved}"
+            )
+        costs[vehicle_type] = approved
+    return MappingProxyType(costs)
 
 
 def _resolve_authority(
@@ -592,6 +840,7 @@ def _node_from_rows(
     fleet_by_depot: dict[str, dict[str, str]],
     facility_rows: dict[str, dict[str, str]],
     depot_charger_capacity_mode: str,
+    depot_time_windows: Mapping[str, tuple[float, float]] | None,
 ) -> Node:
     node_id = row["node_id"]
     node_type = row["node_type"].strip().lower()
@@ -610,13 +859,26 @@ def _node_from_rows(
             raise ValueError(
                 f"China81 depot scenario binding is missing for {node_id!r}"
             ) from exc
+        ready_time = float(CHINA81_HORIZON_START_SECOND)
+        due_time = float(CHINA81_HORIZON_END_SECOND)
+        if depot_time_windows is not None:
+            ready_time, due_time = map(float, depot_time_windows[node_id])
+            if (
+                not math.isfinite(ready_time)
+                or not math.isfinite(due_time)
+                or ready_time < 0.0
+                or due_time < ready_time
+            ):
+                raise ValueError(
+                    f"China81 depot time window is invalid for {node_id!r}"
+                )
         return Node(
             node_type="d",
-            ready_time=float(CHINA81_HORIZON_START_SECOND),
-            due_time=float(CHINA81_HORIZON_END_SECOND),
+            ready_time=ready_time,
+            due_time=due_time,
             charge_power_kw=float(fleet["depot_charge_power_kw"]),
             station_chargers=(
-                int(fleet["depot_charger_count"])
+                configured_depot_gun_count(fleet)
                 if depot_charger_capacity_mode
                 == DEPOT_CHARGER_CAPACITY_FINITE_INSTANCE
                 else None
@@ -676,7 +938,9 @@ def _node_from_rows(
     )
 
 
-def _china_vehicle_parameters() -> dict[str, VehicleTypeParameters]:
+def _china_vehicle_parameters(
+    fixed_costs: Mapping[str, float],
+) -> dict[str, VehicleTypeParameters]:
     """Return the frozen vehicle facts plus declared literature transfers."""
 
     return {
@@ -700,7 +964,9 @@ def _china_vehicle_parameters() -> dict[str, VehicleTypeParameters]:
                 "AF_0.85_WH_SCENARIO_TRIP_2026_102123",
                 "CD_0.45_EPA_SMARTWAY_CLASS2B_SCENARIO",
                 "CMEM_DEMIR2012_GOEKE2015_TRANSFER",
+                "CHINA81_PRIVATE_REBUILD_VEHICLE_COSTS_CSV",
             ),
+            fixed_cost_per_physical_vehicle_day=float(fixed_costs["cv"]),
         ),
         "ev": VehicleTypeParameters(
             vehicle_type_id="FOTON-AUMARK-ES1-EXPRESS-STAKE",
@@ -717,7 +983,7 @@ def _china_vehicle_parameters() -> dict[str, VehicleTypeParameters]:
             battery_kwh=77.28,
             drag_coefficient=0.45,
             rolling_resistance_coefficient=0.01,
-            non_energy_distance_cost_per_km=0.67,
+            non_energy_distance_cost_per_km=EV_NON_ENERGY_CNY_PER_KM,
             engine_friction_kj_per_rev_l=None,
             engine_speed_rev_per_s=None,
             engine_displacement_l=None,
@@ -728,7 +994,10 @@ def _china_vehicle_parameters() -> dict[str, VehicleTypeParameters]:
                 "AF_0.85_WH_SCENARIO_TRIP_2026_102123",
                 "CD_0.45_EPA_SMARTWAY_CLASS2B_SCENARIO",
                 "EV_EFFICIENCY_GOEKE2015_TRANSFER",
+                "BATTERY_DEPRECIATION_CHANGJIANG_2024_GOEKE_SCHNEIDER_2015",
+                "CHINA81_PRIVATE_REBUILD_VEHICLE_COSTS_CSV",
             ),
+            fixed_cost_per_physical_vehicle_day=float(fixed_costs["ev"]),
         ),
     }
 
@@ -753,7 +1022,7 @@ def _load_time_profile(
     for row in selected:
         by_city[row["city"].strip().lower()].append(row)
     for city, rows in by_city.items():
-        slots = sorted(int(row["half_hour_slot"]) for row in rows)
+        slots = sorted(calendar_row_number(row) for row in rows)
         if slots != list(range(1, 49)):
             raise ValueError(
                 f"China81 calendar must contain 48 unique slots for "
@@ -766,7 +1035,7 @@ def _load_time_profile(
                 f"China81 calendar uses an unregistered city {city!r}"
             ) from exc
         for row in rows:
-            slot = int(row["half_hour_slot"])
+            slot = calendar_row_number(row)
             minute = int(row["minute_of_day"])
             expected_minute = (slot - 1) * 30
             if minute != expected_minute:
@@ -853,8 +1122,8 @@ def _load_time_profile(
                 "city": row["city"].strip().lower(),
                 "region": row["region"].strip().lower(),
                 "date": row["date"],
-                "time_index": int(row["half_hour_slot"]),
-                "half_hour_slot": int(row["half_hour_slot"]),
+                "time_index": calendar_row_number(row),
+                "hourly_calendar_row": calendar_row_number(row),
                 "horizon_second_start": (
                     float(row["minute_of_day"]) * 60.0
                 ),
@@ -917,6 +1186,7 @@ def _china_prices(
     time_profile: list[dict[str, Any]],
     *,
     diesel_price_by_city: Mapping[str, float],
+    vehicle_parameters: Mapping[str, VehicleTypeParameters],
 ) -> PriceParameters:
     depot_mean = sum(
         float(row["depot_energy_cny_per_kwh"])
@@ -926,6 +1196,27 @@ def _china_prices(
         float(row["public_total_cny_per_kwh"])
         for row in time_profile
     ) / len(time_profile)
+    try:
+        cv_fixed_cost = vehicle_parameters[
+            "cv"
+        ].fixed_cost_per_physical_vehicle_day
+        ev_traction_multiplier = vehicle_parameters[
+            "ev"
+        ].traction_energy_multiplier
+    except KeyError as exc:
+        raise ValueError("China81 vehicle profile has no EV entry") from exc
+    if (
+        cv_fixed_cost is None
+        or not math.isfinite(float(cv_fixed_cost))
+        or float(cv_fixed_cost) <= 0.0
+    ):
+        raise ValueError("China81 CV fixed cost must be positive")
+    if (
+        ev_traction_multiplier is None
+        or not math.isfinite(float(ev_traction_multiplier))
+        or float(ev_traction_multiplier) <= 0.0
+    ):
+        raise ValueError("China81 EV traction multiplier must be positive")
     return PriceParameters(
         c_d=0.45,
         c_r=0.01,
@@ -933,6 +1224,9 @@ def _china_prices(
         m_curb=2_565.0,
         m_unit=1.0,
         Q_capacity=1_735.0,
+        # The vehicle profile is the sole China81 authority for this evaluator
+        # coefficient.  China81Bundle.__post_init__ rejects later divergence.
+        alpha_e=float(ev_traction_multiplier),
         # Compatibility field for legacy code paths; the per-type EV contract
         # above remains authoritative.
         B_battery_kwh=77.28,
@@ -947,27 +1241,33 @@ def _china_prices(
         electricity_price=public_mean,
         station_electricity_price=public_mean,
         depot_electricity_price=depot_mean,
-        depot_charge_power_kw=22.0,
-        carbon_price=0.07502,
-        carbon_price_low=0.05632,
-        diesel_ef=2.70480534,
-        vehicle_fixed_cost=170.0,
+        depot_charge_power_kw=60.0,
+        carbon_price=CHINA81_CARBON_PRICE_CNY_PER_KG,
+        carbon_price_low=CHINA81_CARBON_PRICE_LOW_CNY_PER_KG,
+        diesel_ef=CHINA81_DIESEL_EF_KG_PER_L,
+        vehicle_fixed_cost=float(cv_fixed_cost),
         occupancy_fee=0.5,
         cross_site_cost=0.0,
         revenue_per_kg=1.5,
         fairness_theta=1.0,
         c_km=0.78,
-        # Compatibility triple for code that only ever constructs depot
-        # charging.  New charging code resolves the explicit technology
-        # triples below.  Montoya et al. (2017), Fig. 8, p. 13 supplies both
-        # normalized shapes; the public fast shape is transparently scaled
-        # from its 44 kW source to the preserved China81 60 kW station power.
-        charging_curve_id=M17_22KW_NORMAL_PWL.curve_id,
-        charging_soc_breakpoints=M17_22KW_NORMAL_PWL.soc_breakpoints,
-        charging_relative_powers=M17_22KW_NORMAL_PWL.relative_powers,
-        depot_charging_curve_id=M17_22KW_NORMAL_PWL.curve_id,
-        depot_charging_soc_breakpoints=M17_22KW_NORMAL_PWL.soc_breakpoints,
-        depot_charging_relative_powers=M17_22KW_NORMAL_PWL.relative_powers,
+        # Compatibility and depot triples both carry the approved 60 kW
+        # China81 depot scenario.  Montoya et al. (2017), Fig. 8, p. 13
+        # supplies the normalized fast shape, scaled from 44 kW to 60 kW.
+        charging_curve_id=M17_FAST_SHAPE_SCALED_60KW_PWL.curve_id,
+        charging_soc_breakpoints=(
+            M17_FAST_SHAPE_SCALED_60KW_PWL.soc_breakpoints
+        ),
+        charging_relative_powers=(
+            M17_FAST_SHAPE_SCALED_60KW_PWL.relative_powers
+        ),
+        depot_charging_curve_id=M17_FAST_SHAPE_SCALED_60KW_PWL.curve_id,
+        depot_charging_soc_breakpoints=(
+            M17_FAST_SHAPE_SCALED_60KW_PWL.soc_breakpoints
+        ),
+        depot_charging_relative_powers=(
+            M17_FAST_SHAPE_SCALED_60KW_PWL.relative_powers
+        ),
         public_charging_curve_id=M17_FAST_SHAPE_SCALED_60KW_PWL.curve_id,
         public_charging_soc_breakpoints=(
             M17_FAST_SHAPE_SCALED_60KW_PWL.soc_breakpoints

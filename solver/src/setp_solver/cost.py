@@ -167,7 +167,18 @@ def evaluate(
 
     # MC-W1-F2-DEPOT-CONCURRENCY-01: the fixed acquisition/activation charge
     # applies once per used physical vehicle, not once per delivery trip.
-    cost_fix = (n_veh_cv + n_veh_ev) * _price(prices, "vehicle_fixed_cost")
+    cost_fix = (
+        n_veh_cv
+        * instance.vehicle_fixed_cost_per_day(
+            "cv",
+            fallback=_price(prices, "vehicle_fixed_cost"),
+        )
+        + n_veh_ev
+        * instance.vehicle_fixed_cost_per_day(
+            "ev",
+            fallback=_price(prices, "vehicle_fixed_cost"),
+        )
+    )
     cost_km = sum(
         item.distance_m
         / 1000.0

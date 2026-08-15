@@ -10,7 +10,7 @@ from typing import Any
 
 from ..cost import evaluate
 from ..instance_loader import load_carbon_profile, load_instance
-from ..prices import DEFAULT_PRICES
+from ..prices import UK_2025_PRICES
 from ..solution import Route, Solution
 from .schema import read_records, write_rows
 from .tables import write_table_rows
@@ -124,22 +124,22 @@ def _parameter_rows(repo_root: Path, reports_dir: Path) -> tuple[list[dict[str, 
     observed_seeds = sorted({_int(row.get("seed")) for row in (_load_json(path) for path in reports_dir.glob("*.json") if not path.name.startswith("._")) if row.get("seed")})
     rows: list[dict[str, Any]] = []
     specs = [
-        ("$Q$", "车辆载重容量", DEFAULT_PRICES.Q_capacity, "kg"),
-        ("$v$", "固定行驶速度", DEFAULT_PRICES.v_speed_ms * 3.6, "km/h"),
-        ("$B$", "电池容量", DEFAULT_PRICES.B_battery_kwh, "kWh"),
-        ("$\\pi_d$", "车场交流充电功率上限", DEFAULT_PRICES.depot_charge_power_kw, "kW"),
-        ("$p^f$", "柴油价格", DEFAULT_PRICES.diesel_price, "£/L"),
-        ("$p_{s,t}^e,\\ s\\in S$", "公共快充电价", DEFAULT_PRICES.station_electricity_price, "£/kWh"),
-        ("$p_{s,t}^e,\\ s\\in D$", "车场用电价格", DEFAULT_PRICES.depot_electricity_price, "£/kWh"),
-        ("$p^{car}$", "碳交易价格(主值)", DEFAULT_PRICES.carbon_price, "£/kgCO2e"),
-        ("$p^{car}_{\\text{low}}$", "碳交易价格(敏感性低值)", DEFAULT_PRICES.carbon_price_low, "£/kgCO2e"),
-        ("$c^{fix}$", "车辆启用固定成本", DEFAULT_PRICES.vehicle_fixed_cost, "£/班次"),
-        ("$c^{km}$", "非能源里程成本", DEFAULT_PRICES.c_km, "£/km"),
-        ("$c^{occ}$", "充电桩占用成本", DEFAULT_PRICES.occupancy_fee, "£/min"),
-        ("$c^{tr}$", "跨车场服务成本", DEFAULT_PRICES.cross_site_cost, "£/次"),
-        ("$\\rho$", "单位配送收入系数", DEFAULT_PRICES.revenue_per_kg, "£/kg"),
-        ("$\\theta$", "收益公平比例下界主值", DEFAULT_PRICES.fairness_theta, "---"),
-        ("$\\lambda^g$", "柴油碳排放因子", DEFAULT_PRICES.diesel_ef, "kgCO2e/L"),
+        ("$Q$", "车辆载重容量", UK_2025_PRICES.Q_capacity, "kg"),
+        ("$v$", "固定行驶速度", UK_2025_PRICES.v_speed_ms * 3.6, "km/h"),
+        ("$B$", "电池容量", UK_2025_PRICES.B_battery_kwh, "kWh"),
+        ("$\\pi_d$", "车场交流充电功率上限", UK_2025_PRICES.depot_charge_power_kw, "kW"),
+        ("$p^f$", "柴油价格", UK_2025_PRICES.diesel_price, "£/L"),
+        ("$p_{s,t}^e,\\ s\\in S$", "公共快充电价", UK_2025_PRICES.station_electricity_price, "£/kWh"),
+        ("$p_{s,t}^e,\\ s\\in D$", "车场用电价格", UK_2025_PRICES.depot_electricity_price, "£/kWh"),
+        ("$p^{car}$", "碳交易价格(主值)", UK_2025_PRICES.carbon_price, "£/kgCO2e"),
+        ("$p^{car}_{\\text{low}}$", "碳交易价格(敏感性低值)", UK_2025_PRICES.carbon_price_low, "£/kgCO2e"),
+        ("$c^{fix}$", "车辆启用固定成本", UK_2025_PRICES.vehicle_fixed_cost, "£/班次"),
+        ("$c^{km}$", "非能源里程成本", UK_2025_PRICES.c_km, "£/km"),
+        ("$c^{occ}$", "充电桩占用成本", UK_2025_PRICES.occupancy_fee, "£/min"),
+        ("$c^{tr}$", "跨车场服务成本", UK_2025_PRICES.cross_site_cost, "£/次"),
+        ("$\\rho$", "单位配送收入系数", UK_2025_PRICES.revenue_per_kg, "£/kg"),
+        ("$\\theta$", "收益公平比例下界主值", UK_2025_PRICES.fairness_theta, "---"),
+        ("$\\lambda^g$", "柴油碳排放因子", UK_2025_PRICES.diesel_ef, "kgCO2e/L"),
     ]
     warnings: list[str] = []
     for symbol, meaning, code_value, unit in specs:
@@ -415,7 +415,12 @@ def _cv_only_replay_metrics(repo_root: Path, t0_report: dict[str, Any]) -> dict[
         )
         for route in t0_report["A_carbon_on"]["routes"]
     ]
-    return evaluate(Solution(routes=routes), instance, carbon)
+    return evaluate(
+        Solution(routes=routes),
+        instance,
+        carbon,
+        UK_2025_PRICES,
+    )
 
 
 def _t6_case(label: str, metrics: dict[str, Any], *, charging_carbon: float, mean_intensity: Any) -> dict[str, Any]:
@@ -433,7 +438,11 @@ def _carbon_sensitivity_table10_rows(t4_rows: list[dict[str, Any]]) -> list[dict
     base_carbon = _metric_value(t4_rows, "总碳", 1935.23)
     fuel_cost = _metric_value(t4_rows, "燃油成本", 1051.11)
     electricity = _metric_value(t4_rows, "电费", 270.48)
-    fuel_liters = fuel_cost / DEFAULT_PRICES.diesel_price if DEFAULT_PRICES.diesel_price else fuel_cost
+    fuel_liters = (
+        fuel_cost / UK_2025_PRICES.diesel_price
+        if UK_2025_PRICES.diesel_price
+        else fuel_cost
+    )
     rows: list[dict[str, Any]] = []
     quotas = (0.85, 1.15)
     for price in (0.0, 0.2, 0.4, 0.6, 0.8, 1.0):

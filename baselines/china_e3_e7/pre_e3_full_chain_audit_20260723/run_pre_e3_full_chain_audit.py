@@ -34,7 +34,7 @@ OUT = SCRIPT.parent
 STATIC = REPO / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718"
 CATALOG = STATIC / "instance_catalog.csv"
 FACILITIES = STATIC / "facilities.csv"
-CALENDAR = STATIC / "tariff_carbon_48slot_calendar.csv"
+CALENDAR = STATIC / "tariff_carbon_hourly_calendar.csv"
 ORDERS = (
     REPO
     / "data/ChinaInstances/china81_order_attributes_mc001_v1_20260718/orders.csv"
@@ -1532,7 +1532,7 @@ def audit_mapping_and_calendar(
     calendar = read_csv(CALENDAR)
     tvci_rows = read_csv(TVCI)
     tvci = {
-        (row["date"], int(row["half_hour_slot"])): row
+        (row["date"], int(row["hourly_calendar_row"])): row
         for row in tvci_rows
     }
 
@@ -1618,7 +1618,7 @@ def audit_mapping_and_calendar(
     )
 
     key_counts = Counter(
-        (row["city"], row["date"], int(row["half_hour_slot"]))
+        (row["city"], row["date"], int(row["hourly_calendar_row"]))
         for row in calendar
     )
     duplicate_keys = [key for key, count in key_counts.items() if count != 1]
@@ -1632,7 +1632,7 @@ def audit_mapping_and_calendar(
             calendar_errors.append(f"{city}:date_set")
         for date in expected_dates:
             slots = sorted(
-                int(row["half_hour_slot"])
+                int(row["hourly_calendar_row"])
                 for row in city_rows
                 if row["date"] == date
             )
@@ -1643,7 +1643,7 @@ def audit_mapping_and_calendar(
             row
             for row in city_rows
             if int(row["minute_of_day"])
-            != (int(row["half_hour_slot"]) - 1) * 30
+            != (int(row["hourly_calendar_row"]) - 1) * 30
         ]
         if noncanonical_starts:
             calendar_errors.append(
@@ -1676,9 +1676,9 @@ def audit_mapping_and_calendar(
         )
         if not math.isclose(total, expected_total, rel_tol=0.0, abs_tol=1e-9):
             arithmetic_errors.append(
-                f"{row['city']}:{row['date']}:{row['half_hour_slot']}"
+                f"{row['city']}:{row['date']}:{row['hourly_calendar_row']}"
             )
-        source = tvci[(row["date"], int(row["half_hour_slot"]))]
+        source = tvci[(row["date"], int(row["hourly_calendar_row"]))]
         actual_source_value = float(source[row["carbon_source_column"]])
         if not math.isclose(
             float(row["carbon_factor_kgco2e_per_kwh"]),
@@ -1687,7 +1687,7 @@ def audit_mapping_and_calendar(
             abs_tol=1e-10,
         ):
             source_value_errors.append(
-                f"{row['city']}:{row['date']}:{row['half_hour_slot']}"
+                f"{row['city']}:{row['date']}:{row['hourly_calendar_row']}"
             )
         intended_column = REVIEWED_CITY_MAPPING[row["city"]]["carbon_column"]
         intended_value = float(source[intended_column])
@@ -2113,7 +2113,7 @@ def audit_prices_and_periods(
         expected_period = reviewed_period_for(city, minute)
         if row["tariff_period"] != expected_period:
             period_row_errors.append(
-                f"{city}:{row['date']}:{row['half_hour_slot']}:"
+                f"{city}:{row['date']}:{row['hourly_calendar_row']}:"
                 f"{row['tariff_period']}!={expected_period}"
             )
 
@@ -2129,7 +2129,7 @@ def audit_prices_and_periods(
         expected_price = prices[expected_period]
         if expected_price is None:
             price_row_errors.append(
-                f"{city}:{row['date']}:{row['half_hour_slot']}:"
+                f"{city}:{row['date']}:{row['hourly_calendar_row']}:"
                 f"missing_{expected_period}_price"
             )
             continue
@@ -2144,7 +2144,7 @@ def audit_prices_and_periods(
                 abs_tol=1e-10,
             ):
                 price_row_errors.append(
-                    f"{city}:{row['date']}:{row['half_hour_slot']}:"
+                    f"{city}:{row['date']}:{row['hourly_calendar_row']}:"
                     f"{field}={row[field]}!=expected={expected_price}"
                 )
     add(

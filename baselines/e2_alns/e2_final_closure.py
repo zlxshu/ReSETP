@@ -96,7 +96,7 @@ PROTECTED_PATHS = (
     "solver/src/setp_solver/search/resetp_alns",
     "solver/src/setp_solver/search/alns_wouda.py",
     "solver/src/setp_solver/search/winner_operators.py",
-    "docs/paper_submission_final/paper_main.tex",
+    "docs/paper_submission_final/RETIRED_paper_main.tex",
 )
 
 

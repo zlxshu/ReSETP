@@ -15,7 +15,6 @@ from dataclasses import dataclass, field
 
 from setp_hgs_kernel.ExternalPopulation import (
     EvaluatedSolution,
-    ExternalPopulation,
 )
 from setp_hgs_kernel.GeneticAlgorithm import GeneticAlgorithmParams
 from setp_hgs_kernel.IntegratedGeneticAlgorithm import (
@@ -27,7 +26,20 @@ from setp_hgs_kernel._setp_hgs_kernel import (
     PopulationParams as KernelPopulationParams,
 )
 
-from .charging import ChargingRepairPolicy, repair_changed_duties
+from .charging import (
+    ChargingFeasibilityPrescreen,
+    ChargingRepairPolicy,
+    charging_rejection_reason,
+    repair_changed_duties,
+)
+from .bi_objective_population import (
+    SINGLE_OBJECTIVE,
+    BiObjectiveArchive,
+    BiObjectiveExternalPopulation,
+    ObjectiveValues,
+    make_private_population,
+    validate_population_objective_mode,
+)
 from .contracts import (
     CandidateOutcome,
     CandidateStatus,
@@ -40,6 +52,7 @@ from .crossover import (
 )
 from .education import _trajectory_row, educate_best_improvement
 from .evaluation import DutyFullEvaluator, FullEvaluation
+from .fleet_registry import assert_fleet_activation_allowed
 from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
 from .model import DutyIndividual
 from .population import (
@@ -47,6 +60,12 @@ from .population import (
     PenaltyParameters,
     PopulationParameters,
     broken_pairs_distance,
+)
+from .schedule_capture import emit_schedule_capture
+from .schedule_oracle import (
+    OracleStatus,
+    ScheduleCoordinator,
+    ScheduleOracleContext,
 )
 from .proposals import (
     DEFAULT_SERIAL_PROPOSAL_SOURCE_ID,
@@ -93,6 +112,14 @@ class IntegratedPrivateHGSBundle:
         PrivateIntegratedEvaluation,
     ]
     accounting: PrivateIntegratedAccounting
+    population: object
+    objective_mode: str
+    charging_prescreen: ChargingFeasibilityPrescreen | None
+
+    def bi_objective_archive(self) -> BiObjectiveArchive | None:
+        if not isinstance(self.population, BiObjectiveExternalPopulation):
+            return None
+        return self.population.archive()
 
 
 class _DutyRngAdapter:
@@ -128,6 +155,15 @@ def build_integrated_private_hgs(
     initial_evaluations: tuple[FullEvaluation, ...] | None = None,
     trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
     arm: str = "integrated_private_hgs",
+    schedule_cross_repair_fallback: bool = False,
+    schedule_all_changed_move_evaluation: bool = False,
+    fleet_activation_enabled: bool = True,
+    objective_mode: str = SINGLE_OBJECTIVE,
+    charging_prescreen_enabled: bool = False,
+    charging_prescreen_audit_limit: int = 0,
+    cross_depot_enabled: bool = True,
+    multi_trip_enabled: bool = True,
+    type_exchange_enabled: bool = True,
 ) -> IntegratedPrivateHGSBundle:
     """Build the shared HGS loop over complete private-problem candidates."""
 
@@ -164,9 +200,25 @@ def build_integrated_private_hgs(
                     "an initial evaluation belongs to another context"
                 )
 
+    objective_mode = validate_population_objective_mode(objective_mode)
     copied_parameters = SolveParams()
     complete_penalties = AdaptivePenaltyManager(penalty_parameters)
     accounting = PrivateIntegratedAccounting()
+    charging_prescreen = (
+        ChargingFeasibilityPrescreen(
+            evaluator.context,
+            charging_policy,
+            audit_limit=int(charging_prescreen_audit_limit),
+        )
+        if charging_prescreen_enabled
+        else None
+    )
+    schedule_coordinator = None
+    if schedule_cross_repair_fallback or schedule_all_changed_move_evaluation:
+        schedule_coordinator = ScheduleCoordinator(
+            ScheduleOracleContext.from_evaluation_context(evaluator.context),
+            result_sink=accounting.mechanism.record_schedule_oracle_result,
+        )
     education_cache: dict[
         tuple[bool, str, str, tuple[tuple[str, float], ...]],
         EvaluatedSolution[
@@ -180,6 +232,26 @@ def build_integrated_private_hgs(
         for node in evaluator.context.bundle.instance.nodes
         if node.node_type.lower() == "c"
     }
+    customer_home_depot_by_id = (
+        None
+        if cross_depot_enabled
+        else {
+            customer: duty.home_depot_id
+            for duty in template.duties
+            for trip in duty.trips
+            for customer in trip.customer_ids
+        }
+    )
+    customer_vehicle_type_by_id = (
+        None
+        if type_exchange_enabled
+        else {
+            customer: duty.vehicle_type
+            for duty in template.duties
+            for trip in duty.trips
+            for customer in trip.customer_ids
+        }
+    )
     if proposal_engine is None:
         mechanism_engine = MechanismProposalEngine(
             evaluator.context,
@@ -243,6 +315,58 @@ def build_integrated_private_hgs(
             PrivateIntegratedEvaluation(individual, full),
         )
 
+    def coordinate_candidate(
+        reference: DutyIndividual,
+        raw_candidate: DutyIndividual,
+        changed_duty_ids: frozenset[str],
+        *,
+        channel: str,
+    ) -> EvaluatedSolution[
+        DutyIndividual,
+        PrivateIntegratedEvaluation,
+    ] | None:
+        if schedule_coordinator is None:
+            return None
+        try:
+            assert_fleet_activation_allowed(
+                reference,
+                raw_candidate,
+                enabled=fleet_activation_enabled,
+            )
+        except ValueError:
+            return None
+        coordinated = schedule_coordinator.coordinate(
+            reference,
+            raw_candidate,
+            changed_duty_ids=changed_duty_ids,
+        )
+        accounting.mechanism.record_schedule_coordinator_result(
+            coordinated,
+            changed_duty_count=len(changed_duty_ids),
+        )
+        if coordinated.status != OracleStatus.FEASIBLE:
+            accounting.mechanism.schedule_rejected_candidates_by_channel_and_status[
+                f"{channel}:{coordinated.status.value}"
+            ] += 1
+            return None
+        evaluated = tuple(
+            item
+            for scheduled in coordinated.frontier
+            if (item := evaluate(scheduled)) is not None
+        )
+        if not evaluated:
+            accounting.mechanism.schedule_rejected_candidates_by_channel_and_status[
+                f"{channel}:FULL_EVALUATION_REJECTED"
+            ] += 1
+            return None
+        return min(
+            evaluated,
+            key=lambda item: (
+                float(complete_penalties.cost(item.evaluation.full)),
+                item.solution.fingerprint,
+            ),
+        )
+
     def breed(
         parents: tuple[
             EvaluatedSolution[
@@ -283,6 +407,11 @@ def build_integrated_private_hgs(
                 changed_duty_ids=frozenset(),
                 error_type=type(error).__name__,
                 error=str(error),
+                charging_rejection_reason=(
+                    charging_rejection_reason(error)
+                    if status == CandidateStatus.REJECTED_CHARGING
+                    else None
+                ),
             )
             accounting.mechanism.record_outcome(outcome)
             if trajectory_sink is not None:
@@ -303,6 +432,9 @@ def build_integrated_private_hgs(
                 (first.solution, second.solution),
                 rng,
                 customer_coordinates,
+                customer_home_depot_by_id=customer_home_depot_by_id,
+                customer_vehicle_type_by_id=customer_vehicle_type_by_id,
+                multi_trip_enabled=multi_trip_enabled,
             )
         except ValueError as error:
             if str(error) != "trip assignment found no compatible movable trip":
@@ -359,6 +491,11 @@ def build_integrated_private_hgs(
                 reject(error)
                 continue
             try:
+                assert_fleet_activation_allowed(
+                    first.solution,
+                    crossed.child,
+                    enabled=fleet_activation_enabled,
+                )
                 completed = repair_changed_duties(
                     first.solution,
                     crossed.child,
@@ -367,13 +504,77 @@ def build_integrated_private_hgs(
                     policy=charging_policy,
                 )
             except (TypeError, ValueError) as error:
+                rescued = None
+                if schedule_cross_repair_fallback:
+                    rescued = coordinate_candidate(
+                        first.solution,
+                        crossed.child,
+                        crossed.changed_duty_ids,
+                        channel="duty_crossover",
+                    )
+                if rescued is not None:
+                    accounting.mechanism.schedule_rescued_candidates_by_channel[
+                        "duty_crossover"
+                    ] += 1
+                    viable.append(
+                        (
+                            float(
+                                complete_penalties.cost(
+                                    rescued.evaluation.full
+                                )
+                            ),
+                            rescued.solution.fingerprint,
+                            crossed,
+                            rescued,
+                        )
+                    )
+                    continue
                 accounting.rejected_candidates += 1
                 accounting.rejection_reasons[
                     f"{type(error).__name__}: {error}"
                 ] += 1
+                if any(
+                    token in str(error).lower()
+                    for token in ("charg", "battery", "energy", "soc")
+                ):
+                    emit_schedule_capture(
+                        channel="duty_crossover",
+                        action_id="trip-assignment",
+                        iteration=accounting.crossover_calls,
+                        reference=first.solution,
+                        raw_candidate=crossed.child,
+                        changed_duty_ids=frozenset(
+                            crossed.changed_duty_ids
+                        ),
+                        context=evaluator.context,
+                        a0_status="INFEASIBLE",
+                        error=error,
+                    )
                 reject(error)
                 continue
+            emit_schedule_capture(
+                channel="crossover",
+                action_id="trip-assignment",
+                iteration=accounting.crossover_calls,
+                reference=first.solution,
+                raw_candidate=crossed.child,
+                changed_duty_ids=frozenset(crossed.changed_duty_ids),
+                context=evaluator.context,
+                a0_status="FEASIBLE",
+                error=None,
+            )
             evaluated = evaluate(completed)
+            if evaluated is None and schedule_cross_repair_fallback:
+                evaluated = coordinate_candidate(
+                    first.solution,
+                    crossed.child,
+                    crossed.changed_duty_ids,
+                    channel="duty_crossover",
+                )
+                if evaluated is not None:
+                    accounting.mechanism.schedule_rescued_candidates_by_channel[
+                        "duty_crossover"
+                    ] += 1
             if evaluated is None:
                 continue
             viable.append(
@@ -478,6 +679,14 @@ def build_integrated_private_hgs(
             proposal_engine=engine,
             stop_requested=stop_requested,
             selection_policy="first",
+            schedule_coordinator=(
+                schedule_coordinator
+                if schedule_all_changed_move_evaluation
+                else None
+            ),
+            fleet_activation_enabled=fleet_activation_enabled,
+            charging_prescreen=charging_prescreen,
+            record_trajectory=trajectory_sink is not None,
         )
         if individual.fingerprint == candidate.solution.fingerprint:
             result = candidate
@@ -576,9 +785,14 @@ def build_integrated_private_hgs(
             ub_diversity=population_parameters.ub_diversity,
         )
     )
-    population = ExternalPopulation(
+    population = make_private_population(
         broken_pairs_distance,
+        objective_mode=objective_mode,
         is_feasible=adapter.is_feasible,
+        objectives=lambda evaluation: ObjectiveValues(
+            total_cost=float(evaluation.full.total_cost),
+            total_emissions_kg=float(evaluation.full.breakdown["E_total"]),
+        ),
         penalised_cost=adapter.penalised_cost,
         fingerprint=adapter.fingerprint,
         params=kernel_population_parameters,
@@ -599,7 +813,13 @@ def build_integrated_private_hgs(
             num_iters_no_improvement=int(stagnation_patience),
         ),
     )
-    return IntegratedPrivateHGSBundle(algorithm, accounting)
+    return IntegratedPrivateHGSBundle(
+        algorithm,
+        accounting,
+        population,
+        objective_mode,
+        charging_prescreen,
+    )
 
 
 def _fleet_identity(individual: DutyIndividual) -> tuple[

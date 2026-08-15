@@ -91,13 +91,13 @@
       "num_cv": "5",
       "num_ev": "2",
       "total_fleet_cap": "7",
-      "default_electrification_level_percent": "25",
-      "depot_charger_count": "2",
+      "default_fleet_electrification_percent_metadata_only": "25",
+      "configured_depot_gun_count_if_finite": "2",
       "depot_charge_power_kw": "22.0",
       "depot_charger_capacity_default": "UNBOUNDED",
       "fleet_parameter_class": "DERIVED_FIXED_TOTAL_MULTITRIP_ZERO_SEARCH_AUTHORITY",
       "charger_parameter_class": "UNBOUNDED_DEFAULT__FINITE_2_OPTIONAL_HISTORICAL",
-      "level_allocations_json": "{\"0\":{\"num_cv\":7,\"num_ev\":0,\"total_fleet_cap\":7},\"100\":{\"num_cv\":0,\"num_ev\":7,\"total_fleet_cap\":7},\"25\":{\"num_cv\":5,\"num_ev\":2,\"total_fleet_cap\":7},\"50\":{\"num_cv\":3,\"num_ev\":4,\"total_fleet_cap\":7},\"75\":{\"num_cv\":2,\"num_ev\":5,\"total_fleet_cap\":7}}"
+      "fleet_allocation_map_metadata_only": "{\"0\":{\"num_cv\":7,\"num_ev\":0,\"total_fleet_cap\":7},\"100\":{\"num_cv\":0,\"num_ev\":7,\"total_fleet_cap\":7},\"25\":{\"num_cv\":5,\"num_ev\":2,\"total_fleet_cap\":7},\"50\":{\"num_cv\":3,\"num_ev\":4,\"total_fleet_cap\":7},\"75\":{\"num_cv\":2,\"num_ev\":5,\"total_fleet_cap\":7}}"
     },
     {
       "instance_id": "cn-cy-100c-01-V2-LOCATIONS",
@@ -108,13 +108,13 @@
       "num_cv": "7",
       "num_ev": "2",
       "total_fleet_cap": "9",
-      "default_electrification_level_percent": "25",
-      "depot_charger_count": "2",
+      "default_fleet_electrification_percent_metadata_only": "25",
+      "configured_depot_gun_count_if_finite": "2",
       "depot_charge_power_kw": "22.0",
       "depot_charger_capacity_default": "UNBOUNDED",
       "fleet_parameter_class": "DERIVED_FIXED_TOTAL_MULTITRIP_ZERO_SEARCH_AUTHORITY",
       "charger_parameter_class": "UNBOUNDED_DEFAULT__FINITE_2_OPTIONAL_HISTORICAL",
-      "level_allocations_json": "{\"0\":{\"num_cv\":9,\"num_ev\":0,\"total_fleet_cap\":9},\"100\":{\"num_cv\":0,\"num_ev\":9,\"total_fleet_cap\":9},\"25\":{\"num_cv\":7,\"num_ev\":2,\"total_fleet_cap\":9},\"50\":{\"num_cv\":5,\"num_ev\":4,\"total_fleet_cap\":9},\"75\":{\"num_cv\":2,\"num_ev\":7,\"total_fleet_cap\":9}}"
+      "fleet_allocation_map_metadata_only": "{\"0\":{\"num_cv\":9,\"num_ev\":0,\"total_fleet_cap\":9},\"100\":{\"num_cv\":0,\"num_ev\":9,\"total_fleet_cap\":9},\"25\":{\"num_cv\":7,\"num_ev\":2,\"total_fleet_cap\":9},\"50\":{\"num_cv\":5,\"num_ev\":4,\"total_fleet_cap\":9},\"75\":{\"num_cv\":2,\"num_ev\":7,\"total_fleet_cap\":9}}"
     }
   ],
   "source_files_sha256": {
@@ -268,7 +268,7 @@
     "data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/fleet_caps.csv": "ed9a584a31cc257eb064d5df9042f2df82a6b1868b73657474a9629e425f00b1",
     "data/ChinaInstances/china81_finite_fleet_authority_v3_20260802/metadata.json": "31104bcadda1449059480a1e064f88b80cda495713c329d277d2c30d721711c0",
     "data/ChinaInstances/china81_order_attributes_gis_v2_20260723/orders.csv": "a36b833228f9313f02a5e7796156b1f1e0b1a39982e5427c017d25522349c982",
-    "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b",
+    "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv": "e714b05b2e44635204681fe213dfd454e9f9009c647bad7318ce6b0ccad2004b",
     "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv": "b7bcafb0fcaabc5ebc1557583b92858d3537ce8aca4ad7dbf6b1098387e21d2e",
     "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv": "886354a6a6a5fd3e63512caa800f9541637fd5e99e432b6843b235ef96300655",
     "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instances/cn-cy-100c-01-V2-LOCATIONS/nodes.csv": "cddf1e966e3a9a48c5960a6a638d78dff779ee56e4ef0cb2b807c05d6363081f",

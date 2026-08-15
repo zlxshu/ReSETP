@@ -334,7 +334,7 @@ v3 原样复制。
 $\gamma_t$"；`:453`、`:894`（充电时刻选择规则）、`:1426` 均在使用 $\widehat\gamma_t$。
 
 **FACT 2 — 数据只有一条序列。**
-`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv`
+`data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv`
 （12096 行，9 城 × 28 日 × 48 槽）**只有一列** `carbon_factor_kgco2e_per_kwh`；
 `solver/src/setp_solver/china81.py:817` 把同一个值直接标成 `forecast_gco2_per_kwh`。
 

@@ -320,7 +320,7 @@ FACT — 针对附加问题，本次在不跑搜索的情况下，对v2的81个w
 
 ### INF-6 — CONFIRMED
 
-FACT — `data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv:2-12097` 共12096个数据行。数值碳因子列只有 `carbon_factor_kgco2e_per_kwh`；另有非数值来源标识列 `carbon_source_column`。`solver/src/setp_solver/china81.py:803-817` 读取同一个 `gamma_kg`，并同时赋给 `actual_gco2_per_kwh` 和 `forecast_gco2_per_kwh`。
+FACT — `data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv:2-12097` 共12096个数据行。数值碳因子列只有 `carbon_factor_kgco2e_per_kwh`；另有非数值来源标识列 `carbon_source_column`。`solver/src/setp_solver/china81.py:803-817` 读取同一个 `gamma_kg`，并同时赋给 `actual_gco2_per_kwh` 和 `forecast_gco2_per_kwh`。
 
 ### INF-7 — CONFIRMED
 
@@ -384,4 +384,4 @@ FACT — 自检只验证50c seed1的第1阶段、per-pass cap1，而形式任务
 
 ### NF-6 — China81的actual字段名不代表观测实际值
 
-FACT — China81日历有 `carbon_source_column` 来源标识，但唯一数值碳因子被同时复制给forecast和actual（`tariff_carbon_48slot_calendar.csv:1-12097`；`solver/src/setp_solver/china81.py:803-817`）。原始中国数据文档将它定义为规划情景投影与运行模拟小时均值，所以字段名 `actual_gco2_per_kwh` 在China81上的数据语义是“用于事后核算的同一预给序列”，不是电网实测值。证据：`Annotation_of_the_dataset.pdf` 第1、4页。
+FACT — China81日历有 `carbon_source_column` 来源标识，但唯一数值碳因子被同时复制给forecast和actual（`tariff_carbon_hourly_calendar.csv:1-12097`；`solver/src/setp_solver/china81.py:803-817`）。原始中国数据文档将它定义为规划情景投影与运行模拟小时均值，所以字段名 `actual_gco2_per_kwh` 在China81上的数据语义是“用于事后核算的同一预给序列”，不是电网实测值。证据：`Annotation_of_the_dataset.pdf` 第1、4页。

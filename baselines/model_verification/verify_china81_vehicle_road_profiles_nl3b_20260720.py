@@ -452,7 +452,7 @@ def main() -> int:
             lambda relative: (
                 relative in {
                     "instance_catalog.csv",
-                    "tariff_carbon_48slot_calendar.csv",
+                    "tariff_carbon_hourly_calendar.csv",
                 }
                 or (
                     relative.startswith("instances/")

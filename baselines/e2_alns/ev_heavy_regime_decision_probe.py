@@ -193,12 +193,12 @@ def run_stage0(args: argparse.Namespace) -> dict[str, Any]:
 def stage0_instance(category: str, instance_name: str, size: int, battery_kwh: float, output_dir: Path) -> dict[str, Any]:
     from setp_solver.check import check_solution
     from setp_solver.cost import evaluate
-    from setp_solver.prices import DEFAULT_PRICES
+    from setp_solver.prices import UK_2025_PRICES
     from setp_solver.search.bundle import load_search_bundle
     from setp_solver.search.carbon_operators import low_carbon_charging_share
     from setp_solver.search.metaheuristic_baselines import solution_to_dict
 
-    prices = replace(DEFAULT_PRICES, B_battery_kwh=float(battery_kwh), carbon_price=CARBON_PRICE)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=float(battery_kwh), carbon_price=CARBON_PRICE)
     bundle_dir = bundle_path(category, instance_name)
     bundle = load_search_bundle(bundle_dir)
     baseline, source = load_baseline_solution(bundle, instance_name, prices)
@@ -633,14 +633,14 @@ def execute_search_task_subprocess(task: dict[str, Any]) -> dict[str, Any]:
 def run_search_task(task: dict[str, Any]) -> dict[str, Any]:
     from setp_solver.check import check_solution
     from setp_solver.cost import evaluate
-    from setp_solver.prices import DEFAULT_PRICES
+    from setp_solver.prices import UK_2025_PRICES
     from setp_solver.search.bundle import load_search_bundle
     from setp_solver.search.carbon_operators import low_carbon_charging_share
     from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline
     from setp_solver.search.winner_operators import WinnerKernelConfig, run_e2_alns_carbon
 
     started = time.perf_counter()
-    prices = replace(DEFAULT_PRICES, B_battery_kwh=float(task["battery_kwh"]), carbon_price=CARBON_PRICE)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=float(task["battery_kwh"]), carbon_price=CARBON_PRICE)
     bundle = load_search_bundle(Path(task["repo_root"]) / task["bundle_dir"])
     initial_solution, seed_source = load_or_build_seed_for_search(task, bundle, prices)
     checkpoint_path = str(task.get("checkpoint_path", "")).strip()
@@ -812,7 +812,7 @@ def read_checkpoint(path: Path) -> dict[str, Any] | None:
 def timeout_row_from_checkpoint(task: dict[str, Any], elapsed: float, stdout: str | bytes | None, stderr: str | bytes | None) -> dict[str, Any]:
     from setp_solver.check import check_solution
     from setp_solver.cost import evaluate
-    from setp_solver.prices import DEFAULT_PRICES
+    from setp_solver.prices import UK_2025_PRICES
     from setp_solver.search.bundle import load_search_bundle
     from setp_solver.search.carbon_operators import low_carbon_charging_share
     from setp_solver.search.metaheuristic_baselines import solution_from_dict
@@ -824,7 +824,7 @@ def timeout_row_from_checkpoint(task: dict[str, Any], elapsed: float, stdout: st
         row["worker_stdout_tail"] = tail_text(stdout)
         row["worker_stderr_tail"] = tail_text(stderr)
         return row
-    prices = replace(DEFAULT_PRICES, B_battery_kwh=float(task["battery_kwh"]), carbon_price=CARBON_PRICE)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=float(task["battery_kwh"]), carbon_price=CARBON_PRICE)
     bundle = load_search_bundle(Path(task["repo_root"]) / task["bundle_dir"])
     solution = solution_from_dict(checkpoint["solution"])
     violations = check_solution(solution, bundle.instance, prices)
@@ -1009,11 +1009,11 @@ def stage2_decision(rows: list[dict[str, Any]], pairs_lns: list[dict[str, Any]],
 
 
 def headroom_audit(instances: list[tuple[str, str, int]], battery_kwh: float) -> list[dict[str, Any]]:
-    from setp_solver.prices import DEFAULT_PRICES
+    from setp_solver.prices import UK_2025_PRICES
     from setp_solver.search.bundle import load_search_bundle
     from setp_solver.search.fleet import infer_fleet_limits
 
-    prices = replace(DEFAULT_PRICES, B_battery_kwh=float(battery_kwh), carbon_price=CARBON_PRICE)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=float(battery_kwh), carbon_price=CARBON_PRICE)
     rows = []
     for category, instance_name, size in instances:
         bundle = load_search_bundle(bundle_path(category, instance_name))
@@ -1114,13 +1114,13 @@ def bundle_path(category: str, instance_name: str) -> Path:
 
 
 def phase0_audit(battery_kwh: float) -> dict[str, Any]:
-    from setp_solver.prices import DEFAULT_PRICES
+    from setp_solver.prices import UK_2025_PRICES
 
     default_probe = {
-        "Q": float(DEFAULT_PRICES.Q_capacity),
-        "B": float(DEFAULT_PRICES.B_battery_kwh),
-        "v": float(DEFAULT_PRICES.v_speed_ms),
-        "carbon": float(DEFAULT_PRICES.carbon_price),
+        "Q": float(UK_2025_PRICES.Q_capacity),
+        "B": float(UK_2025_PRICES.B_battery_kwh),
+        "v": float(UK_2025_PRICES.v_speed_ms),
+        "carbon": float(UK_2025_PRICES.carbon_price),
         "python": sys.executable,
         "numpy": numpy_version(),
     }
@@ -1526,7 +1526,7 @@ def render_stageA_report(metadata: dict[str, Any], phase0: dict[str, Any], decis
     for row in failures:
         lines.append(f"| {row.get('instance')} | {row.get('failure_reason')} | {row.get('count')} |")
     lines.extend(common_artifact_lines(metadata))
-    lines.append("- Battery capacity was applied only with in-memory `dataclasses.replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)`.")
+    lines.append("- Battery capacity was applied only with in-memory `dataclasses.replace(UK_2025_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)`.")
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -1597,7 +1597,7 @@ def render_stageB_report(
         f"- Baseline pairs: `{metadata.get('output_dir')}/paired_vs_baselines.csv`",
         f"- Ablation pairs: `{metadata.get('output_dir')}/paired_vs_ablation.csv`",
         "- Wall-clock caps: 100c=900s, 150c=1800s, 200c=2700s; rows record actual eval counts.",
-        "- Battery capacity was applied only with in-memory `dataclasses.replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)`.",
+        "- Battery capacity was applied only with in-memory `dataclasses.replace(UK_2025_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)`.",
     ])
     return "\n".join(lines).rstrip() + "\n"
 

@@ -162,8 +162,8 @@ def build() -> dict[str, Any]:
                 raise RuntimeError(
                     f"not 48 slots: {instance_id}/{city}/{len(rows)}"
                 )
-            for row in sorted(rows, key=lambda item: item["half_hour_slot"]):
-                slot = int(row["half_hour_slot"])
+            for row in sorted(rows, key=lambda item: item["hourly_calendar_row"]):
+                slot = int(row["hourly_calendar_row"])
                 key = (instance_id, city, bundle.date, slot)
                 if key in slot_keys:
                     raise RuntimeError(f"duplicate settlement key: {key}")
@@ -178,7 +178,7 @@ def build() -> dict[str, Any]:
                         ),
                         "diesel_zone": row["diesel_zone"],
                         "scenario_date": row["date"],
-                        "half_hour_slot": slot,
+                        "hourly_calendar_row": slot,
                         "minute_of_day": int(
                             row["horizon_second_start"] / 60
                         ),
@@ -248,7 +248,7 @@ def build() -> dict[str, Any]:
             "carbon_source_column",
             "diesel_zone",
             "scenario_date",
-            "half_hour_slot",
+            "hourly_calendar_row",
         ],
         "scenario_date": DEFAULT_CHINA81_DATE,
         "instance_count": len(raw_rows),
@@ -282,7 +282,7 @@ def build() -> dict[str, Any]:
                 for path in (
                     STATIC / "instance_catalog.csv",
                     STATIC / "node_city_membership.csv",
-                    RUNTIME / "tariff_carbon_48slot_calendar.csv",
+                    RUNTIME / "tariff_carbon_hourly_calendar.csv",
                     RUNTIME / "decision.json",
                     FLEET / "fleet_caps.csv",
                     FLEET / "decision.json",

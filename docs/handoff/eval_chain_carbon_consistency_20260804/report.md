@@ -28,7 +28,7 @@ PYTHONHASHSEED=0 PYTHONPATH=solver/src:models/src:baselines/algorithm_prototypes
 
 ### 2.1 槽索引口径
 
-**[FACT]** 输入日历是每城市 48 行、`half_hour_slot=1..48`；内部 `charging_slot_breakdown`/`charging_action_slot_breakdown` 使用 0-based `slot_index=0..47`。`cost.py:73-107` 的 `carbon_slot_index` 与 `carbon_profile_row_for_slot` 将时间按 1800 秒映射，并按实际 profile 长度 48 循环；没有 24 槽替换、1-based 直接索引、UTC 另加偏移或整体时移。
+**[FACT]** 输入日历是每城市 48 行、`hourly_calendar_row=1..48`；内部 `charging_slot_breakdown`/`charging_action_slot_breakdown` 使用 0-based `slot_index=0..47`。`cost.py:73-107` 的 `carbon_slot_index` 与 `carbon_profile_row_for_slot` 将时间按 1800 秒映射，并按实际 profile 长度 48 循环；没有 24 槽替换、1-based 直接索引、UTC 另加偏移或整体时移。
 
 **[FACT]** 搜索代理的时变电费/碳值在 `baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py:969-992` 通过同一 `time_profile_rows_for_node` 取候选城市行；完整充电排放在 `cost.py:723-753` 通过同一节点 profile、同一 slot breakdown 和 `carbon_profile_row_for_slot` 结算。T5 的槽输出只是把内部 0-based 槽加 1 展示。
 

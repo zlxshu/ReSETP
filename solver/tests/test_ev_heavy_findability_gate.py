@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 
 from setp_solver.check import check_solution
-from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.prices import DEFAULT_PRICES, UK_2025_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.evaluation import EvaluationContext, score_reference
 from setp_solver.search.winner_operators import WinnerOperatorAction, WinnerOperatorSet, apply_winner_action, e2_alns_throughput_flags
@@ -20,7 +20,7 @@ from baselines.e2_alns import ev_heavy_regime_decision_probe as regime
 class EvHeavyFindabilityGateTest(unittest.TestCase):
     def test_neutral_seed_does_not_load_ev_maximal_solution(self) -> None:
         bundle = load_search_bundle(regime.bundle_path("vanilla", "e2-vanilla-10c-01"))
-        prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=gate.CARBON_PRICE)
+        prices = replace(UK_2025_PRICES, B_battery_kwh=280.0, carbon_price=gate.CARBON_PRICE)
 
         _solution, source = gate.neutral_seed(bundle, prices)
 
@@ -122,7 +122,7 @@ class EvHeavyFindabilityGateTest(unittest.TestCase):
 
     def test_winner_vehicle_type_swap_uses_instance_fleet_caps(self) -> None:
         bundle = load_search_bundle(regime.bundle_path("threeshift", "e2-threeshift-150c-01"))
-        prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=gate.CARBON_PRICE)
+        prices = replace(UK_2025_PRICES, B_battery_kwh=280.0, carbon_price=gate.CARBON_PRICE)
         neutral, _source = gate.neutral_seed(bundle, prices)
         context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices, repair_delta_mode="fast")
         initial_obj = score_reference(neutral, context)

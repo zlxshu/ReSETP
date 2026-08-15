@@ -1,0 +1,443 @@
+"""Soundness gates for exact-BPC certification on stepwise (value-jump) ATFs.
+
+Historical context (M5.9). The vendored Lera BPC *was* unsound on stepwise
+travel-time functions (Rifki2020 and any future step-carrying family): value
+jumps were mollified into 1e-3-wide steep bridge segments, whose
+~1000*step-height slope turned the labeling's epsilon arithmetic and domain
+clamps into O(step-height) merge/dominance mispricing. Negative-reduced-cost
+columns were silently dropped and the branch-and-price closed at a wrong,
+warm-start-dependent "optimum". See ``cpp/lera/NOTICE.md`` item 9 and the
+2026-07-08 Rifki retraction report. Stepwise instances have run on the exact
+tagged-vertical path since M13.0 and the forward-side mollifier is deleted; the
+reverse-side normalizer (``continuize_value_jumps``) is retained because the
+jump-free path needs it, and the gates below pin that (item 9, amendment 7).
+
+These tests are the *specification* of the fix. The M5.9 numerics fix (exact
+coordinate-swap ``Inverse`` for non-decreasing functions) made them pass on the
+local build: the pricing incompleteness that certified 8376 > 8361 is gone
+here, so the gates below are hard gates. **They are necessary, not sufficient**:
+the 2026-07-10 g5k re-certification showed the residual mispricing is
+BUILD-DEPENDENT (bit-identical payloads certify differently under gcc-13/Debian
+vs the local NixOS toolchain; e.g. Rifki-25 n=10 cold 4820 vs true 4357 on g5k
+only). These gates therefore pin local-build soundness against regressions;
+they do not certify the prover on stepwise ATFs. See NOTICE item 9 and the
+2026-07-10 campaign report. The guard tests (jump-free family) must stay green
+throughout. Randomized coverage: ``test_prover_fuzz_soundness.py``.
+
+The decisive minimal reproducer is TDVRPTW/Rifki2020/n=20/Rifki-16: cold solve
+certifies ``Optimum 8376`` while the checker-valid solution below carries cost
+8361 (a 124-unit / 1.46% refutation), and the certified value is warm-start
+dependent (8485 / 8376 / 8361 from stored-BKS / cold / counterexample starts).
+"""
+
+from __future__ import annotations
+
+import pytest
+from mamut_routing_lib.models import BenchmarkSolution
+from mamut_routing_lib.td import (
+    check_td_solution,
+    compute_solution_cost,
+    load_td_instance,
+)
+
+from conftest import benchmarks_root, family_instances, require_benchmarks
+
+
+def _pick(paths, name):
+    for p in paths:
+        if p.name.removesuffix(".vrp.json") == name:
+            return p
+    return None
+
+
+def _need(path, label):
+    """Skip (do not fail) when a specific instance is absent from the checkout.
+
+    ``require_benchmarks()`` only asserts the benchmarks *root* exists; CI and
+    sparse checkouts may carry only a subset (e.g. Dabia n=25), so the
+    stepwise reproducers (Rifki2020) can still be missing. These gates then
+    skip, consistent with every other benchmark-dependent test in the suite.
+    """
+    if path is None or not path.exists():
+        pytest.skip(f"{label} instance not in the benchmark checkout")
+    return path
+
+
+# Decisive minimal reproducer -------------------------------------------------
+RIFKI16_N20 = _pick(family_instances("TDVRPTW", "Rifki2020", ["n=20"]), "Rifki-16")
+
+# A checker-valid solution strictly below the M5.7 "proven optimum" 8485 and
+# below the cold-start "optimum" 8376 (M7.4 ILS counterexample; retraction
+# report 2026-07-08). Its exact checker cost is asserted in-test.
+RIFKI16_N20_COUNTEREXAMPLE = [
+    [5],
+    [8, 13],
+    [10, 16, 12, 18, 2, 19],
+    [17, 6, 20, 9, 3],
+    [7, 4, 15, 11, 14, 1],
+]
+RIFKI16_N20_COUNTEREXAMPLE_COST = 8361.0
+
+# Jump-free regression guard --------------------------------------------------
+C101_N25 = _pick(family_instances("TDVRPTW", "Dabia2013", ["n=25"]), "C101")
+
+
+def _cold(loaded, tl=60.0):
+    from kayros.lera import solve_duration
+
+    return solve_duration(loaded, time_limit_s=tl)
+
+
+def _warm(loaded, routes, tl=60.0):
+    from kayros.lera import solve_duration
+
+    return solve_duration(loaded, time_limit_s=tl, initial_routes=routes)
+
+
+def test_reproducer_counterexample_is_checker_valid():
+    """Sanity: the counterexample really is a valid, cheaper solution.
+
+    This anchors the soundness gates below — if this fails the reproducer data
+    is stale, not the solver.
+    """
+    require_benchmarks()
+    _need(RIFKI16_N20, "Rifki-16 n=20 TDVRPTW")
+    loaded = load_td_instance(RIFKI16_N20)
+    sol = BenchmarkSolution(
+        instance_name="Rifki-16",
+        routes=sorted(RIFKI16_N20_COUNTEREXAMPLE, key=lambda r: r[0]),
+    )
+    chk = check_td_solution(loaded, sol)
+    assert chk.is_valid()
+    assert chk.routing_cost == RIFKI16_N20_COUNTEREXAMPLE_COST
+
+
+def test_stepwise_certified_value_is_sound():
+    """A certified optimum must not exceed a known checker-valid solution.
+
+    Cold solve of the reproducer: the certified value must be <= 8361 (the
+    checker cost of a feasible solution). Fixed in M5.9 (exact non-decreasing
+    ``Inverse`` removed the pricing incompleteness that made the mollified path
+    certify 8376); was strict-xfail before the fix.
+    """
+    require_benchmarks()
+    _need(RIFKI16_N20, "Rifki-16 n=20 TDVRPTW")
+    loaded = load_td_instance(RIFKI16_N20)
+    res = _cold(loaded)
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] <= RIFKI16_N20_COUNTEREXAMPLE_COST
+
+
+def test_stepwise_certification_is_warm_start_independent():
+    """A sound proof cannot depend on the warm start.
+
+    Cold and counterexample-warm solves must both certify Optimum at the same
+    value. Before M5.9: 8376 (cold) vs 8361 (warm) -- warm-start dependence was
+    the decisive soundness signature; now both certify 8361.
+    """
+    require_benchmarks()
+    _need(RIFKI16_N20, "Rifki-16 n=20 TDVRPTW")
+    loaded = load_td_instance(RIFKI16_N20)
+    cold = _cold(loaded)
+    warm = _warm(loaded, RIFKI16_N20_COUNTEREXAMPLE)
+    assert cold["exact_log"]["status"] == "Optimum"
+    assert warm["exact_log"]["status"] == "Optimum"
+    assert cold["value"] == warm["value"]
+
+
+# --- The pinned SYMMETRIC-merge defect (target of the exact value-jump work) --
+
+
+def test_symmetric_merge_stepwise_is_sound(monkeypatch):
+    """Under KAYROS_LBL_SYMMETRIC=1 the prover must certify the true optimum.
+
+    History: unsound (uninitialized-`symmetric` UB era, 4820) -> fixed by the
+    13.2 tags -> apparently regressed (4820) -> ROOT CAUSE was the pricing
+    ladder's unsound termination (memo 13.8: a heuristic level re-pricing an
+    existing column stalled column generation before the Exact level ever ran);
+    fixed by added-driven escalation in the bridge. Hard gate.
+    """
+    require_benchmarks()
+    from conftest import benchmarks_root
+
+    src = benchmarks_root() / "TDVRPTW" / "Rifki2020" / "n=10" / "Rifki-25.vrp.json"
+    _need(src, "Rifki-25 n=10 TDVRPTW")
+    monkeypatch.setenv("KAYROS_LBL_SYMMETRIC", "1")
+    loaded = load_td_instance(src)
+    res = _cold(loaded, tl=60.0)
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] == pytest.approx(4357.0, abs=1e-6)
+
+
+# Shrunk from Rifki-14 n=30 (cold 10207 vs warm 10188 on both platforms, the
+# 2026-07-10 two-platform gate's one material failure). k=15 subset, locally
+# minimal under single drops. The checker-valid solution below (cost 5572,
+# found and certified by the SYMMETRIC tagged-vertical path, cold == warm)
+# refutes BOTH asymmetric arms: cold 5606 AND ILS-warm 5580 — so warm-start
+# agreement alone cannot certify the asymmetric path, and mode-variation
+# (asymmetric vs symmetric) joins the gate family.
+RIFKI14_K15_SRC = ("Rifki2020", "n=30", "Rifki-14")
+RIFKI14_K15_KEEP = [2, 5, 6, 7, 9, 10, 11, 12, 13, 15, 20, 22, 23, 25, 30]
+RIFKI14_K15_TRUE_UB = 5572.0
+RIFKI14_K15_WITNESS = [[8, 9, 7, 13, 3, 1], [6, 2, 4, 10, 15], [12, 11], [5, 14]]
+
+
+def _load_rifki14_k15():
+    from td_fuzz import subsample
+
+    fam, size, name = RIFKI14_K15_SRC
+    src = benchmarks_root() / "TDVRPTW" / fam / size / f"{name}.vrp.json"
+    _need(src, "Rifki-14 n=30 TDVRPTW")
+    return subsample(load_td_instance(src), RIFKI14_K15_KEEP, "Rifki-14-k15")
+
+
+def test_rifki14_k15_witness_is_checker_valid():
+    """Anchor: the 5572 witness is a valid solution of the k=15 subset."""
+    require_benchmarks()
+    inst = _load_rifki14_k15()
+    from mamut_routing_lib.td import compute_solution_cost
+
+    cost = compute_solution_cost(inst.instance, inst.atfs, RIFKI14_K15_WITNESS)
+    assert cost == pytest.approx(RIFKI14_K15_TRUE_UB, abs=1e-6)
+
+
+def test_asymmetric_rifki14_k15_is_sound():
+    """Asymmetric cold must not certify above the checker-valid 5572.
+
+    FIXED by the added-driven ladder escalation (memo 13.8): the label-trace
+    harness showed the witness column's labels were only ever killed at
+    HEURISTIC pricing levels, and the level logs showed the Exact level never
+    ran — the ladder broke on a non-empty pricing pool whose columns were all
+    fingerprint-duplicates, and the BCP read added == 0 as node-optimal. Cold
+    and warm now certify 5572 with Exact iterations in the log. Hard gate.
+    """
+    require_benchmarks()
+    inst = _load_rifki14_k15()
+    res = _cold(inst, tl=120.0)
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] <= RIFKI14_K15_TRUE_UB + 1e-6
+
+
+def test_symmetric_rifki14_k15_is_sound():
+    """The symmetric tagged-vertical path certifies the true 5572 (hard gate)."""
+    require_benchmarks()
+    import os as _os
+
+    _os.environ["KAYROS_LBL_SYMMETRIC"] = "1"
+    try:
+        inst = _load_rifki14_k15()
+        res = _cold(inst, tl=120.0)
+    finally:
+        _os.environ.pop("KAYROS_LBL_SYMMETRIC", None)
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] == pytest.approx(RIFKI14_K15_TRUE_UB, abs=1e-6)
+
+
+# --- M13.0: the 3 exact-arm incompleteness reproducers (session 24) ----------
+# Under KAYROS_STEP_EXACT=1 (the exact tagged-vertical path, which also
+# bypasses the reverse-side normalizer) the cold
+# solve used to certify ABOVE the checker-valid optimum (7451 > 7378,
+# 21330 > 21319; dropped negative-reduced-cost columns), while warm-starting
+# with the witness routes certified the truth: pure pricing incompleteness
+# (the 13.7 signature). FIXED by the session-24 three-layer repair (extension
+# elapsed-time identity, path-keyed solution pool, operator+ stacked-tail
+# hold-back): Rifki-2 and Rifki-17 certify their truths cold == warm and are
+# hard certification gates. Rifki-18 finds the true optimum as its incumbent
+# but cannot close the tree within local TLs on the fixed build (honest
+# TimeLimitReached; the exact path trades speed for completeness there), so
+# its gate asserts SOUNDNESS (never a certificate above the truth, incumbent
+# == truth); its full certification budget is judged by the g5k sweep.
+# Truths are the audited mollified four-run certificates (store BKS).
+M130_EXACT_CASES = {
+    "Rifki-2": ("n=20", 7378.0, 300.0),
+    "Rifki-18": ("n=20", 7127.0, 300.0),
+    "Rifki-17": ("n=50", 21319.0, 600.0),
+}
+
+
+def _exact_cold_result(name, monkeypatch):
+    require_benchmarks()
+    size, truth, tl = M130_EXACT_CASES[name]
+    src = benchmarks_root() / "TDVRPTW" / "Rifki2020" / size / f"{name}.vrp.json"
+    _need(src, f"{name} {size} TDVRPTW")
+    monkeypatch.setenv("KAYROS_STEP_EXACT", "1")
+    loaded = load_td_instance(src)
+    return _cold(loaded, tl=tl), truth
+
+
+def test_exact_path_rifki2_n20_certifies_truth(monkeypatch):
+    res, truth = _exact_cold_result("Rifki-2", monkeypatch)
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] <= truth + 1e-6
+
+
+def test_exact_path_rifki17_n50_certifies_truth(monkeypatch):
+    res, truth = _exact_cold_result("Rifki-17", monkeypatch)
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] <= truth + 1e-6
+
+
+def test_exact_path_rifki18_n20_is_sound(monkeypatch):
+    res, truth = _exact_cold_result("Rifki-18", monkeypatch)
+    status = res["exact_log"]["status"]
+    if status == "Optimum":
+        assert res["value"] <= truth + 1e-6
+    else:
+        # Honest TL: the incumbent must have reached the true optimum and the
+        # dual bound must not contradict it (an above-truth certificate is the
+        # defect this gate exists for).
+        assert status == "TimeLimitReached"
+        assert res["exact_log"]["best_int_value"] == pytest.approx(truth, abs=1e-6)
+        assert res["exact_log"]["best_bound"] <= truth + 1e-6
+
+
+# Fuzzer-pinned jump-free guard (2026-07-10): the dominator-side choice-min
+# experiment over-certified this subset (7667.4 > 7526); it must stay at the
+# ILS-confirmed optimum. Fast (seconds).
+C102_K7_SRC = ("Dabia2013", "n=25", "C102")
+C102_K7_KEEP = [5, 7, 9, 12, 13, 15, 17]
+C102_K7_TRUE = 7525.999728501456  # checker-exact; ILS matches at display precision
+
+
+def test_jumpfree_c102_k7_guard():
+    from td_fuzz import subsample
+
+    require_benchmarks()
+    fam, size, name = C102_K7_SRC
+    src = benchmarks_root() / "TDVRPTW" / fam / size / f"{name}.vrp.json"
+    inst = subsample(load_td_instance(src), C102_K7_KEEP, "C102-k7")
+    res = _cold(inst, tl=60.0)
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] == pytest.approx(C102_K7_TRUE, abs=1e-9)
+
+
+# --- M13.3: the jump-free over-certification the M13.0 gating premise caused --
+# M13.0 selected its new step-arc extension arithmetic (and the goc vertical
+# rules) on "does any operand carry a vertical", asserting that jump-free
+# instances carry none. That premise is FALSE: CHOICE verticals (Inverse of a
+# departure plateau) and set-valued label durations are ubiquitous on jump-free
+# instances (probe on this very instance: 6560 step-arc extensions vs 1387
+# legacy, zero of them at a JUMP vertical). The exact-path arithmetic is sound
+# only against exact-path semantics, so on jump-free data it certified optima
+# strictly ABOVE checker-valid solutions on at least six Vu2020 instances
+# (+0.29 to +9.88). M13.3 gates both layers on the solve being step-carrying
+# (KAYROS_STEP_EXACT), restoring the audited kayros 1.0.0 arithmetic here.
+#
+# This is the largest of the six (+4.27 at M13.0..1.5.0) and the fastest to
+# close (~10-25 s cold). The truth is the stored MAMUT certificate, which the
+# pre-M13.0 build reproduces bit-exactly and which an independent checker-valid
+# solution attains.
+VU_A5PA_D90_W40 = ("Vu2020", "n=59", "Vu-A5-pA-d90-w40")
+VU_A5PA_D90_W40_TRUE = 2760.1098340282865
+
+
+def test_jumpfree_vu2020_certificate_is_not_above_the_truth():
+    """A jump-free cold certificate must not exceed the known optimum.
+
+    Hard soundness gate. M13.0 through 1.5.0 certified ``Optimum
+    2764.379834028286`` here, 4.27 above a checker-valid solution: a live
+    over-certification, not a bound-quality issue. Also checks the returned
+    solution prices at the certified value under the reference checker, so a
+    "sound" value backed by an infeasible route cannot pass.
+    """
+    require_benchmarks()
+    fam, size, name = VU_A5PA_D90_W40
+    src = benchmarks_root() / "TDVRPTW" / fam / size / f"{name}.vrp.json"
+    _need(src, f"{name} {size} TDVRPTW")
+    loaded = load_td_instance(src)
+    res = _cold(loaded, tl=600.0)
+    assert res["stepwise_atfs"] is False  # the premise this gate is about
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] <= VU_A5PA_D90_W40_TRUE + 1e-6
+    from kayros.lera import routes_to_mamut
+
+    routes = [
+        r[1:-1] for r in routes_to_mamut(res["routes"], loaded.instance.num_customers)
+    ]
+    assert res["value"] == pytest.approx(
+        compute_solution_cost(loaded.instance, loaded.atfs, routes), abs=1e-6
+    )
+
+
+# --- The reverse-side discriminators (2026-08-05) ---------------------------
+#
+# These two are the instances that catch a regression in the REVERSE instance
+# construction, which the Vu-A5-pA-d90-w40 gate above does not: when the
+# reverse-side normalizer ``continuize_value_jumps`` was deleted as presumed
+# mollifier residue, Vu-A5-pA-d90-w40 kept certifying its exact stored value
+# while these two rose above checker-valid stored solutions (1278.2616 against
+# 1275.8316, and 1852.9437 against 1846.8070), deterministically and with the
+# tree closed. The mechanism is that the reflected reverse arrival carries
+# CHOICE verticals (``Inverse`` of a departure plateau, carried through
+# ``FlipTime``/``FlipValue``), which the normalizer flattens and which the
+# legacy jump-free arithmetic cannot handle. Truths are the stored MAMUT BKS
+# costs, each attained by an independently checker-valid solution.
+VU_REVERSE_SIDE_CASES = {
+    "Vu-A2-pB-d98-w60": 1275.8316212247312,
+    "Vu-A2-pB-d98-w100": 1846.8070188618972,
+}
+
+
+@pytest.mark.parametrize("name", sorted(VU_REVERSE_SIDE_CASES))
+def test_jumpfree_reverse_side_certificate_is_not_above_the_truth(name):
+    """A jump-free cold certificate must not exceed a checker-valid solution.
+
+    Hard soundness gate on the reverse instance construction. Companion to
+    ``test_jumpfree_vu2020_certificate_is_not_above_the_truth``, which pins the
+    forward/extension side: that one passes on a build whose reverse arrivals
+    are wrong, so these two carry the reverse-side signal on their own. As
+    there, the returned solution must also price at the certified value under
+    the reference checker, so a "sound" value backed by an infeasible route
+    cannot pass.
+    """
+    require_benchmarks()
+    truth = VU_REVERSE_SIDE_CASES[name]
+    src = benchmarks_root() / "TDVRPTW" / "Vu2020" / "n=59" / f"{name}.vrp.json"
+    _need(src, f"{name} n=59 TDVRPTW")
+    loaded = load_td_instance(src)
+    res = _cold(loaded, tl=600.0)
+    assert res["stepwise_atfs"] is False  # the premise this gate is about
+    assert res["exact_log"]["status"] == "Optimum"
+    assert res["value"] <= truth + 1e-6
+    from kayros.lera import routes_to_mamut
+
+    routes = [
+        r[1:-1] for r in routes_to_mamut(res["routes"], loaded.instance.num_customers)
+    ]
+    assert res["value"] == pytest.approx(
+        compute_solution_cost(loaded.instance, loaded.atfs, routes), abs=1e-6
+    )
+
+
+# --- Regression guards: jump-free family proofs must stay correct/stable -----
+
+
+def test_jumpfree_certification_is_warm_start_independent():
+    """Dabia2013 C101 (jump-free): cold and warm certify the same optimum."""
+    require_benchmarks()
+    assert C101_N25 is not None
+    loaded = load_td_instance(C101_N25)
+    cold = _cold(loaded, tl=120.0)
+    assert cold["exact_log"]["status"] == "Optimum"
+    routes = [
+        r[1:-1]
+        for r in __import__("kayros.lera", fromlist=["routes_to_mamut"]).routes_to_mamut(
+            cold["routes"], loaded.instance.num_customers
+        )
+    ]
+    warm = _warm(loaded, routes, tl=120.0)
+    assert warm["exact_log"]["status"] == "Optimum"
+    assert cold["value"] == warm["value"]
+    # And the reported value is checker-exact.
+    assert cold["value"] == compute_solution_cost(loaded.instance, loaded.atfs, routes)
+
+
+def test_jumpfree_certification_is_deterministic():
+    """Two cold solves of the jump-free guard agree bit-for-bit."""
+    require_benchmarks()
+    assert C101_N25 is not None
+    loaded = load_td_instance(C101_N25)
+    a = _cold(loaded, tl=120.0)
+    b = _cold(loaded, tl=120.0)
+    assert a["value"] == b["value"]
+    assert a["exact_log"]["status"] == b["exact_log"]["status"] == "Optimum"

@@ -2,7 +2,7 @@
 
 > **对照方法**：左列 = 陈雨蝶模板要求，右列 = 你论文的现状。✅ = 符合，⚠️ = 部分符合需调整，❌ = 缺失/严重不符。
 >
-> **对照对象**：`/docs/paper_submission_final/paper_main.tex`（你的论文）vs `陈雨蝶2025论文模板手册.md`（标准模板）
+> **对照对象**：`/docs/paper_submission_final/RETIRED_paper_main.tex`（你的论文）vs `陈雨蝶2025论文模板手册.md`（标准模板）
 
 ---
 

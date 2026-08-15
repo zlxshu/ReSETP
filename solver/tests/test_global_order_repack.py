@@ -72,15 +72,15 @@ class GlobalOrderRepackTests(unittest.TestCase):
 
     def test_global_repack_candidate_uses_existing_referee(self) -> None:
         from setp_solver.check import check_solution
-        from setp_solver.prices import DEFAULT_PRICES
+        from setp_solver.prices import UK_2025_PRICES
         from setp_solver.search.evaluation import EvaluationContext, model_cost
         from setp_solver.algorithms.resetp_alns.support.global_order_repack import (
             propose_global_order_repack,
         )
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
-        solution = make_shared_initial_solution(bundle)
-        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+        solution = make_shared_initial_solution(bundle, prices=UK_2025_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=UK_2025_PRICES)
 
         outcome = propose_global_order_repack(
             solution,
@@ -92,7 +92,7 @@ class GlobalOrderRepackTests(unittest.TestCase):
 
         self.assertGreaterEqual(outcome.attempts, 1)
         if outcome.solution is not None:
-            self.assertFalse(check_solution(outcome.solution, bundle.instance, DEFAULT_PRICES))
+            self.assertFalse(check_solution(outcome.solution, bundle.instance, UK_2025_PRICES))
             self.assertIsInstance(outcome.trace_rows, list)
             self.assertIsNotNone(outcome.objective)
 

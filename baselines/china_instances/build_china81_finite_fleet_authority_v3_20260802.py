@@ -718,13 +718,13 @@ def compute() -> dict[str, Any]:
                     "num_cv": total - default_ev[model.depot_id],
                     "num_ev": default_ev[model.depot_id],
                     "total_fleet_cap": total,
-                    "default_electrification_level_percent": int(DEFAULT_LEVEL),
-                    "depot_charger_count": 2,
+                    "default_fleet_electrification_percent_metadata_only": int(DEFAULT_LEVEL),
+                    "configured_depot_gun_count_if_finite": 2,
                     "depot_charge_power_kw": "22.0",
                     "depot_charger_capacity_default": "UNBOUNDED",
                     "fleet_parameter_class": "DERIVED_FIXED_TOTAL_MULTITRIP_ZERO_SEARCH_AUTHORITY",
                     "charger_parameter_class": "UNBOUNDED_DEFAULT__FINITE_2_OPTIONAL_HISTORICAL",
-                    "level_allocations_json": json.dumps(
+                    "fleet_allocation_map_metadata_only": json.dumps(
                         allocations,
                         ensure_ascii=False,
                         sort_keys=True,

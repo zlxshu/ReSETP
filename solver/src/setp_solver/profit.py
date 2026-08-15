@@ -13,10 +13,13 @@ import math
 from typing import Any
 
 from .cost import (
+    _e5_route_time_seconds,
     _evaluate_route,
+    _optional_price,
     _price,
     charging_action_electricity_cost,
     charging_action_emissions_kg,
+    diesel_price_for_route,
 )
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
@@ -32,6 +35,7 @@ class DepotProfitBreakdown:
     cost_fuel: float
     cost_electricity: float
     cost_occupancy: float
+    cost_time: float
     cost_transship: float
     cost_carbon: float
     cost_total: float
@@ -75,10 +79,10 @@ def calculate_depot_profits(
     """Return paper ``Pi_d`` and ``C_d`` components by service depot.
 
     Revenue follows ``R_i = rho * q_i`` and is credited to the depot serving the
-    customer. Fixed, distance, fuel, electricity, occupancy, and carbon costs
-    are allocated to the vehicle's route home depot. Cross-site service cost is
-    charged when the service depot differs from inferred or supplied
-    ``d_i^0``.
+    customer. Fixed, distance, fuel, electricity, occupancy, route-time, and
+    carbon costs are allocated to the vehicle's route home depot. Cross-site
+    service cost is charged when the service depot differs from inferred or
+    supplied ``d_i^0``.
     """
 
     node_lookup = {node.node_id: node for node in instance.nodes}
@@ -103,7 +107,10 @@ def calculate_depot_profits(
         fixed_cost_depot = fixed_cost_depot_by_vehicle.get(vehicle_key)
         if fixed_cost_depot is None:
             fixed_cost_depot_by_vehicle[vehicle_key] = depot_id
-            row["cost_fixed"] += _price(prices, "vehicle_fixed_cost")
+            row["cost_fixed"] += instance.vehicle_fixed_cost_per_day(
+                route.vehicle_type,
+                fallback=_price(prices, "vehicle_fixed_cost"),
+            )
         elif fixed_cost_depot != depot_id:
             raise ValueError(
                 "one physical vehicle cannot have multiple home depots: "
@@ -118,7 +125,11 @@ def calculate_depot_profits(
             )
         )
         if route.vehicle_type.lower() == "cv":
-            row["cost_fuel"] += route_energy.fuel_liters * _price(prices, "diesel_price")
+            row["cost_fuel"] += route_energy.fuel_liters * diesel_price_for_route(
+                route,
+                instance,
+                prices,
+            )
             row["cv_direct_emissions_kg"] += route_energy.fuel_liters * _price(prices, "diesel_ef")
         for customer_id in _route_customer_ids(route, node_lookup):
             customer = node_lookup[customer_id]
@@ -157,6 +168,25 @@ def calculate_depot_profits(
             prices,
         )
 
+    actions_by_vehicle: dict[str, list[ChargingAction]] = {}
+    for action in solution.charging_actions:
+        actions_by_vehicle.setdefault(action.vehicle_id, []).append(action)
+    time_rate = _optional_price(prices, "route_time_cost_per_hour")
+    for route in solution.routes:
+        data[route.home_depot_id]["cost_time"] += (
+            _e5_route_time_seconds(
+                Solution(
+                    routes=[route],
+                    charging_actions=actions_by_vehicle.get(route.vehicle_id, []),
+                ),
+                instance,
+                node_lookup,
+                prices,
+            )
+            / 3600.0
+            * time_rate
+        )
+
     total_emissions = sum(row["cv_direct_emissions_kg"] + row["ev_indirect_emissions_kg"] for row in data.values())
     # v2026-06-12: W2a keeps depot-profit allocation numerically consistent
     # with cost.evaluate: CE=inf is a safe no-trading sentinel, while the paper
@@ -188,6 +218,7 @@ def _empty_row(depot_id: str, prior_profit: float) -> dict[str, float]:
         "cost_fuel": 0.0,
         "cost_electricity": 0.0,
         "cost_occupancy": 0.0,
+        "cost_time": 0.0,
         "cost_transship": 0.0,
         "cost_carbon": 0.0,
         "customers_served": 0.0,
@@ -207,6 +238,7 @@ def _finalize_row(depot_id: str, row: dict[str, float]) -> DepotProfitBreakdown:
         + row["cost_fuel"]
         + row["cost_electricity"]
         + row["cost_occupancy"]
+        + row["cost_time"]
         + row["cost_transship"]
         + row["cost_carbon"]
     )
@@ -219,6 +251,7 @@ def _finalize_row(depot_id: str, row: dict[str, float]) -> DepotProfitBreakdown:
         cost_fuel=row["cost_fuel"],
         cost_electricity=row["cost_electricity"],
         cost_occupancy=row["cost_occupancy"],
+        cost_time=row["cost_time"],
         cost_transship=row["cost_transship"],
         cost_carbon=row["cost_carbon"],
         cost_total=cost_total,

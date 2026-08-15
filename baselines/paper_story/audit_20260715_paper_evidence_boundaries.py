@@ -23,7 +23,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from baselines.paper_story import build_20260715_formal_evidence as evidence_builder  # noqa: E402
 
-TEX = ROOT / "docs/paper_submission_final/paper_main.tex"
+TEX = ROOT / "docs/paper_submission_final/RETIRED_paper_main.tex"
 PAPER_DIR = TEX.parent
 PAPER_PDF = PAPER_DIR / "paper_main.pdf"
 PAPER_LOG = PAPER_DIR / "paper_main.log"

@@ -68,6 +68,7 @@ private:
 
     std::vector<NodeOperator *> nodeOps;
     std::vector<RouteOperator *> routeOps;
+    bool hasInitialEmptyRouteOperator = false;
 
     size_t numUpdates_ = 0;         // modification counter
     bool searchCompleted_ = false;  // No further improving move found?
@@ -81,7 +82,8 @@ private:
     // Tests the node pair (U, V).
     bool applyNodeOps(Route::Node *U,
                       Route::Node *V,
-                      CostEvaluator const &costEvaluator);
+                      CostEvaluator const &costEvaluator,
+                      bool initialEmptyOnly = false);
 
     // Tests the route pair (U, V).
     bool applyRouteOps(Route *U, Route *V, CostEvaluator const &costEvaluator);
@@ -92,7 +94,8 @@ private:
 
     // Tests moves involving empty routes.
     void applyEmptyRouteMoves(Route::Node *U,
-                              CostEvaluator const &costEvaluator);
+                              CostEvaluator const &costEvaluator,
+                              bool initialEmptyOnly);
 
     // Tests moves involving missing or optional clients.
     void applyOptionalClientMoves(Route::Node *U,
@@ -114,6 +117,11 @@ private:
     // improving move or required for feasibility.
     void
     insert(Route::Node *U, CostEvaluator const &costEvaluator, bool required);
+
+    // Inserts one required client at the cheapest hard-feasible position.
+    // Every position is screened through the cached Route::Proposal path.
+    bool insertRequiredFeasible(Route::Node *U,
+                                CostEvaluator const &costEvaluator);
 
 public:
     /**
@@ -175,6 +183,14 @@ public:
      */
     Solution intensify(Solution const &solution,
                        CostEvaluator const &costEvaluator);
+
+    /**
+     * Insert every required client missing from the supplied solution using
+     * the same cached insertion path as regular local search, without
+     * applying any other neighbourhood move.
+     */
+    Solution repairRequired(Solution const &solution,
+                            CostEvaluator const &costEvaluator);
 
     /**
      * Shuffles the order in which the node and route pairs are evaluated, and

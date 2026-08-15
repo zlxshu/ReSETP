@@ -178,7 +178,7 @@ def _protected_hashes() -> dict[str, str]:
         ROOT / "solver/src/setp_solver/check.py",
         ROOT / "solver/src/setp_solver/search/evaluation.py",
         ROOT / "solver/src/setp_solver/prices.py",
-        ROOT / "docs/paper_submission_final/paper_main.tex",
+        ROOT / "docs/paper_submission_final/RETIRED_paper_main.tex",
         PACKAGE / "run_p3_china81_formal.py",
         P3_RAW,
         SEALED_S3_RAW,

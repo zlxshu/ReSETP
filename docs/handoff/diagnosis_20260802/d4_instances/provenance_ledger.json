@@ -146,8 +146,8 @@
     "input_name": "车场充电桩数量与功率",
     "class": "构造",
     "evidence": [
-      "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv: fields depot_charger_count=2, depot_charge_power_kw=22.0, charger_parameter_class=CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT",
-      "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv: fields depot_power_kw=22.0, depot_gun_count=2, depot_parameter_class=UNIFORM_PLANNED_CAPACITY_SCENARIO_PROXY"
+      "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv: fields configured_depot_gun_count_if_finite=2, depot_charge_power_kw=22.0, charger_parameter_class=CONSTRUCTED_SCENARIO_NOT_OBSERVED_SITE_CONTRACT",
+      "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/facilities.csv: fields depot_site_power_kw_shadow=22.0, depot_gun_count=2, depot_parameter_class=UNIFORM_PLANNED_CAPACITY_SCENARIO_PROXY"
     ],
     "note": "不是命名园区现场充电设备或合同观测。"
   },
@@ -173,7 +173,7 @@
     "class": "构造",
     "evidence": [
       "data/ChinaPrices/china_2025_02_tariff_register_v2.json: fields formal_row_rule, f3_scenario_rule.main, city_to_price_area",
-      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv: fields tariff_row_class=ONE_TO_TEN_KV_SINGLE_PART_SCENARIO_ROW, price_area_id",
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv: fields tariff_row_class=ONE_TO_TEN_KV_SINGLE_PART_SCENARIO_ROW, price_area_id",
       "docs/paper_v2/paper_main.tex:1030（明确为构造情景、非命名车场合同观测）"
     ],
     "note": "价表公开不等于命名园区采用该电压、计费制和利用档；最终适用行是研究情景。"
@@ -182,7 +182,7 @@
     "input_name": "公共充电服务费0.40元/kWh",
     "class": "未登记",
     "evidence": [
-      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv: fields public_service_fee_cny_per_kwh=0.4, service_fee_class=UNIFORM_SCENARIO_PROXY_NOT_MARKET_OBSERVATION",
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv: fields public_service_fee_cny_per_kwh=0.4, service_fee_class=UNIFORM_SCENARIO_PROXY_NOT_MARKET_OBSERVATION",
       "docs/handoff/ledger_input_provenance_01_20260728/report.md:563-574（未找到九城命名站同值一手价目）"
     ],
     "note": "有实现值和情景标签，但没有精确支撑九城统一0.40的来源登记。"
@@ -192,7 +192,7 @@
     "class": "公开发布",
     "evidence": [
       "docs/handoff/ledger_input_provenance_01_20260728/report.md:329-339（Figshare DOI 10.6084/m9.figshare.28953545.v3、原始文件哈希与S1投影边界）",
-      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv: fields carbon_factor_kgco2e_per_kwh, carbon_source_column"
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv: fields carbon_factor_kgco2e_per_kwh, carbon_source_column"
     ],
     "note": "公开数据集是模型模拟的省级情景投影，不是官方实测、实时或边际碳强度。"
   },
@@ -301,7 +301,7 @@
     "class": "公开发布",
     "evidence": [
       "baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/diesel_price_2025_02_12_source_register.csv: fields reviewed_source_strength（DIRECT_OFFICIAL_*）, reviewed_source_url, source_file, source_sha256",
-      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv: fields diesel_price_cny_per_l, diesel_source_strength, diesel_source_file"
+      "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv: fields diesel_price_cny_per_l, diesel_source_strength, diesel_source_file"
     ],
     "note": "八个城市由五个公开区域价表映射；城市共用所属省级/区域价。"
   },

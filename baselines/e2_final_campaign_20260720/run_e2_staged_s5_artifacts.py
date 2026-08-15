@@ -627,7 +627,7 @@ def setup_axes(ax: Any) -> None:
 def plot_carbon_profile() -> dict[str, Any]:
     source = [
         row
-        for row in read_csv(RUNTIME / "tariff_carbon_48slot_calendar.csv")
+        for row in read_csv(RUNTIME / "tariff_carbon_hourly_calendar.csv")
         if row["date"] == "2025-02-12"
     ]
     selections = (
@@ -640,7 +640,7 @@ def plot_carbon_profile() -> dict[str, Any]:
     for city, label, color, style, marker in selections:
         rows = sorted(
             (row for row in source if row["city"] == city),
-            key=lambda row: int(row["half_hour_slot"]),
+            key=lambda row: int(row["hourly_calendar_row"]),
         )
         if len(rows) != 48:
             raise RuntimeError(f"{city}: expected 48 half-hour rows")
@@ -667,7 +667,7 @@ def plot_carbon_profile() -> dict[str, Any]:
                 "city_group": label,
                 "representative_city": city,
                 "date": row["date"],
-                "half_hour_slot": int(row["half_hour_slot"]),
+                "hourly_calendar_row": int(row["hourly_calendar_row"]),
                 "time_h": float(row["minute_of_day"]) / 60.0,
                 "carbon_intensity_gco2_per_kwh": 1000.0
                 * float(row["carbon_factor_kgco2e_per_kwh"]),
@@ -1025,7 +1025,7 @@ def main() -> int:
         S4 / "decision.json",
         P1 / "raw_runs.csv",
         P1 / "decision.json",
-        RUNTIME / "tariff_carbon_48slot_calendar.csv",
+        RUNTIME / "tariff_carbon_hourly_calendar.csv",
         RUNTIME / "decision.json",
         Path(__file__).resolve(),
     )

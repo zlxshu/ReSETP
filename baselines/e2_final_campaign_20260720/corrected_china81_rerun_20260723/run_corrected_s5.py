@@ -422,7 +422,7 @@ def china81_summary(
 def plot_carbon() -> dict[str, Any]:
     rows = [
         row
-        for row in read_csv(RUNTIME / "tariff_carbon_48slot_calendar.csv")
+        for row in read_csv(RUNTIME / "tariff_carbon_hourly_calendar.csv")
         if row["date"] == "2025-02-12"
     ]
     selections = (
@@ -435,7 +435,7 @@ def plot_carbon() -> dict[str, Any]:
     for city, label, color, style in selections:
         city_rows = sorted(
             (row for row in rows if row["city"] == city),
-            key=lambda row: int(row["half_hour_slot"]),
+            key=lambda row: int(row["hourly_calendar_row"]),
         )
         if len(city_rows) != 48:
             raise RuntimeError(f"{city}: expected 48 slots")
@@ -450,7 +450,7 @@ def plot_carbon() -> dict[str, Any]:
                 "region_label": label,
                 "representative_city": city,
                 "scenario_date": row["date"],
-                "half_hour_slot": int(row["half_hour_slot"]),
+                "hourly_calendar_row": int(row["hourly_calendar_row"]),
                 "time_h": float(row["minute_of_day"]) / 60.0,
                 "carbon_intensity_gco2_per_kwh": 1000.0
                 * float(row["carbon_factor_kgco2e_per_kwh"]),
@@ -857,7 +857,7 @@ def main() -> int:
                     P1 / "decision.json",
                     FULL_REPLAY / "raw_runs.csv",
                     FULL_REPLAY / "decision.json",
-                    RUNTIME / "tariff_carbon_48slot_calendar.csv",
+                    RUNTIME / "tariff_carbon_hourly_calendar.csv",
                     RUNTIME / "decision.json",
                     RUNTIME / "artifact_hashes.json",
                     Path(__file__).resolve(),

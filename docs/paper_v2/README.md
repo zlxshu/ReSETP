@@ -55,5 +55,5 @@
 
 ## 与原稿的差异
 
-- `docs/paper_submission_final/paper_main.tex` — 原稿, **未修改**
-- `docs/paper_v2/paper_main.tex` — V2, 全新壳子
+- `docs/paper_submission_final/RETIRED_paper_main.tex` — 原稿, **未修改**
+- `docs/paper_v2/RETIRED_paper_main.tex` — V2, 全新壳子

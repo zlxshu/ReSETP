@@ -1,4 +1,5 @@
 #include "bindings.h"
+#include "DepotSplit.h"
 #include "Exchange.h"
 #include "LocalSearch.h"
 #include "RelocateWithDepot.h"
@@ -16,9 +17,12 @@
 
 namespace py = pybind11;
 
+using setp_hgs_kernel::search::DepotSplit;
 using setp_hgs_kernel::search::Exchange;
 using setp_hgs_kernel::search::inplaceCost;
 using setp_hgs_kernel::search::insertCost;
+using setp_hgs_kernel::search::insertReloadCost;
+using setp_hgs_kernel::search::insertReloadFeasible;
 using setp_hgs_kernel::search::LocalSearch;
 using setp_hgs_kernel::search::NodeOperator;
 using setp_hgs_kernel::search::OperatorStatistics;
@@ -40,6 +44,23 @@ PYBIND11_MODULE(_search, m)
         m, "OperatorStatistics", DOC(setp_hgs_kernel, search, OperatorStatistics))
         .def_readonly("num_evaluations", &OperatorStatistics::numEvaluations)
         .def_readonly("num_applications", &OperatorStatistics::numApplications);
+
+    py::class_<DepotSplit, NodeOperator>(m, "DepotSplit")
+        .def(py::init<setp_hgs_kernel::ProblemData const &,
+                      std::vector<size_t>>(),
+             py::arg("data"),
+             py::arg("compatible_vehicle_groups"),
+             py::keep_alive<1, 2>())
+        .def_property_readonly("statistics",
+                               &DepotSplit::statistics,
+                               py::return_value_policy::reference_internal)
+        .def("evaluate",
+             &DepotSplit::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &DepotSplit::apply, py::arg("U"), py::arg("V"))
+        .def_static("supports", &supports<DepotSplit>, py::arg("data"));
 
     py::class_<Exchange<1, 0>, NodeOperator>(
         m, "Exchange10", DOC(setp_hgs_kernel, search, Exchange))
@@ -300,6 +321,11 @@ PYBIND11_MODULE(_search, m)
              py::arg("solution"),
              py::arg("cost_evaluator"),
              py::call_guard<py::gil_scoped_release>())
+        .def("repair_required",
+             &LocalSearch::repairRequired,
+             py::arg("solution"),
+             py::arg("cost_evaluator"),
+             py::call_guard<py::gil_scoped_release>())
         .def("shuffle", &LocalSearch::shuffle, py::arg("rng"));
 
     py::class_<Route>(m, "Route", DOC(setp_hgs_kernel, search, Route))
@@ -489,6 +515,21 @@ PYBIND11_MODULE(_search, m)
           py::arg("data"),
           py::arg("cost_evaluator"),
           DOC(setp_hgs_kernel, search, insertCost));
+
+    m.def("insert_reload_cost",
+          &insertReloadCost,
+          py::arg("V"),
+          py::arg("depot"),
+          py::arg("data"),
+          py::arg("cost_evaluator"),
+          DOC(setp_hgs_kernel, search, insertReloadCost));
+
+    m.def("insert_reload_feasible",
+          &insertReloadFeasible,
+          py::arg("V"),
+          py::arg("depot"),
+          py::arg("data"),
+          DOC(setp_hgs_kernel, search, insertReloadFeasible));
 
     m.def("inplace_cost",
           &inplaceCost,

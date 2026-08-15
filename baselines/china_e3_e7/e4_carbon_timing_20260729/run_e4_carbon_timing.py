@@ -255,7 +255,7 @@ def discover_inputs() -> list[dict[str, Any]]:
 
 
 def validate_calendar() -> dict[str, Any]:
-    path = PARAMETER_AUTHORITY / "tariff_carbon_48slot_calendar.csv"
+    path = PARAMETER_AUTHORITY / "tariff_carbon_hourly_calendar.csv"
     with path.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     cities = sorted({row["city"].strip().lower() for row in rows})
@@ -268,7 +268,7 @@ def validate_calendar() -> dict[str, Any]:
     if set(counts.values()) != {48} or len(rows) != 9 * 28 * 48:
         raise RuntimeError("calendar must contain 48 rows for every city/date")
     wrapper_path = (
-        APPROVED_WRAPPER_AUTHORITY / "tariff_carbon_48slot_calendar.csv"
+        APPROVED_WRAPPER_AUTHORITY / "tariff_carbon_hourly_calendar.csv"
     )
     with wrapper_path.open(newline="", encoding="utf-8") as handle:
         wrapper_rows = list(csv.DictReader(handle))
@@ -276,7 +276,7 @@ def validate_calendar() -> dict[str, Any]:
         "city",
         "region",
         "date",
-        "half_hour_slot",
+        "hourly_calendar_row",
         "minute_of_day",
         "tariff_period",
         "depot_energy_cny_per_kwh",
@@ -347,7 +347,7 @@ def load_e4_bundle(instance_id: str, date: str) -> Any:
         if node.city is not None and str(node.city).strip()
     }
     profile = _load_time_profile(
-        PARAMETER_AUTHORITY / "tariff_carbon_48slot_calendar.csv",
+        PARAMETER_AUTHORITY / "tariff_carbon_hourly_calendar.csv",
         cities=cities,
         date=date,
         require_explicit_mapping=False,
@@ -356,7 +356,7 @@ def load_e4_bundle(instance_id: str, date: str) -> Any:
     source_paths["timing_calendar"] = str(
         (
             PARAMETER_AUTHORITY
-            / "tariff_carbon_48slot_calendar.csv"
+            / "tariff_carbon_hourly_calendar.csv"
         ).relative_to(ROOT)
     )
     source_paths["approved_bundle_wrapper"] = str(

@@ -95,7 +95,7 @@ def build_metadata(pre: dict[str, Any]) -> dict[str, Any]:
                 "solver/src/setp_solver/check.py",
                 "solver/src/setp_solver/search/evaluation.py",
                 "solver/src/setp_solver/prices.py",
-                "docs/paper_submission_final/paper_main.tex",
+                "docs/paper_submission_final/RETIRED_paper_main.tex",
             ],
         },
         "pre_commit": pre.get("commit"),
@@ -375,7 +375,7 @@ def run_protected_file_gate() -> dict[str, Any]:
         "solver/src/setp_solver/check.py",
         "solver/src/setp_solver/search/evaluation.py",
         "solver/src/setp_solver/prices.py",
-        "docs/paper_submission_final/paper_main.tex",
+        "docs/paper_submission_final/RETIRED_paper_main.tex",
     ]
     proc = subprocess.run(cmd, cwd=REPO_ROOT, check=False, text=True, capture_output=True)
     return {"ok": proc.returncode == 0 and not proc.stdout.strip(), "returncode": proc.returncode, "stdout": proc.stdout}

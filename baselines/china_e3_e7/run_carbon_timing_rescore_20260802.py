@@ -130,7 +130,7 @@ PROTECTED_PATHS = (
     ROOT / "solver/src/setp_solver/cost.py",
     ROOT / "solver/src/setp_solver/check.py",
     ROOT / "solver/src/setp_solver/search/evaluation.py",
-    ROOT / "docs/paper_v2/paper_main.tex",
+    ROOT / "docs/paper_v2/RETIRED_paper_main.tex",
 )
 
 
@@ -270,7 +270,7 @@ def fixed_bundle(instance_id: str, date: str) -> Any:
         if node.city is not None and str(node.city).strip()
     }
     profile = _load_time_profile(
-        RUNTIME_V3 / "tariff_carbon_48slot_calendar.csv",
+        RUNTIME_V3 / "tariff_carbon_hourly_calendar.csv",
         cities=cities,
         date=date,
         require_explicit_mapping=False,
@@ -1505,8 +1505,8 @@ def main() -> int:
         FLEET_ROOT / "artifact_hashes.json",
         FLEET_EVIDENCE_ROOT / "metadata.json",
         FLEET_EVIDENCE_ROOT / "decision.json",
-        RUNTIME_V3 / "tariff_carbon_48slot_calendar.csv",
-        RUNTIME_V4 / "tariff_carbon_48slot_calendar.csv",
+        RUNTIME_V3 / "tariff_carbon_hourly_calendar.csv",
+        RUNTIME_V4 / "tariff_carbon_hourly_calendar.csv",
     )
     joint_source_manifest = {
         rel(item["path"]): sha256_path(item["path"])

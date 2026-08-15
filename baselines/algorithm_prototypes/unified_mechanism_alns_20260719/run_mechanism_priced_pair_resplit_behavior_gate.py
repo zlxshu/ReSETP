@@ -58,7 +58,7 @@ VERDICT_STOP = "STOP_MECHANISM_PRICED_PAIR_RESPLIT_BEHAVIOR"
 LOCKED_FILES = (
     "docs/handoff/mechanism_priced_pair_resplit_contract_20260719.md",
     "docs/handoff/algorithm_source_and_license_register_20260719.md",
-    "docs/paper_submission_final/paper_main.tex",
+    "docs/paper_submission_final/RETIRED_paper_main.tex",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_priced_pair_resplit_solver.py",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_priced_pair_resplit_fixtures.py",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_priced_pair_resplit_oracle.py",

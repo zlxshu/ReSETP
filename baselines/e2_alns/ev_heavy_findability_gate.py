@@ -313,14 +313,14 @@ def execute_search_task_subprocess(task: dict[str, Any]) -> dict[str, Any]:
 def run_search_task(task: dict[str, Any]) -> dict[str, Any]:
     from setp_solver.check import check_solution
     from setp_solver.cost import evaluate
-    from setp_solver.prices import DEFAULT_PRICES
+    from setp_solver.prices import UK_2025_PRICES
     from setp_solver.search.bundle import load_search_bundle
     from setp_solver.search.candidates import solution_signature_hash
     from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline
     from setp_solver.search.winner_operators import WinnerKernelConfig, run_e2_alns_carbon, run_e2_alns_throughput
 
     started = time.perf_counter()
-    prices = replace(DEFAULT_PRICES, B_battery_kwh=float(task["battery_kwh"]), carbon_price=CARBON_PRICE)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=float(task["battery_kwh"]), carbon_price=CARBON_PRICE)
     bundle = load_search_bundle(Path(task["repo_root"]) / task["bundle_dir"])
     initial_solution, seed_source = neutral_seed(bundle, prices)
     initial_metrics = evaluate(initial_solution, bundle.instance, bundle.carbon_profile, prices)
@@ -476,13 +476,13 @@ def ev_maximal_reference(category: str, instance_name: str, size: int, battery_k
 def ev_swap_audit_instance(category: str, instance_name: str, size: int, battery_kwh: float) -> list[dict[str, Any]]:
     from setp_solver.check import check_solution
     from setp_solver.cost import evaluate
-    from setp_solver.prices import DEFAULT_PRICES
+    from setp_solver.prices import UK_2025_PRICES
     from setp_solver.search.bundle import load_search_bundle
     from setp_solver.search.charging import repair_route_charging
     from setp_solver.search.fleet import normalize_solution_vehicle_trips
     from setp_solver.solution import Solution
 
-    prices = replace(DEFAULT_PRICES, B_battery_kwh=float(battery_kwh), carbon_price=CARBON_PRICE)
+    prices = replace(UK_2025_PRICES, B_battery_kwh=float(battery_kwh), carbon_price=CARBON_PRICE)
     bundle = load_search_bundle(regime.bundle_path(category, instance_name))
     neutral, seed_source = neutral_seed(bundle, prices)
     before_metrics = evaluate(neutral, bundle.instance, bundle.carbon_profile, prices)

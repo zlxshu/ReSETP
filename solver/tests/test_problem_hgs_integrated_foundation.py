@@ -27,6 +27,7 @@ from setp_solver.algorithms.problem_hgs.proposals import (
     SequentialProposalEngine,
 )
 from setp_solver.prices import PriceParameters
+from setp_solver.solution import ChargingAction
 from setp_hgs_kernel.stop import MaxIterations
 from setp_hgs_kernel._setp_hgs_kernel import PopulationParams
 from setp_hgs_kernel.ExternalPopulation import (
@@ -260,6 +261,112 @@ def test_static_charging_clocks_are_serial_not_a_cartesian_product() -> None:
         )
         for candidate in candidates
     } == {(1800.0, 3600.0), (0.0, 5400.0)}
+
+
+def test_first_trip_prev_night_switch_selects_existing_modes_by_trip() -> None:
+    duty = PhysicalVehicleDuty(
+        "EV_D0_1",
+        "ev",
+        "D0",
+        trips=(DutyTrip(1, ("C1",)), DutyTrip(2, ("C2",))),
+    )
+    sealed = ChargingRepairPolicy(
+        strategy="integrated",
+        carbon_weight=1.0,
+        depot_charge_window_mode="same_day_predeparture",
+        charge_timing_policy="cost_plus_carbon",
+        charge_amount_strategy="just_enough",
+        public_station_candidate_mode="parallel",
+        carbon_profiles_by_day_offset=None,
+    )
+    enabled = ChargingRepairPolicy(
+        strategy=sealed.strategy,
+        carbon_weight=sealed.carbon_weight,
+        depot_charge_window_mode=sealed.depot_charge_window_mode,
+        charge_timing_policy=sealed.charge_timing_policy,
+        charge_amount_strategy=sealed.charge_amount_strategy,
+        public_station_candidate_mode=sealed.public_station_candidate_mode,
+        carbon_profiles_by_day_offset=sealed.carbon_profiles_by_day_offset,
+        first_trip_prev_night_enabled=True,
+    )
+
+    assert [
+        charging_module._route_repair_window_modes(duty, trip, sealed)
+        for trip in duty.trips
+    ] == [("same_day_predeparture",), ("same_day_predeparture",)]
+    assert [
+        charging_module._route_repair_window_modes(duty, trip, enabled)
+        for trip in duty.trips
+    ] == [
+        ("same_day_predeparture", "prev_night"),
+        ("same_day_predeparture",),
+    ]
+
+
+def test_merged_first_trip_windows_use_the_repeated_representative_day_profile(
+    monkeypatch,
+) -> None:
+    operating_day = [{"timing_score": 2.0}]
+    policy = ChargingRepairPolicy(
+        strategy="integrated",
+        carbon_weight=1.0,
+        depot_charge_window_mode="same_day_predeparture",
+        charge_timing_policy="cost_plus_carbon",
+        charge_amount_strategy="just_enough",
+        public_station_candidate_mode="parallel",
+        carbon_profiles_by_day_offset=None,
+        first_trip_prev_night_enabled=True,
+    )
+    context = SimpleNamespace(
+        bundle=SimpleNamespace(
+            instance=object(),
+            prices=object(),
+            time_profile=operating_day,
+        )
+    )
+    seen_modes = []
+
+    def fake_select(*args, mode, carbon_profiles_by_day_offset, **kwargs):
+        assert carbon_profiles_by_day_offset is None
+        seen_modes.append(mode)
+        if mode == "prev_night":
+            return 18.0 * 3600.0, -1
+        return 6.0 * 3600.0, 0
+
+    def fake_objective(action, instance, profile, prices, **kwargs):
+        assert profile is operating_day
+        return float(profile[0]["timing_score"])
+
+    monkeypatch.setattr(
+        charging_module,
+        "select_certified_depot_charge_start",
+        fake_select,
+    )
+    monkeypatch.setattr(
+        charging_module,
+        "charge_timing_objective_value",
+        fake_objective,
+    )
+
+    start, offset = charging_module._select_depot_charge_start_from_windows(
+        ChargingAction(
+            vehicle_id="EV_D0_1#T1",
+            station_id="D0",
+            energy_kwh=22.0,
+            occupancy_minutes=60.0,
+            charge_start_second=0.0,
+        ),
+        (
+            ("same_day_predeparture", 0.0, 7.0 * 3600.0),
+            ("prev_night", -24.0 * 3600.0, -3600.0),
+        ),
+        context=context,
+        policy=policy,
+    )
+
+    assert seen_modes == ["same_day_predeparture", "prev_night"]
+    assert start == 18.0 * 3600.0
+    assert offset == -1
 
 
 

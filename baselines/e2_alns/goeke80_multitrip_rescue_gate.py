@@ -136,7 +136,7 @@ def build_metadata(repo_root: Path, args: argparse.Namespace) -> dict[str, Any]:
 
 
 def phase0_audit(repo_root: Path) -> dict[str, Any]:
-    tex = (repo_root / "docs/paper_submission_final/paper_main.tex").read_text(encoding="utf-8", errors="ignore")
+    tex = (repo_root / "docs/paper_submission_final/RETIRED_paper_main.tex").read_text(encoding="utf-8", errors="ignore")
     return {
         "Q_capacity": float(DEFAULT_PRICES.Q_capacity),
         "B_battery_kwh": float(DEFAULT_PRICES.B_battery_kwh),

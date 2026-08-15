@@ -878,10 +878,10 @@ def recompute_infrastructure() -> dict[str, Any]:
     ev_route_audit = recompute_ev_witness_route_energy(caps2, witness2)
     calendar_path = Path(
         "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/"
-        "tariff_carbon_48slot_calendar.csv"
+        "tariff_carbon_hourly_calendar.csv"
     )
     if not (ROOT / calendar_path).is_file():
-        matches = list((ROOT / "data/ChinaInstances").glob("**/tariff_carbon_48slot_calendar.csv"))
+        matches = list((ROOT / "data/ChinaInstances").glob("**/tariff_carbon_hourly_calendar.csv"))
         if len(matches) != 1:
             raise RuntimeError(f"calendar candidates: {matches}")
         calendar_path = matches[0].relative_to(ROOT)

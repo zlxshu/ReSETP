@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters
+from setp_solver.prices import PriceParameters, UK_2025_PRICES
 from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import enumerate_feasible_insertions
 from setp_solver.search.evaluation import EvaluationContext
@@ -80,7 +80,11 @@ def test_ev_recharge_time_participates_in_reuse() -> None:
         Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
-    prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
+    prices = replace(
+        UK_2025_PRICES,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=280.0,
+    )
     fast = build_multitrip_certificate(routes, _instance(), replace(prices, depot_charge_power_kw=600.0), recharge_mode=CHARGE_MODE_FULL)
     slow = build_multitrip_certificate(routes, _instance(), replace(prices, depot_charge_power_kw=0.01), recharge_mode=CHARGE_MODE_FULL)
     assert fast.vehicle_counts["ev"] == 1
@@ -92,7 +96,12 @@ def test_certificate_reads_depot_power_from_the_shared_price_object() -> None:
         Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
-    prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
+    prices = replace(
+        UK_2025_PRICES,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=280.0,
+        depot_charge_power_kw=22.0,
+    )
     certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_FULL)
     assert certificate.depot_charge_power_kw == 22.0
 
@@ -108,7 +117,12 @@ def test_partial_mode_keeps_a_continuous_battery_ledger() -> None:
         Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
-    prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
+    prices = replace(
+        UK_2025_PRICES,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=280.0,
+        depot_charge_power_kw=22.0,
+    )
     certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_PARTIAL)
     by_index = sorted(certificate.trips, key=lambda trip: trip.trip_index)
     assert certificate.recharge_mode == CHARGE_MODE_PARTIAL
@@ -120,7 +134,12 @@ def test_partial_mode_keeps_a_continuous_battery_ledger() -> None:
 
 def test_full_mode_certificate_must_replenish_the_energy_it_used() -> None:
     routes = [Route("EV_A", "ev", "D0", ["D0", "C1", "D0"])]
-    prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
+    prices = replace(
+        UK_2025_PRICES,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=280.0,
+        depot_charge_power_kw=22.0,
+    )
     certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_FULL)
     trip = certificate.trips[0]
     tampered = replace(
@@ -137,7 +156,12 @@ def test_on_demand_mode_charges_only_what_the_next_trip_needs() -> None:
         Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
-    prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
+    prices = replace(
+        UK_2025_PRICES,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=280.0,
+        depot_charge_power_kw=22.0,
+    )
     certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_ON_DEMAND)
     ordered = sorted(certificate.trips, key=lambda trip: trip.trip_index)
     expected = max(0.0, float(ordered[1].start_battery_kwh) - float(ordered[0].end_battery_kwh))
@@ -149,7 +173,12 @@ def test_between_trip_charge_is_exported_to_cost_and_carbon_ledger() -> None:
         Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
-    base = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
+    base = replace(
+        UK_2025_PRICES,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=280.0,
+        depot_charge_power_kw=22.0,
+    )
     one_trip_need = route_timing(routes[0], _instance(), base).drive_energy_kwh
     prices = replace(base, B_battery_kwh=one_trip_need * 1.5, initial_ev_battery_kwh=one_trip_need * 1.5)
     certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_ON_DEMAND)
@@ -163,7 +192,8 @@ def test_between_trip_charge_is_exported_to_cost_and_carbon_ledger() -> None:
 def test_e4_continuous_soc_contract_retains_terminal_charge_in_trip_ledger() -> None:
     route = Route("EV_A", "ev", "D0", ["D0", "C1", "D0"])
     instance = _instance()
-    prices = PriceParameters(
+    prices = replace(
+        UK_2025_PRICES,
         B_battery_kwh=10.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -245,9 +275,10 @@ def test_complete_multitrip_checker_replaces_only_certified_residual_battery() -
         Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
-    probe = PriceParameters(B_battery_kwh=280.0)
+    probe = replace(UK_2025_PRICES, B_battery_kwh=280.0)
     drive = route_timing(routes[0], instance, probe).drive_energy_kwh
-    prices = PriceParameters(
+    prices = replace(
+        UK_2025_PRICES,
         B_battery_kwh=drive * 1.05,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -278,7 +309,12 @@ def _two_trip_solution_and_prices() -> tuple[Solution, PriceParameters]:
         Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
-    base = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=0.0, depot_charge_power_kw=22.0)
+    base = replace(
+        UK_2025_PRICES,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=0.0,
+        depot_charge_power_kw=22.0,
+    )
     need = route_timing(routes[0], _instance(), base).drive_energy_kwh
     prices = replace(base, B_battery_kwh=need * 1.5)
     actions = [
@@ -591,6 +627,24 @@ def test_route_must_return_to_same_home_depot() -> None:
     route = Route("CV_A", "cv", "D0", ["D0", "C1", "D1"])
     with pytest.raises(ValueError, match="does not return"):
         route_timing(route, _instance())
+
+
+def test_minimum_departure_is_opt_in_and_preserves_default_clock() -> None:
+    route = Route("CV_A", "cv", "D0", ["D0", "C1", "D0"])
+    baseline = route_timing(route, _instance())
+
+    assert route_timing(
+        route,
+        _instance(),
+        minimum_departure_second=None,
+    ) == baseline
+    shifted = route_timing(
+        route,
+        _instance(),
+        minimum_departure_second=1_500.0,
+    )
+    assert shifted.earliest_departure_second == 1_500.0
+    assert shifted.return_second > baseline.return_second
 
 
 def test_strict_e3_new_route_gate_counts_physical_vehicles_not_route_rows(monkeypatch: pytest.MonkeyPatch) -> None:

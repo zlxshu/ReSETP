@@ -24,6 +24,10 @@ from setp_hgs_kernel.stop import (
 )
 
 
+PUBLIC_INSTANCE_ROUND_FUNC = "exact"
+PUBLIC_INSTANCE_SCALE = 1_000
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -158,11 +162,6 @@ def main() -> int:
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--stagnation-patience", type=int, default=500)
     parser.add_argument("--max-runtime-seconds", type=float)
-    parser.add_argument(
-        "--round-func",
-        choices=("exact", "round"),
-        default="exact",
-    )
     args = parser.parse_args()
     if args.iterations < 1:
         raise ValueError("technical iterations must be positive")
@@ -203,7 +202,8 @@ def main() -> int:
                 "public_customer_depot_reassignment": False,
                 "initial_population_preeducation": False,
             },
-            "round_func": args.round_func,
+            "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
+            "integer_scale": PUBLIC_INSTANCE_SCALE,
             "stopping": (
                 "bounded calibration iterations plus a no-improvement window; "
                 "not a frozen formal limit"
@@ -214,7 +214,7 @@ def main() -> int:
     )
 
     try:
-        data = read(instance_path, round_func=args.round_func)
+        data = read(instance_path, round_func=PUBLIC_INSTANCE_ROUND_FUNC)
         criteria = [
             MaxIterations(args.iterations),
             NoImprovement(args.stagnation_patience),
@@ -289,7 +289,7 @@ def main() -> int:
                     "total_clients": len(clients),
                     "completed_delivery": served_delivery,
                     "total_delivery": total_delivery,
-                    "round_func": args.round_func,
+                    "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
                     "dcrex_enabled": False,
                     "customer_depot_reassignment_enabled": False,
                     "initial_population_preeducation_enabled": False,
@@ -324,7 +324,7 @@ def main() -> int:
                 "cost": cost,
                 "iterations": result.num_iterations,
                 "runtime_seconds": result.runtime,
-                "round_func": args.round_func,
+                "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
                 "completed_clients": len(set(visits)),
                 "total_clients": len(clients),
                 "completed_delivery": served_delivery,

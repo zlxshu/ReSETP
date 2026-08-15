@@ -355,7 +355,7 @@ def _verify_city_date_bindings(
         rows = rows_by_city[city]
         if len(rows) != 48:
             raise RuntimeError(f"city does not have 48 half-hour rows: {city}")
-        slots = {int(row["half_hour_slot"]) for row in rows}
+        slots = {int(row["hourly_calendar_row"]) for row in rows}
         if slots != set(range(1, 49)):
             raise RuntimeError(f"half-hour slots are incomplete: {city}")
         for row in rows:

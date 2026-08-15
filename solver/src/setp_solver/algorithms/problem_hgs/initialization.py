@@ -14,6 +14,7 @@ from time import perf_counter
 
 from .charging import ChargingRepairPolicy, repair_changed_duties
 from .evaluation import DutyFullEvaluator, FullEvaluation
+from .fleet_registry import assert_fleet_activation_allowed
 from .model import DutyIndividual
 from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
 from .contracts import CandidateStatus, SearchAccounting
@@ -397,6 +398,7 @@ def build_initial_population(
     max_random_attempts: int | None,
     require_complete_feasible: bool = False,
     stop_requested: Callable[[], bool] | None = None,
+    fleet_activation_enabled: bool = True,
 ) -> InitialPopulationResult:
     """Keep the registered solution and add fully evaluated random skeletons.
 
@@ -474,6 +476,11 @@ def build_initial_population(
                 )
                 continue
             candidate = move.apply(initial)
+            assert_fleet_activation_allowed(
+                initial,
+                candidate,
+                enabled=fleet_activation_enabled,
+            )
             candidate = repair_changed_duties(
                 initial,
                 candidate,

@@ -24,6 +24,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
+from feasibility_report_text import _format_full_evaluation_result
 from run_problem_hgs_private_technical import (
     PROTECTED,
     _build_context,
@@ -565,11 +566,20 @@ def run(
     )
     _json(output / "metadata.json", metadata)
 
+    timing_rows = [
+        row
+        for row in rows
+        if row["experiment"] == "CHARGING_TIMING_FIXED_ROUTE_TYPE_AMOUNT"
+    ]
+    timing_evaluation_result = _format_full_evaluation_result(
+        feasible=all(bool(row["full_model_feasible"]) for row in timing_rows),
+        violation_count=sum(int(row["full_violation_count"]) for row in timing_rows),
+    )
     report = f"""# Problem-HGS 三地区静态主效应小试
 
 ## 结论
 
-本次只在三地区现有自研算法解上改变一个因素，不重新搜索路线。三种充电时刻口径均通过完整模型；混合车队与全燃油车队使用完全相同的客户顺序。详细数字在 `raw_runs.csv`，汇总在 `decision.json`。
+本次只在三地区现有自研算法解上改变一个因素，不重新搜索路线。三种充电时刻口径汇总为：{timing_evaluation_result}；混合车队与全燃油车队使用完全相同的客户顺序。详细数字在 `raw_runs.csv`，汇总在 `decision.json`。
 
 本包是算例与接口诊断，不是正式实验，也没有替用户选择代表地区。动态需求没有混入这次固定路线复算，避免用一个单时点切面冒充真实事件流实验。
 

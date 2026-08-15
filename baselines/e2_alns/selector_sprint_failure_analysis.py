@@ -39,7 +39,7 @@ PROTECTED_PATHS = (
     "solver/src/setp_solver/search/evaluation.py",
     "solver/src/setp_solver/prices.py",
     "solver/src/setp_solver/search/feasible_repair.py",
-    "docs/paper_submission_final/paper_main.tex",
+    "docs/paper_submission_final/RETIRED_paper_main.tex",
     "paper_main.tex",
 )
 HASH_EXCLUDE_NAMES = {"artifact_hashes.json", ".DS_Store"}

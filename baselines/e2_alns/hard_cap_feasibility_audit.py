@@ -29,7 +29,7 @@ from setp_solver.search.construction import build_initial_solution
 
 BENCHMARK_ROOT = Path("models/data_bundle/generated_instances/e2_benchmark")
 RAW_ROOT = Path("models/data_bundle/raw_instances/goeke_uk")
-PAPER_TEX = Path("docs/paper_submission_final/paper_main.tex")
+PAPER_TEX = Path("docs/paper_submission_final/RETIRED_paper_main.tex")
 DEFAULT_OUTPUT_DIR = Path("baselines/e2_alns/hard_cap_feasibility_audit_data")
 DEFAULT_REPORT = Path("baselines/e2_alns/hard_cap_feasibility_audit.md")
 GOEKE_Q_KG = 3650.0
@@ -135,7 +135,7 @@ def build_metadata(repo_root: Path, args: argparse.Namespace) -> dict[str, Any]:
             "solver/src/setp_solver/check.py",
             "solver/src/setp_solver/search/evaluation.py",
             "models/data_bundle/generated_instances/e2_benchmark",
-            "docs/paper_submission_final/paper_main.tex",
+            "docs/paper_submission_final/RETIRED_paper_main.tex",
         ],
         "output_dir": str(DEFAULT_OUTPUT_DIR),
         "report_path": str(DEFAULT_REPORT),
