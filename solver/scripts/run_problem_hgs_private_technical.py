@@ -154,6 +154,7 @@ DEPOT_SWAP_PACKAGE = Path(
 DEPOT_SWAP_RUNTIME_PARAMETER_AUTHORITY = Path(
     "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723"
 )
+DEPOT_SEARCH_INSTANCE_ID = "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd"
 
 
 def _sha256(path: Path) -> str:
@@ -674,6 +675,18 @@ def _build_context(
             instance_id,
             package_root=repo / "data/ChinaInstances/china81_suite_prd_fix_v1_20260812",
             report_root=repo / "solver/reports/suite_prd_fix_20260812",
+            fleet_parameters=fleet_parameters,
+        )
+    if instance_id == DEPOT_SEARCH_INSTANCE_ID:
+        if depot_charging_scenario_name != "60kw":
+            raise ValueError(
+                "DEPOTSEARCH instance is frozen at the 60 kW depot scenario"
+            )
+        return _build_saved_suite_context(
+            repo,
+            instance_id,
+            package_root=repo / "data/ChinaInstances/china81_final_suite_v2_20260815",
+            report_root=repo / "solver/reports/instance_build_only_d996f755bd_20260815",
             fleet_parameters=fleet_parameters,
         )
 
