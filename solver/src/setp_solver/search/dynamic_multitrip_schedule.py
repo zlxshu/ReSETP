@@ -421,6 +421,11 @@ def cut_dynamic_certificate_at_trigger(
         if running:
             trip = running[0]
             route = route_by_id[trip.route_id]
+            inherits_physical_state = (
+                tracked_route_id == trip.route_id
+                and bool(route.node_sequence)
+                and route.node_sequence[0] == state.virtual_origin_node_id
+            )
             execution = _replay_trip(
                 route,
                 trip,
@@ -438,12 +443,12 @@ def cut_dynamic_certificate_at_trigger(
                 trigger,
                 inherited_remaining_load_kg=(
                     state.remaining_load_kg
-                    if tracked_route_id == trip.route_id
+                    if inherits_physical_state
                     else None
                 ),
                 inherited_battery_kwh=(
                     state.remaining_battery_kwh
-                    if tracked_route_id == trip.route_id
+                    if inherits_physical_state
                     and state.vehicle_type == "ev"
                     else None
                 ),
@@ -1268,6 +1273,15 @@ def validate_dynamic_multitrip_certificate(
                     item.virtual_origin_node_id
                     for item in states.values()
                     if item.virtual_origin_node_id is not None
+                ),
+                inherited_load_kg=next(
+                    (
+                        item.remaining_load_kg
+                        for item in states.values()
+                        if item.virtual_origin_node_id
+                        == route.node_sequence[0]
+                    ),
+                    None,
                 ),
             )
 

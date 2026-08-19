@@ -554,8 +554,21 @@ def test_in_progress_cut_keeps_entered_arc_and_releases_editable_suffix() -> Non
         instance,
         prices,
     )
+    base_trip = certificate.trips[0]
+    reserve_kwh = 10.0
+    trip = replace(
+        base_trip,
+        start_battery_kwh=float(base_trip.start_battery_kwh) + reserve_kwh,
+        end_battery_kwh=float(base_trip.end_battery_kwh) + reserve_kwh,
+    )
+    source = replace(source, charging_actions=[])
+    certificate = replace(
+        certificate,
+        trips=(trip,),
+        initial_battery_kwh=trip.start_battery_kwh,
+        depot_charge_ledger=(),
+    )
     route = source.routes[0]
-    trip = certificate.trips[0]
     first_travel = 1_000.0 / UK_2025_PRICES.v_speed_ms
     second_travel = 1_000.0 / UK_2025_PRICES.v_speed_ms
     trigger = trip.departure_second + first_travel + 60.0 + second_travel / 2.0
