@@ -98,6 +98,9 @@ def test_result_package_contains_every_required_report_field(tmp_path: Path) -> 
                 "evaluation_context_sha256": "b" * 64,
                 "total_cost": cost,
                 "total_emissions_kg": 50.0,
+                "full_evaluation_feasible": True,
+                "hard_violation_count": 0,
+                "hard_violations_json": "[]",
                 "customers_served": 10,
                 "customers_total": 10,
                 "demand_served": 100.0,
@@ -116,13 +119,23 @@ def test_result_package_contains_every_required_report_field(tmp_path: Path) -> 
                 "cost_breakdown_json": json.dumps({"total_cost": cost}),
             }
         )
+        payload.update(harness._assess_row(payload).row_fields())
         return payload
 
     output = tmp_path / "package"
+    overall = harness.assess_run(
+        termination_ok=True,
+        feasible_ok=True,
+        customers_complete=True,
+        demand_complete=True,
+        success_verdict="PRIVATE_ABLATION_BATCH_COMPLETE",
+        failure_verdict="PRIVATE_ABLATION_BATCH_FAILED",
+    )
     harness.write_result_package(
         output,
         (row("A0", 100.0),),
         {"status": "COMPLETED", "pair_validation": "PASSED"},
+        overall,
     )
 
     with (output / "raw_runs.csv").open(encoding="utf-8", newline="") as handle:
@@ -138,4 +151,35 @@ def test_result_package_contains_every_required_report_field(tmp_path: Path) -> 
     hashes = json.loads(
         (output / "artifact_hashes.json").read_text(encoding="utf-8")
     )
-    assert set(hashes) == {"metadata.json", "raw_runs.csv", "report.md"}
+    assert set(hashes) == {
+        "decision.json",
+        "metadata.json",
+        "raw_runs.csv",
+        "report.md",
+    }
+
+
+def test_cost_does_not_make_rejected_ablation_rows_successful() -> None:
+    complete = {
+        "run_status": "STOPPED_BY_CALLER",
+        "total_cost": 100.0,
+        "full_evaluation_feasible": True,
+        "hard_violation_count": 0,
+        "customers_served": 10,
+        "customers_total": 10,
+        "demand_served": 100.0,
+        "demand_total": 100.0,
+    }
+    complete.update(harness._assess_row(complete).row_fields())
+    assert harness._successful_rows((complete,)) == [complete]
+
+    for changed in (
+        {"run_status": "INTERNAL_ERROR"},
+        {"full_evaluation_feasible": False, "hard_violation_count": 1},
+        {"customers_served": 9},
+        {"demand_served": 99.0},
+    ):
+        row = {**complete, **changed}
+        row.update(harness._assess_row(row).row_fields())
+        assert row["total_cost"] == 100.0
+        assert harness._successful_rows((row,)) == []

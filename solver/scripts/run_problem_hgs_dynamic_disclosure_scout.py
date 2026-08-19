@@ -72,7 +72,7 @@ from setp_solver.cost import (
     charging_action_electricity_cost,
     charging_action_emissions_kg,
 )
-from setp_solver.search.dynamic import _subinstance_for_customers
+from setp_solver.instance_subset import rebuild_instance_matrix
 from setp_solver.search.dynamic_multitrip_schedule import (
     DynamicAssetState,
     cut_certificate_at_trigger,
@@ -186,7 +186,15 @@ def _dynamic_provenance(repo: Path, output: Path) -> dict:
 def _subset_bundle(bundle, customer_ids: set[str]):
     return replace(
         bundle,
-        instance=_subinstance_for_customers(bundle.instance, customer_ids),
+        instance=rebuild_instance_matrix(
+            bundle.instance,
+            [
+                node
+                for node in bundle.instance.nodes
+                if node.node_type.lower() in {"d", "f"}
+                or node.node_id in customer_ids
+            ],
+        ),
         customer_home_depot=MappingProxyType(
             {
                 customer_id: depot_id

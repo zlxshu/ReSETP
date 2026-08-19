@@ -51,6 +51,7 @@ from setp_solver.china81_completion import (
     annotate_cross_site_services,
 )
 from setp_solver.cost import evaluate
+from setp_solver.mapping_identity import mapping_sha256
 from setp_solver.profit import calculate_depot_profits, depot_profit_values
 from setp_solver.search.multitrip_schedule import (
     MultiTripCertificate,
@@ -58,6 +59,14 @@ from setp_solver.search.multitrip_schedule import (
 )
 from setp_solver.solution import ChargingAction, Route, Solution
 
+from .contracts import (
+    CHARGING_ENERGY_GAP,
+    CHARGING_WINDOW_GAP,
+    ChargingCandidateStatus,
+    ChargingClockWitness,
+    ChargingGap,
+    ChargingGapDutyIndividual,
+)
 from .dynamic import DutyDynamicState, prepare_dynamic_candidate
 from .model import DutyIndividual, PhysicalVehicleDuty
 
@@ -121,6 +130,35 @@ class RebuiltRouteConstraintContract:
             or float(self.vehicle_volume_capacity_m3) <= 0.0
         ):
             raise ValueError("rebuilt vehicle volume capacity must be positive")
+
+
+def assert_candidate_routes_single_shift(
+    individual: DutyIndividual,
+    contract: RebuiltRouteConstraintContract | None,
+) -> None:
+    """Reject a materialized Duty trip that crosses registered shifts."""
+
+    if contract is None:
+        return
+    for duty in individual.duties:
+        for trip in duty.trips:
+            shifts = set()
+            for customer_id in trip.customer_ids:
+                try:
+                    shifts.add(
+                        str(contract.customer_shift_by_id[customer_id])
+                    )
+                except KeyError as exc:
+                    raise ValueError(
+                        "candidate route references a customer outside the "
+                        f"rebuilt shift contract: {customer_id}"
+                    ) from exc
+            if len(shifts) > 1:
+                raise ValueError(
+                    f"rebuilt route {duty.route_id(trip.trip_index)} mixes "
+                    "customer shifts: "
+                    + ", ".join(sorted(shifts))
+                )
 
 
 @dataclass(frozen=True)
@@ -228,6 +266,13 @@ class FullEvaluation:
     evaluation_context_sha256: str
     source: str
     accounting: Mapping[str, int]
+    charging_candidate_status: ChargingCandidateStatus = (
+        ChargingCandidateStatus.READY
+    )
+    charging_gap: ChargingGap = ChargingGap()
+    charging_rejection_reason: str | None = None
+    charging_affected_duty_ids: tuple[str, ...] = ()
+    charging_clock_witnesses: tuple[ChargingClockWitness, ...] = ()
 
     @property
     def feasible(self) -> bool:
@@ -239,19 +284,6 @@ class _DutySlice:
     fingerprint: str
     prepared_solution: Solution
     zero_quota_breakdown: Mapping[str, float]
-
-
-def mapping_sha256(values: Mapping[str, float]) -> str:
-    payload = [
-        [str(key), float(value).hex()]
-        for key, value in sorted(values.items())
-    ]
-    encoded = json.dumps(
-        payload,
-        ensure_ascii=False,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _remove_certified_dynamic_battery_duplicates(
@@ -426,6 +458,32 @@ def _shift_minimum_departure_second_by_route(
     return minimum_by_route
 
 
+def _charging_gap_certificate(
+    individual: ChargingGapDutyIndividual,
+    context: DutyEvaluationContext,
+) -> MultiTripCertificate:
+    """Materialise an explicit incomplete certificate without inventing a schedule."""
+
+    counts = {
+        vehicle_type: sum(
+            1
+            for duty in individual.duties
+            if duty.trips and duty.vehicle_type == vehicle_type
+        )
+        for vehicle_type in ("cv", "ev")
+    }
+    return MultiTripCertificate(
+        contract_id="SC3_CHARGING_GAP_BEST_EFFORT_V1",
+        status=ChargingCandidateStatus.BEST_EFFORT.value,
+        vehicle_counts=counts,
+        trips=(),
+        recharge_mode=context.depot_charge_window_mode,
+        depot_charge_power_kw=float(
+            context.bundle.prices.depot_charge_power_kw
+        ),
+    )
+
+
 class DutyFullEvaluator:
     """Evaluate a Duty individual without allowing hidden vehicle repacking."""
 
@@ -447,23 +505,43 @@ class DutyFullEvaluator:
         source: str,
     ) -> FullEvaluation:
         self._validate_customer_partition(individual)
+        gap_candidate = (
+            individual
+            if isinstance(individual, ChargingGapDutyIndividual)
+            else None
+        )
         dynamic_state = self.context.dynamic_state
         if dynamic_state is None:
             decoded = individual.to_solution()
-            prepared, certificate = prepare_multitrip_solution(
-                decoded,
-                self.context.bundle.instance,
-                self.context.bundle.prices,
-                depot_charge_window_mode=self.context.depot_charge_window_mode,
-                minimum_departure_second_by_route=(
-                    _shift_minimum_departure_second_by_route(
-                        decoded,
-                        self.context,
-                    )
-                ),
-            )
-            _assert_no_hidden_repair(decoded, prepared)
+            try:
+                prepared, certificate = prepare_multitrip_solution(
+                    decoded,
+                    self.context.bundle.instance,
+                    self.context.bundle.prices,
+                    depot_charge_window_mode=(
+                        self.context.depot_charge_window_mode
+                    ),
+                    minimum_departure_second_by_route=(
+                        _shift_minimum_departure_second_by_route(
+                            decoded,
+                            self.context,
+                        )
+                    ),
+                )
+                _assert_no_hidden_repair(decoded, prepared)
+            except (TypeError, ValueError):
+                if gap_candidate is None:
+                    raise
+                prepared = decoded
+                certificate = _charging_gap_certificate(
+                    gap_candidate,
+                    self.context,
+                )
         else:
+            if gap_candidate is not None:
+                raise ValueError(
+                    "SC3 BEST_EFFORT is not defined for a dynamic cut"
+                )
             dynamic = prepare_dynamic_candidate(
                 individual,
                 dynamic_state,
@@ -496,6 +574,31 @@ class DutyFullEvaluator:
                 "incremental_evaluations": 0,
                 "sentinel_evaluations": sentinel,
             },
+            charging_candidate_status=(
+                ChargingCandidateStatus.READY
+                if gap_candidate is None
+                else gap_candidate.charging_candidate_status
+            ),
+            charging_gap=(
+                ChargingGap()
+                if gap_candidate is None
+                else gap_candidate.charging_gap
+            ),
+            charging_rejection_reason=(
+                None
+                if gap_candidate is None
+                else gap_candidate.charging_rejection_reason
+            ),
+            charging_affected_duty_ids=(
+                ()
+                if gap_candidate is None
+                else gap_candidate.affected_duty_ids
+            ),
+            charging_clock_witnesses=(
+                ()
+                if gap_candidate is None
+                else gap_candidate.charging_clock_witnesses
+            ),
         )
 
     def prepare_duty_slice(self, duty: PhysicalVehicleDuty) -> _DutySlice:
@@ -543,6 +646,13 @@ class DutyFullEvaluator:
         source: str,
         accounting: Mapping[str, int],
         breakdown: Mapping[str, float] | None = None,
+        charging_candidate_status: ChargingCandidateStatus = (
+            ChargingCandidateStatus.READY
+        ),
+        charging_gap: ChargingGap = ChargingGap(),
+        charging_rejection_reason: str | None = None,
+        charging_affected_duty_ids: tuple[str, ...] = (),
+        charging_clock_witnesses: tuple[ChargingClockWitness, ...] = (),
     ) -> FullEvaluation:
         bundle = self.context.bundle
         profit_breakdowns = calculate_depot_profits(
@@ -614,6 +724,31 @@ class DutyFullEvaluator:
                 all_cv_reference=False,
             )
         )
+        gap_vehicle_id = (
+            charging_affected_duty_ids[0]
+            if charging_affected_duty_ids
+            else ""
+        )
+        if charging_gap.missing_energy_kwh > 0.0:
+            violations.append(
+                Violation(
+                    CHARGING_ENERGY_GAP,
+                    gap_vehicle_id,
+                    "charging_subproblem",
+                    "missing energy "
+                    f"{charging_gap.missing_energy_kwh:.17g} kWh",
+                )
+            )
+        if charging_gap.window_shortage_seconds > 0.0:
+            violations.append(
+                Violation(
+                    CHARGING_WINDOW_GAP,
+                    gap_vehicle_id,
+                    "charging_subproblem",
+                    "feasible charging window short by "
+                    f"{charging_gap.window_shortage_seconds:.17g} s",
+                )
+            )
         exact_breakdown = dict(
             breakdown
             if breakdown is not None
@@ -633,6 +768,7 @@ class DutyFullEvaluator:
             prepared,
             bundle,
             margins,
+            charging_gap=charging_gap,
         )
         return FullEvaluation(
             total_cost=float(exact_breakdown["total_cost"]),
@@ -647,6 +783,13 @@ class DutyFullEvaluator:
             evaluation_context_sha256=self.context_sha256,
             source=source,
             accounting=dict(accounting),
+            charging_candidate_status=ChargingCandidateStatus(
+                charging_candidate_status
+            ),
+            charging_gap=charging_gap,
+            charging_rejection_reason=charging_rejection_reason,
+            charging_affected_duty_ids=tuple(charging_affected_duty_ids),
+            charging_clock_witnesses=tuple(charging_clock_witnesses),
         )
 
     def _validate_customer_partition(self, individual: DutyIndividual) -> None:
@@ -686,6 +829,10 @@ class DutyIncrementalEvaluator:
 
     def seed(self, individual: DutyIndividual) -> int:
         self.full_evaluator._validate_customer_partition(individual)
+        if isinstance(individual, ChargingGapDutyIndividual):
+            self._slices = {}
+            self._individual_fingerprint = individual.fingerprint
+            return 0
         if self.full_evaluator.context.dynamic_state is not None:
             self._slices = {}
             self._individual_fingerprint = individual.fingerprint
@@ -715,6 +862,18 @@ class DutyIncrementalEvaluator:
                 f"actual={sorted(actual_changed)}, declared={sorted(changed_duty_ids)}"
             )
         self.full_evaluator._validate_customer_partition(candidate)
+        if isinstance(
+            previous,
+            ChargingGapDutyIndividual,
+        ) or isinstance(candidate, ChargingGapDutyIndividual):
+            result = self.full_evaluator._evaluate_full(
+                candidate,
+                source="charging-gap-full",
+            )
+            if commit:
+                self._slices = {}
+                self._individual_fingerprint = candidate.fingerprint
+            return result
         if self.full_evaluator.context.dynamic_state is not None:
             result = self.full_evaluator._evaluate_full(
                 candidate,
@@ -848,6 +1007,16 @@ def assert_evaluations_equivalent(
         raise AssertionError("incremental prepared solution differs from full truth")
     if left.certificate != right.certificate:
         raise AssertionError("incremental certificate differs from full truth")
+    if left.charging_candidate_status != right.charging_candidate_status:
+        raise AssertionError("incremental charging candidate status differs")
+    if left.charging_gap != right.charging_gap:
+        raise AssertionError("incremental charging gap differs")
+    if left.charging_rejection_reason != right.charging_rejection_reason:
+        raise AssertionError("incremental charging rejection reason differs")
+    if left.charging_affected_duty_ids != right.charging_affected_duty_ids:
+        raise AssertionError("incremental charging affected duties differ")
+    if left.charging_clock_witnesses != right.charging_clock_witnesses:
+        raise AssertionError("incremental charging clock witnesses differ")
 
 
 def _measure_violations(
@@ -855,6 +1024,8 @@ def _measure_violations(
     prepared: Solution,
     bundle: China81Bundle,
     participation_margin: Mapping[str, float],
+    *,
+    charging_gap: ChargingGap = ChargingGap(),
 ) -> tuple[float, ...]:
     """Return native-unit magnitudes where the model exposes them exactly."""
 
@@ -900,6 +1071,10 @@ def _measure_violations(
             fleet_overage = _fleet_magnitude(violation.detail)
             if fleet_overage is not None:
                 magnitude = fleet_overage
+        elif violation.type == CHARGING_ENERGY_GAP:
+            magnitude = float(charging_gap.missing_energy_kwh)
+        elif violation.type == CHARGING_WINDOW_GAP:
+            magnitude = float(charging_gap.window_shortage_seconds)
         measured.append(float(magnitude))
     return tuple(measured)
 

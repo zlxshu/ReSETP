@@ -14,7 +14,6 @@ import csv
 import hashlib
 import importlib.metadata
 import importlib.util
-import io
 import json
 import math
 import os
@@ -32,6 +31,17 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[2]
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from experiment_acceptance import (  # noqa: E402
+    assess_run,
+    finalize_five_file_package,
+    package_exit_code,
+    validate_five_file_package,
+)
+
 INSTANCE_ROOT = (
     REPO
     / "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719"
@@ -44,6 +54,12 @@ INDEPENDENT_PYTHON = (
     REPO / "build/python_envs/setp-independent-hgs/bin/python"
 )
 FROZEN_PYTHON = Path("/opt/anaconda3/bin/python3.13")
+INDEPENDENT_WORKER_PYTHONPATH = os.pathsep.join(
+    (
+        str(REPO / "third_party/setp_hgs_kernel"),
+        str(REPO / "solver/src"),
+    )
+)
 INSTANCES = tuple(
     f"PR{number}{suffix}"
     for number in range(11, 25)
@@ -59,7 +75,14 @@ REQUIRED_RUN_FILES = (
     "raw_runs.csv",
     "metadata.json",
     "audit.json",
+    "decision.json",
+    "artifact_hashes.json",
+    "report.md",
 )
+PROBE_SUCCESS_VERDICT = "PROBE_RUN_COMPLETE"
+PROBE_AUDIT_FAILURE_VERDICT = "PROBE_RUN_FAILED_AUDIT"
+FORMAL_SUCCESS_VERDICT = "FORMAL_RUN_COMPLETE"
+FORMAL_AUDIT_FAILURE_VERDICT = "FORMAL_RUN_FAILED_AUDIT"
 
 
 def _timestamp() -> str:
@@ -353,7 +376,6 @@ def _solve_independent(
     seed: int,
     max_runtime_seconds: float,
     no_improvement: int,
-    sisr_enabled: bool,
 ) -> tuple[Any, int, int, float, _TracingStop, dict[str, Any]]:
     if importlib.util.find_spec("pyvrp") is not None:
         raise RuntimeError(
@@ -372,49 +394,14 @@ def _solve_independent(
     bundle = build_integrated_public_hgs(
         data,
         seed=seed,
-        enable_vidal_compound=True,
-        enable_customer_relocation=True,
-        refinement_scope="new_incumbent",
-        enable_sisr=sisr_enabled,
     )
     stop = _TracingStop(max_runtime_seconds, no_improvement)
-    algorithm_cpu_started = time.process_time()
     result = bundle.algorithm.run(stop)
-    algorithm_cpu_seconds = time.process_time() - algorithm_cpu_started
     solution = result.best.solution
     cost = int(result.best.evaluation.objective)
     accounting = {
         "integrated_run": {
             key: value for key, value in vars(result.accounting).items()
-        },
-        "serial_compound": {
-            key: value for key, value in vars(bundle.vidal_accounting).items()
-        },
-        "sisr": {
-            **{
-                key: value
-                for key, value in vars(bundle.sisr_accounting).items()
-            },
-            "enabled": bool(sisr_enabled),
-            "parameters": {
-                "average_removed_customers": 10.0,
-                "maximum_string_length": 10.0,
-                "blink_probability": 0.01,
-                "insertion_order_weights": {
-                    "random": 4,
-                    "demand": 4,
-                    "far": 2,
-                    "close": 1,
-                },
-            },
-            "algorithm_cpu_seconds": algorithm_cpu_seconds,
-            "cpu_share_percent": (
-                100.0
-                * bundle.sisr_accounting.cpu_seconds
-                / algorithm_cpu_seconds
-                if algorithm_cpu_seconds > 0
-                else 0.0
-            ),
         },
     }
     return (
@@ -832,15 +819,21 @@ def _write_artifact_hashes(output: Path) -> None:
     )
 
 
+def _run_verdicts(run_kind: str) -> tuple[str, str]:
+    if run_kind == "probe":
+        return PROBE_SUCCESS_VERDICT, PROBE_AUDIT_FAILURE_VERDICT
+    if run_kind == "formal":
+        return FORMAL_SUCCESS_VERDICT, FORMAL_AUDIT_FAILURE_VERDICT
+    raise ValueError(f"unsupported run kind: {run_kind!r}")
+
+
 def _worker_failure(
     output: Path,
     metadata: dict[str, Any],
     error: BaseException,
     stop: _TracingStop | None,
 ) -> None:
-    metadata["status"] = "FAILED"
     metadata["finished_at"] = _timestamp()
-    _json(output / "metadata.json", metadata)
     if stop is not None and stop.rows:
         _write_trace(output / "raw_runs.csv", stop)
     else:
@@ -855,21 +848,31 @@ def _worker_failure(
             "created_at": _timestamp(),
         },
     )
-    _json(
-        output / "decision.json",
-        {
-            "verdict": "RUN_FAILED",
+    success_verdict, _ = _run_verdicts(str(metadata["run_kind"]))
+    acceptance = assess_run(
+        termination_ok=None,
+        feasible_ok=None,
+        customers_complete=None,
+        demand_complete=None,
+        audit_ok=None,
+        extra_failure_reasons=(f"{type(error).__name__}: {error}",),
+        success_verdict=success_verdict,
+        failure_verdict="RUN_FAILED",
+    )
+    finalize_five_file_package(
+        output,
+        acceptance=acceptance,
+        metadata=metadata,
+        decision={
             "error_type": type(error).__name__,
             "error": str(error),
             "traceback": traceback.format_exc(),
         },
+        report_text=(
+            "# 运行失败\n\n"
+            f"{type(error).__name__}: {error}\n"
+        ),
     )
-    _atomic_text(
-        output / "report.md",
-        "# 运行失败\n\n"
-        f"{type(error).__name__}: {error}\n",
-    )
-    _write_artifact_hashes(output)
 
 
 def _worker_main(args: argparse.Namespace) -> int:
@@ -891,10 +894,17 @@ def _worker_main(args: argparse.Namespace) -> int:
         "seed": args.seed,
         "max_runtime_seconds": args.max_runtime_seconds,
         "no_improvement_iterations": args.no_improvement,
-        "sisr_enabled": bool(args.sisr_enabled),
         "components": {
             "copied_hgs": True,
-            "sisr_adjacent_string_ruin_recreate": bool(args.sisr_enabled),
+            "p82_private_duty_components": {
+                "charge_timing": False,
+                "cross_depot": False,
+                "hybrid_decoder": False,
+                "multi_trip": False,
+                "route_layer_crossover": False,
+                "sc3_near_feasible_charging": False,
+                "type_exchange": False,
+            },
         },
         "round_func": ROUND_FUNC,
         "rounding_definition": "np.round(1000 * value).astype(np.int64)",
@@ -913,12 +923,9 @@ def _worker_main(args: argparse.Namespace) -> int:
                 args.seed,
                 args.max_runtime_seconds,
                 args.no_improvement,
-                args.sisr_enabled,
             )
             source_identity = _independent_source_identity(instance_path)
         else:
-            if args.sisr_enabled:
-                raise ValueError("SISR is only available on the independent arm")
             solved = _solve_frozen(
                 instance_path,
                 args.seed,
@@ -955,24 +962,35 @@ def _worker_main(args: argparse.Namespace) -> int:
         _json(output / "audit.json", audit)
         audit_summary = audit["summary"]
 
-        service_ok = bool(
-            service["complete"]
-            and service["scaled_feasible"]
-            and service["no_duplicate_clients"]
-            and service["completed_clients"] == service["total_clients"]
-            and service["completed_delivery"] == service["total_delivery"]
+        success_verdict, failure_verdict = _run_verdicts(args.run_kind)
+        acceptance = assess_run(
+            termination_ok=(
+                stop.termination_reason in {"NO_IMPROVEMENT", "MAX_RUNTIME"}
+                and bool(stop.rows)
+            ),
+            feasible_ok=bool(
+                service["scaled_feasible"]
+                and service["no_duplicate_clients"]
+                and audit_summary["all_routes_raw_precision_feasible"]
+            ),
+            customers_complete=bool(
+                service["complete"]
+                and service["completed_clients"] == service["total_clients"]
+                and audit_summary["coverage_complete"]
+            ),
+            demand_complete=bool(
+                service["completed_delivery"] == service["total_delivery"]
+                and audit_summary["demand_complete"]
+            ),
+            audit_ok=bool(
+                audit_summary["all_routes_raw_precision_feasible"]
+                and audit_summary["service_complete"]
+            ),
+            success_verdict=success_verdict,
+            failure_verdict=failure_verdict,
         )
-        raw_ok = bool(
-            audit_summary["all_routes_raw_precision_feasible"]
-            and audit_summary["service_complete"]
-        )
-        verdict = (
-            "FORMAL_RUN_COMPLETE"
-            if service_ok and raw_ok
-            else "FORMAL_RUN_COMPLETE_WITH_AUDIT_FAILURE"
-        )
+        verdict = acceptance.verdict
         decision = {
-            "verdict": verdict,
             "run_kind": args.run_kind,
             "instance": args.instance,
             "arm": args.arm,
@@ -987,10 +1005,8 @@ def _worker_main(args: argparse.Namespace) -> int:
             "raw_precision_audit": audit_summary,
             "algorithm_accounting": algorithm_accounting,
         }
-        _json(output / "decision.json", decision)
         metadata.update(
             {
-                "status": "COMPLETE",
                 "finished_at": _timestamp(),
                 "source_identity": source_identity,
                 "termination_reason": stop.termination_reason,
@@ -998,21 +1014,42 @@ def _worker_main(args: argparse.Namespace) -> int:
                 "actual_runtime_seconds": runtime_seconds,
             }
         )
-        _json(output / "metadata.json", metadata)
-        _atomic_text(
-            output / "report.md",
-            "# 单次公开对照运行\n\n"
-            f"{args.instance}，{args.arm}，seed {args.seed}；"
-            f"成本 {cost}（细缩放后整数），运行 {runtime_seconds:.6f} 秒，"
-            f"完成客户 {service['completed_clients']}/{service['total_clients']}，"
-            f"完成需求 {service['completed_delivery']}/{service['total_delivery']}。\n\n"
-            f"原始精度审计：{audit_summary['feasible_routes']}/"
-            f"{audit_summary['total_routes']} 条路线可行。\n",
+        finalize_five_file_package(
+            output,
+            acceptance=acceptance,
+            metadata=metadata,
+            decision=decision,
+            report_text=(
+                "# 单次公开对照运行\n\n"
+                f"判定：`{verdict}`。\n\n"
+                f"{args.instance}，{args.arm}，seed {args.seed}；"
+                f"成本 {cost}（细缩放后整数），运行 {runtime_seconds:.6f} 秒，"
+                f"完成客户 {service['completed_clients']}/{service['total_clients']}，"
+                f"完成需求 {service['completed_delivery']}/{service['total_delivery']}。\n\n"
+                f"原始精度审计：{audit_summary['feasible_routes']}/"
+                f"{audit_summary['total_routes']} 条路线可行。\n"
+            ),
         )
-        _write_artifact_hashes(output)
-        print(json.dumps(decision, ensure_ascii=False), flush=True)
-        return 0
-    except BaseException as error:  # preserve the full failed run package
+        print(
+            json.dumps(
+                {
+                    **decision,
+                    "verdict": acceptance.verdict,
+                    "accepted": acceptance.accepted,
+                },
+                ensure_ascii=False,
+            ),
+            flush=True,
+        )
+        return package_exit_code(acceptance)
+    except (
+        ArithmeticError,
+        LookupError,
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+    ) as error:  # preserve the full failed run package
         _worker_failure(output, metadata, error, stop)
         traceback.print_exc()
         return 1
@@ -1031,7 +1068,6 @@ def _worker_command(
     max_runtime_seconds: float,
     no_improvement: int,
     run_kind: str,
-    sisr_enabled: bool = False,
 ) -> tuple[list[str], dict[str, str]]:
     python = INDEPENDENT_PYTHON if arm == "independent" else FROZEN_PYTHON
     if not python.is_file():
@@ -1054,10 +1090,11 @@ def _worker_command(
         "--run-kind",
         run_kind,
     ]
-    if sisr_enabled:
-        command.append("--sisr-enabled")
     environment = dict(os.environ)
-    environment.pop("PYTHONPATH", None)
+    if arm == "independent":
+        environment["PYTHONPATH"] = INDEPENDENT_WORKER_PYTHONPATH
+    else:
+        environment.pop("PYTHONPATH", None)
     environment["PYTHONNOUSERSITE"] = "1"
     return command, environment
 
@@ -1080,12 +1117,22 @@ def _validate_run_package(output: Path) -> dict[str, Any]:
     ]
     if missing:
         raise RuntimeError(f"{output} missing nonempty files: {missing}")
-    metadata = json.loads((output / "metadata.json").read_text("utf-8"))
+    package_metadata = json.loads(
+        (output / "metadata.json").read_text("utf-8")
+    )
+    run_kind = package_metadata.get("run_kind")
+    if not isinstance(run_kind, str):
+        raise RuntimeError(f"run metadata has invalid run_kind: {output}")
+    validated = validate_five_file_package(
+        output,
+        expected_success_verdict=_run_verdicts(run_kind)[0],
+    )
+    metadata = validated["metadata"]
     solution = json.loads(
         (output / "best_solution.json").read_text("utf-8")
     )
     audit = json.loads((output / "audit.json").read_text("utf-8"))
-    decision = json.loads((output / "decision.json").read_text("utf-8"))
+    decision = validated["decision"]
     with (output / "raw_runs.csv").open(
         encoding="utf-8", newline=""
     ) as handle:
@@ -1281,7 +1328,6 @@ def _probe_main(args: argparse.Namespace) -> int:
         max_runtime_seconds=args.max_runtime_seconds,
         no_improvement=args.no_improvement,
         run_kind="probe",
-        sisr_enabled=args.sisr_enabled,
     )
     if returncode != 0:
         return returncode
@@ -1352,7 +1398,6 @@ def _batch_main(args: argparse.Namespace) -> int:
                     max_runtime_seconds=args.max_runtime_seconds,
                     no_improvement=args.no_improvement,
                     run_kind="formal",
-                    sisr_enabled=False,
                 )
                 if returncode != 0:
                     raise RuntimeError(
@@ -1360,7 +1405,14 @@ def _batch_main(args: argparse.Namespace) -> int:
                     )
                 package = _validate_run_package(run_output)
                 _append_progress(progress, instance, arm, package)
-    except BaseException as error:
+    except (
+        ArithmeticError,
+        LookupError,
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+    ) as error:
         batch_metadata.update(
             {
                 "status": "FAILED",
@@ -1378,13 +1430,46 @@ def _batch_main(args: argparse.Namespace) -> int:
                 "traceback": traceback.format_exc(),
             },
         )
+        _write_csv(
+            output / "raw_runs.csv",
+            [
+                {
+                    "run_status": "FAILED",
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                }
+            ],
+        )
+        acceptance = assess_run(
+            termination_ok=False,
+            feasible_ok=None,
+            customers_complete=None,
+            demand_complete=None,
+            audit_ok=None,
+            extra_failure_reasons=(f"{type(error).__name__}: {error}",),
+            success_verdict="FORMAL_CANDIDATE_BATCH_COMPLETE",
+            failure_verdict="FORMAL_CANDIDATE_BATCH_FAILED",
+        )
+        finalize_five_file_package(
+            output,
+            acceptance=acceptance,
+            metadata=batch_metadata,
+            decision={
+                "completed_runs": 0,
+                "error_type": type(error).__name__,
+                "error": str(error),
+            },
+            report_text=(
+                "# 公开候选批处理失败\n\n"
+                f"{type(error).__name__}: {error}\n"
+            ),
+        )
         traceback.print_exc()
-        return 1
+        return package_exit_code(acceptance)
 
     rows = _pair_summary(output, args.seed)
     _write_csv(output / "raw_runs.csv", rows)
     decision = {
-        "verdict": "FORMAL_CANDIDATE_BATCH_COMPLETE",
         "completed_runs": len(INSTANCES) * len(ARMS),
         "instances": len(INSTANCES),
         "independent_wins_by_scaled_cost": sum(
@@ -1405,19 +1490,56 @@ def _batch_main(args: argparse.Namespace) -> int:
         ),
         "selection_or_filtering_applied": False,
     }
-    _json(output / "decision.json", decision)
-    _atomic_text(output / "report.md", _batch_report(rows))
+    acceptance = assess_run(
+        termination_ok=True,
+        feasible_ok=True,
+        customers_complete=all(
+            row["independent_completed_clients"] == row["independent_total_clients"]
+            and row["frozen_completed_clients"] == row["frozen_total_clients"]
+            for row in rows
+        ),
+        demand_complete=all(
+            row["independent_completed_delivery"] == row["independent_total_delivery"]
+            and row["frozen_completed_delivery"] == row["frozen_total_delivery"]
+            for row in rows
+        ),
+        audit_ok=bool(
+            decision["all_independent_routes_raw_feasible"]
+            and decision["all_frozen_routes_raw_feasible"]
+        ),
+        success_verdict="FORMAL_CANDIDATE_BATCH_COMPLETE",
+        failure_verdict="FORMAL_CANDIDATE_BATCH_FAILED",
+    )
     batch_metadata.update(
-        {"status": "COMPLETE", "finished_at": _timestamp()}
+        {
+            "status": "COMPLETE" if acceptance.accepted else "FAILED",
+            "finished_at": _timestamp(),
+        }
     )
     _json(output / "batch_metadata.json", batch_metadata)
-    _batch_artifact_hashes(output, args.seed)
+    finalize_five_file_package(
+        output,
+        acceptance=acceptance,
+        metadata=batch_metadata,
+        decision=decision,
+        report_text=_batch_report(rows),
+    )
+    validate_five_file_package(
+        output,
+        expected_success_verdict="FORMAL_CANDIDATE_BATCH_COMPLETE",
+    )
     _atomic_text(
         output / "DONE",
         f"FORMAL_CANDIDATE_BATCH_COMPLETE {_timestamp()}\n",
     )
-    print(json.dumps(decision, ensure_ascii=False), flush=True)
-    return 0
+    print(
+        json.dumps(
+            {**decision, "verdict": acceptance.verdict, "accepted": True},
+            ensure_ascii=False,
+        ),
+        flush=True,
+    )
+    return package_exit_code(acceptance)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -1432,7 +1554,6 @@ def _parser() -> argparse.ArgumentParser:
     worker.add_argument("--max-runtime-seconds", type=float, required=True)
     worker.add_argument("--no-improvement", type=int, default=5_000)
     worker.add_argument("--run-kind", choices=("probe", "formal"), required=True)
-    worker.add_argument("--sisr-enabled", action="store_true")
 
     probe = commands.add_parser("probe")
     probe.add_argument("output_dir", type=Path)
@@ -1441,7 +1562,6 @@ def _parser() -> argparse.ArgumentParser:
     probe.add_argument("--seed", type=int, default=11)
     probe.add_argument("--max-runtime-seconds", type=float, default=60.0)
     probe.add_argument("--no-improvement", type=int, default=5_000)
-    probe.add_argument("--sisr-enabled", action="store_true")
 
     batch = commands.add_parser("batch")
     batch.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)

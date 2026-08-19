@@ -1,0 +1,21 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+exclude = [
+  "third_party",
+  "Reference Algorithm",
+  "solver/reports",
+  "baselines",
+  "build",
+  "dist",
+]
+
+[tool.ruff.lint]
+select = ["C901", "PLR0912", "PLR0915", "BLE001", "SIM105", "TRY203"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-branches = 12
+max-statements = 50

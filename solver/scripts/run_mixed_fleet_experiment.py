@@ -21,6 +21,18 @@ from time import perf_counter
 from types import MappingProxyType
 from typing import Any, Iterable, Mapping, Sequence
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from experiment_acceptance import (  # noqa: E402
+    NORMAL_PROBLEM_HGS_TERMINATIONS,
+    assess_run,
+    finalize_five_file_package,
+    package_exit_code,
+    row_is_accepted,
+)
+
 
 MAX_WALL_CLOCK_SECONDS = 20.0 * 60.0
 PROTECTED = (
@@ -272,38 +284,9 @@ def _pair_identities(
     )
 
 
-def _load_pi0_manifest(path: Path) -> dict[str, dict[str, Any]]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("schema") != "resetp.formal_pi0.v1":
-        raise ValueError("Pi0 manifest schema must be resetp.formal_pi0.v1")
-    instances = payload.get("instances")
-    if not isinstance(instances, dict):
-        raise ValueError("Pi0 manifest requires an instances object")
-    parsed: dict[str, dict[str, Any]] = {}
-    for instance_id, record in instances.items():
-        if not isinstance(record, dict) or not isinstance(record.get("values"), dict):
-            raise ValueError(f"Pi0 record is malformed: {instance_id}")
-        values = {str(key): float(value) for key, value in record["values"].items()}
-        if not values or any(value <= 0.0 for value in values.values()):
-            raise ValueError(f"Pi0 values must be positive: {instance_id}")
-        value_sha256 = _json_sha256(
-            [[key, float(value).hex()] for key, value in sorted(values.items())]
-        )
-        declared = record.get("value_sha256")
-        if declared is not None and str(declared).lower() != value_sha256:
-            raise ValueError(f"Pi0 value hash mismatch: {instance_id}")
-        source_id = str(record.get("source_id", "")).strip()
-        if not source_id:
-            raise ValueError(f"Pi0 source_id is required: {instance_id}")
-        parsed[str(instance_id)] = {
-            "values": values,
-            "value_sha256": value_sha256,
-            "source_id": source_id,
-        }
-    return parsed
-
-
 def _validate_static_inputs(args: argparse.Namespace, repo: Path) -> dict[str, Any]:
+    from setp_solver.pi0_manifest import load_pi0_manifest
+
     _validate_output_path(repo, args.output_dir)
     authorities = _authority_rows(repo)
     missing = [instance for instance in args.instances if instance not in authorities]
@@ -318,11 +301,15 @@ def _validate_static_inputs(args: argparse.Namespace, repo: Path) -> dict[str, A
     snapshot_sha = _json_sha256(source_hashes)
     pi0_records = None
     if args.pi0_manifest is not None:
-        pi0_records = _load_pi0_manifest(args.pi0_manifest.resolve())
+        pi0_records = load_pi0_manifest(args.pi0_manifest.resolve())
         missing_pi0 = [instance for instance in args.instances if instance not in pi0_records]
         if missing_pi0:
             raise ValueError(f"Pi0 manifest misses requested instances: {missing_pi0}")
         for instance in args.instances:
+            if pi0_records[instance]["formal_reuse_allowed"] is not True:
+                raise ValueError(
+                    f"probe-only Pi0 cannot enter a formal mixed-fleet run: {instance}"
+                )
             expected_depots = set(authorities[instance])
             actual_depots = set(pi0_records[instance]["values"])
             if actual_depots != expected_depots:
@@ -374,7 +361,6 @@ def _dry_run_payload(
         "fleet_parameter_class_ids_by_arm": {
             arm: _planned_fleet_parameter_class_id(arm) for arm in args.arms
         },
-        "pareto_export_planned": args.objective_mode == "bi_objective",
         "pair_validation": "PASSED",
         "pair_fields": PAIR_FIELDS,
         "pair_groups": groups,
@@ -391,7 +377,6 @@ def _dry_run_payload(
             "report.md",
             "artifact_hashes.json",
         ),
-        "additional_pareto_file": "pareto_points.csv",
     }
 
 
@@ -620,13 +605,13 @@ def _arm_setup(
     from setp_solver.algorithms.problem_hgs.evaluation import (
         DutyEvaluationContext,
         FrozenMappingIdentity,
-        mapping_sha256,
     )
     from setp_solver.algorithms.problem_hgs.model import DutyIndividual
     from setp_solver.china81_completion import complete_china81_route_skeleton
     from setp_solver.search.multitrip_schedule import (
         DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
     )
+    from setp_solver.mapping_identity import mapping_sha256
 
     bundle = _arm_bundle(repo, instance_id, arm)
     level_name = ARM_DEFINITIONS[arm].initial_witness_level
@@ -819,35 +804,6 @@ def _fleet_use_by_depot(individual: Any, bundle: Any) -> dict[str, dict[str, int
     return rows
 
 
-def _point_row(
-    *,
-    instance_id: str,
-    seed: int,
-    arm: str,
-    pair_group_id: str,
-    point_index: int,
-    individual: Any,
-    evaluation: Any,
-) -> dict[str, Any]:
-    row = {
-        "instance_id": instance_id,
-        "seed": int(seed),
-        "arm": arm,
-        "pair_group_id": pair_group_id,
-        "point_index": int(point_index),
-        "individual_fingerprint": individual.fingerprint,
-        "total_cost_cny": float(evaluation.total_cost),
-        "direct_emissions_kg": float(evaluation.breakdown["E_cv_direct"]),
-        "indirect_emissions_kg": float(evaluation.breakdown["E_ev_indirect"]),
-        "total_emissions_kg": float(evaluation.breakdown["E_total"]),
-        "feasible": bool(evaluation.feasible),
-    }
-    row.update(_fleet_fields(individual))
-    for key, value in sorted(evaluation.breakdown.items()):
-        row[f"breakdown__{key}"] = value
-    return row
-
-
 def _run_one(
     *,
     repo: Path,
@@ -860,7 +816,7 @@ def _run_one(
     pair_identity: PairIdentity,
     pi0_record: Mapping[str, Any],
     run_dir: Path,
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+) -> dict[str, Any]:
     from run_problem_hgs_private_technical import _parameters, _policy
     from setp_solver.algorithms.problem_hgs.evaluation import DutyFullEvaluator
     from setp_solver.algorithms.problem_hgs.kernel_proposals import (
@@ -928,9 +884,6 @@ def _run_one(
     )
     selected_individual = result.best
     selected_evaluation = result.best_evaluation
-    if result.cost_priority_point is not None:
-        selected_individual = result.cost_priority_point.individual
-        selected_evaluation = result.cost_priority_point.evaluation
     accounting = result.accounting.to_dict()
     row: dict[str, Any] = {
         "instance_id": instance_id,
@@ -958,17 +911,6 @@ def _run_one(
         "total_emissions_kg": float(selected_evaluation.breakdown["E_total"]),
         "feasible": bool(selected_evaluation.feasible),
         "violation_count": len(selected_evaluation.violations),
-        "pareto_point_count": len(result.non_dominated_set),
-        "cost_priority_fingerprint": (
-            None
-            if result.cost_priority_point is None
-            else result.cost_priority_point.individual.fingerprint
-        ),
-        "emissions_priority_fingerprint": (
-            None
-            if result.emissions_priority_point is None
-            else result.emissions_priority_point.individual.fingerprint
-        ),
         "completed_generations": int(result.iterations),
         "initialization_wall_seconds": float(
             accounting["initialization_wall_seconds"]
@@ -996,39 +938,6 @@ def _run_one(
     for key, value in sorted(selected_evaluation.breakdown.items()):
         row[f"breakdown__{key}"] = value
 
-    point_rows = []
-    records = list(result.non_dominated_set)
-    if not records:
-        point_rows.append(
-            _point_row(
-                instance_id=instance_id,
-                seed=seed,
-                arm=arm,
-                pair_group_id=pair_identity.pair_group_id,
-                point_index=0,
-                individual=selected_individual,
-                evaluation=selected_evaluation,
-            )
-        )
-    else:
-        for index, point in enumerate(records):
-            point_row = _point_row(
-                instance_id=instance_id,
-                seed=seed,
-                arm=arm,
-                pair_group_id=pair_identity.pair_group_id,
-                point_index=index,
-                individual=point.individual,
-                evaluation=point.evaluation,
-            )
-            point_row.update(_service_fields(point.individual, bundle))
-            point_row["fleet_use_by_depot_json"] = json.dumps(
-                _fleet_use_by_depot(point.individual, bundle),
-                ensure_ascii=False,
-                sort_keys=True,
-            )
-            point_rows.append(point_row)
-
     run_dir.mkdir(parents=True)
     _write_json(
         run_dir / "result.json",
@@ -1040,16 +949,15 @@ def _run_one(
                 "feasible": selected_evaluation.feasible,
                 "violations": [asdict(item) for item in selected_evaluation.violations],
             },
-            "pareto_front": [point.to_dict() for point in records],
             "accounting": accounting,
             "provenance": asdict(result.provenance),
         },
     )
-    return row, point_rows
+    return row
 
 
 def _failure_row(identity: PairIdentity, error: Exception) -> dict[str, Any]:
-    return {
+    row = {
         "instance_id": identity.instance_id,
         "seed": identity.seed,
         "arm": identity.arm,
@@ -1066,6 +974,8 @@ def _failure_row(identity: PairIdentity, error: Exception) -> dict[str, Any]:
         "error": str(error),
         "traceback": traceback.format_exc(),
     }
+    row.update(_assess_row(row).row_fields())
+    return row
 
 
 def _ordered_fields(rows: Sequence[Mapping[str, Any]]) -> list[str]:
@@ -1097,7 +1007,6 @@ def _ordered_fields(rows: Sequence[Mapping[str, Any]]) -> list[str]:
         "ev_trips",
         "total_trips",
         "fleet_use_by_depot_json",
-        "pareto_point_count",
     ]
     available = set().union(*(row.keys() for row in rows)) if rows else set()
     return [*preferred, *sorted(available.difference(preferred))]
@@ -1111,8 +1020,40 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+def _assess_row(
+    row: Mapping[str, Any],
+    *,
+    audit_ok: bool = True,
+):
+    return assess_run(
+        termination_ok=(
+            row.get("run_status") in NORMAL_PROBLEM_HGS_TERMINATIONS
+        ),
+        feasible_ok=(
+            row.get("feasible") is True
+            and row.get("violation_count") == 0
+        ),
+        customers_complete=(
+            row.get("customers_served") is not None
+            and row.get("customers_served") == row.get("customers_total")
+        ),
+        demand_complete=(
+            row.get("demand_served") is not None
+            and row.get("demand_served") == row.get("demand_total")
+        ),
+        audit_ok=audit_ok,
+        extra_failure_reasons=(
+            f"{row.get('error_type')}: {row.get('error')}"
+            if row.get("error_type") or row.get("error")
+            else ""
+        ,),
+        success_verdict="MIXED_FLEET_RUN_COMPLETE",
+        failure_verdict="MIXED_FLEET_RUN_FAILED",
+    )
+
+
 def _successful(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
-    return [row for row in rows if row.get("total_cost_cny") not in (None, "")]
+    return [row for row in rows if row_is_accepted(row)]
 
 
 def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
@@ -1199,11 +1140,11 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
             f"{statistics.mean(float(a['customers_served']) - float(b['customers_served']) for a, b in pairs):.6f} | "
             f"{statistics.mean(float(a['demand_completion_ratio']) - float(b['demand_completion_ratio']) for a, b in pairs):.6%} |"
         )
-    failed = [row for row in rows if row.get("run_status") == "FAILED"]
+    failed = [row for row in rows if not row_is_accepted(row)]
     lines.extend(["", "## 完整性", ""])
     lines.append(
-        f"完成 {len(successful)} 次，失败 {len(failed)} 次。"
-        "失败原文保留在 `raw_runs.csv`；非支配点逐点保存在 `pareto_points.csv`。"
+        f"验收通过 {len(successful)} 次，拒绝 {len(failed)} 次。"
+        "失败原文保留在 `raw_runs.csv`。"
     )
     return "\n".join(lines) + "\n"
 
@@ -1235,8 +1176,8 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--wall-clock-seconds", type=float, required=True)
     parser.add_argument(
         "--objective-mode",
-        choices=("single_objective", "bi_objective"),
-        default="bi_objective",
+        choices=("single_objective",),
+        default="single_objective",
     )
     parser.add_argument(
         "--population-mode",
@@ -1302,7 +1243,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     pair_groups = []
     rows: list[dict[str, Any]] = []
-    pareto_rows: list[dict[str, Any]] = []
     metadata = {
         "status": "RUNNING",
         "experiment_id": "MAIN-2",
@@ -1337,7 +1277,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     }
     _write_json(output / "metadata.json", metadata)
     pi0_records = validated["pi0_records"]
-    assert pi0_records is not None
     for instance_id in args.instances:
         for seed in args.seeds:
             identities = _pair_identities(
@@ -1354,7 +1293,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             for arm in args.arms:
                 run_dir = output / "runs" / instance_id / arm / f"seed_{seed}"
                 try:
-                    row, points = _run_one(
+                    row = _run_one(
                         repo=repo,
                         instance_id=instance_id,
                         arm=arm,
@@ -1368,38 +1307,66 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                 except Exception as error:  # Preserve exact per-run failure.
                     row = _failure_row(by_arm[arm], error)
-                    points = []
                     run_dir.mkdir(parents=True, exist_ok=True)
                     _write_json(run_dir / "failure.json", row)
+                if "acceptance_passed" not in row:
+                    row.update(_assess_row(row).row_fields())
                 rows.append(row)
-                pareto_rows.extend(points)
 
     protected_after = {path: _sha256(repo / path) for path in PROTECTED}
-    if protected_after != protected_before:
-        raise RuntimeError("a protected source file changed during MAIN-2")
+    protected_ok = protected_after == protected_before
+    if not protected_ok:
+        for row in rows:
+            row.update(_assess_row(row, audit_ok=False).row_fields())
     _write_csv(output / "raw_runs.csv", rows)
-    _write_csv(output / "pareto_points.csv", pareto_rows)
-    (output / "report.md").write_text(render_report(rows), encoding="utf-8")
     metadata.update(
         {
-            "status": (
-                "COMPLETED_WITH_FAILURES"
-                if any(row.get("run_status") == "FAILED" for row in rows)
-                else "COMPLETED"
-            ),
             "pair_validation": "PASSED",
             "pair_groups": pair_groups,
             "planned_run_count": len(args.instances)
             * len(args.seeds)
             * len(args.arms),
             "recorded_run_count": len(rows),
-            "pareto_point_count": len(pareto_rows),
             "protected_hashes_after": protected_after,
         }
     )
-    _write_json(output / "metadata.json", metadata)
-    _write_json(output / "artifact_hashes.json", _artifact_hashes(output))
-    return 0
+    accepted_rows = _successful(rows)
+    overall = assess_run(
+        termination_ok=len(accepted_rows) == len(rows),
+        feasible_ok=all(row.get("feasible") is True for row in rows),
+        customers_complete=all(
+            row.get("customers_served") == row.get("customers_total")
+            for row in rows
+        ),
+        demand_complete=all(
+            row.get("demand_served") == row.get("demand_total")
+            for row in rows
+        ),
+        audit_ok=protected_ok,
+        extra_failure_reasons=tuple(
+            f"{row.get('instance_id')} seed={row.get('seed')} arm={row.get('arm')}: "
+            f"{row.get('acceptance_failure_reasons')}"
+            for row in rows
+            if not row_is_accepted(row)
+        ),
+        success_verdict="MIXED_FLEET_BATCH_COMPLETE",
+        failure_verdict="MIXED_FLEET_BATCH_FAILED",
+    )
+    decision = {
+        "planned_run_count": len(rows),
+        "accepted_run_count": len(accepted_rows),
+        "rejected_run_count": len(rows) - len(accepted_rows),
+        "protected_hashes_unchanged": protected_ok,
+    }
+    finalize_five_file_package(
+        output,
+        acceptance=overall,
+        metadata=metadata,
+        decision=decision,
+        report_text=render_report(rows),
+        complete_status="COMPLETED",
+    )
+    return package_exit_code(overall)
 
 
 if __name__ == "__main__":

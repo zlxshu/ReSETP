@@ -12,7 +12,7 @@ from __future__ import annotations
 import csv
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, Protocol
@@ -21,6 +21,7 @@ from .charging_curve import (
     M17_FAST_SHAPE_SCALED_60KW_PWL,
 )
 from .instance_loader import (
+    IndexedTimeProfile,
     Instance,
     Node,
     VehicleTypeParameters,
@@ -237,10 +238,25 @@ class China81Bundle:
     runtime_parameter_authority: str
     fleet_authority: str
     model_config: Mapping[str, object]
+    carbon_price_cny_per_kg: float = CHINA81_CARBON_PRICE_CNY_PER_KG
     formal_search_allowed: bool = False
+    enterprise_assignment_by_customer: Mapping[str, str] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
+    enterprise_assignment_source_path: str | None = None
+    enterprise_assignment_source_sha256: str | None = None
+    enterprise_assignment_mapping_sha256: str | None = None
+    enterprise_assignment_rule_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         """Fail closed if China81 profiles and prices are mixed or diverge."""
+
+        if not isinstance(self.time_profile, IndexedTimeProfile):
+            object.__setattr__(
+                self,
+                "time_profile",
+                IndexedTimeProfile(self.time_profile),
+            )
 
         actual_city_prices = dict(self.prices.diesel_price_by_city)
         expected_city_prices = dict(self.diesel_price_by_city)
@@ -263,7 +279,7 @@ class China81Bundle:
                 f"{expected_diesel_price}"
             )
         expected_core = {
-            "carbon_price": CHINA81_CARBON_PRICE_CNY_PER_KG,
+            "carbon_price": self.carbon_price_cny_per_kg,
             "carbon_price_low": CHINA81_CARBON_PRICE_LOW_CNY_PER_KG,
             "diesel_ef": CHINA81_DIESEL_EF_KG_PER_L,
         }

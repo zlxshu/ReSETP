@@ -1,0 +1,1502 @@
+"""Production wiring for the MAIN-3b paired dynamic experiment.
+
+This module deliberately contains adapters, not a new routing method.  The
+static and rolling arms enter the existing private Problem-HGS runner; the
+mechanical arm enters the existing three-class insertion baseline.  Exact
+dynamic cuts, complete evaluation, and the fleet ledger remain owned by the
+existing Problem-HGS components.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import asdict, dataclass, replace
+from pathlib import Path
+from types import MappingProxyType
+from typing import Any
+
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_SCRIPT_ROOT = _REPO_ROOT / "scripts"
+if str(_SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_ROOT))
+
+from experiment_acceptance import (  # noqa: E402
+    NORMAL_PROBLEM_HGS_TERMINATIONS,
+)
+from run_problem_hgs_private_technical import (  # noqa: E402
+    DEPOT_SEARCH_INSTANCE_ID,
+    ENDOGENOUS_FLEET_PARAMETERS,
+    _build_context,
+    _parameters,
+    _policy,
+)
+from setp_solver.algorithms.problem_hgs.dynamic import (  # noqa: E402
+    DutyDynamicState,
+    PreparedDynamicCandidate,
+    future_individual_from_cut,
+    prepare_dynamic_candidate,
+)
+from setp_solver.algorithms.problem_hgs.dynamic_insertion import (  # noqa: E402
+    DynamicInsertionFailure,
+    DynamicInsertionOperator,
+    INSERTED_AND_FULL_EVALUATION_FEASIBLE,
+    _committed_sha256,
+)
+from setp_solver.algorithms.problem_hgs.evaluation import (  # noqa: E402
+    DutyEvaluationContext,
+    DutyFullEvaluator,
+    FullEvaluation,
+)
+from setp_solver.algorithms.problem_hgs.kernel_proposals import (  # noqa: E402
+    IndependentKernelDutyRouteProposalEngine,
+)
+from setp_solver.algorithms.problem_hgs.mechanical_baseline import (  # noqa: E402
+    MechanicalInsertionFailure,
+    insert_initial_customer,
+    insert_revealed_customer,
+)
+from setp_solver.algorithms.problem_hgs.model import (  # noqa: E402
+    DutyIndividual,
+)
+from setp_solver.algorithms.problem_hgs.runner import (  # noqa: E402
+    FrozenPopulationIdentity,
+    ProblemHGSSearchState,
+    population_sha256,
+    run_integrated_problem_hgs,
+)
+from setp_solver.c8_dynamic_stream import (  # noqa: E402
+    C8_BASE_INSTANCE_ID,
+    C8DynamicStream,
+    extend_route_contract,
+    load_c8_stream,
+    overlay_c8_bundle,
+    subset_c8_bundle,
+)
+from setp_solver.search.dynamic_multitrip_schedule import (  # noqa: E402
+    DynamicAssetState,
+    cut_certificate_at_trigger,
+    cut_dynamic_certificate_at_trigger,
+)
+from setp_solver.solution import (  # noqa: E402
+    ChargingAction,
+    Route,
+    Solution,
+    physical_vehicle_id,
+)
+
+
+_DAY_SECONDS = 86_400.0
+_TOL = 1.0e-9
+
+
+class ProductionBackendHalt(RuntimeError):
+    """An existing component could not satisfy the declared backend contract."""
+
+
+@dataclass(frozen=True)
+class ProductionEvaluation:
+    """Harness-shaped view of one already-computed full evaluation."""
+
+    total_cost: float
+    total_emissions_kg: float
+    customers_served: int
+    demand_served_kg: float
+    enabled_vehicles: int
+    full_evaluation_feasible: bool
+    details: Mapping[str, Any] = MappingProxyType({})
+
+
+@dataclass(frozen=True)
+class ProductionOrder:
+    """The small information object consumed by the generic harness."""
+
+    event_id: str
+    customer_id: str
+    appearance_second: float
+    demand_kg: float
+    x: float
+    y: float
+    initially_visible: bool = False
+
+
+@dataclass(frozen=True)
+class ProductionDynamicProblem:
+    """Read-only unified target plus the in-memory C8 overlay."""
+
+    instance_id: str
+    repo: Path
+    base_bundle: Any
+    full_bundle: Any
+    base_initial: DutyIndividual
+    base_context: DutyEvaluationContext
+    c8_stream: C8DynamicStream
+    initial_orders: tuple[ProductionOrder, ...]
+    dynamic_orders: tuple[ProductionOrder, ...]
+
+    @property
+    def orders(self) -> tuple[ProductionOrder, ...]:
+        return self.initial_orders + self.dynamic_orders
+
+    @property
+    def order_by_id(self) -> Mapping[str, ProductionOrder]:
+        return {order.customer_id: order for order in self.orders}
+
+    @property
+    def static_customer_ids(self) -> frozenset[str]:
+        return frozenset(order.customer_id for order in self.initial_orders)
+
+    @property
+    def dynamic_customer_ids(self) -> frozenset[str]:
+        return frozenset(order.customer_id for order in self.dynamic_orders)
+
+    @property
+    def appearance_by_customer(self) -> Mapping[str, float]:
+        return MappingProxyType(
+            {
+                order.customer_id: float(order.appearance_second)
+                for order in self.orders
+            }
+        )
+
+
+@dataclass(frozen=True)
+class ProductionState:
+    """A public harness state and a private continuation checkpoint.
+
+    ``evaluation`` is the one complete evaluation exposed to the harness.
+    ``planning_future`` is separate because a deferred order is intentionally
+    absent from the last successful continuation and must be retried later.
+    """
+
+    individual: DutyIndividual
+    evaluation: FullEvaluation
+    bundle: Any
+    context: DutyEvaluationContext
+    active_customer_ids: frozenset[str]
+    dynamic_state: DutyDynamicState | None
+    stage_index: int
+    base_individual: DutyIndividual
+    static_solution: Solution
+    static_certificate: Any
+    planning_dynamic_state: DutyDynamicState | None = None
+    planning_future: PreparedDynamicCandidate | None = None
+    planning_individual: DutyIndividual | None = None
+    planning_active_customer_ids: frozenset[str] = frozenset()
+    planning_trigger_second: float | None = None
+    deferred_customer_ids: tuple[str, ...] = ()
+    timing_by_route: Mapping[str, Any] = MappingProxyType({})
+    diagnostics: tuple[Mapping[str, Any], ...] = ()
+    outsourced_customer_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "active_customer_ids",
+            frozenset(self.active_customer_ids),
+        )
+        object.__setattr__(
+            self,
+            "planning_active_customer_ids",
+            frozenset(self.planning_active_customer_ids),
+        )
+        object.__setattr__(
+            self,
+            "deferred_customer_ids",
+            tuple(dict.fromkeys(map(str, self.deferred_customer_ids))),
+        )
+        object.__setattr__(
+            self,
+            "timing_by_route",
+            MappingProxyType(dict(self.timing_by_route)),
+        )
+        object.__setattr__(self, "diagnostics", tuple(self.diagnostics))
+
+    @property
+    def unserved_customer_ids(self) -> tuple[str, ...]:
+        return tuple(self.individual.unserved_customers)
+
+
+@dataclass(frozen=True)
+class _StageFrame:
+    active_customer_ids: frozenset[str]
+    trigger_second: float
+    bundle: Any
+    context: DutyEvaluationContext
+    evaluator: DutyFullEvaluator
+    dynamic_state: DutyDynamicState
+    initial_future: DutyIndividual
+    source_solution: Solution
+    source_certificate: Any
+    timing_by_route: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
+class ProductionBackend:
+    """Adapter implementing the seven-method experiment backend contract."""
+
+    seed: int = 1
+    shared_stream: Any | None = None
+
+    evaluator_identity = "Problem-HGS-DutyFullEvaluator-v2026-08-16"
+
+    def for_seed(self, seed: int) -> "ProductionBackend":
+        return replace(self, seed=int(seed), shared_stream=None)
+
+    def with_stream(self, stream: Any) -> "ProductionBackend":
+        return replace(self, shared_stream=stream)
+
+    def initial_plan(
+        self,
+        problem: ProductionDynamicProblem,
+        deadline_seconds: float,
+    ) -> ProductionState:
+        context = _static_context(problem.base_context, problem.base_bundle)
+        candidate, evaluation, _ = self._run_hgs(
+            problem.base_initial,
+            context,
+            deadline_seconds,
+            arm="initial_plan",
+            stage_index=0,
+        )
+        static_solution = evaluation.prepared_solution
+        static_certificate = evaluation.certificate
+        static_ids = problem.static_customer_ids
+        return ProductionState(
+            individual=candidate,
+            evaluation=evaluation,
+            bundle=problem.base_bundle,
+            context=context,
+            active_customer_ids=static_ids,
+            dynamic_state=None,
+            stage_index=0,
+            base_individual=problem.base_initial,
+            static_solution=static_solution,
+            static_certificate=static_certificate,
+            planning_individual=problem.base_initial,
+            planning_active_customer_ids=static_ids,
+            timing_by_route=_timing_map(static_certificate),
+        )
+
+    def rolling_reoptimize(
+        self,
+        problem: ProductionDynamicProblem,
+        current: ProductionState,
+        visible_customer_ids: Sequence[str],
+        deadline_seconds: float,
+    ) -> tuple[ProductionState, str]:
+        stream = _require_bound_stream(self)
+        trigger = _current_trigger(stream, current.stage_index)
+        active = frozenset(map(str, visible_customer_ids))
+        _validate_active(problem, active)
+        frame = self._build_stage(problem, current, active, trigger)
+        stage_evaluation = frame.evaluator.evaluate(frame.initial_future)
+        pending = tuple(frame.initial_future.unserved_customers)
+        if not pending:
+            next_state = replace(current, stage_index=current.stage_index + 1)
+            return next_state, "rolling_no_new_unserved_suffix"
+
+        started = _now()
+        policy = _policy(frame.evaluator)
+        try:
+            insertion = DynamicInsertionOperator(
+                enabled=True,
+                random_seed=self.seed + int(current.stage_index) + 1,
+            ).apply(
+                frame.initial_future,
+                evaluator=frame.evaluator,
+                charging_policy=policy,
+                newly_revealed_customer_ids=pending,
+                current_evaluation=stage_evaluation,
+            )
+        except (DynamicInsertionFailure, TypeError, ValueError) as error:
+            deferred = _deferred_state(
+                current,
+                frame,
+                stage_evaluation,
+                active_customer_ids=active,
+                deferred_customer_ids=tuple(
+                    dict.fromkeys((*current.deferred_customer_ids, *pending))
+                ),
+                stage_index=current.stage_index + 1,
+                diagnostic={
+                    "arm": "rolling_dynamic",
+                    "kind": "dynamic_insertion_exception",
+                    "error": f"{type(error).__name__}: {error}",
+                },
+            )
+            return deferred, "rolling_defer_dynamic_insertion_exception"
+
+        if (
+            insertion.status != INSERTED_AND_FULL_EVALUATION_FEASIBLE
+            or insertion.evaluation is None
+        ):
+            diagnostic = {
+                "arm": "rolling_dynamic",
+                "kind": "dynamic_insertion_no_feasible_candidate",
+                "status": insertion.status,
+                "failure_reason": insertion.failure_reason,
+                "candidate_diagnostics": [
+                    {
+                        "candidate_id": item.candidate_id,
+                        "scope": item.scope,
+                        "status": item.status,
+                        "failure_reason": item.failure_reason,
+                    }
+                    for item in insertion.accounting.candidate_diagnostics
+                ],
+            }
+            return (
+                _deferred_state(
+                    current,
+                    frame,
+                    stage_evaluation,
+                    active_customer_ids=active,
+                    deferred_customer_ids=tuple(
+                        dict.fromkeys((*current.deferred_customer_ids, *pending))
+                    ),
+                    stage_index=current.stage_index + 1,
+                    diagnostic=diagnostic,
+                ),
+                "rolling_defer_no_feasible_candidate",
+            )
+
+        remaining = max(0.0, float(deadline_seconds) - (_now() - started))
+        candidate, evaluation, run_result = self._run_hgs(
+            insertion.individual,
+            frame.context,
+            remaining,
+            arm="rolling_dynamic",
+            stage_index=current.stage_index + 1,
+        )
+        if not evaluation.feasible:
+            candidate = insertion.individual
+            evaluation = insertion.evaluation
+        _assert_committed_history_unchanged(frame.evaluator, evaluation)
+        next_state = _successful_state(
+            current,
+            frame,
+            candidate,
+            evaluation,
+            active_customer_ids=active,
+            stage_index=current.stage_index + 1,
+            diagnostics={
+                "arm": "rolling_dynamic",
+                "kind": "problem_hgs_stage",
+                "iterations": int(run_result.iterations),
+                "termination_status": run_result.termination_status,
+                "dynamic_insertion_candidate_count": int(
+                    insertion.accounting.candidate_attempt_count
+                ),
+            },
+        )
+        return next_state, "rolling_dynamic_insertion_then_problem_hgs"
+
+    def mechanical_dispatch(
+        self,
+        problem: ProductionDynamicProblem,
+        current: ProductionState,
+        newly_revealed_customer_ids: Sequence[str],
+        deadline_seconds: float,
+    ) -> tuple[ProductionState, str]:
+        del deadline_seconds
+        stream = _require_bound_stream(self)
+        trigger = _current_trigger(stream, current.stage_index)
+        new_ids = tuple(dict.fromkeys(map(str, newly_revealed_customer_ids)))
+        active_all = frozenset(
+            {*current.active_customer_ids, *new_ids}
+        )
+        _validate_active(problem, active_all)
+        queue = tuple(
+            dict.fromkeys((*current.deferred_customer_ids, *new_ids))
+        )
+        work = current
+        detail_rows: list[str] = []
+        for customer_id in queue:
+            if customer_id in work.planning_active_customer_ids:
+                continue
+            attempt_active = frozenset(
+                {*work.planning_active_customer_ids, customer_id}
+            )
+            frame = self._build_stage(problem, work, attempt_active, trigger)
+            stage_evaluation = frame.evaluator.evaluate(frame.initial_future)
+            try:
+                result = insert_revealed_customer(
+                    frame.initial_future,
+                    customer_id,
+                    frame.evaluator,
+                )
+            except MechanicalInsertionFailure as error:
+                detail_rows.append(f"{customer_id}:defer")
+                work = _deferred_state(
+                    work,
+                    frame,
+                    stage_evaluation,
+                    active_customer_ids=attempt_active,
+                    deferred_customer_ids=tuple(
+                        dict.fromkeys((*work.deferred_customer_ids, customer_id))
+                    ),
+                    stage_index=work.stage_index,
+                    diagnostic={
+                        "arm": "mechanical_online_p38",
+                        "kind": "mechanical_no_feasible_candidate",
+                        "customer_id": customer_id,
+                        "class_diagnostics": error.class_diagnostics,
+                        "rejected_candidates": [
+                            [key, int(value)]
+                            for key, value in error.rejected_candidates
+                        ],
+                    },
+                )
+                continue
+            except (TypeError, ValueError) as error:
+                raise ProductionBackendHalt(
+                    "mechanical baseline cannot consume the dynamic cut for "
+                    f"{customer_id}: {type(error).__name__}: {error}"
+                ) from error
+
+            _assert_committed_history_unchanged(frame.evaluator, result.evaluation)
+            work = _successful_state(
+                work,
+                frame,
+                result.individual,
+                result.evaluation,
+                active_customer_ids=attempt_active,
+                stage_index=work.stage_index,
+                diagnostics={
+                    "arm": "mechanical_online_p38",
+                    "kind": "mechanical_insertion",
+                    "customer_id": customer_id,
+                    "candidate_class": result.decision.candidate_class,
+                    "rejected_candidates": [
+                        [key, int(value)]
+                        for key, value in result.decision.rejected_candidates
+                    ],
+                },
+            )
+            detail_rows.append(
+                f"{customer_id}:{result.decision.candidate_class}"
+            )
+
+        report_frame = self._build_stage(problem, work, active_all, trigger)
+        report_evaluation = report_frame.evaluator.evaluate(
+            report_frame.initial_future
+        )
+        report = _deferred_state(
+            work,
+            report_frame,
+            report_evaluation,
+            active_customer_ids=active_all,
+            deferred_customer_ids=work.deferred_customer_ids,
+            stage_index=current.stage_index + 1,
+            diagnostic={
+                "arm": "mechanical_online_p38",
+                "kind": "batch_summary",
+                "decisions": list(detail_rows),
+            },
+        )
+        return report, ";".join(detail_rows)
+
+    def full_information_static(
+        self,
+        problem: ProductionDynamicProblem,
+        all_customer_ids: Sequence[str],
+        deadline_seconds: float,
+    ) -> ProductionState:
+        base = self.initial_plan(problem, deadline_seconds)
+        current = base.individual
+        active = set(problem.static_customer_ids)
+        dynamic_ids = [
+            str(customer_id)
+            for customer_id in all_customer_ids
+            if str(customer_id) in problem.dynamic_customer_ids
+        ]
+        last_context = _static_context(problem.base_context, problem.base_bundle)
+        last_bundle = problem.base_bundle
+        last_evaluation = base.evaluation
+        diagnostics: list[Mapping[str, Any]] = []
+        for customer_id in dynamic_ids:
+            active.add(customer_id)
+            bundle = subset_c8_bundle(problem.full_bundle, active)
+            context = _static_context(
+                _context_with_bundle(problem.base_context, bundle, problem),
+                bundle,
+            )
+            candidate = replace(
+                current,
+                unserved_customers=(customer_id,),
+                source="full-information-static-preinsert",
+            )
+            evaluator = DutyFullEvaluator(context)
+            try:
+                inserted = insert_initial_customer(candidate, customer_id, evaluator)
+            except (TypeError, ValueError, RuntimeError) as error:
+                remaining = tuple(dynamic_ids[dynamic_ids.index(customer_id) :])
+                incomplete = replace(
+                    current,
+                    unserved_customers=remaining,
+                    source="full-information-static-defer",
+                )
+                last_evaluation = evaluator.evaluate(incomplete)
+                diagnostics.append(
+                    {
+                        "arm": "full_information_static_reference",
+                        "kind": "static_preinsert_failure",
+                        "customer_id": customer_id,
+                        "error": f"{type(error).__name__}: {error}",
+                    }
+                )
+                return ProductionState(
+                    individual=incomplete,
+                    evaluation=last_evaluation,
+                    bundle=bundle,
+                    context=context,
+                    active_customer_ids=frozenset(active),
+                    dynamic_state=None,
+                    stage_index=len(dynamic_ids),
+                    base_individual=problem.base_initial,
+                    static_solution=base.static_solution,
+                    static_certificate=base.static_certificate,
+                    planning_active_customer_ids=frozenset(active - set(remaining)),
+                    deferred_customer_ids=remaining,
+                    timing_by_route=_timing_map(last_evaluation.certificate),
+                    diagnostics=tuple(diagnostics),
+                )
+            current = inserted.individual
+            last_evaluation = inserted.evaluation
+            last_context = context
+            last_bundle = bundle
+
+        context = _static_context(
+            _context_with_bundle(problem.base_context, problem.full_bundle, problem),
+            problem.full_bundle,
+        )
+        candidate, evaluation, _ = self._run_hgs(
+            current,
+            context,
+            deadline_seconds,
+            arm="full_information_static_reference",
+            stage_index=len(dynamic_ids),
+        )
+        del last_context, last_bundle, last_evaluation
+        return ProductionState(
+            individual=candidate,
+            evaluation=evaluation,
+            bundle=problem.full_bundle,
+            context=context,
+            active_customer_ids=frozenset(
+                {*problem.static_customer_ids, *problem.dynamic_customer_ids}
+            ),
+            dynamic_state=None,
+            stage_index=len(dynamic_ids),
+            base_individual=problem.base_initial,
+            static_solution=base.static_solution,
+            static_certificate=base.static_certificate,
+            planning_individual=candidate,
+            planning_active_customer_ids=frozenset(
+                {*problem.static_customer_ids, *problem.dynamic_customer_ids}
+            ),
+            timing_by_route=_timing_map(evaluation.certificate),
+            diagnostics=tuple(diagnostics),
+        )
+
+    def evaluate(
+        self,
+        problem: ProductionDynamicProblem,
+        state: ProductionState,
+    ) -> Any:
+        """Expose the already-computed DutyFullEvaluator result."""
+
+        full = state.evaluation
+        bundle = state.bundle
+        served = _served_customers(full.prepared_solution, bundle)
+        active = {
+            node.node_id
+            for node in bundle.instance.nodes
+            if node.node_type.lower() == "c"
+        }
+        demand = {
+            node.node_id: float(node.demand)
+            for node in bundle.instance.nodes
+            if node.node_type.lower() == "c"
+        }
+        enabled = {
+            physical_vehicle_id(route.vehicle_id)
+            for route in full.prepared_solution.routes
+        }
+        details = _details(
+            state,
+            full,
+            bundle,
+            served,
+            active,
+            demand,
+            dynamic_customer_ids=problem.dynamic_customer_ids,
+        )
+        return ProductionEvaluation(
+            total_cost=float(full.total_cost),
+            total_emissions_kg=float(full.breakdown.get("E_total", 0.0)),
+            customers_served=len(served),
+            demand_served_kg=sum(demand[item] for item in served),
+            enabled_vehicles=len(enabled),
+            full_evaluation_feasible=bool(full.feasible),
+            details=details,
+        )
+
+    def fleet_snapshot(
+        self,
+        problem: ProductionDynamicProblem,
+        state: ProductionState,
+    ) -> list[dict[str, Any]]:
+        del problem
+        full = state.evaluation
+        bundle = state.bundle
+        routes_by_asset: dict[str, list[Route]] = {}
+        for route in full.prepared_solution.routes:
+            routes_by_asset.setdefault(
+                physical_vehicle_id(route.vehicle_id), []
+            ).append(route)
+        timings = dict(state.timing_by_route)
+        timings.update(_timing_map(full.certificate))
+        battery_capacity = float(
+            bundle.instance.battery_capacity_kwh(
+                fallback=float(getattr(bundle.prices, "B_battery_kwh", 0.0))
+            )
+        )
+        rows: list[dict[str, Any]] = []
+        for duty in state.base_individual.duties:
+            asset_id = duty.physical_vehicle_id
+            routes = routes_by_asset.get(asset_id, [])
+            customers = [
+                customer_id
+                for route in routes
+                for customer_id in route.node_sequence[1:-1]
+            ]
+            demand = sum(
+                float(
+                    bundle.instance.nodes[bundle.instance.node_index[customer_id]].demand
+                )
+                for customer_id in customers
+                if customer_id in bundle.instance.node_index
+            )
+            trip_times = [
+                timings[route.vehicle_id]
+                for route in routes
+                if route.vehicle_id in timings
+            ]
+            departure = (
+                min(float(item.departure_second) for item in trip_times)
+                if trip_times
+                else ""
+            )
+            returned = (
+                max(float(item.return_second) for item in trip_times)
+                if trip_times
+                else ""
+            )
+            asset_state = (
+                None
+                if state.dynamic_state is None
+                else state.dynamic_state.asset_states.get(asset_id)
+            )
+            soc = (
+                ""
+                if asset_state is None or duty.vehicle_type != "ev"
+                else float(asset_state.remaining_battery_kwh)
+            )
+            soc_fraction = (
+                ""
+                if soc == "" or battery_capacity <= 0.0
+                else float(soc) / battery_capacity
+            )
+            capacity = _payload_capacity(bundle, duty.vehicle_type)
+            rows.append(
+                {
+                    "vehicle_id": asset_id,
+                    "vehicle_type": duty.vehicle_type,
+                    "home_depot_id": duty.home_depot_id,
+                    "status": "used" if routes else "idle",
+                    "trip_count": len(routes),
+                    "assigned_customer_count": len(customers),
+                    "assigned_demand_kg": demand,
+                    "remaining_capacity_kg": (
+                        "" if capacity is None else max(0.0, capacity - demand)
+                    ),
+                    "departure_second": departure,
+                    "return_second": returned,
+                    "soc_kwh": soc,
+                    "soc_fraction": soc_fraction,
+                }
+            )
+        return rows
+
+    def _build_stage(
+        self,
+        problem: ProductionDynamicProblem,
+        previous: ProductionState,
+        active_customer_ids: frozenset[str],
+        trigger_second: float,
+    ) -> _StageFrame:
+        if not problem.base_context.rebuilt_route_constraints:
+            raise ProductionBackendHalt(
+                "unified target has no rebuilt route contract; dynamic cut "
+                "cannot freeze shift-aware execution"
+            )
+        bundle = subset_c8_bundle(problem.full_bundle, active_customer_ids)
+        route_contract = extend_route_contract(
+            problem.base_context.rebuilt_route_constraints,
+            problem.c8_stream,
+            active_customer_ids,
+        )
+        if previous.planning_future is None:
+            source_solution = previous.static_solution
+            source_certificate = previous.static_certificate
+            cut = cut_certificate_at_trigger(
+                source_solution,
+                source_certificate,
+                bundle.instance,
+                bundle.prices,
+                trigger_second=float(trigger_second),
+            )
+            assets = _full_asset_registry(
+                previous.base_individual,
+                cut,
+                bundle,
+            )
+            prior = Solution()
+            certified_history = frozenset()
+            timing = _timing_map(source_certificate)
+        else:
+            if previous.planning_dynamic_state is None:
+                raise ProductionBackendHalt(
+                    "dynamic continuation has a future solution but no "
+                    "dynamic asset state"
+                )
+            source_solution = previous.planning_future.future_solution
+            source_certificate = previous.planning_future.future_certificate
+            cut = cut_dynamic_certificate_at_trigger(
+                source_solution,
+                source_certificate,
+                bundle.instance,
+                bundle.prices,
+                inherited_asset_states=previous.planning_dynamic_state.asset_states,
+                previous_stage_start_second=float(
+                    previous.planning_dynamic_state.cut.trigger_second
+                ),
+                trigger_second=float(trigger_second),
+                inherited_locked_charging_actions=(
+                    previous.planning_dynamic_state.cut.locked_charging_actions
+                ),
+            )
+            assets = MappingProxyType(dict(cut.asset_states))
+            prior = _advance_prior_history(previous.planning_dynamic_state)
+            certified_history = frozenset(
+                {
+                    *previous.planning_dynamic_state.certified_dynamic_route_ids,
+                    *cut.completed_route_ids,
+                    *cut.in_progress_route_ids,
+                }
+            )
+            timing = dict(previous.timing_by_route)
+            timing.update(_timing_map(source_certificate))
+
+        committed_route_ids = {
+            *cut.completed_route_ids,
+            *cut.in_progress_route_ids,
+        }
+        committed_customers = {
+            customer_id
+            for route in (
+                *prior.routes,
+                *(
+                    route
+                    for route in source_solution.routes
+                    if route.vehicle_id in committed_route_ids
+                ),
+            )
+            for customer_id in route.node_sequence[1:-1]
+            if customer_id in active_customer_ids
+        }
+        dynamic_state = DutyDynamicState(
+            source_solution=source_solution,
+            cut=cut,
+            asset_states=assets,
+            future_customer_ids=frozenset(
+                active_customer_ids.difference(committed_customers)
+            ),
+            customer_appearance_second={
+                customer_id: problem.appearance_by_customer[customer_id]
+                for customer_id in active_customer_ids
+            },
+            charging_strategy="aware",
+            charging_intensity_field="forecast_gco2_per_kwh",
+            prior_committed_solution=prior,
+            certified_dynamic_route_ids=certified_history,
+        )
+        initial_future = future_individual_from_cut(
+            dynamic_state,
+            source_certificate,
+            bundle.instance,
+        )
+        context = replace(
+            problem.base_context,
+            bundle=bundle,
+            rebuilt_route_constraints=route_contract,
+            fairness_enabled=False,
+            incremental_full_truth_sentinel_enabled=False,
+            dynamic_state=dynamic_state,
+        )
+        return _StageFrame(
+            active_customer_ids=active_customer_ids,
+            trigger_second=float(trigger_second),
+            bundle=bundle,
+            context=context,
+            evaluator=DutyFullEvaluator(context),
+            dynamic_state=dynamic_state,
+            initial_future=initial_future,
+            source_solution=source_solution,
+            source_certificate=source_certificate,
+            timing_by_route=MappingProxyType(dict(timing)),
+        )
+
+    def _run_hgs(
+        self,
+        candidate: DutyIndividual,
+        context: DutyEvaluationContext,
+        deadline_seconds: float,
+        *,
+        arm: str,
+        stage_index: int,
+    ) -> tuple[DutyIndividual, FullEvaluation, Any]:
+        if candidate.unserved_customers:
+            raise ProductionBackendHalt(
+                "Problem-HGS received an incomplete candidate in "
+                f"{arm}: {candidate.unserved_customers}"
+            )
+        evaluator = DutyFullEvaluator(context)
+        init_started = _now()
+        initial_evaluation = evaluator.evaluate(candidate)
+        initialization_wall = _now() - init_started
+        if not initial_evaluation.feasible:
+            raise ProductionBackendHalt(
+                f"complete candidate rejected before Problem-HGS in {arm}: "
+                + "; ".join(item.detail for item in initial_evaluation.violations)
+            )
+        route_engine = IndependentKernelDutyRouteProposalEngine(
+            context,
+            candidate,
+            random_seed=self.seed + int(stage_index),
+            stream_role=f"main3b_{arm}_{stage_index}",
+            depot_assignment_operator_enabled=True,
+            rebuilt_volume_capacity_enabled=(
+                context.rebuilt_route_constraints is not None
+            ),
+            rebuilt_shift_neighbours_only=(
+                context.rebuilt_route_constraints is not None
+            ),
+            shift_aware_ev_unit_cost_enabled=(
+                context.rebuilt_route_constraints is not None
+            ),
+        )
+        parameters = _parameters(
+            random_seed=self.seed + int(stage_index),
+            population_mode="technical_two_parent",
+        )
+        identity = FrozenPopulationIdentity(
+            source_id=f"main3b:{arm}:stage-{stage_index}",
+            value_sha256=population_sha256((candidate,)),
+        )
+        result = run_integrated_problem_hgs(
+            (candidate,),
+            evaluator=evaluator,
+            charging_policy=_policy(evaluator),
+            parameters=parameters,
+            initial_population_identity=identity,
+            stop=lambda state: _stop_at_deadline(
+                state,
+                float(deadline_seconds),
+            ),
+            arm=arm,
+            route_engine=route_engine,
+            initial_evaluations=(initial_evaluation,),
+            initialization_full_evaluation_count=1,
+            initialization_wall_seconds=initialization_wall,
+            cross_depot_enabled=True,
+            multi_trip_enabled=True,
+            type_exchange_enabled=True,
+            route_layer_crossover_enabled=False,
+        )
+        _require_normal_hgs_termination(result, arm=arm)
+        return result.best, result.best_evaluation, result
+
+
+def _require_normal_hgs_termination(result: Any, *, arm: str) -> None:
+    """Turn a returned abnormal solver result into a carrier-level HALT."""
+
+    status = getattr(result, "termination_status", None)
+    if status in NORMAL_PROBLEM_HGS_TERMINATIONS:
+        return
+    error_type = getattr(result, "termination_error_type", None)
+    error = getattr(result, "termination_error", None)
+    detail = ": ".join(
+        str(item) for item in (error_type, error) if item not in (None, "")
+    )
+    suffix = f" ({detail})" if detail else ""
+    raise ProductionBackendHalt(
+        f"Problem-HGS ended abnormally in {arm}: {status!r}{suffix}"
+    )
+
+
+def build_production_problem(
+    repo: Path,
+    stream_directory: Path,
+) -> ProductionDynamicProblem:
+    """Load the selected target and overlay the existing ten-event stream."""
+
+    stream = load_c8_stream(
+        stream_directory,
+        expected_base_instance_id=C8_BASE_INSTANCE_ID,
+    )
+    bundle, initial, _pi0, context = _build_context(
+        repo,
+        DEPOT_SEARCH_INSTANCE_ID,
+        fleet_parameters=ENDOGENOUS_FLEET_PARAMETERS,
+    )
+    base_context = replace(
+        context,
+        fairness_enabled=False,
+        incremental_full_truth_sentinel_enabled=False,
+        dynamic_state=None,
+    )
+    full_bundle = overlay_c8_bundle(bundle, stream)
+    initial_orders = tuple(
+        ProductionOrder(
+            event_id=f"initial::{node.node_id}",
+            customer_id=node.node_id,
+            appearance_second=0.0,
+            demand_kg=float(node.demand),
+            x=float(node.x),
+            y=float(node.y),
+            initially_visible=True,
+        )
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "c"
+    )
+    dynamic_orders = tuple(
+        ProductionOrder(
+            event_id=event.event_id,
+            customer_id=event.customer_id,
+            appearance_second=float(event.appearance_second),
+            demand_kg=float(event.demand_kg),
+            x=float(event.longitude),
+            y=float(event.latitude),
+            initially_visible=False,
+        )
+        for event in stream.events
+    )
+    return ProductionDynamicProblem(
+        instance_id=DEPOT_SEARCH_INSTANCE_ID,
+        repo=repo,
+        base_bundle=bundle,
+        full_bundle=full_bundle,
+        base_initial=initial,
+        base_context=base_context,
+        c8_stream=stream,
+        initial_orders=initial_orders,
+        dynamic_orders=dynamic_orders,
+    )
+
+
+def _static_context(context: DutyEvaluationContext, bundle: Any) -> DutyEvaluationContext:
+    return replace(
+        context,
+        bundle=bundle,
+        dynamic_state=None,
+        fairness_enabled=False,
+        incremental_full_truth_sentinel_enabled=False,
+    )
+
+
+def _context_with_bundle(
+    context: DutyEvaluationContext,
+    bundle: Any,
+    problem: ProductionDynamicProblem,
+) -> DutyEvaluationContext:
+    if context.rebuilt_route_constraints is None:
+        raise ProductionBackendHalt("missing rebuilt route contract")
+    contract = extend_route_contract(
+        context.rebuilt_route_constraints,
+        problem.c8_stream,
+        {
+            node.node_id
+            for node in bundle.instance.nodes
+            if node.node_type.lower() == "c"
+        },
+    )
+    return replace(context, bundle=bundle, rebuilt_route_constraints=contract)
+
+
+def _successful_state(
+    previous: ProductionState,
+    frame: _StageFrame,
+    candidate: DutyIndividual,
+    evaluation: FullEvaluation,
+    *,
+    active_customer_ids: frozenset[str],
+    stage_index: int,
+    diagnostics: Mapping[str, Any],
+) -> ProductionState:
+    if not evaluation.feasible or candidate.unserved_customers:
+        raise ProductionBackendHalt(
+            "successful dynamic adapter result is not a complete feasible "
+            "candidate"
+        )
+    try:
+        prepared = prepare_dynamic_candidate(
+            candidate,
+            frame.dynamic_state,
+            frame.bundle,
+            minimum_departure_second_by_customer_id=(
+                {
+                    customer_id: float(start)
+                    for customer_id, start in _minimum_departures(frame.context).items()
+                }
+            ),
+            shift_id_by_customer_id=(
+                None
+                if frame.context.rebuilt_route_constraints is None
+                else frame.context.rebuilt_route_constraints.customer_shift_by_id
+            ),
+        )
+    except (TypeError, ValueError) as error:
+        raise ProductionBackendHalt(
+            "existing exact dynamic scheduler could not materialize the "
+            f"Problem-HGS candidate: {type(error).__name__}: {error}"
+        ) from error
+    timing = dict(previous.timing_by_route)
+    timing.update(frame.timing_by_route)
+    timing.update(_timing_map(prepared.future_certificate))
+    deferred = tuple(
+        item
+        for item in previous.deferred_customer_ids
+        if item not in active_customer_ids
+    )
+    return ProductionState(
+        individual=candidate,
+        evaluation=evaluation,
+        bundle=frame.bundle,
+        context=frame.context,
+        active_customer_ids=active_customer_ids,
+        dynamic_state=frame.dynamic_state,
+        stage_index=stage_index,
+        base_individual=previous.base_individual,
+        static_solution=previous.static_solution,
+        static_certificate=previous.static_certificate,
+        planning_dynamic_state=frame.dynamic_state,
+        planning_future=prepared,
+        planning_individual=candidate,
+        planning_active_customer_ids=active_customer_ids,
+        planning_trigger_second=frame.trigger_second,
+        deferred_customer_ids=deferred,
+        timing_by_route=timing,
+        diagnostics=(*previous.diagnostics, dict(diagnostics)),
+    )
+
+
+def _deferred_state(
+    previous: ProductionState,
+    frame: _StageFrame,
+    evaluation: FullEvaluation,
+    *,
+    active_customer_ids: frozenset[str],
+    deferred_customer_ids: Sequence[str],
+    stage_index: int,
+    diagnostic: Mapping[str, Any],
+) -> ProductionState:
+    timing = dict(previous.timing_by_route)
+    timing.update(frame.timing_by_route)
+    return ProductionState(
+        individual=frame.initial_future,
+        evaluation=evaluation,
+        bundle=frame.bundle,
+        context=frame.context,
+        active_customer_ids=active_customer_ids,
+        dynamic_state=frame.dynamic_state,
+        stage_index=stage_index,
+        base_individual=previous.base_individual,
+        static_solution=previous.static_solution,
+        static_certificate=previous.static_certificate,
+        planning_dynamic_state=previous.planning_dynamic_state,
+        planning_future=previous.planning_future,
+        planning_individual=previous.planning_individual,
+        planning_active_customer_ids=previous.planning_active_customer_ids,
+        planning_trigger_second=previous.planning_trigger_second,
+        deferred_customer_ids=tuple(dict.fromkeys(map(str, deferred_customer_ids))),
+        timing_by_route=timing,
+        diagnostics=(*previous.diagnostics, dict(diagnostic)),
+    )
+
+
+def _assert_committed_history_unchanged(
+    evaluator: DutyFullEvaluator,
+    evaluation: FullEvaluation,
+) -> None:
+    before = _committed_history_sha256(evaluator)
+    after = _committed_history_sha256(evaluator, evaluation=evaluation)
+    if before != after:
+        raise ProductionBackendHalt(
+            "Problem-HGS candidate changed the committed route or charging history"
+        )
+
+
+def _committed_history_sha256(
+    evaluator: DutyFullEvaluator,
+    *,
+    evaluation: FullEvaluation | None = None,
+) -> str:
+    """Hash the immutable part of a dynamic cut with one consistent scope.
+
+    The existing insertion helper intentionally hashes committed vehicle
+    routes and actions attached to those vehicles.  A dynamic cut also locks
+    charging actions that may belong to an otherwise editable route.  Those
+    actions are historical facts too, so this adapter includes them on both
+    sides of the comparison.
+    """
+    state = evaluator.context.dynamic_state
+    if state is None:
+        return hashlib.sha256(b"static-no-commitment").hexdigest()
+
+    committed_route_ids = {
+        *state.cut.completed_route_ids,
+        *state.cut.in_progress_route_ids,
+        *(route.vehicle_id for route in state.prior_committed_solution.routes),
+    }
+    locked_actions = (
+        *state.prior_committed_solution.charging_actions,
+        *state.cut.locked_charging_actions,
+    )
+    locked_action_keys = {
+        (
+            action.vehicle_id,
+            action.station_id,
+            float(action.charge_start_second),
+            float(action.energy_kwh),
+        )
+        for action in locked_actions
+    }
+
+    if evaluation is None:
+        source_routes = (
+            *state.prior_committed_solution.routes,
+            *(
+                route
+                for route in state.source_solution.routes
+                if route.vehicle_id in committed_route_ids
+            ),
+        )
+        source_actions = locked_actions
+    else:
+        source_routes = tuple(
+            route
+            for route in evaluation.prepared_solution.routes
+            if route.vehicle_id in committed_route_ids
+        )
+        source_actions = tuple(
+            action
+            for action in evaluation.prepared_solution.charging_actions
+            if (
+                action.vehicle_id in committed_route_ids
+                or (
+                    action.vehicle_id,
+                    action.station_id,
+                    float(action.charge_start_second),
+                    float(action.energy_kwh),
+                )
+                in locked_action_keys
+            )
+        )
+
+    payload = {
+        "routes": sorted(
+            (asdict(route) for route in source_routes),
+            key=lambda row: (row["vehicle_id"], json.dumps(row, sort_keys=True)),
+        ),
+        "charging_actions": sorted(
+            (asdict(action) for action in source_actions),
+            key=lambda row: (
+                row["vehicle_id"],
+                row["charge_day_offset"],
+                row["charge_start_second"],
+                row["station_id"],
+            ),
+        ),
+    }
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+
+
+def _full_asset_registry(
+    initial: DutyIndividual,
+    cut: Any,
+    bundle: Any,
+) -> Mapping[str, DynamicAssetState]:
+    assets = dict(cut.asset_states)
+    for duty in initial.duties:
+        if duty.physical_vehicle_id in assets:
+            continue
+        assets[duty.physical_vehicle_id] = DynamicAssetState(
+            physical_vehicle_id=duty.physical_vehicle_id,
+            vehicle_type=duty.vehicle_type,
+            home_depot_id=duty.home_depot_id,
+            available_second=float(cut.trigger_second),
+            remaining_battery_kwh=(
+                float(bundle.prices.initial_ev_battery_kwh)
+                if duty.vehicle_type == "ev"
+                else 0.0
+            ),
+            next_trip_index=1,
+        )
+    return MappingProxyType(assets)
+
+
+def _advance_prior_history(state: DutyDynamicState) -> Solution:
+    prior = state.prior_committed_solution or Solution()
+    committed_ids = {
+        *state.cut.completed_route_ids,
+        *state.cut.in_progress_route_ids,
+    }
+    routes = {route.vehicle_id: route for route in prior.routes}
+    for route in state.source_solution.routes:
+        if route.vehicle_id not in committed_ids:
+            continue
+        old = routes.get(route.vehicle_id)
+        if old is not None and old != route:
+            raise ProductionBackendHalt("committed route history changed between cuts")
+        routes[route.vehicle_id] = route
+    actions: dict[tuple[Any, ...], ChargingAction] = {}
+    for action in (*prior.charging_actions, *state.cut.locked_charging_actions):
+        if action.vehicle_id not in routes:
+            continue
+        key = (
+            action.vehicle_id,
+            action.station_id,
+            float(action.charge_start_second),
+            float(action.energy_kwh),
+        )
+        old = actions.get(key)
+        if old is not None and old != action:
+            raise ProductionBackendHalt("committed charging history changed")
+        actions[key] = action
+    return Solution(
+        routes=[routes[key] for key in sorted(routes)],
+        charging_actions=[actions[key] for key in sorted(actions, key=str)],
+    )
+
+
+def _served_customers(solution: Solution, bundle: Any) -> frozenset[str]:
+    customer_ids = {
+        node.node_id
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "c"
+    }
+    return frozenset(
+        node_id
+        for route in solution.routes
+        for node_id in route.node_sequence[1:-1]
+        if node_id in customer_ids
+    )
+
+
+def _details(
+    state: ProductionState,
+    evaluation: FullEvaluation,
+    bundle: Any,
+    served: frozenset[str],
+    active: set[str],
+    demand: Mapping[str, float],
+    *,
+    dynamic_customer_ids: frozenset[str],
+) -> Mapping[str, Any]:
+    route_by_customer: dict[str, Route] = {}
+    for route in evaluation.prepared_solution.routes:
+        for customer_id in route.node_sequence[1:-1]:
+            route_by_customer[customer_id] = route
+    all_cross_cases = []
+    revealed_dynamic_ids = set(active).intersection(dynamic_customer_ids)
+    served_dynamic_ids = served.intersection(revealed_dynamic_ids)
+    for customer_id in sorted(served_dynamic_ids):
+        route = route_by_customer.get(customer_id)
+        original = bundle.customer_home_depot.get(customer_id)
+        if route is None or original is None:
+            continue
+        if str(route.home_depot_id) != str(original):
+            all_cross_cases.append(
+                {
+                    "customer_id": customer_id,
+                    "original_depot_id": str(original),
+                    "serving_depot_id": str(route.home_depot_id),
+                    "vehicle_id": physical_vehicle_id(route.vehicle_id),
+                    "route_id": route.vehicle_id,
+                    "demand_kg": float(demand.get(customer_id, 0.0)),
+                }
+            )
+    cross_cases = all_cross_cases[:5]
+    route_types = {
+        physical_vehicle_id(route.vehicle_id): str(route.vehicle_type).lower()
+        for route in evaluation.prepared_solution.routes
+    }
+    charge_times = [
+        {
+            "vehicle_id": action.vehicle_id,
+            "station_id": action.station_id,
+            "charge_start_second": float(action.charge_start_second),
+            "charge_day_offset": int(action.charge_day_offset),
+            "energy_kwh": float(action.energy_kwh),
+        }
+        for action in evaluation.prepared_solution.charging_actions
+    ]
+    fallback_rows = list(state.diagnostics)
+    return {
+        "cumulative_total_cost_cny": float(evaluation.total_cost),
+        "cumulative_emissions_kg": float(
+            evaluation.breakdown.get("E_total", 0.0)
+        ),
+        "cumulative_customers_served": len(served.intersection(active)),
+        "cumulative_demand_served_kg": sum(
+            float(demand[item]) for item in served.intersection(active)
+        ),
+        "defer_triggered": bool(state.deferred_customer_ids),
+        "defer_count": len(state.deferred_customer_ids),
+        "defer_customer_ids": "|".join(state.deferred_customer_ids),
+        "fallback_diagnostics_json": json.dumps(
+            fallback_rows,
+            ensure_ascii=False,
+            sort_keys=True,
+            allow_nan=False,
+        ),
+        "cross_depot_served_count": len(all_cross_cases),
+        "cross_depot_served_ratio": (
+            len(all_cross_cases) / len(revealed_dynamic_ids)
+            if revealed_dynamic_ids
+            else 0.0
+        ),
+        "cross_depot_cases_json": json.dumps(
+            cross_cases,
+            ensure_ascii=False,
+            sort_keys=True,
+            allow_nan=False,
+        ),
+        "enterprise_profit_json": json.dumps(
+            dict(evaluation.depot_profit),
+            ensure_ascii=False,
+            sort_keys=True,
+            allow_nan=False,
+        ),
+        "participation_margin_json": json.dumps(
+            dict(evaluation.participation_margin),
+            ensure_ascii=False,
+            sort_keys=True,
+            allow_nan=False,
+        ),
+        "fairness_status": (
+            "WIRED"
+            if state.context.fairness_enabled
+            else "NOT_WIRED_FAIRNESS_NOT_IN_DYNAMIC_DECISION"
+        ),
+        "ev_route_count": sum(value == "ev" for value in route_types.values()),
+        "cv_route_count": sum(value == "cv" for value in route_types.values()),
+        "charging_action_count": len(charge_times),
+        "charging_times_json": json.dumps(
+            charge_times,
+            ensure_ascii=False,
+            sort_keys=True,
+            allow_nan=False,
+        ),
+        "charging_emissions_kg": float(
+            evaluation.breakdown.get("E_ev_indirect", 0.0)
+        ),
+        "committed_history_preserved": True,
+        "committed_history_sha256": _committed_history_sha256(
+            DutyFullEvaluator(state.context),
+            evaluation=evaluation,
+        ),
+        "candidate_stage_count": len(state.diagnostics),
+    }
+
+
+def _timing_map(certificate: Any) -> dict[str, Any]:
+    return {
+        trip.route_id: trip
+        for trip in getattr(certificate, "trips", ())
+    }
+
+
+def _minimum_departures(context: DutyEvaluationContext) -> Mapping[str, float]:
+    contract = context.rebuilt_route_constraints
+    if contract is None:
+        return {}
+    return {
+        customer_id: float(contract.shift_window_second_by_id[shift_id][0])
+        for customer_id, shift_id in contract.customer_shift_by_id.items()
+    }
+
+
+def _payload_capacity(bundle: Any, vehicle_type: str) -> float | None:
+    parameters = bundle.instance.vehicle_parameters
+    if parameters is None:
+        return None
+    profile = parameters.get(str(vehicle_type).lower())
+    if profile is None:
+        return None
+    value = getattr(profile, "payload_capacity_kg", None)
+    return None if value is None else float(value)
+
+
+def _stop_at_deadline(state: ProblemHGSSearchState, deadline: float) -> bool:
+    return float(state.elapsed_seconds) >= max(0.0, float(deadline))
+
+
+def _current_trigger(stream: Any, stage_index: int) -> float:
+    if stage_index >= len(stream.batches):
+        raise ProductionBackendHalt(
+            f"dynamic stage index {stage_index} exceeds shared trigger batches"
+        )
+    return float(stream.batches[stage_index].trigger_second)
+
+
+def _require_bound_stream(backend: ProductionBackend) -> Any:
+    if backend.shared_stream is None:
+        raise ProductionBackendHalt(
+            "production backend was called before the shared event stream was bound"
+        )
+    return backend.shared_stream
+
+
+def _validate_active(
+    problem: ProductionDynamicProblem,
+    active_customer_ids: Iterable[str],
+) -> None:
+    active = set(map(str, active_customer_ids))
+    expected = set(problem.static_customer_ids).union(
+        active.intersection(problem.dynamic_customer_ids)
+    )
+    if active != expected:
+        raise ProductionBackendHalt(
+            "visible information contains an unknown or hidden customer: "
+            + ", ".join(sorted(active.difference(expected)))
+        )
+
+
+def _now() -> float:
+    from time import perf_counter
+
+    return perf_counter()

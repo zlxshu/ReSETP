@@ -7,14 +7,6 @@ import pytest
 
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import PriceParameters, UK_2025_PRICES
-from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
-from setp_solver.algorithms.resetp_alns.operators.feasible_repair import enumerate_feasible_insertions
-from setp_solver.search.evaluation import EvaluationContext
-from setp_solver.search.e3_multitrip_runtime import (
-    complete_prepared_solution_violations,
-    hard_violations as e3_hard_violations,
-    prepare_and_score_reference,
-)
 from setp_solver.search.multitrip_schedule import (
     CHARGE_MODE_FULL,
     CHARGE_MODE_ON_DEMAND,
@@ -29,6 +21,7 @@ from setp_solver.search.multitrip_schedule import (
     prepare_multitrip_solution,
     reschedule_between_trip_charging,
     route_timing,
+    strict_multitrip_violations,
     validate_multitrip_certificate,
 )
 from setp_solver.solution import ChargingAction, Route, Solution
@@ -296,12 +289,6 @@ def test_complete_multitrip_checker_replaces_only_certified_residual_battery() -
         if item.type == BATTERY
     ]
     assert static_battery
-    assert complete_prepared_solution_violations(
-        prepared,
-        certificate,
-        instance,
-        prices,
-    ) == []
 
 
 def _two_trip_solution_and_prices() -> tuple[Solution, PriceParameters]:
@@ -428,9 +415,7 @@ def test_first_trip_aware_replay_uses_only_the_pre_horizon_day(monkeypatch: pyte
     assert aware_first.charge_start_second + aware_first.occupancy_minutes * 60.0 <= STATIC_PREHORIZON_SECONDS + 1e-6
     source = _instance()
     instance = Instance(source.nodes[:4], [row[:4] for row in source.distance_matrix[:4]], num_cv=14, num_ev=14)
-    context = EvaluationContext(instance, profile, prices=prices)
-    monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
-    assert e3_hard_violations(aware, context) == []
+    assert strict_multitrip_violations(aware.routes, instance, prices) == []
 
 
 def test_same_day_first_trip_aware_replay_cannot_charge_after_departure(
@@ -480,9 +465,7 @@ def test_same_day_first_trip_aware_replay_cannot_charge_after_departure(
         num_cv=14,
         num_ev=14,
     )
-    context = EvaluationContext(instance, profile, prices=prices)
-    monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
-    assert e3_hard_violations(aware, context) == []
+    assert strict_multitrip_violations(aware.routes, instance, prices) == []
 
 
 def test_calendar_aware_replay_uses_previous_day_forecast_for_first_trip() -> None:
@@ -591,21 +574,6 @@ def test_between_trip_aware_replay_moves_only_within_the_legal_gap() -> None:
     assert aware_gap.charge_start_second + aware_gap.occupancy_minutes * 60.0 <= current.departure_second + 1e-6
 
 
-def test_e3_runtime_carries_previous_trip_battery_without_changing_legacy_checker(monkeypatch: pytest.MonkeyPatch) -> None:
-    solution, prices = _two_trip_solution_and_prices()
-    source = _instance()
-    instance = Instance(source.nodes[:4], [row[:4] for row in source.distance_matrix[:4]], num_cv=14, num_ev=14)
-    profile = [
-        {"slot_index": i, "horizon_second_start": i * 1800.0, "actual_gco2_per_kwh": 100.0}
-        for i in range(48)
-    ]
-    context = EvaluationContext(instance, profile, prices=prices)
-    monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
-    prepared, objective = prepare_and_score_reference(solution, context)
-    assert objective < 1_000_000_000.0
-    assert e3_hard_violations(prepared, context) == []
-
-
 def test_strict_schedule_stops_instead_of_ignoring_unbound_public_charge() -> None:
     route = Route("EV_A", "ev", "D0", ["D0", "F1", "C1", "D0"])
     action = ChargingAction(
@@ -645,22 +613,3 @@ def test_minimum_departure_is_opt_in_and_preserves_default_clock() -> None:
     )
     assert shifted.earliest_departure_second == 1_500.0
     assert shifted.return_second > baseline.return_second
-
-
-def test_strict_e3_new_route_gate_counts_physical_vehicles_not_route_rows(monkeypatch: pytest.MonkeyPatch) -> None:
-    nodes = [Node("D0", "d", 0, 0, due_time=100_000)]
-    nodes.extend(
-        Node(f"C{index}", "c", 0, 0, demand=10, ready_time=float(index * 600), due_time=float(index * 600 + 120), service_time=10)
-        for index in range(1, 16)
-    )
-    matrix = [[0.0 if i == j else 1_000.0 for j in range(len(nodes))] for i in range(len(nodes))]
-    instance = Instance(nodes, matrix, num_cv=14, num_ev=14)
-    solution = Solution(routes=[Route(f"CV{index}", "cv", "D0", ["D0", f"C{index}", "D0"]) for index in range(1, 15)])
-    context = EvaluationContext(instance, [])
-    policy = SearchPolicy(max_cv=14, max_ev=14)
-    monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
-
-    options = enumerate_feasible_insertions(solution, "C15", context, policy)
-
-    assert any(option.opened_new_route for option in options)
-    assert context.score_counts["strict_multitrip_new_route_admissible"] >= 1

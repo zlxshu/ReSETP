@@ -1,0 +1,30 @@
+[importlinter]
+root_packages =
+    setp_solver
+    setp_hgs_kernel
+    setp_instance_lab
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:vendor-does-not-import-project]
+name = Frozen HGS vendor must not import ReSETP project code
+type = forbidden
+source_modules =
+    setp_hgs_kernel
+forbidden_modules =
+    setp_solver
+    setp_instance_lab
+
+[importlinter:contract:problem-hgs-does-not-call-retired-alns]
+name = Problem HGS must not depend on retired fairness or ALNS entrypoints
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    setp_solver.algorithms.problem_hgs
+forbidden_modules =
+    setp_solver.search.fairness
+    setp_solver.search.alns_wouda
+    setp_solver.algorithms.resetp_alns.api
+    setp_solver.algorithms.resetp_alns.kernel
+    setp_solver.algorithms.resetp_alns.operators
+    setp_solver.algorithms.resetp_alns.runtime

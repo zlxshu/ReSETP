@@ -105,7 +105,6 @@ def run_project_alns(
         carbon_operator_bias=1.0 if mechanism_mode else 0.0,
         refined_carbon_operators=bool(mechanism_mode),
         refined_carbon_weight=1.0 if mechanism_mode else 0.0,
-        include_sisr_string_removal=False,
         capture_best_solutions=False,
         split_selector_rng=True,
     )

@@ -141,6 +141,13 @@ class AdaptivePenaltyManager:
     params: PenaltyParameters
     penalties: dict[str, float] = field(default_factory=dict)
     _history: dict[str, deque[bool]] = field(default_factory=dict)
+    registration_counts: Counter[str] = field(default_factory=Counter)
+    update_counts: Counter[str] = field(default_factory=Counter)
+    coefficient_change_counts: Counter[str] = field(default_factory=Counter)
+    update_feasible_shares: dict[str, list[float]] = field(
+        default_factory=dict
+    )
+    penalty_trajectories: dict[str, list[float]] = field(default_factory=dict)
 
     def _initial_penalty(self, violation_type: str) -> float:
         configured = dict(self.params.initial_penalty_by_type)
@@ -163,6 +170,11 @@ class AdaptivePenaltyManager:
                     self.params.maximum_penalty,
                 ),
             )
+            self.penalty_trajectories.setdefault(
+                violation_type,
+                [float(self.penalties[violation_type])],
+            )
+            self.registration_counts[violation_type] += 1
             history = self._history.setdefault(
                 violation_type,
                 deque(maxlen=self.params.solutions_between_updates),
@@ -170,7 +182,13 @@ class AdaptivePenaltyManager:
             history.append(counts.get(violation_type, 0) == 0)
             if len(history) == self.params.solutions_between_updates:
                 feasible_share = sum(history) / len(history)
+                self.update_counts[violation_type] += 1
+                self.update_feasible_shares.setdefault(
+                    violation_type,
+                    [],
+                ).append(float(feasible_share))
                 difference = self.params.target_feasible - feasible_share
+                before = float(self.penalties[violation_type])
                 if abs(difference) >= self.params.feasibility_tolerance:
                     multiplier = (
                         self.params.penalty_increase
@@ -182,7 +200,76 @@ class AdaptivePenaltyManager:
                         self.params.minimum_penalty,
                         self.params.maximum_penalty,
                     )
+                after = float(self.penalties[violation_type])
+                self.penalty_trajectories[violation_type].append(after)
+                if after != before:
+                    self.coefficient_change_counts[violation_type] += 1
                 history.clear()
+
+    def telemetry(self) -> dict[str, object]:
+        """Return read-only evidence about typed penalty-window activity."""
+
+        types = sorted(
+            set(self.registration_counts)
+            | set(self.penalties)
+            | set(self.update_counts)
+        )
+        return {
+            "solutions_between_updates": int(
+                self.params.solutions_between_updates
+            ),
+            "by_violation_type": {
+                violation_type: {
+                    "registration_count": int(
+                        self.registration_counts.get(violation_type, 0)
+                    ),
+                    "update_count": int(
+                        self.update_counts.get(violation_type, 0)
+                    ),
+                    "coefficient_change_count": int(
+                        self.coefficient_change_counts.get(
+                            violation_type,
+                            0,
+                        )
+                    ),
+                    "update_feasible_shares": [
+                        float(value)
+                        for value in self.update_feasible_shares.get(
+                            violation_type,
+                            [],
+                        )
+                    ],
+                    "penalty_trajectory": [
+                        float(value)
+                        for value in self.penalty_trajectories.get(
+                            violation_type,
+                            [],
+                        )
+                    ],
+                    "penalty_start": (
+                        None
+                        if not self.penalty_trajectories.get(
+                            violation_type,
+                            [],
+                        )
+                        else float(
+                            self.penalty_trajectories[violation_type][0]
+                        )
+                    ),
+                    "penalty_end": (
+                        None
+                        if not self.penalty_trajectories.get(
+                            violation_type,
+                            [],
+                        )
+                        else float(
+                            self.penalty_trajectories[violation_type][-1]
+                        )
+                    ),
+                }
+                for violation_type in types
+            },
+        }
 
     def cost(self, evaluation: FullEvaluation) -> float:
         magnitude_by_type: Counter[str] = Counter()
@@ -289,7 +376,7 @@ class DutyPopulation:
     def _tournament(
         self,
         rng: random.Random,
-        fitness: dict[int, float],
+        fitness: dict[str, float],
     ) -> EvaluatedDutyCandidate:
         members = self._feasible + self._infeasible
         sampled = [
@@ -299,7 +386,7 @@ class DutyPopulation:
         return min(
             sampled,
             key=lambda item: (
-                fitness[id(item)],
+                fitness[item.fingerprint],
                 item.fingerprint,
             ),
         )
@@ -307,9 +394,9 @@ class DutyPopulation:
     def _fitness(
         self,
         distance_cache: dict[tuple[str, str], float] | None = None,
-    ) -> dict[int, float]:
+    ) -> dict[str, float]:
         distances = {} if distance_cache is None else distance_cache
-        fitness: dict[int, float] = {}
+        fitness: dict[str, float] = {}
         for subpopulation in (self._feasible, self._infeasible):
             if not subpopulation:
                 continue
@@ -321,7 +408,8 @@ class DutyPopulation:
                 ),
             )
             cost_rank = {
-                id(item): rank for rank, item in enumerate(cost_order, start=1)
+                item.fingerprint: rank
+                for rank, item in enumerate(cost_order, start=1)
             }
             diversity_order = sorted(
                 subpopulation,
@@ -336,7 +424,7 @@ class DutyPopulation:
                 ),
             )
             diversity_rank = {
-                id(item): rank
+                item.fingerprint: rank
                 for rank, item in enumerate(diversity_order, start=1)
             }
             diversity_weight = 1.0 - min(
@@ -344,7 +432,7 @@ class DutyPopulation:
                 len(subpopulation),
             ) / len(subpopulation)
             for item in subpopulation:
-                identity = id(item)
+                identity = item.fingerprint
                 fitness[identity] = float(cost_rank[identity]) + (
                     diversity_weight * float(diversity_rank[identity])
                 )
@@ -373,7 +461,7 @@ class DutyPopulation:
         while len(subpopulation) > self.params.min_pop_size:
             fitness = self._fitness(distance_cache)
             elite = {
-                id(item)
+                item.fingerprint
                 for item in sorted(
                     subpopulation,
                     key=lambda item: (
@@ -385,14 +473,14 @@ class DutyPopulation:
             removable = [
                 item
                 for item in subpopulation
-                if id(item) not in elite
+                if item.fingerprint not in elite
             ]
             if not removable:
                 break
             worst = max(
                 removable,
                 key=lambda item: (
-                    fitness[id(item)],
+                    fitness[item.fingerprint],
                     item.fingerprint,
                 ),
             )

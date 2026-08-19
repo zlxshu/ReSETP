@@ -9,8 +9,9 @@ problem proposals.
 from __future__ import annotations
 
 import hashlib
+from collections import Counter
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from setp_solver.instance_loader import Instance
@@ -92,7 +93,14 @@ class MechanismProposalEngine:
     cross_depot_enabled: bool = True
     multi_trip_enabled: bool = True
     type_exchange_enabled: bool = True
+    fairness_generation_prescreen_enabled: bool = True
     source_id: str = "problem-hgs-problem-mechanism-actions-v1"
+    _generation_counts: Counter[str] = field(
+        default_factory=Counter,
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
     @property
     def identity_sha256(self) -> str:
@@ -106,6 +114,8 @@ class MechanismProposalEngine:
             + repr(self.include_charging_candidates)
             + "\n"
             + repr(self.include_non_charging_candidates)
+            + "\n"
+            + repr(self.fairness_generation_prescreen_enabled)
         )
         if self.include_structural_channels:
             payload += "\nstructural_channels=depot,fairness,multi_trip"
@@ -121,6 +131,20 @@ class MechanismProposalEngine:
         if disabled:
             payload += "\nmechanism_off=" + ",".join(disabled)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @property
+    def generation_statistics(self) -> dict[str, object]:
+        keys = (
+            "fairness_considered",
+            "fairness_filtered_locked",
+            "fairness_filtered_no_change",
+            "fairness_filtered_mixed_shift",
+            "fairness_materialized",
+        )
+        return {
+            "enabled": bool(self.fairness_generation_prescreen_enabled),
+            **{key: int(self._generation_counts[key]) for key in keys},
+        }
 
     def propose(
         self,
@@ -147,9 +171,18 @@ class MechanismProposalEngine:
                 evaluation,
                 instance,
                 include_whole_duty_type_exchange=False,
+                allowed_channels=frozenset(structural_channels),
+                customer_shift_by_id=(
+                    None
+                    if self.context.rebuilt_route_constraints is None
+                    else self.context.rebuilt_route_constraints.customer_shift_by_id
+                ),
+                fairness_prescreen_enabled=(
+                    self.fairness_generation_prescreen_enabled
+                ),
+                generation_counts=self._generation_counts,
             ):
-                if move.channel in structural_channels:
-                    yield move
+                yield move
 
         if (
             self.include_non_charging_candidates

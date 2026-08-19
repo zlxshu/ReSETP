@@ -123,7 +123,6 @@ def _build_cv_seed(
 ) -> Solution:
     """Build the original deterministic CV-only seed."""
 
-    node_lookup = {node.node_id: node for node in instance.nodes}
     depots = [node for node in instance.nodes if node.node_type.lower() == "d"]
     customers = [node for node in instance.nodes if node.node_type.lower() == "c"]
     plans: list[_RoutePlan] = []
@@ -533,14 +532,6 @@ def _seed_route_budget(instance: Instance, prices: PriceParameters | dict[str, f
     if max_cv >= UNBOUNDED_FLEET:
         return max(1, demand_bound)
     return max(1, min(max_cv, _customer_count(instance)))
-
-
-def _seed_route_limit(limits: FleetLimits, *, introduce_ev: bool) -> int:
-    if not introduce_ev or limits.ev <= 0:
-        return limits.cv
-    if limits.cv >= UNBOUNDED_FLEET or limits.ev >= UNBOUNDED_FLEET:
-        return UNBOUNDED_FLEET
-    return max(1, int(limits.cv) + int(limits.ev))
 
 
 def _customer_count(instance: Instance) -> int:

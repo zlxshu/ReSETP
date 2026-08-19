@@ -196,3 +196,59 @@
 - **意外**：同日出车前充电标记为第 0 天后，首趟重排仍把整天都当作候选窗口。成渝、京津冀、珠三角 50 客户真实输入都能把低碳充电时段选到出车之后。
 - **价值**：时变碳效应不能只看碳强度和计账闭合，还必须证明选中的充电时刻在车辆真实可用窗口内；否则减排本身是物理上不存在的。
 - **状态**：已修复。三地完整检查均 0 违规，另用京津冀真实输入固化了证书出发时刻与检查器出发时刻不同的反例。证据：`solver/src/setp_solver/search/multitrip_schedule.py:2313-2369`、`solver/tests/test_multitrip_schedule.py:400-447`、`baselines/algorithm_prototypes/duty_hgs_20260807/tests/test_dynamic_adapter.py:324-369`。
+
+### 31. 低 RSS 掩盖了 8 GiB 仍存活的 Python 小对象
+
+- **日期**：2026-08-17
+- **意外**：深跑临近安全线时 RSS 只有约 1.4 GiB，但 Python 小对象分配器显示 8.34 GiB 仍被活对象占用；其余页面已被 macOS 压缩或换出。只看 RSS 会把真实增长误判为不严重。另一个反直觉结果是：压缩两个外层充电修复缓存会触发更多重复时序计算，200 圈足迹反而增加 94.969 MiB。
+- **价值**：后续长跑内存诊断必须同时看进程总足迹、swap 增量和解释器活块，且不能按“缓存”名字统一逐出；分配位置也不能代替持有者证据。
+- **状态**：根因类别已确认，最终长期持有容器仍未定位，当前为 `MEM_DIAG_HALT`。证据：`solver/reports/mem_diag_20260817/report.md`、`pymalloc_deep/resource_samples.csv`、`ablation_200.csv`。
+
+### 32. 车型交换开关关闭且具名提案为零，客户车型归属仍会变化
+
+- **日期**：2026-08-17
+- **意外**：时变碳三臂按 P82 补充只新增启用多趟后，1 圈 `asap` 探针已经完整可行并服务全部客户；但 `type_exchange=false`、具名车型交换提案数为 0 时，仍有 6 个客户从参考车型归属变到另一车型。
+- **价值**：机制开关只封住具名算子，不一定封住初始种群、解码或种群选择中的同义变化。后续消融和单机制实验必须核对输入与最终结构闭包，不能只看提案计数。
+- **状态**：已修复。根因是 runner 未把机制开关传给初始化种群；通用闭包已覆盖车型与场站两维，真实 1 圈闭包 0 违例。证据：`solver/reports/type_closure_diag_20260817/report.md`、`solver/reports/fix_sentinel_closure_20260817/report.md`。
+
+### 33. 路线层交叉接受会被 runner 误算成 education 接受
+
+- **日期**：2026-08-17
+- **意外**：初始化结构闭包修复后的 1 圈中，实际接受动作只有 `hgs_population:2` 和 `route_layer_crossover:1`，没有 education channel 接受；runner 却把所有非 population 接受都汇总为 `accepted_education_moves`，在 `sentinel_evaluations=0` 时误报“education move 未冷复算”。
+- **价值**：不同候选路径必须按实际评价合同核验，不能只按“非 population”粗分；否则正确的完整评价路线层候选会被错误的 sentinel 门拦下。该发现不否定结构闭包五项已经通过，但会阻止三臂 runner 正常收口。
+- **状态**：已修复。runner 现按实际评价路径分类；路线层单独计作完整评价，真实 education 接受缺 sentinel 的旧失败规则仍由回归保护。证据：`solver/reports/fix_sentinel_closure_20260817/report.md`、`closure_probe_iter1/decision.json`、`solver/tests/test_problem_hgs_runner_sentinel.py`。
+
+### 34. 正确的车型闭包锁住了一个全 CV 参考，使充电三臂没有作用载体
+
+- **日期**：2026-08-17
+- **意外**：车型与场站闭包修好后，三套时变碳充电策略按同一算例、seed 11 各跑完 200 圈；三臂均为 9 CV/0 EV、0 次充电、0 kWh，成本与排放逐位相同。共同参考车型哈希本身就是全 CV，因此这次零差不是 sentinel 或闭包失败。
+- **价值**：机制闭包不仅要防止别的机制混入归因，也要确认被检验机制确有作用载体。充电策略实验在开跑前应核对共同固定参考中存在 EV 与真实充电需求；否则增加种子只会重复无信号前提。
+- **状态**：已登记，尚未由用户选择后续实验语义。Codex 建议先建立至少含 1 辆 EV 的共同可行固定参考并继续关闭车型交换；若在三臂中启用车型交换则会改变归因，须另行拍板。证据：`solver/reports/fix_sentinel_closure_20260817/report.md`、`asap/best_solution.json`、`cost_min/best_solution.json`、`cost_plus_carbon/best_solution.json`。
+
+### 35. 真值连续指挥让 EV 与充电重新存活，但单个 HGS 周期几乎吃掉旧 200 圈时间
+
+- **日期**：2026-08-17
+- **意外**：P31 开启态在既有教育深度上限 1 的 20 圈里最终仍是 0 EV；为只核语义而做的不设教育深度上限单圈探针却自然运行 45 个教育决策，第一次观察到完整成本严格推翻代理排序，并最终保留 43 个 EV 客户、7 辆在用 EV 和 13 个充电动作。与此同时，这一个 HGS 周期耗时 46.03 秒，接近关闭态 200 圈的 58.82 秒。
+- **价值**：EV 缺席至少部分受代理局部搜索与教育深度共同影响，不能继续只解释成 EV 经济性；但“真值能找到载体”与“该工作量可正式承担”是两件事。后续必须把每次教育的 shortlist 宽度与最大 route decisions 一起冻结，不能只翻开开关。
+- **状态**：边界实现已完成、默认仍关；这是单算例单 seed 单周期技术观察，不作性能或机制效应结论。证据：`solver/reports/p31_boundary_weld_20260817/report.md`、`probes/current_e3_unbounded1/metadata.json`。
+
+### 36. 单企业切片前，现役 loader 会把已加载的公共站充电真值覆盖掉
+
+- **日期**：2026-08-18
+- **意外**：封存实例节点和底层 loader 都含公共充电站及其充电参数，但 `_suite_context_from_built()` 随后重建 `charger_scenario` 时只写入 depot，导致上层看见公共站节点却拿不到对应充电真值。若不在源头纠正，用户已批的“公共站共享”会在单企业切片中静默退化。
+- **价值**：共享设施语义不能只检查节点是否保留，还要检查其物理参数是否沿 loader 全链路存活。本轮保留 loader 已生成的公共站行，再叠加现有 depot 行；企业适配件不猜参数。
+- **状态**：已修复并由真实封存上下文测试覆盖。证据：`solver/tests/test_enterprise_problem_adapter.py`、`solver/reports/enterprise_native_init_probe/summary/report.md`。
+
+### 37. 上游原生随机解能覆盖客户，却无法直接通过本项目的班次／多趟落地链
+
+- **日期**：2026-08-18
+- **意外**：企业甲、乙各调用 25 次上游原生 `make_random`，随机骨架均已生成，但 50 个候选全部在进入种群前被现役充电修复链以班次时间窗或相邻趟重叠／周转不足拒绝；没有一个候选走到最终完整评价。
+- **价值**：瓶颈不是“上游不会随机覆盖客户”，而是普通 VRP 随机排列与本项目班次、多趟语义之间缺少兼容的现成初始化层。继续增加同类抽样或恢复预局部搜索只会改实验合同，不能回答取件血统问题。
+- **状态**：双侧负面证据已封存；Codex 建议按 P106 先进入外部开源班次／时间窗／多趟感知初始化件检索层，非用户新决定。证据：`solver/reports/enterprise_native_init_probe/ENT_A/native_initialization_diagnostics.json`、`ENT_B/native_initialization_diagnostics.json`、`summary/report.md`。
+
+### 38. 总量闭合曾掩盖成本分摊后的企业利润劈分错误
+
+- **日期**：2026-08-18
+- **意外**：联合解比两份企业原生单干之和低 943.967428（21.051626%），旧分摊结果的两企业总利润也能闭合，但实现把联合路线收入归属继续带入成本分摊后的利润，错误报出企业甲 −6714.516286、企业乙 +7658.483714。标准两方成本分摊应从各自单干利润加各自节约，两家最终参与裕量均为 +471.983714。
+- **价值**：只核总量闭合抓不出企业间劈分错误。成本分摊必须同时核 `allocated_profit`、相对真实 Pi0 的最终裕量，以及两企业分配利润之和；运营账参与判定与分摊后判定仍是两张不同的账。
+- **状态**：已修正公式并增加总利润闭合检查，`allocated_profit` 与最终裕量同时更新，原探索包已重算。运营账下企业甲仍为 −5725.282425，搜索语义未改；正式 10 种子结果待算法定稿。证据：`solver/reports/fairness_line_20260818/report.md`、`shapley_allocation.json`、`solver/tests/test_coalition_accounting.py`。

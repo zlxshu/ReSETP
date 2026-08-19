@@ -31,7 +31,7 @@ from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.construction import _build_cv_seed_with_retry
 from setp_solver.search.e3_multitrip_runtime import hard_violations, prepare_solution
 from setp_solver.search.evaluation import EvaluationContext
-from setp_solver.search.fairness import _subinstance_for_depot
+from baselines.e3_ablation._legacy_subbundle import _subinstance_for_depot
 from setp_solver.search.instance_registry import instance_abs_dir
 from setp_solver.search.multitrip_schedule import build_multitrip_certificate, route_timing
 from setp_solver.solution import Route, Solution

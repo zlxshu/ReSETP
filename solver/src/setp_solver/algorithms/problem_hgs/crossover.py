@@ -1,17 +1,4 @@
-"""Duty adapters for the literature-grounded DCREX route exchange.
-
-v1 2026-08-07: exchange a random contiguous block of canonical physical-duty
-registry entries.  This is not the Nagata--Kobayashi/IndependentKernel SREX operator.
-Vehicle identity and locked commitments never cross registry slots; duplicate
-customers are removed and missing customers remain explicit for regret repair.
-
-v2 2026-08-07: duplicate cleanup cannot alter a trip carrying a locked charge.
-
-v3 2026-08-08: the formal algorithm replaces the prototype's random
-contiguous whole-duty block with full multi-parent DCREX.  The generic route
-selection is shared with the public solver; this adapter preserves physical
-vehicle, type, home depot, dynamic locks, and rebuilds changed charging later.
-"""
+"""Customer-assignment crossover for physical-vehicle duties."""
 
 from __future__ import annotations
 
@@ -19,13 +6,6 @@ import random
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
-from .dcrex import (
-    DCREXController,
-    DCREXResult,
-    RouteGene,
-    dcrex_exchange,
-    remove_redundant_customers,
-)
 from .model import (
     DutyIndividual,
     DutyTrip,
@@ -52,140 +32,6 @@ class DutyCrossoverResult:
     deterministic_work_units: int = 1
 
 
-@dataclass(frozen=True)
-class DutyDCREXResult:
-    child: DutyIndividual
-    main_parent: DutyIndividual
-    changed_duty_ids: frozenset[str]
-    duplicate_customers_removed: tuple[str, ...]
-    unserved_customers: tuple[str, ...]
-    dcrex: DCREXResult
-
-
-def dcrex_duty_exchange(
-    parents: tuple[DutyIndividual, ...],
-    rng: random.Random,
-    controller: DCREXController,
-) -> DutyDCREXResult:
-    """Apply complete DCREX while retaining canonical physical-vehicle slots."""
-
-    if len(parents) < 2:
-        raise ValueError("Duty DCREX requires at least two parents")
-    registry = canonical_fleet_registry(parents[0])
-    for parent in parents[1:]:
-        if registry != canonical_fleet_registry(parent):
-            raise ValueError("DCREX parents use different canonical fleets")
-        _assert_parent_locks_compatible(parents[0], parent)
-
-    customer_universe = set().union(
-        *(_represented_customers(parent) for parent in parents)
-    )
-    route_parents = tuple(_route_genes(parent) for parent in parents)
-    crossed = dcrex_exchange(
-        route_parents,
-        customer_universe=sorted(customer_universe),
-        rng=rng,
-        controller=controller,
-        preserve_target_terminals=True,
-    )
-    main = parents[crossed.main_parent_index]
-    protected_occurrences = {
-        (duty.route_id(trip.trip_index), position)
-        for duty in main.duties
-        for trip in duty.trips
-        for position, _customer in enumerate(trip.customer_ids)
-        if (
-            position < len(trip.locked_customer_prefix)
-            or trip.trip_index in duty.locked_charging_trip_indices
-        )
-    }
-    cleaned_routes = remove_redundant_customers(
-        crossed.routes,
-        protected_occurrences=protected_occurrences,
-    )
-    customers_by_route = {
-        str(route.route_id): tuple(str(customer) for customer in route.customer_ids)
-        for route in cleaned_routes.routes
-    }
-    changed_duty_ids: set[str] = set()
-    rebuilt: list[PhysicalVehicleDuty] = []
-    for duty in main.duties:
-        trips = []
-        duty_changed = False
-        for trip in duty.trips:
-            route_id = duty.route_id(trip.trip_index)
-            customers = customers_by_route.get(route_id, trip.customer_ids)
-            if customers != trip.customer_ids:
-                duty_changed = True
-            trips.append(
-                replace(
-                    trip,
-                    customer_ids=customers,
-                    route_visits=() if customers != trip.customer_ids else trip.route_visits,
-                )
-            )
-        if duty_changed:
-            changed_duty_ids.add(duty.physical_vehicle_id)
-            rebuilt.append(
-                compact_empty_trips(
-                    replace(
-                        duty,
-                        trips=tuple(trips),
-                        charging_sessions=tuple(
-                            session
-                            for session in duty.charging_sessions
-                            if session.locked
-                        ),
-                    )
-                )
-            )
-        else:
-            rebuilt.append(duty)
-
-    served = {
-        customer
-        for duty in rebuilt
-        for trip in duty.trips
-        for customer in trip.customer_ids
-    }
-    unserved = tuple(sorted(customer_universe.difference(served)))
-    child = DutyIndividual(
-        duties=tuple(rebuilt),
-        unserved_customers=unserved,
-        source="dcrex-duty-exchange",
-    )
-    for parent in parents:
-        assert_locks_preserved(parent, child)
-    return DutyDCREXResult(
-        child=child,
-        main_parent=main,
-        changed_duty_ids=frozenset(changed_duty_ids),
-        duplicate_customers_removed=tuple(
-            sorted(str(customer) for customer in cleaned_routes.removed_customers)
-        ),
-        unserved_customers=unserved,
-        dcrex=crossed,
-    )
-
-
-def _route_genes(individual: DutyIndividual) -> tuple[RouteGene, ...]:
-    return tuple(
-        RouteGene(
-            route_id=duty.route_id(trip.trip_index),
-            customer_ids=trip.customer_ids,
-            start_depot=duty.home_depot_id,
-            end_depot=duty.home_depot_id,
-            vehicle_type=duty.vehicle_type,
-            exchangeable=(
-                not trip.locked_customer_prefix
-                and trip.trip_index not in duty.locked_charging_trip_indices
-            ),
-        )
-        for duty in individual.duties
-        for trip in duty.trips
-    )
-
-
 def canonical_fleet_registry(
     individual: DutyIndividual,
 ) -> tuple[FleetRegistryEntry, ...]:
@@ -199,66 +45,6 @@ def canonical_fleet_registry(
             individual.duties,
             key=lambda item: item.physical_vehicle_id,
         )
-    )
-
-
-def selective_duty_exchange(
-    parents: tuple[DutyIndividual, DutyIndividual],
-    rng: random.Random,
-) -> DutyCrossoverResult:
-    """Exchange a random contiguous block of whole canonical Duty entries."""
-
-    first, second = parents
-    registry = canonical_fleet_registry(first)
-    if registry != canonical_fleet_registry(second):
-        raise ValueError("crossover parents use different canonical fleets")
-    _assert_parent_locks_compatible(first, second)
-    if not registry:
-        raise ValueError("Duty crossover requires a non-empty fleet registry")
-
-    count = rng.randrange(len(registry)) + 1
-    start = rng.randrange(len(registry))
-    donor_ids = tuple(
-        registry[(start + offset) % len(registry)].physical_vehicle_id
-        for offset in range(count)
-    )
-    first_by_id = {
-        duty.physical_vehicle_id: duty for duty in first.duties
-    }
-    second_by_id = {
-        duty.physical_vehicle_id: duty for duty in second.duties
-    }
-    duties = [
-        first_by_id[entry.physical_vehicle_id]
-        if entry.physical_vehicle_id in donor_ids
-        else second_by_id[entry.physical_vehicle_id]
-        for entry in registry
-    ]
-    cleaned, duplicate_customers, changed_by_cleanup = _remove_duplicates(
-        duties,
-        donor_ids=set(donor_ids),
-    )
-    expected = _represented_customers(first).union(_represented_customers(second))
-    served = {
-        customer
-        for duty in cleaned
-        for trip in duty.trips
-        for customer in trip.customer_ids
-    }
-    unserved = tuple(sorted(expected.difference(served)))
-    child = DutyIndividual(
-        duties=tuple(cleaned),
-        unserved_customers=unserved,
-        source="selective-duty-exchange",
-    )
-    assert_locks_preserved(first, child)
-    assert_locks_preserved(second, child)
-    return DutyCrossoverResult(
-        child=child,
-        changed_duty_ids=frozenset(set(donor_ids).union(changed_by_cleanup)),
-        donor_duty_ids=donor_ids,
-        duplicate_customers_removed=tuple(sorted(duplicate_customers)),
-        unserved_customers=unserved,
     )
 
 
@@ -294,7 +80,7 @@ def trip_assignment_exchange_candidates(
 ) -> tuple[DutyCrossoverResult, ...]:
     """Append one compatible donor trip and remove its former occurrences.
 
-    This is the fast, problem-adapted companion to full DCREX.  It changes the
+    This problem-adapted operator changes the
     assignment of one complete trip without copying an entire day schedule.
     A trip may move across vehicle types and home depots because those belong
     to the receiving physical asset, not to the customer trip.  The receiving

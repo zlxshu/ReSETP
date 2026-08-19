@@ -18,6 +18,10 @@ the sole construction and acceptance path.
 
 v6 2026-08-08: cold-replay only the selected improving action during search;
 tests may still request a sentinel for every candidate through ``evaluate_move``.
+
+v7 2026-08-16: defer a stop request until the current education round has
+completed, then cold-evaluate the returned individual before handing it back
+to the population path.
 """
 
 from __future__ import annotations
@@ -33,10 +37,13 @@ from .charging import (
     ChargingRepairPolicy,
     charging_rejection_reason,
     repair_changed_duties,
+    repair_changed_duties_outcome,
 )
 from .contracts import (
     CandidateOutcome,
     CandidateStatus,
+    ChargingCandidateStatus,
+    ChargingRepairOutcome,
     SearchAccounting,
     TrajectoryRow,
 )
@@ -44,6 +51,7 @@ from .evaluation import (
     DutyFullEvaluator,
     DutyIncrementalEvaluator,
     FullEvaluation,
+    assert_candidate_routes_single_shift,
 )
 from .fleet_registry import assert_fleet_activation_allowed
 from .model import DutyIndividual, assert_locks_preserved
@@ -95,6 +103,10 @@ def evaluate_move(
             current,
             raw,
             enabled=fleet_activation_enabled,
+        )
+        assert_candidate_routes_single_shift(
+            raw,
+            evaluator.context.rebuilt_route_constraints,
         )
     except (TypeError, ValueError) as exc:
         if raw is not None:
@@ -212,7 +224,8 @@ def evaluate_move(
         getattr(move, "explicit_charging_duty_ids", ())
     )
     if charging_prescreen is not None:
-        failure = charging_prescreen.screen(
+        failure = _screen_route_clock(
+            charging_prescreen,
             current,
             raw,
             changed_duty_ids=move.changed_duty_ids,
@@ -227,15 +240,38 @@ def evaluate_move(
                 started,
             )
     try:
-        candidate = repair_changed_duties(
-            current,
-            raw,
-            changed_duty_ids=set(move.changed_duty_ids),
-            context=evaluator.context,
-            policy=charging_policy,
-            cache=charging_repair_cache,
-            preserve_explicit_charging_duty_ids=set(preserved_charging_ids),
-        )
+        if (
+            getattr(evaluator.context, "dynamic_state", None) is None
+            and isinstance(charging_policy, ChargingRepairPolicy)
+        ):
+            charging_outcome = repair_changed_duties_outcome(
+                current,
+                raw,
+                changed_duty_ids=set(move.changed_duty_ids),
+                context=evaluator.context,
+                policy=charging_policy,
+                cache=charging_repair_cache,
+                preserve_explicit_charging_duty_ids=set(
+                    preserved_charging_ids
+                ),
+            )
+        else:
+            candidate = repair_changed_duties(
+                current,
+                raw,
+                changed_duty_ids=set(move.changed_duty_ids),
+                context=evaluator.context,
+                policy=charging_policy,
+                cache=charging_repair_cache,
+                preserve_explicit_charging_duty_ids=set(
+                    preserved_charging_ids
+                ),
+            )
+            charging_outcome = ChargingRepairOutcome(
+                status=ChargingCandidateStatus.READY,
+                candidate=candidate,
+                affected_duty_ids=tuple(sorted(move.changed_duty_ids)),
+            )
     except (TypeError, ValueError) as exc:
         return _rejection(
             move,
@@ -243,6 +279,29 @@ def evaluate_move(
             exc,
             started,
         )
+    if charging_outcome.candidate is None:
+        error = charging_outcome.error or ValueError(
+            charging_outcome.reason_code or charging_outcome.status.value
+        )
+        return CandidateOutcome(
+            action_id=move.action_id,
+            channel=move.channel,
+            status=(
+                CandidateStatus.REJECTED_INTERFACE
+                if charging_outcome.status
+                == ChargingCandidateStatus.REJECTED_INTERFACE
+                else CandidateStatus.REJECTED_CHARGING
+            ),
+            changed_duty_ids=move.changed_duty_ids,
+            error_type=type(error).__name__,
+            error=str(error),
+            charging_rejection_reason=charging_outcome.reason_code,
+            wall_seconds=perf_counter() - started,
+            charging_candidate_status=charging_outcome.status,
+            charging_gap=charging_outcome.gap,
+            charging_clock_witnesses=charging_outcome.clock_witnesses,
+        )
+    candidate = charging_outcome.candidate
     if candidate.fingerprint == current.fingerprint:
         return CandidateOutcome(
             action_id=move.action_id,
@@ -316,6 +375,61 @@ def evaluate_move(
     )
 
 
+def _screen_route_clock(
+    prescreen: ChargingFeasibilityPrescreen,
+    reference: DutyIndividual,
+    candidate: DutyIndividual,
+    *,
+    changed_duty_ids: frozenset[str],
+    channel: str,
+    preserve_explicit_charging_duty_ids: frozenset[str],
+):
+    """Reuse the exact depot channel clock screen for fairness moves."""
+
+    alias = (
+        "depot_collaboration"
+        if channel == "fairness_cross_depot"
+        else channel
+    )
+    counters = (
+        prescreen.checked_by_channel,
+        prescreen.rejected_by_channel,
+        prescreen.passed_by_channel,
+        prescreen.deferred_to_gap_by_channel,
+    )
+    before = tuple(counter[alias] for counter in counters)
+    reasons_before = dict(prescreen.rejected_by_channel_and_reason)
+    failure = prescreen.screen(
+        reference,
+        candidate,
+        changed_duty_ids=changed_duty_ids,
+        channel=alias,
+        preserve_explicit_charging_duty_ids=(
+            preserve_explicit_charging_duty_ids
+        ),
+    )
+    if alias == channel:
+        return failure
+    for counter, previous in zip(counters, before, strict=True):
+        delta = counter[alias] - previous
+        if delta:
+            counter[alias] -= delta
+            counter[channel] += delta
+            if counter[alias] == 0:
+                del counter[alias]
+    prefix = f"{alias}:"
+    for key, value in tuple(prescreen.rejected_by_channel_and_reason.items()):
+        delta = value - reasons_before.get(key, 0)
+        if delta and key.startswith(prefix):
+            prescreen.rejected_by_channel_and_reason[key] -= delta
+            if prescreen.rejected_by_channel_and_reason[key] == 0:
+                del prescreen.rejected_by_channel_and_reason[key]
+            prescreen.rejected_by_channel_and_reason[
+                f"{channel}:{key[len(prefix):]}"
+            ] += delta
+    return failure
+
+
 def educate_best_improvement(
     individual: DutyIndividual,
     *,
@@ -334,12 +448,16 @@ def educate_best_improvement(
     schedule_coordinator: ScheduleCoordinator | None = None,
     fleet_activation_enabled: bool = True,
     charging_prescreen: ChargingFeasibilityPrescreen | None = None,
+    charging_repair_cache: ChargingRepairCache | None = None,
     record_trajectory: bool = True,
+    max_education_rounds: int | None = None,
 ) -> tuple[DutyIndividual, FullEvaluation, tuple[TrajectoryRow, ...]]:
     """Run complete-cost best or first improvement education."""
 
     if selection_policy not in {"best", "first"}:
         raise ValueError("selection policy must be best or first")
+    if max_education_rounds is not None and max_education_rounds < 1:
+        raise ValueError("maximum education rounds must be positive")
 
     current = individual
     if initial_evaluation is None:
@@ -352,9 +470,33 @@ def educate_best_improvement(
             )
         current_evaluation = initial_evaluation
     rows: list[TrajectoryRow] = []
+
+    def finish_after_stop() -> tuple[
+        DutyIndividual,
+        FullEvaluation,
+        tuple[TrajectoryRow, ...],
+    ]:
+        """Return a complete evaluation for the candidate being retained."""
+
+        nonlocal current_evaluation
+        current_evaluation = evaluator.evaluate(current)
+        accounting.full_evaluations += 1
+        return current, current_evaluation, tuple(rows)
+
+    completed_rounds = 0
+    last_round_improved = False
     while True:
         if stop_requested is not None and stop_requested():
+            return finish_after_stop()
+        if (
+            max_education_rounds is not None
+            and completed_rounds >= max_education_rounds
+        ):
+            accounting.record_education_depth_cap(
+                still_improving=last_round_improved
+            )
             return current, current_evaluation, tuple(rows)
+        completed_rounds += 1
         accounting.education_rounds += 1
         engine = proposal_engine or LegacyCompleteProposalEngine()
         proposed = iter(
@@ -374,30 +516,83 @@ def educate_best_improvement(
         moves = chain((first_move,), proposed)
         incremental = DutyIncrementalEvaluator(evaluator)
         accounting.record_cache_seed(incremental.seed(current))
-        charging_repair_cache = ChargingRepairCache(
-            evaluator.context,
-            charging_policy,
+        round_charging_policy = (
+            charging_policy
+            if (
+                getattr(evaluator.context, "dynamic_state", None) is not None
+                or not isinstance(charging_policy, ChargingRepairPolicy)
+                or charging_policy.charging_gap_enabled
+            )
+            else replace(charging_policy, charging_gap_enabled=True)
+        )
+        round_charging_repair_cache = (
+            charging_repair_cache
+            if charging_repair_cache is not None
+            else ChargingRepairCache(
+                evaluator.context,
+                round_charging_policy,
+            )
         )
         round_rows: list[TrajectoryRow] = []
         best = None
         best_key = None
         best_row_index = None
         sentinel_mismatch = False
+        stop_after_round = False
+        truth_batch_active = False
+        truth_batch_closed = False
+        truth_batch_exact_evaluations = 0
+        truth_best = None
+        truth_best_key = None
+        truth_best_row_index = None
+        truth_selected_proxy_rank = None
+        truth_selected_exact_cost = None
+        truth_rank_one_exact_cost = None
         for move in moves:
-            if stop_requested is not None and stop_requested():
-                if record_trajectory:
-                    if trajectory_sink is None:
-                        rows.extend(round_rows)
-                    else:
-                        trajectory_sink(tuple(round_rows))
-                return current, current_evaluation, tuple(rows)
+            proxy_rank = getattr(move, "proxy_rank", None)
+            is_truth_shortlist_move = proxy_rank is not None
+            if is_truth_shortlist_move and truth_batch_closed:
+                raise ValueError(
+                    "truth-guided route candidates must form one contiguous batch"
+                )
+            if truth_batch_active and not is_truth_shortlist_move:
+                accounting.record_truth_shortlist_batch(
+                    truth_batch_exact_evaluations
+                )
+                if truth_best is not None:
+                    best = truth_best
+                    best_key = (
+                        float(penalized_cost(truth_best.evaluation)),
+                        truth_best.action_id,
+                    )
+                    best_row_index = truth_best_row_index
+                    truth_selected_proxy_rank = int(truth_best_key[1])
+                    truth_selected_exact_cost = float(truth_best_key[0])
+                truth_batch_active = False
+                truth_batch_closed = True
+                if (
+                    best is not None
+                    and _meaningfully_better(
+                        float(penalized_cost(best.evaluation)),
+                        float(penalized_cost(current_evaluation)),
+                    )
+                ):
+                    break
+            if is_truth_shortlist_move:
+                truth_batch_active = True
+            if (
+                not stop_after_round
+                and stop_requested is not None
+                and stop_requested()
+            ):
+                stop_after_round = True
             outcome = evaluate_move(
                 current,
                 move,
                 evaluator=evaluator,
-                charging_policy=charging_policy,
+                charging_policy=round_charging_policy,
                 incremental_evaluator=incremental,
-                charging_repair_cache=charging_repair_cache,
+                charging_repair_cache=round_charging_repair_cache,
                 verify_full_truth=False,
                 penalized_cost=penalized_cost,
                 schedule_capture_iteration=iteration,
@@ -423,11 +618,35 @@ def educate_best_improvement(
                 sentinel_mismatch
                 or outcome.status == CandidateStatus.SENTINEL_MISMATCH
             )
+            if is_truth_shortlist_move and outcome.evaluated:
+                truth_batch_exact_evaluations += 1
             if (
                 outcome.evaluated
                 and outcome.evaluation is not None
                 and outcome.candidate is not None
             ):
+                if is_truth_shortlist_move:
+                    exact_cost = float(penalized_cost(outcome.evaluation))
+                    proxy_rank = int(proxy_rank)
+                    truth_candidate_key = (
+                        exact_cost,
+                        proxy_rank,
+                        outcome.action_id,
+                    )
+                    if proxy_rank == 1:
+                        truth_rank_one_exact_cost = exact_cost
+                    if (
+                        truth_best_key is None
+                        or truth_candidate_key < truth_best_key
+                    ):
+                        truth_best = outcome
+                        truth_best_key = truth_candidate_key
+                        truth_best_row_index = (
+                            len(round_rows) - 1
+                            if record_trajectory
+                            else None
+                        )
+                    continue
                 candidate_key = (
                     float(penalized_cost(outcome.evaluation)),
                     outcome.action_id,
@@ -438,6 +657,8 @@ def educate_best_improvement(
                     best_row_index = (
                         len(round_rows) - 1 if record_trajectory else None
                     )
+                    truth_selected_proxy_rank = None
+                    truth_selected_exact_cost = None
                 if (
                     selection_policy == "first"
                     and _meaningfully_better(
@@ -446,6 +667,19 @@ def educate_best_improvement(
                     )
                 ):
                     break
+        if truth_batch_active:
+            accounting.record_truth_shortlist_batch(
+                truth_batch_exact_evaluations
+            )
+            if truth_best is not None:
+                best = truth_best
+                best_key = (
+                    float(penalized_cost(truth_best.evaluation)),
+                    truth_best.action_id,
+                )
+                best_row_index = truth_best_row_index
+                truth_selected_proxy_rank = int(truth_best_key[1])
+                truth_selected_exact_cost = float(truth_best_key[0])
         accepted = bool(
             best is not None
             and _meaningfully_better(
@@ -453,6 +687,7 @@ def educate_best_improvement(
                 float(penalized_cost(current_evaluation)),
             )
         )
+        last_round_improved = accepted
         if (
             accepted
             and best is not None
@@ -481,6 +716,21 @@ def educate_best_improvement(
                 round_rows[best_row_index],
                 accepted=True,
             )
+        truth_reselection_reason = None
+        if (
+            truth_selected_proxy_rank is not None
+            and truth_selected_proxy_rank > 1
+        ):
+            if truth_rank_one_exact_cost is None:
+                truth_reselection_reason = "proxy_rank_one_rejected_by_complete_chain"
+            elif (
+                truth_selected_exact_cost is not None
+                and _meaningfully_better(
+                    truth_selected_exact_cost,
+                    truth_rank_one_exact_cost,
+                )
+            ):
+                truth_reselection_reason = "strict_complete_penalised_cost"
         if record_trajectory:
             if trajectory_sink is None:
                 rows.extend(round_rows)
@@ -488,9 +738,33 @@ def educate_best_improvement(
                 trajectory_sink(tuple(round_rows))
         if sentinel_mismatch:
             raise DutySentinelMismatch(tuple(rows))
+        if stop_after_round:
+            if not accepted or best is None:
+                return finish_after_stop()
+            accounting.record_acceptance(best.channel)
+            if truth_selected_proxy_rank is not None:
+                accounting.record_truth_shortlist_acceptance(
+                    proxy_rank=truth_selected_proxy_rank,
+                    reselection_reason=truth_reselection_reason,
+                )
+            accounting.record_accepted_effect(
+                best.channel,
+                current,
+                current_evaluation,
+                best.candidate,
+                best.evaluation,
+            )
+            current = best.candidate
+            current_evaluation = best.evaluation
+            return finish_after_stop()
         if not accepted or best is None:
             break
         accounting.record_acceptance(best.channel)
+        if truth_selected_proxy_rank is not None:
+            accounting.record_truth_shortlist_acceptance(
+                proxy_rank=truth_selected_proxy_rank,
+                reselection_reason=truth_reselection_reason,
+            )
         accounting.record_accepted_effect(
             best.channel,
             current,

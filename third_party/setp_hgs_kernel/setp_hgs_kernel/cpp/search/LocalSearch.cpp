@@ -6,11 +6,231 @@
 #include <algorithm>
 #include <cassert>
 #include <numeric>
+#include <utility>
 
 using setp_hgs_kernel::Solution;
 using setp_hgs_kernel::search::LocalSearch;
 using setp_hgs_kernel::search::NodeOperator;
 using setp_hgs_kernel::search::RouteOperator;
+
+namespace
+{
+bool candidateLess(LocalSearch::Candidate const &first,
+                   LocalSearch::Candidate const &second)
+{
+    return first.proxyDelta < second.proxyDelta
+           || (first.proxyDelta == second.proxyDelta
+               && first.scanOrdinal < second.scanOrdinal);
+}
+}  // namespace
+
+void LocalSearch::retainCandidate(std::vector<Candidate> &candidates,
+                                  Solution candidate,
+                                  Cost proxyDelta,
+                                  size_t scanOrdinal,
+                                  size_t limit)
+{
+    candidateStatistics_.numMaterialised++;
+    auto const duplicate = std::find_if(
+        candidates.begin(),
+        candidates.end(),
+        [&](Candidate const &other) { return other.solution() == candidate; });
+    Candidate materialised(std::move(candidate), proxyDelta, scanOrdinal);
+    if (duplicate != candidates.end())
+    {
+        if (candidateLess(materialised, *duplicate))
+            *duplicate = std::move(materialised);
+        return;
+    }
+
+    if (candidates.size() < limit)
+        candidates.push_back(std::move(materialised));
+    else
+    {
+        auto const worst = std::max_element(
+            candidates.begin(), candidates.end(), candidateLess);
+        if (candidateLess(materialised, *worst))
+            *worst = std::move(materialised);
+    }
+}
+
+std::vector<LocalSearch::Candidate> LocalSearch::promisingCandidates(
+    Solution const &solution,
+    CostEvaluator const &costEvaluator,
+    size_t limit)
+{
+    if (limit == 0)
+        throw std::invalid_argument("Candidate limit must be positive.");
+    if (!solution.isComplete())
+        throw std::invalid_argument(
+            "Candidate scan requires a complete base solution.");
+    if (data.numGroups() != 0)
+        throw std::invalid_argument(
+            "Candidate scan does not support client groups.");
+    for (size_t client = data.numDepots(); client != data.numLocations(); ++client)
+    {
+        ProblemData::Client const &clientData = data.location(client);
+        if (!clientData.required)
+            throw std::invalid_argument(
+                "Candidate scan does not support optional clients.");
+    }
+
+    candidateStatistics_ = {};
+    std::vector<Candidate> candidates;
+    candidates.reserve(limit);
+    size_t scanOrdinal = 0;
+    loadSolution(solution);
+
+    auto const competitive = [&](Cost proxyDelta, size_t ordinal)
+    {
+        if (candidates.size() < limit)
+            return true;
+        auto const worst = std::max_element(
+            candidates.begin(), candidates.end(), candidateLess);
+        return proxyDelta < worst->proxyDelta
+               || (proxyDelta == worst->proxyDelta
+                   && ordinal < worst->scanOrdinal);
+    };
+
+    auto const scanNodePair = [&](size_t uClient,
+                                  bool vIsRouteStart,
+                                  size_t vIndex)
+    {
+        for (auto *nodeOp : nodeOps)
+        {
+            auto *U = &nodes[uClient];
+            auto *V = vIsRouteStart ? routes[vIndex][0] : &nodes[vIndex];
+            if (!U->route() || !V->route())
+                continue;
+
+            auto const ordinal = scanOrdinal++;
+            auto const deltaCost = nodeOp->evaluate(U, V, costEvaluator);
+            candidateStatistics_.numEvaluated++;
+            if (deltaCost >= 0)
+                continue;
+            candidateStatistics_.numPromising++;
+            if (!competitive(deltaCost, ordinal))
+                continue;
+
+            auto *rU = U->route();
+            auto *rV = V->route();
+            nodeOp->apply(U, V);
+            update(rU, rV);
+            retainCandidate(candidates,
+                            exportSolution(),
+                            deltaCost,
+                            ordinal,
+                            limit);
+            loadSolution(solution);
+        }
+    };
+
+    auto const scanDepotRemoval = [&](size_t routeIndex, size_t nodeIndex)
+    {
+        auto *U = routes[routeIndex][nodeIndex];
+        if (!U->isReloadDepot())
+            return;
+
+        auto const ordinal = scanOrdinal++;
+        auto const deltaCost = removeCost(U, data, costEvaluator);
+        candidateStatistics_.numEvaluated++;
+        if (deltaCost > 0)
+            return;
+        candidateStatistics_.numPromising++;
+        if (!competitive(deltaCost, ordinal))
+            return;
+
+        auto *route = U->route();
+        route->remove(U->idx());
+        update(route, route);
+        retainCandidate(candidates,
+                        exportSolution(),
+                        deltaCost,
+                        ordinal,
+                        limit);
+        loadSolution(solution);
+    };
+
+    // Enumerate one-step node moves from the shared base.  Empty routes are
+    // opened to all operators here: the external exact-truth loop replaces the
+    // proxy-only intermediate step that historically unlocked those moves.
+    for (auto const uClient : orderNodes)
+    {
+        auto *U = &nodes[uClient];
+        if (!U->route())
+            continue;
+
+        auto const routeIndex = U->route()->idx();
+        auto const prevIndex = p(U)->idx();
+        auto const nextIndex = n(U)->idx();
+        if (p(U)->isReloadDepot())
+            scanDepotRemoval(routeIndex, prevIndex);
+        if (n(U)->isReloadDepot())
+            scanDepotRemoval(routeIndex, nextIndex);
+
+        for (auto const vClient : neighbours_[uClient])
+        {
+            auto *V = &nodes[vClient];
+            if (!V->route())
+                continue;
+            scanNodePair(uClient, false, vClient);
+
+            V = &nodes[vClient];
+            if (V->route() && p(V)->isStartDepot())
+                scanNodePair(uClient, true, V->route()->idx());
+        }
+
+        for (auto const &[vehType, offset] : orderVehTypes)
+        {
+            auto const begin = routes.begin() + offset;
+            auto const end = begin + data.vehicleType(vehType).numAvailable;
+            auto const empty = std::find_if(
+                begin, end, [](auto const &route) { return route.empty(); });
+            if (empty != end)
+                scanNodePair(uClient, true, empty->idx());
+        }
+    }
+
+    // Route operators already represent one compound move, so each negative
+    // evaluation can be materialised directly from the same base solution.
+    for (auto const rU : orderRoutes)
+    {
+        if (routes[rU].empty())
+            continue;
+        for (size_t rV = rU + 1; rV != routes.size(); ++rV)
+        {
+            if (routes[rV].empty())
+                continue;
+            for (auto *routeOp : routeOps)
+            {
+                auto *U = &routes[rU];
+                auto *V = &routes[rV];
+                auto const ordinal = scanOrdinal++;
+                auto const deltaCost = routeOp->evaluate(U, V, costEvaluator);
+                candidateStatistics_.numEvaluated++;
+                if (deltaCost >= 0)
+                    continue;
+                candidateStatistics_.numPromising++;
+                if (!competitive(deltaCost, ordinal))
+                    continue;
+
+                routeOp->apply(U, V);
+                update(U, V);
+                retainCandidate(candidates,
+                                exportSolution(),
+                                deltaCost,
+                                ordinal,
+                                limit);
+                loadSolution(solution);
+            }
+        }
+    }
+
+    std::sort(candidates.begin(), candidates.end(), candidateLess);
+    candidateStatistics_.numReturned = candidates.size();
+    loadSolution(solution);
+    return candidates;
+}
 
 Solution LocalSearch::operator()(Solution const &solution,
                                  CostEvaluator const &costEvaluator)
@@ -619,6 +839,11 @@ LocalSearch::Statistics LocalSearch::statistics() const
 
     assert(numImproving <= numUpdates_);
     return {numMoves, numImproving, numUpdates_};
+}
+
+LocalSearch::CandidateStatistics LocalSearch::candidateStatistics() const
+{
+    return candidateStatistics_;
 }
 
 LocalSearch::LocalSearch(ProblemData const &data, Neighbours neighbours)

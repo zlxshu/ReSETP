@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import itertools
-from dataclasses import dataclass
+from collections import Counter
+from dataclasses import dataclass, replace
 from types import SimpleNamespace
 
 import setp_solver.algorithms.problem_hgs.charging as charging_module
@@ -22,6 +23,10 @@ from setp_solver.algorithms.problem_hgs.model import (
 from setp_solver.algorithms.problem_hgs.integrated_private import (
     build_integrated_private_hgs,
 )
+from setp_solver.algorithms.problem_hgs.operators import (
+    RelocateMove,
+    generate_problem_moves,
+)
 from setp_solver.algorithms.problem_hgs.population import PenaltyParameters
 from setp_solver.algorithms.problem_hgs.proposals import (
     SequentialProposalEngine,
@@ -30,7 +35,7 @@ from setp_solver.prices import PriceParameters
 from setp_solver.solution import ChargingAction
 from setp_hgs_kernel.stop import MaxIterations
 from setp_hgs_kernel._setp_hgs_kernel import PopulationParams
-from setp_hgs_kernel.ExternalPopulation import (
+from setp_solver.algorithms.problem_hgs.external_population import (
     EvaluatedSolution,
     ExternalPopulation,
 )
@@ -81,6 +86,7 @@ class _FullEvaluator:
             bundle=SimpleNamespace(
                 instance=SimpleNamespace(nodes=()),
                 instance_id="complete-duty-test",
+                prices=PriceParameters(carbon_price=0.0),
             ),
             dynamic_state=None,
         )
@@ -441,6 +447,123 @@ def test_sequential_proposals_finish_route_stage_before_mechanisms() -> None:
         "r2",
         "m1",
     )
+
+
+def test_fairness_generator_is_lazy_orders_by_deficit_and_keeps_reverse_moves():
+    individual = DutyIndividual(
+        duties=(
+            PhysicalVehicleDuty(
+                "CV_D0_1",
+                "cv",
+                "D0",
+                trips=(DutyTrip(1, ("C1",)),),
+            ),
+            PhysicalVehicleDuty(
+                "CV_D1_1",
+                "cv",
+                "D1",
+                trips=(DutyTrip(1, ("C2",)),),
+            ),
+        ),
+    )
+    counts: Counter[str] = Counter()
+    stream = generate_problem_moves(
+        individual,
+        SimpleNamespace(participation_margin={"D0": 10.0, "D1": -5.0}),
+        object(),
+        allowed_channels=frozenset({"fairness_cross_depot"}),
+        customer_shift_by_id={"C1": "am", "C2": "am"},
+        fairness_prescreen_enabled=True,
+        generation_counts=counts,
+    )
+
+    assert iter(stream) is stream
+    assert counts == Counter()
+    first = next(stream)
+    assert isinstance(first, RelocateMove)
+    assert (first.source_duty_id, first.target_duty_id) == (
+        "CV_D0_1",
+        "CV_D1_1",
+    )
+    remaining = tuple(stream)
+    assert any(
+        isinstance(move, RelocateMove)
+        and move.source_duty_id == "CV_D1_1"
+        and move.target_duty_id == "CV_D0_1"
+        for move in remaining
+    )
+    assert counts["fairness_considered"] == counts["fairness_materialized"]
+
+
+def test_fairness_generator_filters_mixed_shift_and_locked_before_objects():
+    unlocked = DutyIndividual(
+        duties=(
+            PhysicalVehicleDuty(
+                "CV_D0_1",
+                "cv",
+                "D0",
+                trips=(DutyTrip(1, ("C1",)),),
+            ),
+            PhysicalVehicleDuty(
+                "CV_D1_1",
+                "cv",
+                "D1",
+                trips=(DutyTrip(1, ("C2",)),),
+            ),
+        ),
+    )
+    mixed_counts: Counter[str] = Counter()
+    mixed_moves = tuple(
+        generate_problem_moves(
+            unlocked,
+            SimpleNamespace(
+                participation_margin={"D0": 10.0, "D1": -5.0}
+            ),
+            object(),
+            allowed_channels=frozenset({"fairness_cross_depot"}),
+            customer_shift_by_id={"C1": "am", "C2": "pm"},
+            fairness_prescreen_enabled=True,
+            generation_counts=mixed_counts,
+        )
+    )
+    assert all(not isinstance(move, RelocateMove) for move in mixed_moves)
+    assert mixed_counts["fairness_filtered_mixed_shift"] == 4
+
+    locked = replace(
+        unlocked,
+        duties=(
+            replace(
+                unlocked.duties[0],
+                charging_sessions=(
+                    DutyChargingSession(
+                        1,
+                        "D0",
+                        0.0,
+                        0.0,
+                        0.0,
+                        locked=True,
+                    ),
+                ),
+            ),
+            unlocked.duties[1],
+        ),
+    )
+    locked_counts: Counter[str] = Counter()
+    locked_moves = tuple(
+        generate_problem_moves(
+            locked,
+            SimpleNamespace(
+                participation_margin={"D0": 10.0, "D1": -5.0}
+            ),
+            object(),
+            allowed_channels=frozenset({"fairness_cross_depot"}),
+            customer_shift_by_id={"C1": "am", "C2": "am"},
+            fairness_prescreen_enabled=True,
+            generation_counts=locked_counts,
+        )
+    )
+    assert locked_moves == ()
+    assert locked_counts["fairness_filtered_locked"] > 0
 
 
 def test_education_no_improvement_return_keeps_the_three_part_contract() -> None:

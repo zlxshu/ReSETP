@@ -268,10 +268,10 @@ def test_random_population_stays_bounded_but_keeps_looking_for_feasible_seed(
             return self.candidate
 
     class _RouteEngine:
-        def random_skeleton_move(self, _initial, *, random_seed):
+        def random_skeleton_move(self, _initial, *, draw_index):
             return _Move(
                 complete_but_infeasible
-                if random_seed == 7
+                if draw_index == 0
                 else later_feasible
             )
 

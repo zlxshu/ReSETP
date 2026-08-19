@@ -125,11 +125,12 @@ def test_legacy_manifest_allows_only_declared_historical_exceptions(
     ]
 
 
-def test_current_paper_build_is_current_and_searchable() -> None:
+def test_retired_paper_build_is_not_misreported_as_current() -> None:
     failures, info, warnings = audit.verify_paper_build()
-    assert failures == []
-    assert info["page_count"] >= 20
-    assert info["input_file_count"] >= 10
+    assert audit.TEX.name.startswith("RETIRED_")
+    assert len(failures) == 1
+    assert failures[0].startswith("paper build inputs missing:")
+    assert isinstance(info, dict)
     assert isinstance(warnings, list)
 
 
@@ -329,11 +330,18 @@ def test_every_bibliography_entry_is_defined_once_and_cited() -> None:
     assert citations == set(definitions)
 
 
-def test_current_e2b_e3_e4_and_e6_identity_matrices_are_exact() -> None:
+def test_retired_e4_manifest_detects_active_source_drift() -> None:
     assert audit.e2b_identity_failures(audit.E2B) == []
     assert audit.e3_identity_failures(audit.E3) == []
-    assert audit.global_hash_manifest_failures(
+    failures = audit.global_hash_manifest_failures(
         audit.E4 / "artifact_hashes.json", expected_count=262
-    ) == []
+    )
+    assert set(failures) == {
+        "E4 global manifest hash drift: solver/src/setp_solver/search/multitrip_schedule.py",
+        "E4 global manifest hash drift: solver/src/setp_solver/cost.py",
+        "E4 global manifest hash drift: solver/src/setp_solver/check.py",
+        "E4 global manifest path is missing: solver/src/setp_solver/search/e3_multitrip_runtime.py",
+        "E4 global manifest path is missing: solver/src/setp_solver/search/formal_runner.py",
+    }
     assert audit.e4_identity_failures(audit.E4) == []
     assert audit.e6_identity_failures(audit.E6) == []

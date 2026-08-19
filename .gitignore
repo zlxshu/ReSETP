@@ -22,6 +22,12 @@ models/*
 !models/scripts/**
 !models/tests/
 !models/tests/**
+# Re-apply generated-file exclusions after the models source allow-list.
+models/**/__pycache__/
+models/**/.pytest_cache/
+models/**/.ruff_cache/
+models/**/*.py[cod]
+models/**/._*
 solver/reports/
 Reference Algorithm/
 *.npy
@@ -39,3 +45,8 @@ input/**/*
 
 # 仅供阅读学习的第三方仓库（许可证不明，不得提交、不得并入本项目代码）
 third_party/study_only/
+
+# Pinned local environment for repository quality gates.
+.quality-venv/
+.quality-venv-offline-check/
+.coop-venv/

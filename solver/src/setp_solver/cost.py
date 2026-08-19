@@ -32,7 +32,7 @@ from .charging_curve import (
     spec_for_charging_node,
     spec_from_parameters,
 )
-from .instance_loader import Instance, Node
+from .instance_loader import IndexedTimeProfile, Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
 from .solution import ChargingAction, Route, Solution, physical_vehicle_id
 
@@ -114,12 +114,16 @@ def time_profile_rows_for_node(
 ) -> list[dict[str, Any]]:
     """Return one node's city-specific rows or the historical shared rows."""
 
-    profile_cities = {
-        str(row["city"]).strip().lower()
-        for row in time_profile
-        if row.get("city") not in {None, ""}
-    }
-    if not profile_cities:
+    if isinstance(time_profile, IndexedTimeProfile):
+        city_rows = time_profile.city_rows
+    else:
+        city_rows: dict[str, list[dict[str, Any]]] = {}
+        for row in time_profile:
+            city_value = row.get("city")
+            if city_value not in {None, ""}:
+                normalized_city = str(city_value).strip().lower()
+                city_rows.setdefault(normalized_city, []).append(row)
+    if not city_rows:
         return time_profile
     try:
         node = instance.nodes[instance.node_index[node_id]]
@@ -132,12 +136,8 @@ def time_profile_rows_for_node(
             f"node {node_id!r} has no city for a city-specific time profile"
         )
     city = str(node.city).strip().lower()
-    rows = [
-        row
-        for row in time_profile
-        if str(row.get("city", "")).strip().lower() == city
-    ]
-    if not rows:
+    rows = city_rows.get(city)
+    if rows is None:
         raise ValueError(
             f"time profile has no rows for node {node_id!r} city {city!r}"
         )
@@ -161,8 +161,8 @@ def evaluate(
     fuel_liters = sum(item.fuel_liters for item in route_energy if item.vehicle_type == "cv")
     ev_drive_kwh = sum(item.ev_drive_kwh for item in route_energy if item.vehicle_type == "ev")
 
-    n_veh_cv = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "cv"})
-    n_veh_ev = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "ev"})
+    n_veh_cv = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type == "cv"})
+    n_veh_ev = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type == "ev"})
     electricity_kwh = sum(float(action.energy_kwh) for action in solution.charging_actions)
 
     # MC-W1-F2-DEPOT-CONCURRENCY-01: the fixed acquisition/activation charge
@@ -282,7 +282,7 @@ def diesel_price_for_route(
             f"diesel settlement requested for unknown depot "
             f"{route.home_depot_id!r}"
         ) from exc
-    if depot.node_type.lower() != "d":
+    if depot.node_type != "d":
         raise ValueError(
             f"diesel settlement origin is not a depot: "
             f"{route.home_depot_id!r}"
@@ -306,7 +306,7 @@ def _evaluate_route(
     node_lookup: dict[str, Node],
     prices: PriceParameters | dict[str, float] | Any,
 ) -> RouteEnergy:
-    vehicle_type = route.vehicle_type.lower()
+    vehicle_type = route.vehicle_type
     if vehicle_type not in {"cv", "ev"}:
         raise ValueError(f"Unsupported vehicle_type: {route.vehicle_type}")
     if len(route.node_sequence) < 2:
@@ -391,7 +391,7 @@ def route_node_schedule(
     first_start = max(first_arrive, float(first.ready_time))
     first_depart = first_start + float(first.service_time)
     # v2026-06-12: depot pre-departure charging completes before the route leaves the origin depot.
-    first_actions = charging_by_node.get(first.node_id, []) if first.node_type.lower() == "d" else []
+    first_actions = charging_by_node.get(first.node_id, []) if first.node_type == "d" else []
     if first_actions:
         # v2026-06-12: S0 depot actions after route return belong to the
         # overnight return-to-next-departure window and do not delay the same
@@ -428,7 +428,7 @@ def route_node_schedule(
         arrive = schedule[-1].t_depart + travel_time
         # v2026-06-11: charging stations use the action's charge_start and occupancy to push downstream time.
         station_actions = charging_by_node.get(to_node_id, [])
-        if to_node.node_type.lower() == "f" and station_actions:
+        if to_node.node_type == "f" and station_actions:
             start = min(float(action.charge_start_second) for action in station_actions)
             depart = max(float(action.charge_start_second) + float(action.occupancy_minutes) * 60.0 for action in station_actions)
         else:
@@ -523,7 +523,7 @@ def charging_curve_for_action(
     )
     nodes = {node.node_id: node for node in instance.nodes}
     station = nodes.get(action.station_id)
-    if station is None or station.node_type.lower() not in {"d", "f"}:
+    if station is None or station.node_type not in {"d", "f"}:
         if all(value is None for value in metadata):
             try:
                 legacy_spec = spec_from_parameters(prices)
@@ -553,7 +553,7 @@ def charging_curve_for_action(
         return None
     if any(value is None for value in metadata):
         raise ValueError("charging action has incomplete curve metadata")
-    if station.node_type.lower() == "d":
+    if station.node_type == "d":
         reference_power_kw = _price(prices, "depot_charge_power_kw")
     else:
         if station.charge_power_kw is None:
@@ -796,7 +796,7 @@ def route_departure_second(
     departure = float(first.ready_time) + float(first.service_time)
     successor_id = None
     for node_id in route.node_sequence[1:]:
-        if node_id in node_lookup and node_lookup[node_id].node_type.lower() not in {"d", "f"}:
+        if node_id in node_lookup and node_lookup[node_id].node_type not in {"d", "f"}:
             successor_id = node_id
             break
     if successor_id is None and len(route.node_sequence) > 1 and route.node_sequence[1] in node_lookup:
@@ -885,7 +885,7 @@ def _arc_loads(node_sequence: list[str], node_lookup: dict[str, Node]) -> list[f
     remaining_demand = 0.0
     for idx in range(len(node_sequence) - 1, 0, -1):
         node = node_lookup[node_sequence[idx]]
-        if node.node_type.lower() == "c":
+        if node.node_type == "c":
             remaining_demand += float(node.demand)
         loads[idx - 1] = remaining_demand
     return loads
@@ -1197,7 +1197,7 @@ def charging_action_electricity_cost(
     if has_complete_time_varying_price:
         price_field = (
             "depot_energy_cny_per_kwh"
-            if node is not None and node.node_type.lower() == "d"
+            if node is not None and node.node_type == "d"
             else "public_total_cny_per_kwh"
         )
         return sum(
@@ -1218,7 +1218,7 @@ def charging_action_electricity_cost(
         )
     unit_price = (
         _price(prices, "depot_electricity_price")
-        if node is not None and node.node_type.lower() == "d"
+        if node is not None and node.node_type == "d"
         else _price(prices, "station_electricity_price")
     )
     return float(action.energy_kwh) * unit_price
@@ -1232,7 +1232,7 @@ def _charging_occupancy_cost(
     total = 0.0
     for action in solution.charging_actions:
         node = node_lookup.get(action.station_id)
-        if node and node.node_type.lower() == "d":
+        if node and node.node_type == "d":
             continue
         total += float(action.occupancy_minutes) * _price(prices, "occupancy_fee")
     return total
@@ -1258,7 +1258,7 @@ def _e5_route_time_seconds(
         float(action.occupancy_minutes) * 60.0
         for action in solution.charging_actions
         if node_lookup.get(action.station_id) is not None
-        and node_lookup[action.station_id].node_type.lower() == "f"
+        and node_lookup[action.station_id].node_type == "f"
     )
     return travel + enroute_charge
 
@@ -1271,7 +1271,7 @@ def _charging_energy_by_node_type(
     return sum(
         float(action.energy_kwh)
         for action in solution.charging_actions
-        if (node_lookup.get(action.station_id) and node_lookup[action.station_id].node_type.lower() in node_types)
+        if (node_lookup.get(action.station_id) and node_lookup[action.station_id].node_type in node_types)
     )
 
 
@@ -1303,6 +1303,11 @@ def _sorted_carbon_profile_rows(carbon_profile: list[dict[str, Any]]) -> tuple[l
 def _price(prices: PriceParameters | dict[str, float] | Any, name: str) -> float:
     if isinstance(prices, dict):
         return float(prices[name])
+    if isinstance(prices, PriceParameters):
+        try:
+            return float(prices.__dict__[name])
+        except KeyError:
+            pass
     return float(getattr(prices, name))
 
 
@@ -1312,4 +1317,9 @@ def _optional_price(
 ) -> float:
     if isinstance(prices, dict):
         return float(prices.get(name, 0.0))
+    if isinstance(prices, PriceParameters):
+        try:
+            return float(prices.__dict__[name])
+        except KeyError:
+            pass
     return float(getattr(prices, name, 0.0))

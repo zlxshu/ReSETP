@@ -67,6 +67,36 @@ class MechanicalInsertionResult:
     decision: MechanicalInsertionDecision
 
 
+class MechanicalInsertionFailure(RuntimeError):
+    """Structured no-candidate diagnosis for the defer policy."""
+
+    def __init__(
+        self,
+        customer_id: str,
+        *,
+        class_diagnostics: dict[str, dict[str, object]],
+        rejected_candidates: tuple[tuple[str, int], ...],
+    ) -> None:
+        self.customer_id = str(customer_id)
+        self.class_diagnostics = {
+            str(key): dict(value)
+            for key, value in class_diagnostics.items()
+        }
+        self.rejected_candidates = tuple(
+            (str(key), int(value))
+            for key, value in rejected_candidates
+        )
+        super().__init__(
+            "no existing insertion, used-vehicle appended trip, or unused-vehicle "
+            "direct dispatch is fully feasible for "
+            f"{self.customer_id}; "
+            + ", ".join(
+                f"{key}={value}"
+                for key, value in self.rejected_candidates
+            )
+        )
+
+
 @dataclass(frozen=True)
 class _FeasibleCandidate:
     individual: DutyIndividual
@@ -370,13 +400,26 @@ def _insert_one_customer(
             rejected=rejected,
         )
 
-    summary = ", ".join(
-        f"{key}={value}" for key, value in sorted(rejected.items())
-    )
-    raise RuntimeError(
-        "no existing insertion, used-vehicle appended trip, or unused-vehicle "
-        "direct dispatch is fully "
-        f"feasible for {customer_id}; {summary or 'no candidates'}"
+    raise MechanicalInsertionFailure(
+        customer_id,
+        class_diagnostics={
+            _EXISTING_TRIP_CLASS: {
+                "candidates_checked": insertion_positions_checked,
+                "feasible_candidates": len(feasible_insertions),
+                "failure_scope": "complete_evaluation_or_history_check",
+            },
+            _APPENDED_TRIP_CLASS: {
+                "candidates_checked": used_vehicles_checked,
+                "feasible_candidates": len(feasible_appended),
+                "failure_scope": "complete_evaluation_or_history_check",
+            },
+            _IDLE_DISPATCH_CLASS: {
+                "candidates_checked": idle_vehicles_checked,
+                "feasible_candidates": len(feasible_idle),
+                "failure_scope": "complete_evaluation_or_history_check",
+            },
+        },
+        rejected_candidates=tuple(sorted(rejected.items())),
     )
 
 

@@ -21,6 +21,8 @@ existing exact charging reconstruction rebuild the new EV duty.
 
 from __future__ import annotations
 
+from collections import Counter
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, replace
 from typing import Protocol
 
@@ -346,6 +348,8 @@ class DutySkeletonMove:
     channel: str
     replacements: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
     dynamic_future_only: bool = False
+    proxy_rank: int | None = None
+    proxy_delta: int | None = None
 
     @property
     def changed_duty_ids(self) -> frozenset[str]:
@@ -770,7 +774,11 @@ def generate_problem_moves(
     *,
     include_whole_duty_type_exchange: bool = True,
     include_exhaustive_strong_route_moves: bool = False,
-) -> tuple[DutyMove, ...]:
+    allowed_channels: frozenset[str] | None = None,
+    customer_shift_by_id: Mapping[str, str] | None = None,
+    fairness_prescreen_enabled: bool = False,
+    generation_counts: Counter[str] | None = None,
+) -> Iterator[DutyMove]:
     """Generate the legacy neighbourhood and optional strong route actions.
 
     The stronger route actions are available here for equivalence tests and
@@ -784,18 +792,31 @@ def generate_problem_moves(
         for depot_id, margin in evaluation.participation_margin.items()
         if float(margin) < 0.0
     }
-    moves: list[DutyMove] = []
     trip_rows = [
         (duty, trip)
         for duty in individual.duties
         for trip in duty.trips
     ]
-    for source_duty, source_trip in trip_rows:
+    ordered_trip_rows = sorted(
+        trip_rows,
+        key=lambda row: (
+            -float(
+                evaluation.participation_margin.get(
+                    row[0].home_depot_id,
+                    0.0,
+                )
+            ),
+            row[0].physical_vehicle_id,
+            row[1].trip_index,
+        ),
+    )
+    target_trip_rows = tuple(reversed(ordered_trip_rows))
+    for source_duty, source_trip in ordered_trip_rows:
         unlocked = source_trip.customer_ids[
             len(source_trip.locked_customer_prefix) :
         ]
         for customer_id in unlocked:
-            for target_duty, target_trip in trip_rows:
+            for target_duty, target_trip in target_trip_rows:
                 if (
                     source_duty.physical_vehicle_id
                     == target_duty.physical_vehicle_id
@@ -807,28 +828,57 @@ def generate_problem_moves(
                     target_duty,
                     deficient_depots,
                 )
+                if not _channel_allowed(channel, allowed_channels):
+                    continue
                 for position in range(
                     len(target_trip.locked_customer_prefix),
                     len(target_trip.customer_ids) + 1,
                 ):
-                    moves.append(
-                        RelocateMove(
-                            action_id=(
-                                f"relocate:{source_duty.physical_vehicle_id}"
-                                f"#T{source_trip.trip_index}:{customer_id}->"
-                                f"{target_duty.physical_vehicle_id}"
-                                f"#T{target_trip.trip_index}@{position}"
-                            ),
-                            channel=channel,
-                            source_duty_id=source_duty.physical_vehicle_id,
-                            source_trip_index=source_trip.trip_index,
-                            customer_id=customer_id,
-                            target_duty_id=target_duty.physical_vehicle_id,
-                            target_trip_index=target_trip.trip_index,
-                            target_position=position,
-                        )
+                    source_after = tuple(
+                        item
+                        for item in source_trip.customer_ids
+                        if item != customer_id
                     )
-            if len(source_trip.customer_ids) > 1:
+                    target_after = (
+                        target_trip.customer_ids[:position]
+                        + (customer_id,)
+                        + target_trip.customer_ids[position:]
+                    )
+                    if not _fairness_candidate_allowed(
+                        channel,
+                        duties=(
+                            (source_duty, source_trip),
+                            (target_duty, target_trip),
+                        ),
+                        before=(
+                            source_trip.customer_ids,
+                            target_trip.customer_ids,
+                        ),
+                        after=(source_after, target_after),
+                        customer_shift_by_id=customer_shift_by_id,
+                        enabled=fairness_prescreen_enabled,
+                        counts=generation_counts,
+                    ):
+                        continue
+                    yield RelocateMove(
+                        action_id=(
+                            f"relocate:{source_duty.physical_vehicle_id}"
+                            f"#T{source_trip.trip_index}:{customer_id}->"
+                            f"{target_duty.physical_vehicle_id}"
+                            f"#T{target_trip.trip_index}@{position}"
+                        ),
+                        channel=channel,
+                        source_duty_id=source_duty.physical_vehicle_id,
+                        source_trip_index=source_trip.trip_index,
+                        customer_id=customer_id,
+                        target_duty_id=target_duty.physical_vehicle_id,
+                        target_trip_index=target_trip.trip_index,
+                        target_position=position,
+                    )
+            if (
+                len(source_trip.customer_ids) > 1
+                and _channel_allowed("multi_trip", allowed_channels)
+            ):
                 first_unlocked_index = (
                     max(source_duty.locked_charging_trip_indices, default=0)
                     + 1
@@ -837,50 +887,72 @@ def generate_problem_moves(
                     first_unlocked_index,
                     len(source_duty.trips) + 2,
                 ):
-                    moves.append(
-                        OpenTripMove(
-                            action_id=(
-                                f"open-trip:{source_duty.physical_vehicle_id}"
-                                f"#T{source_trip.trip_index}:{customer_id}"
-                                f"@T{new_trip_index}"
-                            ),
-                            channel="multi_trip",
-                            duty_id=source_duty.physical_vehicle_id,
-                            source_trip_index=source_trip.trip_index,
-                            customer_id=customer_id,
-                            new_trip_index=new_trip_index,
-                        )
+                    yield OpenTripMove(
+                        action_id=(
+                            f"open-trip:{source_duty.physical_vehicle_id}"
+                            f"#T{source_trip.trip_index}:{customer_id}"
+                            f"@T{new_trip_index}"
+                        ),
+                        channel="multi_trip",
+                        duty_id=source_duty.physical_vehicle_id,
+                        source_trip_index=source_trip.trip_index,
+                        customer_id=customer_id,
+                        new_trip_index=new_trip_index,
                     )
 
-    for left_index, (left_duty, left_trip) in enumerate(trip_rows):
-        for right_duty, right_trip in trip_rows[left_index + 1 :]:
+    for left_index, (left_duty, left_trip) in enumerate(ordered_trip_rows):
+        for right_duty, right_trip in ordered_trip_rows[left_index + 1 :]:
             channel = _relation_channel(
                 left_duty,
                 right_duty,
                 deficient_depots,
             )
+            if not _channel_allowed(channel, allowed_channels):
+                continue
             for left_customer in left_trip.customer_ids[
                 len(left_trip.locked_customer_prefix) :
             ]:
                 for right_customer in right_trip.customer_ids[
                     len(right_trip.locked_customer_prefix) :
                 ]:
-                    moves.append(
-                        SwapMove(
-                            action_id=(
-                                f"swap:{left_duty.physical_vehicle_id}"
-                                f"#T{left_trip.trip_index}:{left_customer}<->"
-                                f"{right_duty.physical_vehicle_id}"
-                                f"#T{right_trip.trip_index}:{right_customer}"
-                            ),
-                            channel=channel,
-                            left_duty_id=left_duty.physical_vehicle_id,
-                            left_trip_index=left_trip.trip_index,
-                            left_customer_id=left_customer,
-                            right_duty_id=right_duty.physical_vehicle_id,
-                            right_trip_index=right_trip.trip_index,
-                            right_customer_id=right_customer,
-                        )
+                    left_after = tuple(
+                        right_customer if item == left_customer else item
+                        for item in left_trip.customer_ids
+                    )
+                    right_after = tuple(
+                        left_customer if item == right_customer else item
+                        for item in right_trip.customer_ids
+                    )
+                    if not _fairness_candidate_allowed(
+                        channel,
+                        duties=(
+                            (left_duty, left_trip),
+                            (right_duty, right_trip),
+                        ),
+                        before=(
+                            left_trip.customer_ids,
+                            right_trip.customer_ids,
+                        ),
+                        after=(left_after, right_after),
+                        customer_shift_by_id=customer_shift_by_id,
+                        enabled=fairness_prescreen_enabled,
+                        counts=generation_counts,
+                    ):
+                        continue
+                    yield SwapMove(
+                        action_id=(
+                            f"swap:{left_duty.physical_vehicle_id}"
+                            f"#T{left_trip.trip_index}:{left_customer}<->"
+                            f"{right_duty.physical_vehicle_id}"
+                            f"#T{right_trip.trip_index}:{right_customer}"
+                        ),
+                        channel=channel,
+                        left_duty_id=left_duty.physical_vehicle_id,
+                        left_trip_index=left_trip.trip_index,
+                        left_customer_id=left_customer,
+                        right_duty_id=right_duty.physical_vehicle_id,
+                        right_trip_index=right_trip.trip_index,
+                        right_customer_id=right_customer,
                     )
 
             if include_exhaustive_strong_route_moves and (
@@ -893,24 +965,46 @@ def generate_problem_moves(
                 and right_trip.trip_index
                 not in right_duty.locked_charging_trip_indices
             ):
-                moves.append(
-                    WholeTripExchangeMove(
+                whole_channel = (
+                    "fairness_cross_depot"
+                    if left_duty.home_depot_id != right_duty.home_depot_id
+                    else "multi_trip"
+                )
+                if _channel_allowed(
+                    whole_channel,
+                    allowed_channels,
+                ) and _fairness_candidate_allowed(
+                    whole_channel,
+                    duties=(
+                        (left_duty, left_trip),
+                        (right_duty, right_trip),
+                    ),
+                    before=(
+                        left_trip.customer_ids,
+                        right_trip.customer_ids,
+                    ),
+                    after=(
+                        right_trip.customer_ids,
+                        left_trip.customer_ids,
+                    ),
+                    customer_shift_by_id=customer_shift_by_id,
+                    enabled=fairness_prescreen_enabled,
+                    counts=generation_counts,
+                ):
+                    yield WholeTripExchangeMove(
                         action_id=(
-                            f"whole-trip-exchange:"
-                            f"{left_duty.physical_vehicle_id}#T{left_trip.trip_index}<->"
-                            f"{right_duty.physical_vehicle_id}#T{right_trip.trip_index}"
+                            "whole-trip-exchange:"
+                            f"{left_duty.physical_vehicle_id}#T"
+                            f"{left_trip.trip_index}<->"
+                            f"{right_duty.physical_vehicle_id}#T"
+                            f"{right_trip.trip_index}"
                         ),
-                        channel=(
-                            "fairness_cross_depot"
-                            if left_duty.home_depot_id != right_duty.home_depot_id
-                            else "multi_trip"
-                        ),
+                        channel=whole_channel,
                         left_duty_id=left_duty.physical_vehicle_id,
                         left_trip_index=left_trip.trip_index,
                         right_duty_id=right_duty.physical_vehicle_id,
                         right_trip_index=right_trip.trip_index,
                     )
-                )
 
             for left_cut in (
                 range(
@@ -937,31 +1031,45 @@ def generate_problem_moves(
                         and right_after == right_trip.customer_ids
                     ):
                         continue
-                    moves.append(
-                        SwapTailsMove(
-                            action_id=(
-                                f"2opt-star:{left_duty.physical_vehicle_id}"
-                                f"#T{left_trip.trip_index}@{left_cut}<->"
-                                f"{right_duty.physical_vehicle_id}"
-                                f"#T{right_trip.trip_index}@{right_cut}"
-                            ),
-                            channel=channel,
-                            left_duty_id=left_duty.physical_vehicle_id,
-                            left_trip_index=left_trip.trip_index,
-                            left_cut=left_cut,
-                            right_duty_id=right_duty.physical_vehicle_id,
-                            right_trip_index=right_trip.trip_index,
-                            right_cut=right_cut,
-                        )
+                    if not _fairness_candidate_allowed(
+                        channel,
+                        duties=(
+                            (left_duty, left_trip),
+                            (right_duty, right_trip),
+                        ),
+                        before=(
+                            left_trip.customer_ids,
+                            right_trip.customer_ids,
+                        ),
+                        after=(left_after, right_after),
+                        customer_shift_by_id=customer_shift_by_id,
+                        enabled=fairness_prescreen_enabled,
+                        counts=generation_counts,
+                    ):
+                        continue
+                    yield SwapTailsMove(
+                        action_id=(
+                            f"2opt-star:{left_duty.physical_vehicle_id}"
+                            f"#T{left_trip.trip_index}@{left_cut}<->"
+                            f"{right_duty.physical_vehicle_id}"
+                            f"#T{right_trip.trip_index}@{right_cut}"
+                        ),
+                        channel=channel,
+                        left_duty_id=left_duty.physical_vehicle_id,
+                        left_trip_index=left_trip.trip_index,
+                        left_cut=left_cut,
+                        right_duty_id=right_duty.physical_vehicle_id,
+                        right_trip_index=right_trip.trip_index,
+                        right_cut=right_cut,
                     )
 
     for source_duty, source_trip in (
-        trip_rows if include_exhaustive_strong_route_moves else ()
+        ordered_trip_rows if include_exhaustive_strong_route_moves else ()
     ):
         start_min = len(source_trip.locked_customer_prefix)
         for start in range(start_min, len(source_trip.customer_ids) - 1):
             for stop in range(start + 2, len(source_trip.customer_ids) + 1):
-                for target_duty, target_trip in trip_rows:
+                for target_duty, target_trip in target_trip_rows:
                     if (
                         source_duty.physical_vehicle_id
                         == target_duty.physical_vehicle_id
@@ -973,35 +1081,60 @@ def generate_problem_moves(
                         target_duty,
                         deficient_depots,
                     )
+                    if not _channel_allowed(channel, allowed_channels):
+                        continue
                     for position in range(
                         len(target_trip.locked_customer_prefix),
                         len(target_trip.customer_ids) + 1,
                     ):
-                        moves.append(
-                            RelocateSegmentMove(
-                                action_id=(
-                                    f"or-opt:{source_duty.physical_vehicle_id}"
-                                    f"#T{source_trip.trip_index}@{start}:{stop}->"
-                                    f"{target_duty.physical_vehicle_id}"
-                                    f"#T{target_trip.trip_index}@{position}"
-                                ),
-                                channel=channel,
-                                source_duty_id=source_duty.physical_vehicle_id,
-                                source_trip_index=source_trip.trip_index,
-                                start=start,
-                                stop=stop,
-                                target_duty_id=target_duty.physical_vehicle_id,
-                                target_trip_index=target_trip.trip_index,
-                                target_position=position,
-                            )
+                        source_after = (
+                            source_trip.customer_ids[:start]
+                            + source_trip.customer_ids[stop:]
+                        )
+                        target_after = (
+                            target_trip.customer_ids[:position]
+                            + source_trip.customer_ids[start:stop]
+                            + target_trip.customer_ids[position:]
+                        )
+                        if not _fairness_candidate_allowed(
+                            channel,
+                            duties=(
+                                (source_duty, source_trip),
+                                (target_duty, target_trip),
+                            ),
+                            before=(
+                                source_trip.customer_ids,
+                                target_trip.customer_ids,
+                            ),
+                            after=(source_after, target_after),
+                            customer_shift_by_id=customer_shift_by_id,
+                            enabled=fairness_prescreen_enabled,
+                            counts=generation_counts,
+                        ):
+                            continue
+                        yield RelocateSegmentMove(
+                            action_id=(
+                                f"or-opt:{source_duty.physical_vehicle_id}"
+                                f"#T{source_trip.trip_index}@{start}:{stop}->"
+                                f"{target_duty.physical_vehicle_id}"
+                                f"#T{target_trip.trip_index}@{position}"
+                            ),
+                            channel=channel,
+                            source_duty_id=source_duty.physical_vehicle_id,
+                            source_trip_index=source_trip.trip_index,
+                            start=start,
+                            stop=stop,
+                            target_duty_id=target_duty.physical_vehicle_id,
+                            target_trip_index=target_trip.trip_index,
+                            target_position=position,
                         )
 
     for duty, trip in trip_rows:
         start_min = len(trip.locked_customer_prefix)
         for start in range(start_min, len(trip.customer_ids) - 1):
             for stop in range(start + 2, len(trip.customer_ids) + 1):
-                moves.append(
-                    ReverseSegmentMove(
+                if _channel_allowed("route_order", allowed_channels):
+                    yield ReverseSegmentMove(
                         action_id=(
                             f"2opt:{duty.physical_vehicle_id}"
                             f"#T{trip.trip_index}@{start}:{stop}"
@@ -1012,7 +1145,6 @@ def generate_problem_moves(
                         start=start,
                         stop=stop,
                     )
-                )
     if include_whole_duty_type_exchange:
         for left_index, left in enumerate(individual.duties):
             for right in individual.duties[left_index + 1 :]:
@@ -1024,28 +1156,80 @@ def generate_problem_moves(
                     continue
                 if _task_chain(left) == _task_chain(right):
                     continue
-                moves.append(
-                    WholeDutyTypeExchangeMove(
-                        action_id=(
-                            f"whole-duty-type-exchange:"
-                            f"{left.physical_vehicle_id}<->"
-                            f"{right.physical_vehicle_id}"
-                        ),
-                        channel="whole_duty_type_exchange",
-                        left_duty_id=left.physical_vehicle_id,
-                        right_duty_id=right.physical_vehicle_id,
+                if not _channel_allowed(
+                    "whole_duty_type_exchange",
+                    allowed_channels,
+                ):
+                    continue
+                yield WholeDutyTypeExchangeMove(
+                    action_id=(
+                        "whole-duty-type-exchange:"
+                        f"{left.physical_vehicle_id}<->"
+                        f"{right.physical_vehicle_id}"
+                    ),
+                    channel="whole_duty_type_exchange",
+                    left_duty_id=left.physical_vehicle_id,
+                    right_duty_id=right.physical_vehicle_id,
                     )
-                )
     for duty in individual.duties:
         if duty.vehicle_type == "ev":
-            moves.append(
-                ChargingRetimeMove(
+            if _channel_allowed(
+                "time_varying_carbon_charge",
+                allowed_channels,
+            ):
+                yield ChargingRetimeMove(
                     action_id=f"retime:{duty.physical_vehicle_id}",
                     channel="time_varying_carbon_charge",
                     duty_id=duty.physical_vehicle_id,
                 )
-            )
-    return tuple(moves)
+
+
+def _channel_allowed(
+    channel: str,
+    allowed_channels: frozenset[str] | None,
+) -> bool:
+    return allowed_channels is None or channel in allowed_channels
+
+
+def _fairness_candidate_allowed(
+    channel: str,
+    *,
+    duties: tuple[
+        tuple[PhysicalVehicleDuty, DutyTrip],
+        tuple[PhysicalVehicleDuty, DutyTrip],
+    ],
+    before: tuple[tuple[str, ...], tuple[str, ...]],
+    after: tuple[tuple[str, ...], tuple[str, ...]],
+    customer_shift_by_id: Mapping[str, str] | None,
+    enabled: bool,
+    counts: Counter[str] | None,
+) -> bool:
+    if channel != "fairness_cross_depot":
+        return True
+    if counts is not None:
+        counts["fairness_considered"] += 1
+    if enabled:
+        if any(
+            trip.trip_index in duty.locked_charging_trip_indices
+            for duty, trip in duties
+        ):
+            if counts is not None:
+                counts["fairness_filtered_locked"] += 1
+            return False
+        if before == after:
+            if counts is not None:
+                counts["fairness_filtered_no_change"] += 1
+            return False
+        if customer_shift_by_id is not None and any(
+            len({customer_shift_by_id[item] for item in customers}) > 1
+            for customers in after
+        ):
+            if counts is not None:
+                counts["fairness_filtered_mixed_shift"] += 1
+            return False
+    if counts is not None:
+        counts["fairness_materialized"] += 1
+    return True
 
 
 def _task_chain(duty: PhysicalVehicleDuty) -> tuple[tuple[str, ...], ...]:

@@ -19,7 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Iterable, Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, fields, is_dataclass
 from functools import cached_property
 
 from setp_solver.solution import (
@@ -307,7 +307,7 @@ class ScheduledDuty:
 
     @cached_property
     def schedule_fingerprint(self) -> str:
-        payload = _canonical_identity(asdict(self))
+        payload = _canonical_identity(_dataclass_payload(self))
         encoded = json.dumps(
             payload,
             ensure_ascii=False,
@@ -416,7 +416,7 @@ class PhysicalVehicleDuty:
             "physical_vehicle_id": self.physical_vehicle_id,
             "vehicle_type": self.vehicle_type,
             "home_depot_id": self.home_depot_id,
-            "trips": [asdict(trip) for trip in self.trips],
+            "trips": [_dataclass_payload(trip) for trip in self.trips],
             "has_dynamic_commitment": bool(self.has_dynamic_commitment),
         }
         encoded = json.dumps(
@@ -426,6 +426,10 @@ class PhysicalVehicleDuty:
             separators=(",", ":"),
         ).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
+
+    @cached_property
+    def fingerprint_payload(self) -> dict[str, object]:
+        return _dataclass_payload(self)
 
 
 @dataclass(frozen=True)
@@ -468,7 +472,7 @@ class DutyIndividual:
     def fingerprint(self) -> str:
         duty_payloads = []
         for duty in self.duties:
-            payload = asdict(duty)
+            payload = dict(duty.fingerprint_payload)
             if duty.schedule is None:
                 # Preserve every legacy A0 fingerprint until the Oracle is
                 # explicitly attached in the later integration steps.
@@ -661,6 +665,26 @@ def _canonical_identity(value):
         }
     if isinstance(value, (list, tuple)):
         return [_canonical_identity(item) for item in value]
+    return value
+
+
+def _dataclass_payload(value):
+    """Match dataclasses.asdict field/order semantics without deep-copying."""
+
+    if is_dataclass(value):
+        return {
+            item.name: _dataclass_payload(getattr(value, item.name))
+            for item in fields(value)
+        }
+    if isinstance(value, tuple):
+        return tuple(_dataclass_payload(item) for item in value)
+    if isinstance(value, list):
+        return [_dataclass_payload(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            _dataclass_payload(key): _dataclass_payload(item)
+            for key, item in value.items()
+        }
     return value
 
 

@@ -277,6 +277,28 @@ PYBIND11_MODULE(_search, m)
         .def_readonly("num_improving", &LocalSearch::Statistics::numImproving)
         .def_readonly("num_updates", &LocalSearch::Statistics::numUpdates);
 
+    py::class_<LocalSearch::Candidate>(m, "LocalSearchCandidate")
+        .def_property_readonly(
+            "solution",
+            &LocalSearch::Candidate::solution,
+            py::return_value_policy::reference_internal)
+        .def_property_readonly(
+            "proxy_delta",
+            [](LocalSearch::Candidate const &candidate)
+            { return static_cast<int64_t>(candidate.proxyDelta); })
+        .def_readonly("scan_ordinal", &LocalSearch::Candidate::scanOrdinal);
+
+    py::class_<LocalSearch::CandidateStatistics>(
+        m, "LocalSearchCandidateStatistics")
+        .def_readonly("num_evaluated",
+                      &LocalSearch::CandidateStatistics::numEvaluated)
+        .def_readonly("num_promising",
+                      &LocalSearch::CandidateStatistics::numPromising)
+        .def_readonly("num_materialised",
+                      &LocalSearch::CandidateStatistics::numMaterialised)
+        .def_readonly("num_returned",
+                      &LocalSearch::CandidateStatistics::numReturned);
+
     py::class_<LocalSearch>(m, "LocalSearch")
         .def(py::init<setp_hgs_kernel::ProblemData const &,
                       std::vector<std::vector<size_t>>>(),
@@ -288,6 +310,8 @@ PYBIND11_MODULE(_search, m)
                       &LocalSearch::setNeighbours,
                       py::return_value_policy::reference_internal)
         .def_property_readonly("statistics", &LocalSearch::statistics)
+        .def_property_readonly("candidate_statistics",
+                               &LocalSearch::candidateStatistics)
         .def_property_readonly("node_operators",
                                &LocalSearch::nodeOperators,
                                py::return_value_policy::reference_internal)
@@ -325,6 +349,12 @@ PYBIND11_MODULE(_search, m)
              &LocalSearch::repairRequired,
              py::arg("solution"),
              py::arg("cost_evaluator"),
+             py::call_guard<py::gil_scoped_release>())
+        .def("promising_candidates",
+             &LocalSearch::promisingCandidates,
+             py::arg("solution"),
+             py::arg("cost_evaluator"),
+             py::arg("limit"),
              py::call_guard<py::gil_scoped_release>())
         .def("shuffle", &LocalSearch::shuffle, py::arg("rng"));
 

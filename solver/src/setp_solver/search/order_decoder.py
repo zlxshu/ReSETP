@@ -75,10 +75,17 @@ def route_type_hints(solution: Solution, instance: Instance) -> dict[str, float]
     return hints
 
 
-def exploratory_type_hints(order: list[str], context: OrderDecodeContext, index: int = 0) -> dict[str, float]:
+def exploratory_type_hints(
+    order: list[str],
+    context: OrderDecodeContext,
+    index: int = 0,
+) -> dict[str, float]:
     probabilities = (0.05, 0.35, 0.65, 0.85, 1.0)
     probability = probabilities[int(index) % len(probabilities)]
-    return {customer_id: 0.95 if context.rng.random() < probability else 0.05 for customer_id in order}
+    return {
+        customer_id: 0.95 if context.rng.random() < probability else 0.05
+        for customer_id in order
+    }
 
 
 def mutated_type_hints(

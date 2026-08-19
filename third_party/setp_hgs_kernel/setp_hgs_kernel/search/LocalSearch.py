@@ -6,6 +6,8 @@ from setp_hgs_kernel._setp_hgs_kernel import (
 )
 from setp_hgs_kernel.search._search import LocalSearch as _LocalSearch
 from setp_hgs_kernel.search._search import (
+    LocalSearchCandidate,
+    LocalSearchCandidateStatistics,
     LocalSearchStatistics,
     NodeOperator,
     RouteOperator,
@@ -98,6 +100,12 @@ class LocalSearch:
         """
         return self._ls.statistics
 
+    @property
+    def candidate_statistics(self) -> LocalSearchCandidateStatistics:
+        """Return work counters for the most recent candidate scan."""
+
+        return self._ls.candidate_statistics
+
     def __call__(
         self,
         solution: Solution,
@@ -159,6 +167,19 @@ class LocalSearch:
         """Insert missing required clients without other local-search moves."""
 
         return self._ls.repair_required(solution, cost_evaluator)
+
+    def promising_candidates(
+        self,
+        solution: Solution,
+        cost_evaluator: CostEvaluator,
+        limit: int,
+    ) -> list[LocalSearchCandidate]:
+        """Return a bounded proxy-ranked list of one-step candidates."""
+
+        if limit < 1:
+            raise ValueError("candidate limit must be positive")
+        self._ls.shuffle(self._rng)
+        return self._ls.promising_candidates(solution, cost_evaluator, limit)
 
     def search(
         self, solution: Solution, cost_evaluator: CostEvaluator

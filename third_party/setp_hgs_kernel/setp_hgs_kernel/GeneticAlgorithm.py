@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Collection
 
 from setp_hgs_kernel.ProgressPrinter import ProgressPrinter
 from setp_hgs_kernel.Result import Result
 from setp_hgs_kernel.Statistics import Statistics
-from setp_hgs_kernel.HGSControl import HGSControl
 
 if TYPE_CHECKING:
     from setp_hgs_kernel.PenaltyManager import PenaltyManager
@@ -163,45 +163,46 @@ class GeneticAlgorithm:
         print_progress = ProgressPrinter(display, display_interval)
         print_progress.start(self._data)
 
+        start = time.perf_counter()
         stats = Statistics(collect_stats=collect_stats)
+        iters = 0
+        iters_no_improvement = 1
 
         for sol in self._initial_solutions:
             self._pop.add(sol, self._cost_evaluator)
 
-        def restart() -> None:
-            print_progress.restart()
-            self._pop.clear()
-            for sol in self._initial_solutions:
-                self._pop.add(sol, self._cost_evaluator)
+        while not stop(self._cost_evaluator.cost(self._best)):
+            iters += 1
 
-        control = HGSControl(
-            should_stop=lambda _state: stop(
-                self._cost_evaluator.cost(self._best)
-            ),
-            best_value=lambda: self._cost_evaluator.cost(self._best),
-            restart_after_iterations_without_improvement=(
-                self._params.num_iters_no_improvement
-            ),
-            restart=restart,
-            initial_iterations_without_improvement=1,
-        )
-        for _iteration in control.iterations():
+            if iters_no_improvement == self._params.num_iters_no_improvement:
+                print_progress.restart()
+
+                iters_no_improvement = 1
+                self._pop.clear()
+
+                for sol in self._initial_solutions:
+                    self._pop.add(sol, self._cost_evaluator)
+
+            curr_best = self._cost_evaluator.cost(self._best)
+
             parents = self._pop.select(self._rng, self._cost_evaluator)
             offspring = self._crossover(
                 parents, self._data, self._cost_evaluator, self._rng
             )
             self._improve_offspring(offspring)
 
+            new_best = self._cost_evaluator.cost(self._best)
+
+            if new_best < curr_best:
+                iters_no_improvement = 1
+            else:
+                iters_no_improvement += 1
+
             stats.collect_from(self._pop, self._cost_evaluator)
             print_progress.iteration(stats)
 
-        state = control.state
-        res = Result(
-            self._best,
-            stats,
-            state.iterations,
-            state.elapsed_seconds,
-        )
+        end = time.perf_counter() - start
+        res = Result(self._best, stats, iters, end)
 
         print_progress.end(res)
 

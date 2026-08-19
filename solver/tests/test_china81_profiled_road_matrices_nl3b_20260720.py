@@ -25,7 +25,7 @@ from setp_solver.instance_loader import (
     load_profiled_road_matrices,
 )
 from setp_solver.prices import PriceParameters, UK_2025_PRICES
-from setp_solver.search.dynamic import _rebuild_instance_matrix
+from setp_solver.instance_subset import rebuild_instance_matrix
 from setp_solver.search.multitrip_schedule import build_multitrip_certificate
 from setp_solver.solution import ChargingAction, Route, Solution
 
@@ -479,7 +479,7 @@ def test_china_ev_energy_matches_independent_vehicle_formula() -> None:
 
 def test_profiled_dynamic_rebuild_preserves_subsets_and_rejects_new_nodes() -> None:
     instance = _china_profiled_instance()
-    subset = _rebuild_instance_matrix(instance, [instance.nodes[0]])
+    subset = rebuild_instance_matrix(instance, [instance.nodes[0]])
     assert subset.road_profiles is not None
     assert subset.vehicle_parameters is not None
     assert subset.demand_mass_per_unit_kg == 1.0
@@ -488,7 +488,7 @@ def test_profiled_dynamic_rebuild_preserves_subsets_and_rejects_new_nodes() -> N
         ValueError,
         match="precomputed CV/EV road metrics",
     ):
-        _rebuild_instance_matrix(
+        rebuild_instance_matrix(
             instance,
             [
                 *instance.nodes,

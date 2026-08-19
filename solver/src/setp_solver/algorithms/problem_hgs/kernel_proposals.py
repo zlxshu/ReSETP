@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 from decimal import ROUND_HALF_UP, Decimal
+from itertools import groupby
 
 from setp_hgs_kernel import Model, __version__ as kernel_version
 from setp_hgs_kernel import Route as IndependentKernelRoute
@@ -19,6 +20,7 @@ from setp_hgs_kernel import Solution as IndependentKernelSolution
 from setp_hgs_kernel import Trip as IndependentKernelTrip
 from setp_hgs_kernel._setp_hgs_kernel import RandomNumberGenerator
 from setp_hgs_kernel.PenaltyManager import PenaltyManager
+from setp_hgs_kernel.repair import greedy_repair
 from setp_hgs_kernel.search import DepotSplit, LocalSearch, compute_neighbours
 from setp_hgs_kernel.solve import SolveParams
 
@@ -32,7 +34,10 @@ from setp_solver.instance_loader import Instance
 from setp_solver.solution import Route
 from setp_solver.field_rename_compat import calendar_row_number
 
-from .evaluation import DutyEvaluationContext, FullEvaluation
+from .evaluation import (
+    DutyEvaluationContext,
+    FullEvaluation,
+)
 from .model import DutyIndividual
 from .operators import DutyMove, DutySkeletonMove
 
@@ -57,6 +62,8 @@ class IndependentKernelDutyRouteProposalEngine:
         multi_trip_enabled: bool = True,
         type_exchange_enabled: bool = True,
         shift_aware_ev_unit_cost_enabled: bool = False,
+        truth_guided_route_boundary_enabled: bool = False,
+        truth_candidate_limit: int | None = None,
     ) -> None:
         if kernel_version != "0.12.2":
             raise RuntimeError("Duty route proposals require IndependentKernel 0.12.2 HGS")
@@ -82,6 +89,28 @@ class IndependentKernelDutyRouteProposalEngine:
         self.shift_aware_ev_unit_cost_enabled = bool(
             shift_aware_ev_unit_cost_enabled
         )
+        self.truth_guided_route_boundary_enabled = bool(
+            truth_guided_route_boundary_enabled
+        )
+        if self.truth_guided_route_boundary_enabled:
+            if truth_candidate_limit is None or int(truth_candidate_limit) < 1:
+                raise ValueError(
+                    "truth-guided route boundary requires a positive candidate limit"
+                )
+            self.truth_candidate_limit = int(truth_candidate_limit)
+        else:
+            if truth_candidate_limit is not None:
+                raise ValueError(
+                    "truth candidate limit requires the truth-guided route boundary"
+                )
+            self.truth_candidate_limit = None
+        self._truth_boundary_batches = 0
+        self._truth_boundary_proxy_evaluated = 0
+        self._truth_boundary_proxy_promising = 0
+        self._truth_boundary_proxy_materialised = 0
+        self._truth_boundary_native_returned = 0
+        self._truth_boundary_duty_emitted = 0
+        self._truth_boundary_random_proxy_education_bypassed = 0
         if not self.stream_role:
             raise ValueError("route proposal stream role cannot be empty")
         self._fleet_registry = tuple(
@@ -128,6 +157,10 @@ class IndependentKernelDutyRouteProposalEngine:
         params = SolveParams()
         rng = RandomNumberGenerator(seed=int(random_seed))
         self._rng = rng
+        self._initialization_rng_stream_count = 1
+        self._native_random_solution_calls = 0
+        self._greedy_repair_calls = 0
+        self._initialization_prepopulation_local_search_calls = 0
         self._local_search = LocalSearch(
             self._data,
             rng,
@@ -202,6 +235,11 @@ class IndependentKernelDutyRouteProposalEngine:
                 if self.shift_aware_ev_unit_cost_enabled
                 else ""
             )
+            + (
+                f"truth-guided-route-boundary-epsilon-{self.truth_candidate_limit}:"
+                if self.truth_guided_route_boundary_enabled
+                else ""
+            )
             + self.stream_role
         )
         dynamic_identity = None
@@ -256,6 +294,13 @@ class IndependentKernelDutyRouteProposalEngine:
             identity["type_exchange_enabled"] = False
         if self.shift_aware_ev_unit_cost_enabled:
             identity["shift_aware_ev_proxy"] = self._shift_aware_ev_proxy
+        if self.truth_guided_route_boundary_enabled:
+            identity["truth_guided_route_boundary"] = {
+                "enabled": True,
+                "candidate_limit": self.truth_candidate_limit,
+                "candidate_scope": "proxy-proven-one-step-improvements",
+                "truth_scope": "complete-duty-penalised-cost",
+            }
         if self.depot_assignment_operator_enabled:
             identity["depot_assignment_operator"] = {
                 "name": "DepotSplit",
@@ -327,6 +372,37 @@ class IndependentKernelDutyRouteProposalEngine:
         """Return the exact private-side shift-rate inputs used by the proxy."""
 
         return dict(self._shift_aware_ev_proxy)
+
+    @property
+    def truth_boundary_statistics(self) -> dict[str, int | bool | None]:
+        """Return cumulative work at the proxy-to-truth route boundary."""
+
+        return {
+            "enabled": self.truth_guided_route_boundary_enabled,
+            "candidate_limit": self.truth_candidate_limit,
+            "batches": self._truth_boundary_batches,
+            "proxy_evaluated": self._truth_boundary_proxy_evaluated,
+            "proxy_promising": self._truth_boundary_proxy_promising,
+            "proxy_materialised": self._truth_boundary_proxy_materialised,
+            "native_returned": self._truth_boundary_native_returned,
+            "duty_candidates_emitted": self._truth_boundary_duty_emitted,
+            "random_proxy_education_bypassed": (
+                self._truth_boundary_random_proxy_education_bypassed
+            ),
+        }
+
+    @property
+    def native_initialization_statistics(self) -> dict[str, int]:
+        """Return lineage-only counters for native population construction."""
+
+        return {
+            "rng_stream_count": self._initialization_rng_stream_count,
+            "make_random_call_count": self._native_random_solution_calls,
+            "greedy_repair_call_count": self._greedy_repair_calls,
+            "prepopulation_local_search_call_count": (
+                self._initialization_prepopulation_local_search_calls
+            ),
+        }
 
     def _compatible_vehicle_groups(self) -> list[int]:
         labels = sorted(
@@ -419,6 +495,77 @@ class IndependentKernelDutyRouteProposalEngine:
                 "with an embedded lock"
             )
         warm = self._project(individual)
+        if self.truth_guided_route_boundary_enabled:
+            candidates = self._local_search.promising_candidates(
+                warm,
+                self._cost_evaluator,
+                self.truth_candidate_limit,
+            )
+            statistics = self._local_search.candidate_statistics
+            self._truth_boundary_batches += 1
+            self._truth_boundary_proxy_evaluated += int(
+                statistics.num_evaluated
+            )
+            self._truth_boundary_proxy_promising += int(
+                statistics.num_promising
+            )
+            self._truth_boundary_proxy_materialised += int(
+                statistics.num_materialised
+            )
+            self._truth_boundary_native_returned += int(
+                statistics.num_returned
+            )
+
+            decoded: list[
+                tuple[
+                    int,
+                    tuple[tuple[str, tuple[tuple[str, ...], ...]], ...],
+                ]
+            ] = []
+            seen: set[
+                tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
+            ] = set()
+            for candidate in candidates:
+                replacements = self._decode_changes(
+                    individual,
+                    candidate.solution,
+                )
+                if (
+                    not replacements
+                    or replacements in seen
+                    or not self._mechanism_locks_preserved(
+                        individual,
+                        replacements,
+                    )
+                    or not self._shift_safe_replacements(replacements)
+                ):
+                    continue
+                seen.add(replacements)
+                decoded.append((int(candidate.proxy_delta), replacements))
+
+            moves = tuple(
+                DutySkeletonMove(
+                    action_id=(
+                        "setp_hgs_kernel-truth-shortlist:"
+                        f"{proxy_rank}:"
+                        + hashlib.sha256(
+                            repr(replacements).encode("utf-8")
+                        ).hexdigest()[:16]
+                    ),
+                    channel="route_kernel_truth",
+                    replacements=replacements,
+                    dynamic_future_only=dynamic is not None,
+                    proxy_rank=proxy_rank,
+                    proxy_delta=proxy_delta,
+                )
+                for proxy_rank, (proxy_delta, replacements) in enumerate(
+                    decoded,
+                    start=1,
+                )
+            )
+            self._truth_boundary_duty_emitted += len(moves)
+            return moves
+
         improved = self._local_search(warm, self._cost_evaluator)
         self._record_depot_split_statistics()
         replacements = self._decode_changes(individual, improved)
@@ -431,6 +578,11 @@ class IndependentKernelDutyRouteProposalEngine:
             (replacements, *components)
             if len(components) > 1
             else components
+        )
+        proposal_sets = tuple(
+            component
+            for component in proposal_sets
+            if self._shift_safe_replacements(component)
         )
         return tuple(
             DutySkeletonMove(
@@ -451,28 +603,80 @@ class IndependentKernelDutyRouteProposalEngine:
         self,
         individual: DutyIndividual,
         *,
-        random_seed: int,
+        draw_index: int,
     ) -> DutySkeletonMove | None:
-        """Draw one IndependentKernel random route skeleton for population seeding."""
+        """Draw once from the engine-owned native initialization stream."""
 
         if _fleet_registry(individual) != self._fleet_registry:
             raise ValueError("route proposal fleet registry changed")
+        self._native_random_solution_calls += 1
         random_solution = IndependentKernelSolution.make_random(
             self._data,
-            RandomNumberGenerator(seed=int(random_seed)),
+            self._rng,
         )
-        educated_solution = self._local_search(
-            random_solution,
-            self._cost_evaluator,
-        )
-        self._record_depot_split_statistics()
-        replacements = self._decode_changes(individual, educated_solution)
+        if self.truth_guided_route_boundary_enabled:
+            self._truth_boundary_random_proxy_education_bypassed += 1
+        replacements = self._decode_changes(individual, random_solution)
         if not self._mechanism_locks_preserved(individual, replacements):
             return None
         if not replacements:
             return None
+        if not self._shift_safe_replacements(replacements):
+            return None
         return DutySkeletonMove(
-            action_id=f"setp_hgs_kernel-random-educated-skeleton:{int(random_seed)}",
+            action_id=f"setp_hgs_kernel-random-native-skeleton:{int(draw_index)}",
+            channel="initial_population",
+            replacements=replacements,
+            dynamic_future_only=self._context.dynamic_state is not None,
+        )
+
+    def greedy_repair_skeleton_move(
+        self,
+        individual: DutyIndividual,
+        *,
+        draw_index: int,
+    ) -> DutySkeletonMove | None:
+        """Insert one random customer order into all physical vehicle slots."""
+
+        if _fleet_registry(individual) != self._fleet_registry:
+            raise ValueError("route proposal fleet registry changed")
+        self._native_random_solution_calls += 1
+        random_solution = IndependentKernelSolution.make_random(
+            self._data,
+            self._rng,
+        )
+        customer_order = [
+            int(location)
+            for route in random_solution.routes()
+            for location in route.visits()
+        ]
+        empty_routes = [
+            IndependentKernelRoute(self._data, [], vehicle_type)
+            for vehicle_type in self._vehicle_type_by_duty_id.values()
+        ]
+        self._greedy_repair_calls += 1
+        repaired_routes = greedy_repair(
+            empty_routes,
+            customer_order,
+            self._data,
+            self._cost_evaluator,
+        )
+        repaired_solution = IndependentKernelSolution(
+            self._data,
+            [route for route in repaired_routes if route.visits()],
+        )
+        replacements = self._decode_changes(individual, repaired_solution)
+        if not self._mechanism_locks_preserved(individual, replacements):
+            return None
+        if not replacements:
+            return None
+        if not self._shift_safe_replacements(replacements):
+            return None
+        return DutySkeletonMove(
+            action_id=(
+                "setp_hgs_kernel-greedy-repair-skeleton:"
+                f"{int(draw_index)}"
+            ),
             channel="initial_population",
             replacements=replacements,
             dynamic_future_only=self._context.dynamic_state is not None,
@@ -511,6 +715,63 @@ class IndependentKernelDutyRouteProposalEngine:
                 ):
                     return False
         return True
+
+    def _shift_safe_replacements(
+        self,
+        replacements: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...],
+    ) -> bool:
+        """Keep mixed-shift route chains out of the materialization boundary."""
+
+        if self._context.rebuilt_route_constraints is None:
+            return True
+        shifts_by_customer = (
+            self._context.rebuilt_route_constraints.customer_shift_by_id
+        )
+        for _duty_id, chain in replacements:
+            for customers in chain:
+                try:
+                    shifts = {
+                        str(shifts_by_customer[customer])
+                        for customer in customers
+                    }
+                except KeyError:
+                    return False
+                if len(shifts) > 1:
+                    return False
+        return True
+
+    def _split_replacement_trips_by_shift(
+        self,
+        chain: tuple[tuple[str, ...], ...],
+    ) -> tuple[tuple[str, ...], ...]:
+        """Split each native trip at a customer-shift boundary.
+
+        The native kernel does not know the rebuilt AM/PM trip contract.  Keep
+        its customer order, but materialize every contiguous shift block as a
+        separate trip before the Duty layer schedules and evaluates it.
+        """
+
+        contract = self._context.rebuilt_route_constraints
+        if contract is None:
+            return chain
+        shifts_by_customer = contract.customer_shift_by_id
+        normalized: list[tuple[str, ...]] = []
+        for trip in chain:
+            try:
+                normalized.extend(
+                    tuple(customers)
+                    for _shift, customers in groupby(
+                        trip,
+                        key=shifts_by_customer.__getitem__,
+                    )
+                )
+            except KeyError as exc:
+                raise ValueError(
+                    "candidate route references a customer outside the "
+                    "rebuilt shift contract: "
+                    f"{exc.args[0]}"
+                ) from exc
+        return tuple(normalized)
 
     def _project(self, individual: DutyIndividual) -> IndependentKernelSolution:
         routes: list[IndependentKernelRoute] = []
@@ -551,7 +812,7 @@ class IndependentKernelDutyRouteProposalEngine:
             duty_id = self._duty_id_by_vehicle_type[int(route.vehicle_type())]
             if output[duty_id]:
                 raise ValueError("IndependentKernel returned two routes for one physical asset")
-            output[duty_id] = tuple(
+            raw_chain = tuple(
                 tuple(
                     self._node_id_by_location[int(location)]
                     for location in trip.visits()
@@ -559,6 +820,7 @@ class IndependentKernelDutyRouteProposalEngine:
                 for trip in route.trips()
                 if trip.visits()
             )
+            output[duty_id] = self._split_replacement_trips_by_shift(raw_chain)
         current = {
             duty.physical_vehicle_id: tuple(
                 tuple(trip.customer_ids) for trip in duty.trips
@@ -913,13 +1175,6 @@ def _rebuilt_shift_aware_ev_unit_costs(
         }
         previous_end = float(shift_end)
     return selected
-
-
-def _distance_cost_units(distance_m: float, rate_per_km: float) -> int:
-    """Encode exact non-energy distance cost without proxying energy."""
-
-    amount = Decimal(str(distance_m)) * Decimal(str(rate_per_km)) / 1_000
-    return _money_units(amount)
 
 
 def _route_proxy_cost_units(

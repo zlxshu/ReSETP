@@ -494,11 +494,31 @@ def main() -> int:
         "initial_parent_selection": selected,
         "initial_parent_attempts": attempts,
         "preflight_reverse_attempt": reverse,
-        "proposal_engine_source_id": (
-            result.provenance.proposal_engine_source_id
+        "route_engine_source_id": result.provenance.route_engine_source_id,
+        "route_engine_runtime_sha256": (
+            result.provenance.route_engine_runtime_sha256
         ),
-        "proposal_engine_sha256": (
-            result.provenance.proposal_engine_sha256
+        "route_stage_source_id": result.provenance.route_stage_source_id,
+        "route_stage_runtime_sha256": (
+            result.provenance.route_stage_runtime_sha256
+        ),
+        "mechanism_stage_source_id": (
+            result.provenance.mechanism_stage_source_id
+        ),
+        "mechanism_stage_runtime_sha256": (
+            result.provenance.mechanism_stage_runtime_sha256
+        ),
+        "effective_execution_schema": (
+            result.provenance.effective_execution_schema
+        ),
+        "effective_algorithm_configuration": (
+            result.provenance.effective_algorithm_configuration
+        ),
+        "effective_runtime_identity": (
+            result.provenance.effective_runtime_identity
+        ),
+        "search_configuration_sha256": (
+            result.provenance.search_configuration_sha256
         ),
         "pi0_values": pi0,
         "pi0_formal_reuse_allowed": False,

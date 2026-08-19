@@ -28,7 +28,10 @@ from setp_solver.cost import evaluate
 from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.profit import calculate_depot_profits, infer_customer_home_depots
 from setp_solver.search.bundle import load_search_bundle
-from setp_solver.search.fairness import _subinstance_for_depot, _write_subbundle
+from baselines.e3_ablation._legacy_subbundle import (
+    _subinstance_for_depot,
+    _write_subbundle,
+)
 from setp_solver.search.fleet import normalize_solution_vehicle_trips
 from setp_solver.search.formal_runner import _derive_carbon_profile
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution

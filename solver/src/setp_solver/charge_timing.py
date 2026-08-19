@@ -530,10 +530,9 @@ class ChargeTimingContexts:
     ) -> None:
         self.instance = instance
         self.prices = prices
-        self._contexts: dict[
-            int,
-            tuple[list[dict[str, Any]], ChargeTimingContext],
-        ] = {}
+        self._contexts: list[
+            tuple[list[dict[str, Any]], ChargeTimingContext]
+        ] = []
 
     def for_profile(
         self,
@@ -543,11 +542,11 @@ class ChargeTimingContexts:
     ) -> ChargeTimingContext:
         if instance is not self.instance or prices is not self.prices:
             raise ValueError("charge timing contexts were reused with other inputs")
-        cached = self._contexts.get(id(carbon_profile))
-        if cached is not None and cached[0] is carbon_profile:
-            return cached[1]
+        for cached_profile, cached_context in self._contexts:
+            if cached_profile is carbon_profile:
+                return cached_context
         context = ChargeTimingContext(instance, carbon_profile, prices)
-        self._contexts[id(carbon_profile)] = (carbon_profile, context)
+        self._contexts.append((carbon_profile, context))
         return context
 
 

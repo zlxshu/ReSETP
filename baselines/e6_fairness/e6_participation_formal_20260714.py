@@ -48,7 +48,10 @@ from setp_solver.profit import calculate_depot_profits
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.e3_multitrip_runtime import hard_violations, prepare_solution
 from setp_solver.search.evaluation import EvaluationContext, cross_depot_violations
-from setp_solver.search.fairness import _subinstance_for_depot, _write_subbundle
+from baselines.e3_ablation._legacy_subbundle import (
+    _subinstance_for_depot,
+    _write_subbundle,
+)
 from setp_solver.solution import ChargingAction, Route, Solution
 
 

@@ -170,14 +170,14 @@ def test_dry_run_is_solver_free_and_does_not_create_output(tmp_path: Path) -> No
     assert payload["solver_entered"] is False
     assert payload["output_directory_created"] is False
     assert payload["serial_execution"] is True
-    assert payload["objective_mode"] == "bi_objective"
+    assert payload["objective_mode"] == "single_objective"
     assert payload["pair_validation"] == "PASSED"
     assert payload["planned_run_count"] == 6
     assert payload["formal_launch_ready"] is False
     assert not output.exists()
 
 
-def test_report_fields_include_service_fleet_emissions_and_pareto() -> None:
+def test_report_fields_include_service_fleet_and_emissions() -> None:
     required = {
         "customers_served",
         "demand_served",
@@ -189,6 +189,31 @@ def test_report_fields_include_service_fleet_emissions_and_pareto() -> None:
         "direct_emissions_kg",
         "indirect_emissions_kg",
         "total_emissions_kg",
-        "pareto_point_count",
     }
     assert required.issubset(set(harness._ordered_fields(({},))))
+
+
+def test_cost_does_not_override_abnormal_or_incomplete_acceptance() -> None:
+    complete = {
+        "run_status": "STOPPED_BY_CALLER",
+        "total_cost_cny": 100.0,
+        "feasible": True,
+        "violation_count": 0,
+        "customers_served": 10,
+        "customers_total": 10,
+        "demand_served": 100.0,
+        "demand_total": 100.0,
+    }
+    accepted = {**complete, **harness._assess_row(complete).row_fields()}
+    assert harness._successful((accepted,)) == [accepted]
+
+    for changed in (
+        {"run_status": "INTERNAL_ERROR"},
+        {"feasible": False, "violation_count": 1},
+        {"customers_served": 9},
+        {"demand_served": 99.0},
+    ):
+        row = {**complete, **changed}
+        row.update(harness._assess_row(row).row_fields())
+        assert row["total_cost_cny"] == 100.0
+        assert harness._successful((row,)) == []

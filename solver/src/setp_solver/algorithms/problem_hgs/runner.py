@@ -14,70 +14,41 @@ configuration and pass it unchanged into education for paired ablation.
 v4 2026-08-08: record and use the system proposal-engine identity so a strong
 route kernel and the problem-mechanism channels cannot be silently confused.
 
-v5 2026-08-08: replace the prototype random duty block with complete
-multi-parent DCREX and its five learned insertion actions.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-import random
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from time import perf_counter
 
-from setp_hgs_kernel.HGSControl import HGSControl, HGSControlState
+from setp_solver.check import PROFIT_FAIRNESS
 
-from .bi_objective_population import (
-    SINGLE_OBJECTIVE,
-    BiObjectiveArchive,
-    validate_population_objective_mode,
-)
-from .charging import ChargingRepairPolicy, repair_changed_duties
+from .charging import ChargingRepairPolicy
 from .contracts import (
-    CandidateOutcome,
     CandidateStatus,
     SearchAccounting,
     TrajectoryRow,
 )
-from .crossover import (
-    dcrex_duty_exchange,
-    trip_assignment_exchange,
-)
-from .crossover_control import (
-    CrossoverAction,
-    RuntimeAwareCrossoverController,
-)
-from .dcrex import DISCOUNT_FACTOR, DCREXController, percentage_reward
-from .education import (
-    DutySentinelMismatch,
-    _trajectory_row,
-    educate_best_improvement,
-)
 from .evaluation import DutyFullEvaluator, FullEvaluation
+from .execution_identity import EffectiveExecutionBundle
 from .integrated_private import build_integrated_private_hgs
 from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
 from .model import DutyIndividual
 from .population import (
-    AdaptivePenaltyManager,
-    DutyPopulation,
     EvaluatedDutyCandidate,
     PenaltyParameters,
     PopulationParameters,
 )
 from .proposals import (
-    DEFAULT_SERIAL_PROPOSAL_SOURCE_ID,
     DutyProposalEngine,
-    LegacyCompleteProposalEngine,
-    MechanismProposalEngine,
-    SequentialProposalEngine,
-    proposal_elite_route,
-    proposal_final_stages,
-    proposal_post_mechanism_route,
-    proposal_stages,
 )
-from .repair import dcrex_repair
+
+
+SINGLE_OBJECTIVE = "single_objective"
 
 
 @dataclass(frozen=True)
@@ -88,17 +59,18 @@ class ProblemHGSSearchParameters:
     stagnation_patience: int = 500
     crossover_mode: str = "fast_only"
     include_whole_duty_type_exchange: bool = True
-    dcrex_discount_factor: float = DISCOUNT_FACTOR
     objective_mode: str = SINGLE_OBJECTIVE
+    education_depth_limit: int | None = None
 
     def __post_init__(self) -> None:
         if self.stagnation_patience < 1:
             raise ValueError("stagnation patience must be positive")
         if self.crossover_mode not in {"fast_only", "hybrid"}:
             raise ValueError("crossover mode must be fast_only or hybrid")
-        if not 0.0 < float(self.dcrex_discount_factor) <= 1.0:
-            raise ValueError("DCREX discount factor must be in (0, 1]")
-        validate_population_objective_mode(self.objective_mode)
+        if self.education_depth_limit is not None and self.education_depth_limit < 1:
+            raise ValueError("education depth limit must be positive")
+        if self.objective_mode != SINGLE_OBJECTIVE:
+            raise ValueError("only single-objective population mode is supported")
 
 
 @dataclass(frozen=True)
@@ -152,58 +124,17 @@ class ProblemHGSSearchState:
     actual_full_model_evaluations: int
     duty_slice_preparations: int
     candidate_assemblies: int
-
-
-@dataclass(frozen=True)
-class BiObjectiveSolutionRecord:
-    """One saved Pareto point with its complete evaluation and certificate."""
-
-    individual: DutyIndividual
-    evaluation: FullEvaluation
-    total_cost: float
-    total_emissions_kg: float
-
-    def to_dict(self) -> dict[str, object]:
-        """Return a JSON-ready point, including the full solution certificate."""
-
-        return {
-            "individual_fingerprint": self.individual.fingerprint,
-            "objectives": {
-                "Z1_total_cost": float(self.total_cost),
-                "Z2_total_emissions_kg": float(self.total_emissions_kg),
-                "E_cv_direct": float(
-                    self.evaluation.breakdown["E_cv_direct"]
-                ),
-                "E_ev_indirect": float(
-                    self.evaluation.breakdown["E_ev_indirect"]
-                ),
-            },
-            "individual": asdict(self.individual),
-            "prepared_solution": asdict(self.evaluation.prepared_solution),
-            "solution_certificate": self.evaluation.certificate.as_dict(),
-            "evaluation": {
-                "total_cost": float(self.evaluation.total_cost),
-                "breakdown": dict(self.evaluation.breakdown),
-                "feasible": bool(self.evaluation.feasible),
-                "violations": [
-                    asdict(violation)
-                    for violation in self.evaluation.violations
-                ],
-                "violation_magnitudes": [
-                    float(value)
-                    for value in self.evaluation.violation_magnitudes
-                ],
-                "depot_profit": dict(self.evaluation.depot_profit),
-                "participation_margin": dict(
-                    self.evaluation.participation_margin
-                ),
-                "evaluation_context_sha256": (
-                    self.evaluation.evaluation_context_sha256
-                ),
-                "source": self.evaluation.source,
-                "accounting": dict(self.evaluation.accounting),
-            },
-        }
+    has_feasible: bool = False
+    best_feasible_raw_cost: float | None = None
+    current_solution_raw_cost: float | None = None
+    current_solution_penalized_cost: float | None = None
+    physical_feasible: bool | None = None
+    fairness_feasible: bool | None = None
+    violation_counts: tuple[tuple[str, int], ...] = ()
+    violation_magnitudes: tuple[tuple[str, float], ...] = ()
+    penalty_coefficients: tuple[tuple[str, float], ...] = ()
+    outer_repair_calls: int = 0
+    outer_refinement_calls: int = 0
 
 
 @dataclass(frozen=True)
@@ -214,13 +145,11 @@ class ProblemHGSRunResult:
     accounting: SearchAccounting
     trajectory: tuple[TrajectoryRow, ...]
     provenance: ProblemHGSRunProvenance
+    effective_execution: EffectiveExecutionBundle
     termination_status: str
     termination_error_type: str | None = None
     termination_error: str | None = None
     objective_mode: str = SINGLE_OBJECTIVE
-    non_dominated_set: tuple[BiObjectiveSolutionRecord, ...] = ()
-    cost_priority_point: BiObjectiveSolutionRecord | None = None
-    emissions_priority_point: BiObjectiveSolutionRecord | None = None
     charging_prescreen_accounting: dict[str, object] | None = None
 
 
@@ -231,19 +160,31 @@ class ProblemHGSRunProvenance:
     arm: str
     instance_id: str
     random_seed: int
-    search_configuration_sha256: str
+    evaluation_context_sha256: str
+    effective_execution_schema: str
+    effective_algorithm_configuration: dict[str, object] | None
+    effective_runtime_identity: dict[str, object]
+    search_configuration_sha256: str | None
     initial_population_source_id: str
     initial_population_sha256: str
     independent_profit_source_id: str
     independent_profit_sha256: str
     independent_profit_externally_frozen: bool
     fairness_enabled: bool
-    fairness_theta: float
+    fairness_theta: float | None
     incremental_full_truth_sentinel_enabled: bool
     trajectory_sink_enabled: bool
     trajectory_retained_in_memory: bool
-    proposal_engine_source_id: str
-    proposal_engine_sha256: str
+    initialization_full_evaluation_count: int
+    initialization_wall_seconds: float
+    route_engine_source_id: str
+    route_engine_runtime_sha256: str
+    route_stage_source_id: str
+    route_stage_runtime_sha256: str
+    mechanism_stage_source_id: str | None
+    mechanism_stage_runtime_sha256: str | None
+    route_layer_crossover_enabled: bool = False
+    education_depth_limit: int | None = None
 
 
 class _TrajectoryRecorder:
@@ -272,6 +213,29 @@ class _TrajectoryRecorder:
             self.retained.extend(batch)
 
 
+def _record_integrated_population_admissions(
+    population,
+    accounting: SearchAccounting,
+    *,
+    initial_candidate_count: int,
+) -> None:
+    """Count the standard population's existing admissions without changing it."""
+
+    original_add = population.add
+    initial_additions_remaining = int(initial_candidate_count)
+
+    def add(candidate):
+        nonlocal initial_additions_remaining
+        retained = original_add(candidate)
+        if initial_additions_remaining > 0:
+            initial_additions_remaining -= 1
+        else:
+            accounting.record_population_admission(inserted=bool(retained))
+        return retained
+
+    population.add = add
+
+
 def run_integrated_problem_hgs(
     initial_candidates: tuple[DutyIndividual, ...],
     *,
@@ -294,6 +258,10 @@ def run_integrated_problem_hgs(
     cross_depot_enabled: bool = True,
     multi_trip_enabled: bool = True,
     type_exchange_enabled: bool = True,
+    route_layer_crossover_enabled: bool = False,
+    include_mechanism_refinement: bool = True,
+    include_charging_candidates: bool = True,
+    expected_search_configuration_sha256: str | None = None,
 ) -> ProblemHGSRunResult:
     """Run the common HGS control flow over complete Duty candidates."""
 
@@ -324,48 +292,10 @@ def run_integrated_problem_hgs(
             "initialization evaluation count cannot be below retained evaluations"
         )
 
-    active_proposal_engine = proposal_engine or SequentialProposalEngine(
-        (route_engine, MechanismProposalEngine(evaluator.context, charging_policy)),
-        source_id=DEFAULT_SERIAL_PROPOSAL_SOURCE_ID,
-    )
     trajectory_enabled = trajectory_sink is not None or retain_trajectory
     trajectory = _TrajectoryRecorder(
         trajectory_sink,
         retain=retain_trajectory,
-    )
-    provenance = ProblemHGSRunProvenance(
-        arm=str(arm),
-        instance_id=str(evaluator.context.bundle.instance_id),
-        random_seed=int(parameters.random_seed),
-        search_configuration_sha256=search_configuration_sha256(
-            parameters,
-            charging_policy,
-            arm=arm,
-            proposal_engine=active_proposal_engine,
-            treatment=treatment,
-        ),
-        initial_population_source_id=initial_population_identity.source_id,
-        initial_population_sha256=(
-            initial_population_identity.value_sha256.lower()
-        ),
-        independent_profit_source_id=(
-            evaluator.context.independent_profit_identity.source_id
-        ),
-        independent_profit_sha256=(
-            evaluator.context.independent_profit_identity.value_sha256.lower()
-        ),
-        independent_profit_externally_frozen=(
-            evaluator.context.independent_profit_identity.externally_frozen
-        ),
-        fairness_enabled=bool(evaluator.context.fairness_enabled),
-        fairness_theta=float(evaluator.context.theta),
-        incremental_full_truth_sentinel_enabled=(
-            evaluator.context.incremental_full_truth_sentinel_enabled
-        ),
-        trajectory_sink_enabled=trajectory_sink is not None,
-        trajectory_retained_in_memory=retain_trajectory,
-        proposal_engine_source_id=active_proposal_engine.source_id,
-        proposal_engine_sha256=active_proposal_engine.identity_sha256,
     )
     full_calls_before = evaluator.full_calls
     sentinel_calls_before = evaluator.sentinel_calls
@@ -373,9 +303,30 @@ def run_integrated_problem_hgs(
     no_improvement = 1
     previous_best: float | None = None
     accounting: SearchAccounting | None = None
+    bundle = None
 
     def current_state() -> ProblemHGSSearchState:
         live = accounting or SearchAccounting()
+        exact = (
+            None
+            if bundle is None or bundle.algorithm.best_so_far is None
+            else bundle.algorithm.best_so_far.evaluation.full
+        )
+        counts: Counter[str] = Counter()
+        magnitudes: Counter[str] = Counter()
+        if exact is not None:
+            for violation, magnitude in zip(
+                exact.violations,
+                exact.violation_magnitudes,
+                strict=True,
+            ):
+                counts[violation.type] += 1
+                magnitudes[violation.type] += float(magnitude)
+        has_feasible = bool(exact is not None and exact.feasible)
+        best_feasible_raw_cost = (
+            float(exact.total_cost) if has_feasible else None
+        )
+        penalty_manager = live.penalty_manager
         full_evaluations = int(initialization_full_evaluation_count) + (
             evaluator.full_calls - full_calls_before
         )
@@ -383,7 +334,7 @@ def run_integrated_problem_hgs(
         return ProblemHGSSearchState(
             iterations=iterations,
             iterations_without_improvement=no_improvement,
-            best_cost=previous_best,
+            best_cost=best_feasible_raw_cost,
             elapsed_seconds=(
                 float(initialization_wall_seconds) + perf_counter() - started
             ),
@@ -395,6 +346,45 @@ def run_integrated_problem_hgs(
             ),
             duty_slice_preparations=live.duty_slice_preparations,
             candidate_assemblies=live.candidate_assemblies,
+            has_feasible=has_feasible,
+            best_feasible_raw_cost=best_feasible_raw_cost,
+            current_solution_raw_cost=(
+                None if exact is None else float(exact.total_cost)
+            ),
+            current_solution_penalized_cost=(
+                None
+                if exact is None or penalty_manager is None
+                else float(penalty_manager.cost(exact))
+            ),
+            physical_feasible=(
+                None
+                if exact is None
+                else not any(
+                    item.type != PROFIT_FAIRNESS
+                    for item in exact.violations
+                )
+            ),
+            fairness_feasible=(
+                None
+                if exact is None
+                else not any(
+                    item.type == PROFIT_FAIRNESS
+                    for item in exact.violations
+                )
+            ),
+            violation_counts=tuple(sorted(counts.items())),
+            violation_magnitudes=tuple(sorted(magnitudes.items())),
+            penalty_coefficients=(
+                ()
+                if penalty_manager is None
+                else tuple(sorted(penalty_manager.penalties.items()))
+            ),
+            outer_repair_calls=(
+                0 if bundle is None else bundle.accounting.repair_calls
+            ),
+            outer_refinement_calls=(
+                0 if bundle is None else bundle.accounting.mechanism_calls
+            ),
         )
 
     class _IntegratedStop:
@@ -423,9 +413,11 @@ def run_integrated_problem_hgs(
         route_engine=route_engine,
         penalty_parameters=parameters.penalties,
         stagnation_patience=parameters.stagnation_patience,
+        include_mechanism_refinement=include_mechanism_refinement,
         include_whole_duty_type_exchange=(
             parameters.include_whole_duty_type_exchange
         ),
+        include_charging_candidates=include_charging_candidates,
         stop_requested=lambda: stop(current_state()),
         population_parameters=parameters.population,
         proposal_engine=proposal_engine,
@@ -451,10 +443,94 @@ def run_integrated_problem_hgs(
         cross_depot_enabled=cross_depot_enabled,
         multi_trip_enabled=multi_trip_enabled,
         type_exchange_enabled=type_exchange_enabled,
+        route_layer_crossover_enabled=route_layer_crossover_enabled,
+        education_depth_limit=parameters.education_depth_limit,
     )
     accounting = bundle.accounting.mechanism
+    accounting.penalty_manager = bundle.complete_penalty_manager
+    effective_execution = bundle.effective_execution
+    actual_search_configuration_sha256 = (
+        search_configuration_sha256(effective_execution)
+        if effective_execution.formal_identity_eligible
+        else None
+    )
+    if expected_search_configuration_sha256 is not None and (
+        actual_search_configuration_sha256 != expected_search_configuration_sha256
+    ):
+        raise ValueError(
+            "effective Problem-HGS search configuration does not match the "
+            "expected formal profile"
+        )
+    effective_algorithm_configuration = (
+        _primitive_snapshot(effective_execution.algorithm_configuration_payload())
+        if effective_execution.formal_identity_eligible
+        else None
+    )
+    provenance = ProblemHGSRunProvenance(
+        arm=str(arm),
+        instance_id=str(evaluator.context.bundle.instance_id),
+        random_seed=int(parameters.random_seed),
+        evaluation_context_sha256=str(evaluator.context_sha256),
+        effective_execution_schema=effective_execution.schema_version,
+        effective_algorithm_configuration=effective_algorithm_configuration,
+        effective_runtime_identity=_primitive_snapshot(
+            effective_execution.runtime_identity_payload()
+        ),
+        search_configuration_sha256=actual_search_configuration_sha256,
+        initial_population_source_id=initial_population_identity.source_id,
+        initial_population_sha256=(
+            initial_population_identity.value_sha256.lower()
+        ),
+        independent_profit_source_id=(
+            evaluator.context.independent_profit_identity.source_id
+        ),
+        independent_profit_sha256=(
+            evaluator.context.independent_profit_identity.value_sha256.lower()
+        ),
+        independent_profit_externally_frozen=(
+            evaluator.context.independent_profit_identity.externally_frozen
+        ),
+        fairness_enabled=effective_execution.fairness_enabled,
+        fairness_theta=effective_execution.fairness_theta,
+        incremental_full_truth_sentinel_enabled=(
+            effective_execution.incremental_full_truth_sentinel_enabled
+        ),
+        trajectory_sink_enabled=trajectory_sink is not None,
+        trajectory_retained_in_memory=retain_trajectory,
+        initialization_full_evaluation_count=int(
+            initialization_full_evaluation_count
+        ),
+        initialization_wall_seconds=float(initialization_wall_seconds),
+        route_engine_source_id=effective_execution.route_engine_source_id,
+        route_engine_runtime_sha256=(
+            effective_execution.route_engine_runtime_sha256
+        ),
+        route_stage_source_id=effective_execution.route_stage_source_id,
+        route_stage_runtime_sha256=(
+            effective_execution.route_stage_runtime_sha256
+        ),
+        mechanism_stage_source_id=(
+            effective_execution.mechanism_stage_source_id
+        ),
+        mechanism_stage_runtime_sha256=(
+            effective_execution.mechanism_stage_runtime_sha256
+        ),
+        route_layer_crossover_enabled=(
+            effective_execution.route_layer_crossover_enabled
+        ),
+        education_depth_limit=effective_execution.education_depth_limit,
+    )
+    _record_integrated_population_admissions(
+        bundle.population,
+        accounting,
+        initial_candidate_count=len(initial_candidates),
+    )
     result = bundle.algorithm.run(_IntegratedStop())
     iterations = result.accounting.iterations
+    accounting.repair_calls += int(bundle.accounting.repair_calls)
+    accounting.outer_refinement_calls += int(
+        bundle.accounting.mechanism_calls
+    )
     accounting.initialization_wall_seconds = float(
         initialization_wall_seconds
     )
@@ -467,6 +543,12 @@ def run_integrated_problem_hgs(
     accounting.sentinel_evaluations = (
         evaluator.sentinel_calls - sentinel_calls_before
     )
+    accounting.charging_repair_cache_hits = int(
+        bundle.charging_repair_cache.hits
+    )
+    accounting.charging_repair_cache_misses = int(
+        bundle.charging_repair_cache.misses
+    )
     best = EvaluatedDutyCandidate(
         result.best.solution,
         result.best.evaluation.full,
@@ -476,12 +558,6 @@ def run_integrated_problem_hgs(
         if not best.evaluation.feasible
         else "STOPPED_BY_CALLER"
     )
-    archive = bundle.bi_objective_archive()
-    (
-        non_dominated_set,
-        cost_priority_point,
-        emissions_priority_point,
-    ) = _bi_objective_result(archive)
     return _finish_result(
         best,
         evaluator,
@@ -490,942 +566,15 @@ def run_integrated_problem_hgs(
         trajectory.retained,
         started,
         provenance,
+        effective_execution,
         status=status,
         objective_mode=parameters.objective_mode,
-        non_dominated_set=non_dominated_set,
-        cost_priority_point=cost_priority_point,
-        emissions_priority_point=emissions_priority_point,
         charging_prescreen_accounting=(
             None
             if bundle.charging_prescreen is None
             else bundle.charging_prescreen.statistics()
         ),
     )
-
-
-def _run_retired_problem_hgs(
-    initial_candidates: tuple[DutyIndividual, ...],
-    *,
-    evaluator: DutyFullEvaluator,
-    charging_policy: ChargingRepairPolicy,
-    parameters: ProblemHGSSearchParameters,
-    initial_population_identity: FrozenPopulationIdentity,
-    stop: Callable[[ProblemHGSSearchState], bool],
-    arm: str,
-    trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
-    retain_trajectory: bool = True,
-    proposal_engine: DutyProposalEngine | None = None,
-    initial_evaluations: tuple[FullEvaluation, ...] | None = None,
-    initialization_full_evaluation_count: int | None = None,
-    initialization_wall_seconds: float = 0.0,
-) -> ProblemHGSRunResult:
-    """Retained 2026-08-09 DCREX outer loop; not an exported/default runner."""
-
-    started = perf_counter()
-    if not initial_candidates:
-        raise ValueError("Problem-HGS requires at least one initial candidate")
-    if float(initialization_wall_seconds) < 0.0:
-        raise ValueError("initialization wall time cannot be negative")
-    if initial_population_identity.value_sha256.lower() != population_sha256(
-        initial_candidates
-    ):
-        raise ValueError(
-            "initial candidates disagree with their frozen population identity"
-        )
-    active_proposal_engine = proposal_engine or LegacyCompleteProposalEngine()
-    trajectory = _TrajectoryRecorder(
-        trajectory_sink,
-        retain=retain_trajectory,
-    )
-    provenance = ProblemHGSRunProvenance(
-        arm=str(arm),
-        instance_id=str(evaluator.context.bundle.instance_id),
-        random_seed=int(parameters.random_seed),
-        search_configuration_sha256=search_configuration_sha256(
-            parameters,
-            charging_policy,
-            arm=arm,
-            proposal_engine=active_proposal_engine,
-        ),
-        initial_population_source_id=initial_population_identity.source_id,
-        initial_population_sha256=initial_population_identity.value_sha256.lower(),
-        independent_profit_source_id=(
-            evaluator.context.independent_profit_identity.source_id
-        ),
-        independent_profit_sha256=(
-            evaluator.context.independent_profit_identity.value_sha256.lower()
-        ),
-        independent_profit_externally_frozen=(
-            evaluator.context.independent_profit_identity.externally_frozen
-        ),
-        fairness_enabled=bool(evaluator.context.fairness_enabled),
-        fairness_theta=float(evaluator.context.theta),
-        incremental_full_truth_sentinel_enabled=(
-            evaluator.context.incremental_full_truth_sentinel_enabled
-        ),
-        trajectory_sink_enabled=trajectory_sink is not None,
-        trajectory_retained_in_memory=retain_trajectory,
-        proposal_engine_source_id=active_proposal_engine.source_id,
-        proposal_engine_sha256=active_proposal_engine.identity_sha256,
-    )
-    rng = random.Random(int(parameters.random_seed))
-    dcrex_controller = DCREXController(
-        gamma=float(parameters.dcrex_discount_factor)
-    )
-    crossover_controller = RuntimeAwareCrossoverController(
-        gamma=float(parameters.dcrex_discount_factor)
-    )
-    customer_coordinates = {
-        node.node_id: (float(node.x), float(node.y))
-        for node in evaluator.context.bundle.instance.nodes
-        if node.node_type.lower() == "c"
-    }
-    accounting = SearchAccounting()
-    accounting.initialization_wall_seconds = float(
-        initialization_wall_seconds
-    )
-    penalty_manager = AdaptivePenaltyManager(parameters.penalties)
-    population = DutyPopulation(parameters.population, penalty_manager)
-    if initial_evaluations is not None:
-        if len(initial_evaluations) != len(initial_candidates):
-            raise ValueError(
-                "initial evaluations must match the initial candidate count"
-            )
-        for candidate, evaluation in zip(
-            initial_candidates,
-            initial_evaluations,
-            strict=True,
-        ):
-            if evaluation.individual_fingerprint != candidate.fingerprint:
-                raise ValueError(
-                    "an initial evaluation belongs to another candidate"
-                )
-            if evaluation.evaluation_context_sha256 != evaluator.context_sha256:
-                raise ValueError(
-                    "an initial evaluation belongs to another evaluator context"
-                )
-            if evaluation.source == "incremental_unverified":
-                raise ValueError(
-                    "an unverified incremental evaluation cannot seed the population"
-                )
-        evaluated_initial = zip(
-            initial_candidates,
-            initial_evaluations,
-            strict=True,
-        )
-        counted = (
-            len(initial_evaluations)
-            if initialization_full_evaluation_count is None
-            else int(initialization_full_evaluation_count)
-        )
-        if counted < len(initial_evaluations):
-            raise ValueError(
-                "initialization evaluation count cannot be below retained evaluations"
-            )
-        accounting.full_evaluations += counted
-        accounting.initialization_full_evaluations += counted
-    else:
-        evaluated_rows = []
-        for candidate in initial_candidates:
-            evaluation = evaluator.evaluate(candidate)
-            accounting.full_evaluations += 1
-            accounting.initialization_full_evaluations += 1
-            evaluated_rows.append((candidate, evaluation))
-        evaluated_initial = iter(evaluated_rows)
-    for candidate, evaluation in evaluated_initial:
-        population.add(candidate, evaluation)
-    best = population.best_feasible() or population.best_penalized()
-    if best is None:
-        raise AssertionError("non-empty initial population was not retained")
-    # The copied HGS population remains a pure route-search stream.  Expensive
-    # problem mechanisms refine a copy of each new route incumbent and cannot
-    # replace or degrade the population member that triggered them.
-    route_incumbent: EvaluatedDutyCandidate | None = None
-
-    iterations = 0
-    no_improvement = 0
-    termination_status = "STOPPED_BY_CALLER"
-
-    def current_state() -> ProblemHGSSearchState:
-        return ProblemHGSSearchState(
-            iterations=iterations,
-            iterations_without_improvement=no_improvement,
-            best_cost=(
-                float(best.evaluation.total_cost)
-                if best.evaluation.feasible
-                else None
-            ),
-            elapsed_seconds=(
-                float(initialization_wall_seconds)
-                + perf_counter()
-                - started
-            ),
-            full_evaluations=accounting.full_evaluations,
-            incremental_evaluations=accounting.incremental_evaluations,
-            sentinel_evaluations=accounting.sentinel_evaluations,
-            actual_full_model_evaluations=(
-                accounting.full_evaluations + accounting.sentinel_evaluations
-            ),
-            duty_slice_preparations=accounting.duty_slice_preparations,
-            candidate_assemblies=accounting.candidate_assemblies,
-        )
-
-    def should_stop_control(state: HGSControlState) -> bool:
-        nonlocal iterations, no_improvement, termination_status
-        iterations = int(state.iterations)
-        no_improvement = int(state.iterations_without_improvement)
-        if no_improvement > parameters.stagnation_patience:
-            termination_status = "CONVERGED_NO_IMPROVEMENT"
-            return True
-        return bool(stop(current_state()))
-
-    control = HGSControl(
-        should_stop=should_stop_control,
-        best_value=lambda: _incumbent_key(best, penalty_manager),
-        restart_after_iterations_without_improvement=None,
-        initial_iterations_without_improvement=0,
-    )
-    for control_iteration in control.iterations():
-
-        parent_records = population.members()
-        accounting.crossover_calls += 1
-        crossover_action = (
-            CrossoverAction.FAST
-            if parameters.crossover_mode == "fast_only"
-            else crossover_controller.select(rng)
-        )
-        pipeline_started = perf_counter()
-        try:
-            if crossover_action == CrossoverAction.FAST:
-                selected = population.select(rng)
-                try:
-                    trip_assignment = trip_assignment_exchange(
-                        (selected[0].individual, selected[1].individual),
-                        rng,
-                        customer_coordinates,
-                    )
-                except ValueError as exc:
-                    if str(exc) != (
-                        "trip assignment found no compatible movable trip"
-                    ):
-                        raise
-                    unavailable = CandidateOutcome(
-                        action_id="trip-assignment-unavailable",
-                        channel="duty_crossover_availability",
-                        status=CandidateStatus.NO_CHANGE,
-                        changed_duty_ids=frozenset(),
-                        error=str(exc),
-                    )
-                    accounting.record_outcome(unavailable)
-                    trajectory.emit(
-                        _trajectory_row(
-                            iteration=iterations,
-                            phase="crossover",
-                            arm=arm,
-                            before=selected[0].individual,
-                            before_evaluation=selected[0].evaluation,
-                            outcome=unavailable,
-                            accepted=False,
-                        )
-                    )
-                    if parameters.crossover_mode == "fast_only":
-                        crossover_controller.update(
-                            crossover_action,
-                            0.0,
-                            perf_counter() - pipeline_started,
-                        )
-                        control_iteration.improved = False
-                        continue
-                    crossover_action = CrossoverAction.DCREX
-            if crossover_action == CrossoverAction.FAST:
-                main_record = selected[0]
-                child = repair_changed_duties(
-                    selected[0].individual,
-                    trip_assignment.child,
-                    changed_duty_ids=set(
-                        trip_assignment.changed_duty_ids
-                    ),
-                    context=evaluator.context,
-                    policy=charging_policy,
-                )
-                child_evaluation = evaluator.evaluate(child)
-                accounting.full_evaluations += 1
-                changed_duty_ids = trip_assignment.changed_duty_ids
-                insertion_operator = None
-                diversity_level = None
-                deterministic_work_units = (
-                    trip_assignment.deterministic_work_units
-                )
-                crossover_action_label = "TRIP_ASSIGNMENT"
-                crossover_action_id = "trip-assignment"
-            else:
-                crossed = dcrex_duty_exchange(
-                    tuple(record.individual for record in parent_records),
-                    rng,
-                    dcrex_controller,
-                )
-                main_record = next(
-                    record
-                    for record in parent_records
-                    if record.individual.fingerprint
-                    == crossed.main_parent.fingerprint
-                )
-                child = repair_changed_duties(
-                    crossed.main_parent,
-                    crossed.child,
-                    changed_duty_ids=set(crossed.changed_duty_ids),
-                    context=evaluator.context,
-                    policy=charging_policy,
-                )
-                child_evaluation = evaluator.evaluate(child)
-                accounting.full_evaluations += 1
-                changed_duty_ids = crossed.changed_duty_ids
-                insertion_operator = crossed.dcrex.insertion_operator
-                diversity_level = crossed.dcrex.diversity_level
-                deterministic_work_units = 1
-                crossover_action_label = "DCREX"
-                crossover_action_id = (
-                    f"dcrex:L{diversity_level}:"
-                    f"{insertion_operator.value}"
-                )
-        except (TypeError, ValueError) as exc:
-            accounting.record_crossover(
-                (
-                    "TRIP_ASSIGNMENT"
-                    if crossover_action == CrossoverAction.FAST
-                    else "DCREX"
-                ),
-                1,
-            )
-            crossover_controller.update(
-                crossover_action,
-                0.0,
-                perf_counter() - pipeline_started,
-            )
-            rejected = CandidateOutcome(
-                action_id=crossover_action.value.lower(),
-                channel="duty_crossover",
-                status=_crossover_rejection_status(exc),
-                changed_duty_ids=frozenset(),
-                error_type=type(exc).__name__,
-                error=str(exc),
-            )
-            accounting.record_outcome(rejected)
-            trajectory.emit(
-                _trajectory_row(
-                    iteration=iterations,
-                    phase="crossover",
-                    arm=arm,
-                    before=best.individual,
-                    before_evaluation=best.evaluation,
-                    outcome=rejected,
-                    accepted=False,
-                )
-            )
-            control_iteration.improved = False
-            continue
-        accounting.record_crossover(
-            crossover_action_label,
-            deterministic_work_units,
-        )
-        constructed = CandidateOutcome(
-            action_id=crossover_action_id,
-            channel="duty_crossover",
-            status=CandidateStatus.EVALUATED,
-            changed_duty_ids=changed_duty_ids,
-            candidate=child,
-            evaluation=child_evaluation,
-        )
-        accounting.record_outcome(constructed)
-        trajectory.emit(
-            _trajectory_row(
-                iteration=iterations,
-                phase="crossover",
-                arm=arm,
-                before=main_record.individual,
-                before_evaluation=main_record.evaluation,
-                outcome=constructed,
-                accepted=False,
-            )
-        )
-        if insertion_operator is None:
-            repaired = child
-            repaired_evaluation = child_evaluation
-            repair_rows = ()
-        else:
-            try:
-                repaired, repaired_evaluation, repair_rows = dcrex_repair(
-                    child,
-                    insertion_operator=insertion_operator,
-                    rng=rng,
-                    evaluator=evaluator,
-                    charging_policy=charging_policy,
-                    arm=arm,
-                    iteration=iterations,
-                    accounting=accounting,
-                    penalized_cost=penalty_manager.cost,
-                    initial_evaluation=child_evaluation,
-                    trajectory_sink=trajectory.emit_many,
-                )
-            except DutySentinelMismatch as exc:
-                trajectory.emit_many(exc.rows)
-                return _finish_result(
-                    best,
-                    evaluator,
-                    iterations,
-                    accounting,
-                    trajectory.retained,
-                    started,
-                    provenance,
-                    status=CandidateStatus.SENTINEL_MISMATCH.value,
-                    error=exc,
-                )
-            except (AssertionError, RuntimeError, TypeError, ValueError) as exc:
-                failed = CandidateOutcome(
-                    action_id=(
-                        f"{crossover_action.value.lower()}-"
-                        f"{insertion_operator.value}-repair"
-                    ),
-                    channel="dcrex_insert",
-                    status=CandidateStatus.INTERNAL_ERROR,
-                    changed_duty_ids=frozenset(
-                        duty.physical_vehicle_id for duty in child.duties
-                    ),
-                    candidate=child,
-                    evaluation=child_evaluation,
-                    error_type=type(exc).__name__,
-                    error=str(exc),
-                )
-                accounting.record_outcome(failed)
-                trajectory.emit(
-                    _trajectory_row(
-                        iteration=iterations,
-                        phase="dcrex_repair",
-                        arm=arm,
-                        before=child,
-                        before_evaluation=child_evaluation,
-                        outcome=failed,
-                        accepted=False,
-                    )
-                )
-                return _finish_result(
-                    best,
-                    evaluator,
-                    iterations,
-                    accounting,
-                    trajectory.retained,
-                    started,
-                    provenance,
-                    status=CandidateStatus.INTERNAL_ERROR.value,
-                    error=exc,
-                )
-        trajectory.emit_many(repair_rows)
-        if repaired.unserved_customers:
-            repair_operator_label = (
-                "none"
-                if insertion_operator is None
-                else insertion_operator.value
-            )
-            crossover_controller.update(
-                crossover_action,
-                0.0,
-                perf_counter() - pipeline_started,
-            )
-            if insertion_operator is not None:
-                dcrex_controller.update_insertion(insertion_operator, 0.0)
-            if diversity_level is not None:
-                dcrex_controller.update_diversity(diversity_level, 0.0)
-            incomplete = CandidateOutcome(
-                action_id=(
-                    f"{crossover_action.value.lower()}-"
-                    f"{repair_operator_label}-"
-                    "repair-incomplete"
-                ),
-                channel="dcrex_insert",
-                status=CandidateStatus.REPAIR_INCOMPLETE,
-                changed_duty_ids=frozenset(
-                    duty.physical_vehicle_id for duty in repaired.duties
-                ),
-                candidate=repaired,
-                evaluation=repaired_evaluation,
-                error=(
-                    "unserved customers remain: "
-                    + ", ".join(repaired.unserved_customers)
-                ),
-            )
-            accounting.record_outcome(incomplete)
-            trajectory.emit(
-                _trajectory_row(
-                    iteration=iterations,
-                    phase="dcrex_repair",
-                    arm=arm,
-                    before=child,
-                    before_evaluation=child_evaluation,
-                    outcome=incomplete,
-                    accepted=False,
-                )
-            )
-            control_iteration.improved = False
-            continue
-        direct_reward = percentage_reward(
-            penalty_manager.cost(main_record.evaluation),
-            penalty_manager.cost(repaired_evaluation),
-        )
-        if diversity_level is not None:
-            dcrex_controller.update_diversity(
-                diversity_level,
-                direct_reward,
-            )
-        if insertion_operator is not None:
-            dcrex_controller.update_insertion(
-                insertion_operator,
-                direct_reward,
-            )
-        crossover_controller.update(
-            crossover_action,
-            direct_reward,
-            perf_counter() - pipeline_started,
-        )
-        try:
-            educated = repaired
-            educated_evaluation = repaired_evaluation
-            stages = proposal_stages(active_proposal_engine)
-            route_stage = stages[0]
-            elite_route_stage = proposal_elite_route(
-                active_proposal_engine
-            )
-            post_mechanism_route_stage = proposal_post_mechanism_route(
-                active_proposal_engine
-            )
-            mechanism_stages = stages[1:]
-            educated, educated_evaluation, education_rows = (
-                educate_best_improvement(
-                    educated,
-                    evaluator=evaluator,
-                    charging_policy=charging_policy,
-                    arm=arm,
-                    iteration=iterations,
-                    accounting=accounting,
-                    penalized_cost=penalty_manager.cost,
-                    initial_evaluation=educated_evaluation,
-                    trajectory_sink=trajectory.emit_many,
-                    include_whole_duty_type_exchange=(
-                        parameters.include_whole_duty_type_exchange
-                    ),
-                    proposal_engine=route_stage,
-                    stop_requested=lambda: stop(current_state()),
-                )
-            )
-        except DutySentinelMismatch as exc:
-            trajectory.emit_many(exc.rows)
-            return _finish_result(
-                best,
-                evaluator,
-                iterations,
-                accounting,
-                trajectory.retained,
-                started,
-                provenance,
-                status=CandidateStatus.SENTINEL_MISMATCH.value,
-                error=exc,
-            )
-        except (AssertionError, RuntimeError, TypeError, ValueError) as exc:
-            failed = CandidateOutcome(
-                action_id="best-improvement-education",
-                channel="education",
-                status=CandidateStatus.INTERNAL_ERROR,
-                changed_duty_ids=frozenset(
-                    duty.physical_vehicle_id for duty in repaired.duties
-                ),
-                candidate=repaired,
-                evaluation=repaired_evaluation,
-                error_type=type(exc).__name__,
-                error=str(exc),
-            )
-            accounting.record_outcome(failed)
-            trajectory.emit(
-                _trajectory_row(
-                    iteration=iterations,
-                    phase="education",
-                    arm=arm,
-                    before=repaired,
-                    before_evaluation=repaired_evaluation,
-                    outcome=failed,
-                    accepted=False,
-                )
-            )
-            return _finish_result(
-                best,
-                evaluator,
-                iterations,
-                accounting,
-                trajectory.retained,
-                started,
-                provenance,
-                status=CandidateStatus.INTERNAL_ERROR.value,
-                error=exc,
-            )
-        trajectory.emit_many(education_rows)
-        admission = population.add(educated, educated_evaluation)
-        accounting.record_population_admission(inserted=admission.inserted)
-        admitted = CandidateOutcome(
-            action_id="population-admission",
-            channel="hgs_population",
-            status=CandidateStatus.EVALUATED,
-            changed_duty_ids=frozenset(
-                duty.physical_vehicle_id for duty in educated.duties
-            ),
-            candidate=educated,
-            evaluation=educated_evaluation,
-        )
-        trajectory.emit(
-            _trajectory_row(
-                iteration=iterations,
-                phase="population",
-                arm=arm,
-                before=repaired,
-                before_evaluation=repaired_evaluation,
-                outcome=admitted,
-                accepted=admission.inserted,
-            )
-        )
-        penalty_manager.register(educated_evaluation)
-        candidate_best = population.best_feasible() or population.best_penalized()
-        route_improved = bool(
-            candidate_best is not None
-            and (
-                route_incumbent is None
-                or _incumbent_key(candidate_best, penalty_manager)
-                < _incumbent_key(route_incumbent, penalty_manager)
-            )
-        )
-        overall_improved = False
-        if candidate_best is not None and _incumbent_key(
-            candidate_best,
-            penalty_manager,
-        ) < _incumbent_key(best, penalty_manager):
-            best = candidate_best
-            overall_improved = True
-
-        if route_improved and candidate_best is not None:
-            route_incumbent = candidate_best
-            refined = candidate_best.individual
-            refined_evaluation = candidate_best.evaluation
-            try:
-                refinement_rows_buffer: list[TrajectoryRow] = []
-                if elite_route_stage is not None:
-                    refined, refined_evaluation, elite_rows = (
-                        educate_best_improvement(
-                            refined,
-                            evaluator=evaluator,
-                            charging_policy=charging_policy,
-                            arm=arm,
-                            iteration=iterations,
-                            accounting=accounting,
-                            penalized_cost=penalty_manager.cost,
-                            initial_evaluation=refined_evaluation,
-                            trajectory_sink=trajectory.emit_many,
-                            include_whole_duty_type_exchange=(
-                                parameters.include_whole_duty_type_exchange
-                            ),
-                            proposal_engine=elite_route_stage,
-                            stop_requested=lambda: stop(current_state()),
-                        )
-                    )
-                    refinement_rows_buffer.extend(elite_rows)
-                    route_refined_record = EvaluatedDutyCandidate(
-                        refined,
-                        refined_evaluation,
-                    )
-                    route_incumbent = route_refined_record
-                    if refined.fingerprint != candidate_best.individual.fingerprint:
-                        elite_admission = population.add(
-                            refined,
-                            refined_evaluation,
-                        )
-                        accounting.record_population_admission(
-                            inserted=elite_admission.inserted
-                        )
-                        penalty_manager.register(refined_evaluation)
-                        trajectory.emit(
-                            _trajectory_row(
-                                iteration=iterations,
-                                phase="elite_population",
-                                arm=arm,
-                                before=candidate_best.individual,
-                                before_evaluation=candidate_best.evaluation,
-                                outcome=CandidateOutcome(
-                                    action_id="elite-route-population-admission",
-                                    channel="hgs_population",
-                                    status=CandidateStatus.EVALUATED,
-                                    changed_duty_ids=frozenset(
-                                        duty.physical_vehicle_id
-                                        for duty in refined.duties
-                                    ),
-                                    candidate=refined,
-                                    evaluation=refined_evaluation,
-                                ),
-                                accepted=elite_admission.inserted,
-                            )
-                        )
-                    if _incumbent_key(
-                        route_refined_record,
-                        penalty_manager,
-                    ) < _incumbent_key(best, penalty_manager):
-                        best = route_refined_record
-                        overall_improved = True
-                for mechanism_stage in mechanism_stages:
-                    before_mechanism_fingerprint = refined.fingerprint
-                    refined, refined_evaluation, mechanism_rows = (
-                        educate_best_improvement(
-                            refined,
-                            evaluator=evaluator,
-                            charging_policy=charging_policy,
-                            arm=arm,
-                            iteration=iterations,
-                            accounting=accounting,
-                            penalized_cost=penalty_manager.cost,
-                            initial_evaluation=refined_evaluation,
-                            trajectory_sink=trajectory.emit_many,
-                            include_whole_duty_type_exchange=(
-                                parameters.include_whole_duty_type_exchange
-                            ),
-                            proposal_engine=mechanism_stage,
-                            stop_requested=lambda: stop(current_state()),
-                        )
-                    )
-                    refinement_rows_buffer.extend(mechanism_rows)
-                    if (
-                        refined.fingerprint
-                        != before_mechanism_fingerprint
-                        and post_mechanism_route_stage is not None
-                    ):
-                        refined, refined_evaluation, restart_rows = (
-                            educate_best_improvement(
-                                refined,
-                                evaluator=evaluator,
-                                charging_policy=charging_policy,
-                                arm=arm,
-                                iteration=iterations,
-                                accounting=accounting,
-                                penalized_cost=penalty_manager.cost,
-                                initial_evaluation=refined_evaluation,
-                                trajectory_sink=trajectory.emit_many,
-                                include_whole_duty_type_exchange=(
-                                    parameters.include_whole_duty_type_exchange
-                                ),
-                                proposal_engine=(
-                                    post_mechanism_route_stage
-                                ),
-                                stop_requested=lambda: stop(current_state()),
-                            )
-                        )
-                        refinement_rows_buffer.extend(restart_rows)
-                trajectory.emit_many(tuple(refinement_rows_buffer))
-            except DutySentinelMismatch as exc:
-                trajectory.emit_many(exc.rows)
-                return _finish_result(
-                    best,
-                    evaluator,
-                    iterations,
-                    accounting,
-                    trajectory.retained,
-                    started,
-                    provenance,
-                    status=CandidateStatus.SENTINEL_MISMATCH.value,
-                    error=exc,
-                )
-            except (AssertionError, RuntimeError, TypeError, ValueError) as exc:
-                failed = CandidateOutcome(
-                    action_id="incumbent-intensification",
-                    channel="education",
-                    status=CandidateStatus.INTERNAL_ERROR,
-                    changed_duty_ids=frozenset(
-                        duty.physical_vehicle_id for duty in refined.duties
-                    ),
-                    candidate=refined,
-                    evaluation=refined_evaluation,
-                    error_type=type(exc).__name__,
-                    error=str(exc),
-                )
-                accounting.record_outcome(failed)
-                trajectory.emit(
-                    _trajectory_row(
-                        iteration=iterations,
-                        phase="incumbent_intensification",
-                        arm=arm,
-                        before=route_incumbent.individual,
-                        before_evaluation=route_incumbent.evaluation,
-                        outcome=failed,
-                        accepted=False,
-                    )
-                )
-                return _finish_result(
-                    best,
-                    evaluator,
-                    iterations,
-                    accounting,
-                    trajectory.retained,
-                    started,
-                    provenance,
-                    status=CandidateStatus.INTERNAL_ERROR.value,
-                    error=exc,
-                )
-            refined_record = EvaluatedDutyCandidate(refined, refined_evaluation)
-            if _incumbent_key(
-                refined_record,
-                penalty_manager,
-            ) < _incumbent_key(best, penalty_manager):
-                best = refined_record
-                overall_improved = True
-
-        control_iteration.improved = bool(route_improved or overall_improved)
-
-    iterations = int(control.state.iterations)
-    no_improvement = int(control.state.iterations_without_improvement)
-
-    final_mechanism_stages = proposal_final_stages(active_proposal_engine)
-    if final_mechanism_stages and not stop(current_state()):
-        refined = best.individual
-        refined_evaluation = best.evaluation
-        post_mechanism_route_stage = proposal_post_mechanism_route(
-            active_proposal_engine
-        )
-        try:
-            for mechanism_stage in final_mechanism_stages:
-                before_mechanism_fingerprint = refined.fingerprint
-                refined, refined_evaluation, _ = educate_best_improvement(
-                    refined,
-                    evaluator=evaluator,
-                    charging_policy=charging_policy,
-                    arm=arm,
-                    iteration=iterations,
-                    accounting=accounting,
-                    penalized_cost=penalty_manager.cost,
-                    initial_evaluation=refined_evaluation,
-                    trajectory_sink=trajectory.emit_many,
-                    include_whole_duty_type_exchange=(
-                        parameters.include_whole_duty_type_exchange
-                    ),
-                    proposal_engine=mechanism_stage,
-                    stop_requested=lambda: stop(current_state()),
-                )
-                if (
-                    refined.fingerprint != before_mechanism_fingerprint
-                    and post_mechanism_route_stage is not None
-                ):
-                    refined, refined_evaluation, _ = educate_best_improvement(
-                        refined,
-                        evaluator=evaluator,
-                        charging_policy=charging_policy,
-                        arm=arm,
-                        iteration=iterations,
-                        accounting=accounting,
-                        penalized_cost=penalty_manager.cost,
-                        initial_evaluation=refined_evaluation,
-                        trajectory_sink=trajectory.emit_many,
-                        include_whole_duty_type_exchange=(
-                            parameters.include_whole_duty_type_exchange
-                        ),
-                        proposal_engine=post_mechanism_route_stage,
-                        stop_requested=lambda: stop(current_state()),
-                    )
-        except DutySentinelMismatch as exc:
-            trajectory.emit_many(exc.rows)
-            return _finish_result(
-                best,
-                evaluator,
-                iterations,
-                accounting,
-                trajectory.retained,
-                started,
-                provenance,
-                status=CandidateStatus.SENTINEL_MISMATCH.value,
-                error=exc,
-            )
-        except (AssertionError, RuntimeError, TypeError, ValueError) as exc:
-            failed = CandidateOutcome(
-                action_id="final-incumbent-intensification",
-                channel="education",
-                status=CandidateStatus.INTERNAL_ERROR,
-                changed_duty_ids=frozenset(
-                    duty.physical_vehicle_id for duty in refined.duties
-                ),
-                candidate=refined,
-                evaluation=refined_evaluation,
-                error_type=type(exc).__name__,
-                error=str(exc),
-            )
-            accounting.record_outcome(failed)
-            trajectory.emit(
-                _trajectory_row(
-                    iteration=iterations,
-                    phase="final_incumbent_intensification",
-                    arm=arm,
-                    before=best.individual,
-                    before_evaluation=best.evaluation,
-                    outcome=failed,
-                    accepted=False,
-                )
-            )
-            return _finish_result(
-                best,
-                evaluator,
-                iterations,
-                accounting,
-                trajectory.retained,
-                started,
-                provenance,
-                status=CandidateStatus.INTERNAL_ERROR.value,
-                error=exc,
-            )
-        refined_record = EvaluatedDutyCandidate(refined, refined_evaluation)
-        if _incumbent_key(refined_record, penalty_manager) < _incumbent_key(
-            best,
-            penalty_manager,
-        ):
-            best = refined_record
-
-    if not best.evaluation.feasible:
-        termination_status = CandidateStatus.NO_FEASIBLE_SOLUTION.value
-    return _finish_result(
-        best,
-        evaluator,
-        iterations,
-        accounting,
-        trajectory.retained,
-        started,
-        provenance,
-        status=termination_status,
-    )
-
-
-def _incumbent_key(
-    candidate: EvaluatedDutyCandidate,
-    penalty_manager: AdaptivePenaltyManager,
-) -> tuple[int, float, str]:
-    if candidate.evaluation.feasible:
-        return (
-            0,
-            float(candidate.evaluation.total_cost),
-            candidate.individual.fingerprint,
-        )
-    return (
-        1,
-        float(penalty_manager.cost(candidate.evaluation)),
-        candidate.individual.fingerprint,
-    )
-
-
-def _crossover_rejection_status(error: Exception) -> CandidateStatus:
-    message = str(error).lower()
-    if "charging" in message:
-        return CandidateStatus.REJECTED_CHARGING
-    if "fleet" in message or "registry" in message:
-        return CandidateStatus.REJECTED_REGISTRY
-    if "lock" in message:
-        return CandidateStatus.REJECTED_LOCK
-    return CandidateStatus.REJECTED_INTERFACE
 
 
 def population_sha256(candidates: tuple[DutyIndividual, ...]) -> str:
@@ -1445,32 +594,26 @@ def population_sha256(candidates: tuple[DutyIndividual, ...]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def search_configuration_sha256(
-    parameters: ProblemHGSSearchParameters,
-    charging_policy: ChargingRepairPolicy,
-    *,
-    arm: str,
-    proposal_engine: DutyProposalEngine | None = None,
-    treatment: PrivateAblationTreatment | None = None,
-) -> str:
-    """Hash only the runner, charging-policy, and arm configuration."""
+def _primitive_snapshot(payload: dict[str, object]) -> dict[str, object]:
+    return json.loads(
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    )
 
-    active_proposal_engine = proposal_engine or LegacyCompleteProposalEngine()
-    parameter_payload = asdict(parameters)
-    if parameters.objective_mode == SINGLE_OBJECTIVE:
-        # Preserve every pre-P39 single-objective configuration digest.
-        parameter_payload.pop("objective_mode")
-    payload = {
-        "arm": str(arm),
-        "parameters": parameter_payload,
-        "charging_policy": asdict(charging_policy),
-        "proposal_engine": {
-            "source_id": active_proposal_engine.source_id,
-            "identity_sha256": active_proposal_engine.identity_sha256,
-        },
-    }
-    if treatment is not None:
-        payload["private_ablation_treatment"] = asdict(treatment)
+
+def search_configuration_sha256(
+    effective_execution: EffectiveExecutionBundle,
+) -> str:
+    """Hash the stable primitive configuration that actually executes."""
+
+    if not effective_execution.formal_identity_eligible:
+        raise ValueError("execution bundle has no approved formal configuration")
+    payload = effective_execution.algorithm_configuration_payload()
     encoded = json.dumps(
         payload,
         ensure_ascii=False,
@@ -1481,40 +624,6 @@ def search_configuration_sha256(
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _bi_objective_result(
-    archive: BiObjectiveArchive | None,
-) -> tuple[
-    tuple[BiObjectiveSolutionRecord, ...],
-    BiObjectiveSolutionRecord | None,
-    BiObjectiveSolutionRecord | None,
-]:
-    if archive is None:
-        return (), None, None
-    records = tuple(
-        BiObjectiveSolutionRecord(
-            individual=entry.candidate.solution,
-            evaluation=entry.candidate.evaluation.full,
-            total_cost=float(entry.objectives.total_cost),
-            total_emissions_kg=float(entry.objectives.total_emissions_kg),
-        )
-        for entry in archive.entries
-    )
-    by_fingerprint = {
-        record.individual.fingerprint: record for record in records
-    }
-    cost_priority = (
-        None
-        if archive.cost_priority is None
-        else by_fingerprint[archive.cost_priority.fingerprint]
-    )
-    emissions_priority = (
-        None
-        if archive.emissions_priority is None
-        else by_fingerprint[archive.emissions_priority.fingerprint]
-    )
-    return records, cost_priority, emissions_priority
-
-
 def _finish_result(
     best,
     evaluator: DutyFullEvaluator,
@@ -1523,13 +632,11 @@ def _finish_result(
     trajectory: list[TrajectoryRow],
     started: float,
     provenance: ProblemHGSRunProvenance,
+    effective_execution: EffectiveExecutionBundle,
     *,
     status: str,
     error: Exception | None = None,
     objective_mode: str = SINGLE_OBJECTIVE,
-    non_dominated_set: tuple[BiObjectiveSolutionRecord, ...] = (),
-    cost_priority_point: BiObjectiveSolutionRecord | None = None,
-    emissions_priority_point: BiObjectiveSolutionRecord | None = None,
     charging_prescreen_accounting: dict[str, object] | None = None,
 ) -> ProblemHGSRunResult:
     final_evaluation = evaluator.evaluate(best.individual)
@@ -1543,12 +650,10 @@ def _finish_result(
         accounting=accounting,
         trajectory=tuple(trajectory),
         provenance=provenance,
+        effective_execution=effective_execution,
         termination_status=status,
         termination_error_type=(None if error is None else type(error).__name__),
         termination_error=None if error is None else str(error),
         objective_mode=objective_mode,
-        non_dominated_set=non_dominated_set,
-        cost_priority_point=cost_priority_point,
-        emissions_priority_point=emissions_priority_point,
         charging_prescreen_accounting=charging_prescreen_accounting,
     )

@@ -21,7 +21,7 @@ if str(REPO) not in sys.path:
 if str(SOLVER_SRC) not in sys.path:
     sys.path.insert(0, str(SOLVER_SRC))
 
-from baselines.e2_alns.run_homberger_g1_sisr_20260718 import (  # noqa: E402
+from baselines.e2_alns.homberger_g1_helpers_20260718 import (  # noqa: E402
     DevelopmentGateError,
     atomic_csv,
     atomic_json,

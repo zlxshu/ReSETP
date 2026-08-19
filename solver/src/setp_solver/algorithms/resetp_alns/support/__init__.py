@@ -1,1 +1,1 @@
-"""Support modules private to independent ReSETP ALNS (not open-source deps)."""
+"""Frozen charging support still shared by the active Problem-HGS chain."""

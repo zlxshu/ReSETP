@@ -1,0 +1,123 @@
+# declared_identity=PROJECT_DOMAIN
+# file_role=UPSTREAM_PATCH_RECORD
+# upstream_url=https://github.com/PyVRP/PyVRP/blob/v0.12.2/pyvrp/GeneticAlgorithm.py
+# upstream_commit=ea0c4211819edac6fd920413ad7508cc9ad56e0e
+# patched_provenance_status=UNKNOWN
+# This patch records namespace adaptation plus the project HGSControl loop.
+diff --git third_party/setp_hgs_kernel/upstream_snapshots/pyvrp_v0.12.2/GeneticAlgorithm.py solver/src/setp_solver/algorithms/problem_hgs/patched_genetic_algorithm.py
+index 027dde5f9..5499c5019 100755
+--- third_party/setp_hgs_kernel/upstream_snapshots/pyvrp_v0.12.2/GeneticAlgorithm.py
++++ solver/src/setp_solver/algorithms/problem_hgs/patched_genetic_algorithm.py
+@@ -1,24 +1,32 @@
++# declared_identity=UPSTREAM_PATCHED
++# provenance_status=UNKNOWN
++# upstream_url=https://github.com/PyVRP/PyVRP/blob/v0.12.2/pyvrp/GeneticAlgorithm.py
++# upstream_commit=ea0c4211819edac6fd920413ad7508cc9ad56e0e
++# patch_path=third_party/setp_hgs_kernel/patches/problem_hgs_genetic_algorithm.patch
++# original_author=PyVRP team; project patch author=UNKNOWN
++# pre_move_sha256=2cdba74c246dbfe59bdf8148edbb1770c3f4cdbd2dd646392519a6f62faa4e8d
+ from __future__ import annotations
+ 
+-import time
+ from dataclasses import dataclass
+ from typing import TYPE_CHECKING, Callable, Collection
+ 
+-from pyvrp.ProgressPrinter import ProgressPrinter
+-from pyvrp.Result import Result
+-from pyvrp.Statistics import Statistics
++from setp_hgs_kernel.ProgressPrinter import ProgressPrinter
++from setp_hgs_kernel.Result import Result
++from setp_hgs_kernel.Statistics import Statistics
++
++from .hgs_control import HGSControl
+ 
+ if TYPE_CHECKING:
+-    from pyvrp.PenaltyManager import PenaltyManager
+-    from pyvrp.Population import Population
+-    from pyvrp._pyvrp import (
++    from setp_hgs_kernel.PenaltyManager import PenaltyManager
++    from setp_hgs_kernel.Population import Population
++    from setp_hgs_kernel._setp_hgs_kernel import (
+         CostEvaluator,
+         ProblemData,
+         RandomNumberGenerator,
+         Solution,
+     )
+-    from pyvrp.search.SearchMethod import SearchMethod
+-    from pyvrp.stop.StoppingCriterion import StoppingCriterion
++    from setp_hgs_kernel.search.SearchMethod import SearchMethod
++    from setp_hgs_kernel.stop.StoppingCriterion import StoppingCriterion
+ 
+ 
+ @dataclass
+@@ -163,46 +171,45 @@ class GeneticAlgorithm:
+         print_progress = ProgressPrinter(display, display_interval)
+         print_progress.start(self._data)
+ 
+-        start = time.perf_counter()
+         stats = Statistics(collect_stats=collect_stats)
+-        iters = 0
+-        iters_no_improvement = 1
+ 
+         for sol in self._initial_solutions:
+             self._pop.add(sol, self._cost_evaluator)
+ 
+-        while not stop(self._cost_evaluator.cost(self._best)):
+-            iters += 1
+-
+-            if iters_no_improvement == self._params.num_iters_no_improvement:
+-                print_progress.restart()
+-
+-                iters_no_improvement = 1
+-                self._pop.clear()
+-
+-                for sol in self._initial_solutions:
+-                    self._pop.add(sol, self._cost_evaluator)
+-
+-            curr_best = self._cost_evaluator.cost(self._best)
++        def restart() -> None:
++            print_progress.restart()
++            self._pop.clear()
++            for sol in self._initial_solutions:
++                self._pop.add(sol, self._cost_evaluator)
+ 
++        control = HGSControl(
++            should_stop=lambda _state: stop(
++                self._cost_evaluator.cost(self._best)
++            ),
++            best_value=lambda: self._cost_evaluator.cost(self._best),
++            restart_after_iterations_without_improvement=(
++                self._params.num_iters_no_improvement
++            ),
++            restart=restart,
++            initial_iterations_without_improvement=1,
++        )
++        for _iteration in control.iterations():
+             parents = self._pop.select(self._rng, self._cost_evaluator)
+             offspring = self._crossover(
+                 parents, self._data, self._cost_evaluator, self._rng
+             )
+             self._improve_offspring(offspring)
+ 
+-            new_best = self._cost_evaluator.cost(self._best)
+-
+-            if new_best < curr_best:
+-                iters_no_improvement = 1
+-            else:
+-                iters_no_improvement += 1
+-
+             stats.collect_from(self._pop, self._cost_evaluator)
+             print_progress.iteration(stats)
+ 
+-        end = time.perf_counter() - start
+-        res = Result(self._best, stats, iters, end)
++        state = control.state
++        res = Result(
++            self._best,
++            stats,
++            state.iterations,
++            state.elapsed_seconds,
++        )
+ 
+         print_progress.end(res)
+ 

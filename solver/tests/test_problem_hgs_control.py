@@ -1,4 +1,4 @@
-from setp_hgs_kernel.HGSControl import HGSControl
+from setp_solver.algorithms.problem_hgs.hgs_control import HGSControl
 
 
 def test_shared_hgs_control_preserves_copied_restart_semantics() -> None:

@@ -36,6 +36,7 @@ from setp_solver.algorithms.resetp_alns.operators.feasible_repair import (
     repair_removed_customers,
 )
 from setp_solver.cost import evaluate
+from setp_solver.charging_curve import ChargingCurveError, curve_from_parameters
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.dynamic import DynamicEvent, RollingParameters, _build_trigger_batches
 from setp_solver.search import dynamic_multitrip_schedule as dynamic_schedule
@@ -678,12 +679,12 @@ def _project_asset_chain(
     power = float(prices.depot_charge_power_kw)
     battery_cap = float(prices.B_battery_kwh)
     try:
-        charging_curve = dynamic_schedule.curve_from_parameters(
+        charging_curve = curve_from_parameters(
             prices,
             capacity_kwh=battery_cap,
             reference_power_kw=power,
         )
-    except dynamic_schedule.ChargingCurveError:
+    except ChargingCurveError:
         return None
     minimum_slack = math.inf
     for route in routes:

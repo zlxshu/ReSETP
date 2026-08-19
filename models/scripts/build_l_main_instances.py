@@ -107,7 +107,7 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 def _git(*args: str) -> str:
     try:
         return subprocess.check_output(["git", *args], cwd=Path(__file__).resolve().parents[2], text=True).strip()
-    except Exception:
+    except (FileNotFoundError, subprocess.CalledProcessError):
         return "UNKNOWN"
 
 

@@ -1,0 +1,107 @@
+rules:
+  - id: resetp-no-object-id-cache-key
+    languages: [python]
+    severity: ERROR
+    message: Do not key a cache by id(); use a stable value identity.
+    pattern-either:
+      - pattern: $CACHE[id($OBJ)] = $VALUE
+      - pattern: $CACHE[id($OBJ)]
+      - pattern: $CACHE.get(id($OBJ), ...)
+      - pattern: $CACHE.setdefault(id($OBJ), ...)
+      - pattern: $CACHE[(id($OBJ), $REST)] = $VALUE
+      - pattern: $CACHE[($REST, id($OBJ))] = $VALUE
+      - pattern: $CACHE[(id($OBJ), $REST)]
+      - pattern: $CACHE[($REST, id($OBJ))]
+      - pattern: $CACHE.get((id($OBJ), $REST), ...)
+      - pattern: $CACHE.get(($REST, id($OBJ)), ...)
+      - pattern: $CACHE.setdefault((id($OBJ), $REST), ...)
+      - pattern: $CACHE.setdefault(($REST, id($OBJ)), ...)
+      - patterns:
+          - pattern-inside: |
+              $KEY = (id($OBJ), $REST)
+              ...
+          - pattern-either:
+              - pattern: $CACHE[$KEY] = $VALUE
+              - pattern: $CACHE[$KEY]
+              - pattern: $CACHE.get($KEY, ...)
+              - pattern: $CACHE.setdefault($KEY, ...)
+      - patterns:
+          - pattern-inside: |
+              $KEY = ($REST, id($OBJ))
+              ...
+          - pattern-either:
+              - pattern: $CACHE[$KEY] = $VALUE
+              - pattern: $CACHE[$KEY]
+              - pattern: $CACHE.get($KEY, ...)
+              - pattern: $CACHE.setdefault($KEY, ...)
+
+  - id: resetp-no-module-mutable-cache
+    languages: [python]
+    severity: ERROR
+    message: Mutable module cache must belong to a RunContext lifecycle.
+    patterns:
+      - metavariable-regex:
+          metavariable: $CACHE
+          regex: (?i)^.*cache.*$
+      - pattern-either:
+          - pattern: $CACHE = {}
+          - pattern: $CACHE = []
+          - pattern: $CACHE = set()
+          - pattern: $CACHE = collections.OrderedDict(...)
+          - pattern: $CACHE = collections.defaultdict(...)
+      - pattern-not-inside: |
+          def $FUNC(...):
+            ...
+      - pattern-not-inside: |
+          class $CLASS:
+            ...
+
+  - id: resetp-no-detail-message-regex-control-flow
+    languages: [python]
+    severity: ERROR
+    message: Human detail/message text must not drive control flow.
+    pattern-either:
+      - pattern: |
+          if re.search($REGEX, $OBJ.detail, ...):
+            ...
+      - pattern: |
+          if re.match($REGEX, $OBJ.detail, ...):
+            ...
+      - pattern: |
+          if re.search($REGEX, $OBJ.message, ...):
+            ...
+      - pattern: |
+          if re.match($REGEX, $OBJ.message, ...):
+            ...
+
+  - id: resetp-no-broad-except-return-default
+    languages: [python]
+    severity: ERROR
+    message: Broad exception must not silently return a default value.
+    pattern-either:
+      - pattern: |
+          try:
+            ...
+          except:
+            ...
+            return $DEFAULT
+      - patterns:
+          - pattern: |
+              try:
+                ...
+              except $EXC:
+                ...
+                return $DEFAULT
+          - metavariable-regex:
+              metavariable: $EXC
+              regex: ^(Exception|BaseException)$
+      - patterns:
+          - pattern: |
+              try:
+                ...
+              except $EXC as $ERR:
+                ...
+                return $DEFAULT
+          - metavariable-regex:
+              metavariable: $EXC
+              regex: ^(Exception|BaseException)$

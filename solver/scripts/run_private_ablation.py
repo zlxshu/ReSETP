@@ -20,6 +20,19 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any, Iterable, Mapping, Sequence
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from experiment_acceptance import (  # noqa: E402
+    NORMAL_PROBLEM_HGS_TERMINATIONS,
+    RunAcceptance,
+    assess_run,
+    finalize_five_file_package,
+    package_exit_code,
+    row_is_accepted,
+)
+
 PROTECTED = (
     "solver/src/setp_solver/cost.py",
     "solver/src/setp_solver/check.py",
@@ -156,6 +169,9 @@ REQUIRED_RAW_FIELDS = (
     "fleet_parameter_class_id",
     "total_cost",
     "total_emissions_kg",
+    "full_evaluation_feasible",
+    "hard_violation_count",
+    "hard_violations_json",
     "customers_served",
     "customers_total",
     "demand_served",
@@ -456,6 +472,13 @@ def _run_one_arm(
         "total_emissions_kg": float(
             result.best_evaluation.breakdown.get("E_total", 0.0)
         ),
+        "full_evaluation_feasible": bool(result.best_evaluation.feasible),
+        "hard_violation_count": len(result.best_evaluation.violations),
+        "hard_violations_json": json.dumps(
+            [asdict(item) for item in result.best_evaluation.violations],
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
         "completed_generations": int(result.iterations),
         "time_to_best_seconds": clock.time_to_best_seconds,
         "initialization_wall_seconds": float(
@@ -531,8 +554,40 @@ def _ordered_fields(rows: Sequence[Mapping[str, Any]]) -> list[str]:
     return [*REQUIRED_RAW_FIELDS, *extras]
 
 
+def _assess_row(
+    row: Mapping[str, Any],
+    *,
+    audit_ok: bool = True,
+) -> RunAcceptance:
+    return assess_run(
+        termination_ok=(
+            row.get("run_status") in NORMAL_PROBLEM_HGS_TERMINATIONS
+        ),
+        feasible_ok=(
+            row.get("full_evaluation_feasible") is True
+            and row.get("hard_violation_count") == 0
+        ),
+        customers_complete=(
+            row.get("customers_served") is not None
+            and row.get("customers_served") == row.get("customers_total")
+        ),
+        demand_complete=(
+            row.get("demand_served") is not None
+            and row.get("demand_served") == row.get("demand_total")
+        ),
+        audit_ok=audit_ok,
+        extra_failure_reasons=(
+            f"{row.get('error_type')}: {row.get('error')}"
+            if row.get("error_type") or row.get("error")
+            else "",
+        ),
+        success_verdict="PRIVATE_ABLATION_RUN_COMPLETE",
+        failure_verdict="PRIVATE_ABLATION_RUN_FAILED",
+    )
+
+
 def _successful_rows(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
-    return [row for row in rows if row.get("total_cost") not in (None, "")]
+    return [row for row in rows if row_is_accepted(row)]
 
 
 def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
@@ -632,7 +687,7 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
                 f"{statistics.mean(completion):.6%} |"
             )
 
-    failed = [row for row in rows if row.get("run_status") == "FAILED"]
+    failed = [row for row in rows if not row_is_accepted(row)]
     lines.extend(["", "## 运行完整性", ""])
     if failed:
         lines.append(f"失败 {len(failed)} 次；错误原文保留在 `raw_runs.csv`。")
@@ -648,6 +703,7 @@ def write_result_package(
     output: Path,
     rows: Sequence[Mapping[str, Any]],
     metadata: Mapping[str, Any],
+    acceptance: RunAcceptance,
 ) -> None:
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
@@ -657,14 +713,19 @@ def write_result_package(
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
-    (output / "report.md").write_text(render_report(rows), encoding="utf-8")
-    _write_json(output / "metadata.json", dict(metadata))
-    hashes = {
-        path.name: _sha256(path)
-        for path in sorted(output.iterdir())
-        if path.is_file() and path.name != "artifact_hashes.json"
+    decision = {
+        "planned_run_count": len(rows),
+        "accepted_run_count": sum(row_is_accepted(row) for row in rows),
+        "rejected_run_count": sum(not row_is_accepted(row) for row in rows),
     }
-    _write_json(output / "artifact_hashes.json", hashes)
+    finalize_five_file_package(
+        output,
+        acceptance=acceptance,
+        metadata=metadata,
+        decision=decision,
+        report_text=render_report(rows),
+        complete_status="COMPLETED",
+    )
 
 
 def _dry_run_payload(args, repo: Path) -> dict[str, Any]:
@@ -840,17 +901,15 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             except Exception as error:  # Preserve one arm's exact failure.
                 row = _failure_row(by_arm[arm], error)
+            row.update(_assess_row(row).row_fields())
             rows.append(row)
 
     protected_after = {path: _sha256(repo / path) for path in PROTECTED}
-    if protected_after != protected_before:
-        raise RuntimeError("a protected file changed during the ablation run")
+    protected_ok = protected_after == protected_before
+    if not protected_ok:
+        for row in rows:
+            row.update(_assess_row(row, audit_ok=False).row_fields())
     metadata = {
-        "status": (
-            "COMPLETED_WITH_FAILURES"
-            if any(row.get("run_status") == "FAILED" for row in rows)
-            else "COMPLETED"
-        ),
         "instance_id": bundle.instance_id,
         "seeds": list(args.seeds),
         "arms": list(args.arms),
@@ -883,8 +942,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         "protected_hashes_after": protected_after,
         "command_argv": list(sys.argv if argv is None else argv),
     }
-    write_result_package(output, rows, metadata)
-    return 0
+    accepted_rows = _successful_rows(rows)
+    overall = assess_run(
+        termination_ok=len(accepted_rows) == len(rows),
+        feasible_ok=all(row.get("full_evaluation_feasible") is True for row in rows),
+        customers_complete=all(
+            row.get("customers_served") == row.get("customers_total")
+            for row in rows
+        ),
+        demand_complete=all(
+            row.get("demand_served") == row.get("demand_total")
+            for row in rows
+        ),
+        audit_ok=protected_ok,
+        extra_failure_reasons=tuple(
+            f"{row.get('instance_id')} seed={row.get('seed')} arm={row.get('arm')}: "
+            f"{row.get('acceptance_failure_reasons')}"
+            for row in rows
+            if not row_is_accepted(row)
+        ),
+        success_verdict="PRIVATE_ABLATION_BATCH_COMPLETE",
+        failure_verdict="PRIVATE_ABLATION_BATCH_FAILED",
+    )
+    write_result_package(output, rows, metadata, overall)
+    return package_exit_code(overall)
 
 
 if __name__ == "__main__":

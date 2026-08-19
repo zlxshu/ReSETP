@@ -32,6 +32,9 @@ class Route:
     home_depot_id: str
     node_sequence: list[str]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "vehicle_type", self.vehicle_type.lower())
+
 
 @dataclass(frozen=True)
 class ChargingAction:

@@ -178,7 +178,11 @@ def cut_certificate_at_trigger(
     battery_cap = instance.battery_capacity_kwh(
         fallback=_price(prices, "B_battery_kwh"),
     )
-    initial_battery = _price(prices, "initial_ev_battery_kwh")
+    initial_battery = (
+        _price(prices, "initial_ev_battery_kwh")
+        if certificate.initial_battery_kwh is None
+        else float(certificate.initial_battery_kwh)
+    )
     states: dict[str, DynamicAssetState] = {}
     for asset_id, asset in ledger.assets.items():
         chain = [ledger.routes[route_id] for route_id in asset.route_ids]

@@ -6,6 +6,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 REPO = Path(__file__).resolve().parents[2]
 SCRIPT = REPO / "solver/scripts/run_dynamic_experiment.py"
@@ -163,3 +165,46 @@ def test_dry_run_writes_complete_synthetic_package(tmp_path: Path, capsys) -> No
     metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
     assert metadata["run_class"] == "synthetic_dry_run"
     assert metadata["event_stream_constructed_once_per_seed"] is True
+
+
+@pytest.mark.parametrize(
+    ("override", "reason"),
+    (
+        ({"run_status": "INTERNAL_ERROR"}, "termination"),
+        ({"full_evaluation_feasible": False}, "feasible"),
+        ({"customers_served": 9}, "customers"),
+        ({"demand_served_kg": 9.0}, "demand"),
+    ),
+)
+def test_cost_cannot_override_failed_dynamic_acceptance(override, reason) -> None:
+    row = {
+        "run_status": "completed",
+        "full_evaluation_feasible": True,
+        "customers_served": 10,
+        "customers_total": 10,
+        "demand_served_kg": 10.0,
+        "demand_total_kg": 10.0,
+        "total_cost": 1.0,
+    } | override
+    acceptance = harness._assess_raw_row(row)
+    assert acceptance.accepted is False
+    assert any(reason in item for item in acceptance.failure_reasons)
+
+
+def test_main3b_halt_package_is_failed_and_has_no_done(tmp_path: Path) -> None:
+    output = tmp_path / "main3b-halt"
+    acceptance = harness._write_main3b_halt_package(
+        output_dir=output,
+        error=RuntimeError("synthetic backend halt"),
+        repo=REPO,
+        protocol=harness.Q569_4_T30_DUALSHIFT,
+        source_hash_before="same",
+        source_hash_after="same",
+        protected_before={"cost.py": "same"},
+        protected_after={"cost.py": "same"},
+    )
+    assert harness.package_exit_code(acceptance) == 2
+    assert not (output / "done.json").exists()
+    assert (output / "failure.json").is_file()
+    decision = json.loads((output / "decision.json").read_text("utf-8"))
+    assert decision["accepted"] is False

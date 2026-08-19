@@ -742,14 +742,18 @@ def certified_depot_charge_window(
         charging_actions=charging_actions,
         validate_battery=False,
     )
+    # The protected checker anchors depot charging to this same route clock.
+    # Keep route_timing for the return-side gap, but do not use its witness
+    # departure as the charging-window upper bound.
+    departure_second = float(route_departure_second(route, instance, prices))
     occupancy = float(occupancy_seconds)
     if mode == "prev_night":
         return 0.0, STATIC_PREHORIZON_SECONDS - occupancy, -1
     if mode == "same_day_predeparture":
-        return 0.0, float(timing.earliest_departure_second) - occupancy, 0
+        return 0.0, departure_second - occupancy, 0
 
     next_departure = (
-        float(timing.earliest_departure_second) + STATIC_PREHORIZON_SECONDS
+        departure_second + STATIC_PREHORIZON_SECONDS
     )
     while next_departure <= float(timing.return_second) + _TOL:
         next_departure += STATIC_PREHORIZON_SECONDS
@@ -2513,20 +2517,6 @@ def reschedule_between_trip_charging(
         else:
             actions.append(action)
     return replace(solution, charging_actions=actions)
-
-
-def drop_multitrip_identity(solution: Solution) -> Solution:
-    """Give fixed routes neutral ids before rebuilding a charging schedule."""
-
-    id_map = {
-        route.vehicle_id: f"{'EV' if route.vehicle_type.lower() == 'ev' else 'CV'}_REPLAY_{index}"
-        for index, route in enumerate(solution.routes, start=1)
-    }
-    return replace(
-        solution,
-        routes=[replace(route, vehicle_id=id_map[route.vehicle_id]) for route in solution.routes],
-        charging_actions=[replace(action, vehicle_id=id_map.get(action.vehicle_id, action.vehicle_id)) for action in solution.charging_actions],
-    )
 
 
 def _lowest_carbon_gap_start(

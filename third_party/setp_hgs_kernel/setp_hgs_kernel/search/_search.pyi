@@ -65,6 +65,20 @@ class LocalSearchStatistics:
     num_improving: int
     num_updates: int
 
+class LocalSearchCandidate:
+    @property
+    def solution(self) -> Solution: ...
+    @property
+    def proxy_delta(self) -> int: ...
+    @property
+    def scan_ordinal(self) -> int: ...
+
+class LocalSearchCandidateStatistics:
+    num_evaluated: int
+    num_promising: int
+    num_materialised: int
+    num_returned: int
+
 class LocalSearch:
     def __init__(
         self,
@@ -83,6 +97,8 @@ class LocalSearch:
     def route_operators(self) -> list[RouteOperator]: ...
     @property
     def statistics(self) -> LocalSearchStatistics: ...
+    @property
+    def candidate_statistics(self) -> LocalSearchCandidateStatistics: ...
     def __call__(
         self,
         solution: Solution,
@@ -99,6 +115,12 @@ class LocalSearch:
         solution: Solution,
         cost_evaluator: CostEvaluator,
     ) -> Solution: ...
+    def promising_candidates(
+        self,
+        solution: Solution,
+        cost_evaluator: CostEvaluator,
+        limit: int,
+    ) -> list[LocalSearchCandidate]: ...
     def search(
         self, solution: Solution, cost_evaluator: CostEvaluator
     ) -> Solution: ...

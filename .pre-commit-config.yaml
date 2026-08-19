@@ -1,0 +1,62 @@
+default_stages: [pre-commit]
+fail_fast: false
+repos:
+  - repo: local
+    hooks:
+      - id: check-ast
+        name: check Python AST
+        entry: .quality-venv/bin/check-ast
+        language: system
+        types: [python]
+        exclude: ^(third_party|Reference Algorithm|solver/reports|baselines)/
+      - id: check-yaml
+        name: check YAML
+        entry: .quality-venv/bin/check-yaml
+        language: system
+        types: [yaml]
+      - id: check-toml
+        name: check TOML
+        entry: .quality-venv/bin/check-toml
+        language: system
+        types: [toml]
+      - id: trailing-whitespace
+        name: trim trailing whitespace
+        entry: .quality-venv/bin/trailing-whitespace-fixer
+        language: system
+        types: [text]
+      - id: end-of-file-fixer
+        name: ensure final newline
+        entry: .quality-venv/bin/end-of-file-fixer
+        language: system
+        types: [text]
+      - id: ruff-behaviour-limits
+        name: Ruff complexity and exception rules
+        entry: .quality-venv/bin/ruff check
+        language: system
+        types: [python]
+        files: ^(solver/src/setp_solver/(algorithms/problem_hgs/execution_identity|mapping_identity|pi0_manifest|enterprise_accounting)|solver/scripts/(coalition_accounting_adapter|run_two_enterprise_allocation|build_fairness_line_probe))\.py$
+      - id: import-contracts
+        name: import architecture contracts
+        entry: env PYTHONPATH=solver/src:models/src:third_party/setp_hgs_kernel .quality-venv/bin/lint-imports --config .importlinter
+        language: system
+        pass_filenames: false
+      - id: vulture
+        name: Vulture against reviewed baseline
+        entry: .quality-venv/bin/vulture solver/src models/src solver/tests tools/quality/vulture_whitelist.py --exclude third_party,solver/reports,baselines,*/._* --min-confidence 60 --sort-by-size
+        language: system
+        pass_filenames: false
+      - id: semgrep-project-rules
+        # REPORT-ONLY (2026-08-18): 36 files / 77 additional legacy findings make
+        # blocking impractical. Restore --error after the legacy debt registry is
+        # empty and a full scan confirms the existing debt has been cleared.
+        name: "Semgrep project behaviour rules (report only: legacy debt)"
+        entry: .quality-venv/bin/semgrep scan --config tools/quality/semgrep_tests/project_behaviour.yml --no-error --metrics=off
+        language: system
+        types: [python]
+        exclude: ^(third_party|Reference Algorithm|solver/reports|baselines|tools/quality/semgrep_tests)/
+        verbose: true
+      - id: project-adapter-file-length
+        name: PROJECT_ADAPTER maximum 250 lines
+        entry: .quality-venv/bin/flake8 --select FLN --max-file-length 250 --file-length-ignore-blank --file-length-ignore-comments --file-length-ignore-shebang
+        language: system
+        files: ^(solver/src/setp_solver/(algorithms/problem_hgs/execution_identity|pi0_manifest|enterprise_accounting)|solver/scripts/coalition_accounting_adapter)\.py$

@@ -36,7 +36,7 @@ from setp_solver.check import check_solution  # noqa: E402
 from setp_solver.solution import Route, Solution  # noqa: E402
 
 
-HELPERS_PATH = REPO / "baselines/e2_alns/run_homberger_g1_sisr_20260718.py"
+HELPERS_PATH = REPO / "baselines/e2_alns/homberger_g1_helpers_20260718.py"
 SPEC = importlib.util.spec_from_file_location("homberger_gate_helpers", HELPERS_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"cannot import {HELPERS_PATH}")

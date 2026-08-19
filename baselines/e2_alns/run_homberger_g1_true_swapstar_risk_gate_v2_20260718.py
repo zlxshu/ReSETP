@@ -18,7 +18,7 @@ if str(SOLVER_SRC) not in sys.path:
 from baselines.e2_alns import (  # noqa: E402
     run_homberger_g1_true_swapstar_risk_gate_20260718 as gate,
 )
-from baselines.e2_alns.run_homberger_g1_sisr_20260718 import (  # noqa: E402
+from baselines.e2_alns.homberger_g1_helpers_20260718 import (  # noqa: E402
     atomic_json,
     clean_generated_appledouble,
     sha256,

@@ -4,7 +4,7 @@ v2026-06-11: Provides the algorithm-side repair hook for paper_main.tex
 lines 428-457. Given a route and carbon profile, it inserts station visits
 when needed and constructs ``ChargingAction`` values using the existing
 Solution/ChargingAction schema. Use ``repair_route_charging`` when route
-nodes may need stations; use ``solve_charging`` when only actions are needed.
+nodes may need stations; fixed-route controls use ``solve_charging_fixed_route``.
 """
 
 from __future__ import annotations
@@ -39,30 +39,6 @@ from .multitrip_schedule import (
     select_certified_depot_charge_start,
     validate_depot_charge_window_mode,
 )
-
-
-def solve_charging(
-    route: Route,
-    instance: Instance,
-    gamma_profile: list[dict[str, Any]],
-    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
-    *,
-    depot_charge_window_mode: str = "full_gap",
-    charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
-    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
-) -> list[ChargingAction]:
-    """Return charging actions for a repaired version of ``route``."""
-
-    _, actions = repair_route_charging(
-        route,
-        instance,
-        gamma_profile,
-        prices,
-        depot_charge_window_mode=depot_charge_window_mode,
-        charge_timing_policy=charge_timing_policy,
-        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
-    )
-    return actions
 
 
 def solve_charging_naive(
@@ -361,7 +337,7 @@ def repair_route_charging(
                 if battery + 1e-9 < needed_direct:
                     raise ValueError(f"No feasible charging insert between {current} and {target}")
             else:
-                station_id, action, arrive_station, depart_station, battery_after_charge = candidate
+                station_id, action, _arrive_station, depart_station, battery_after_charge = candidate
                 repaired.append(station_id)
                 actions.append(action)
                 battery = battery_after_charge

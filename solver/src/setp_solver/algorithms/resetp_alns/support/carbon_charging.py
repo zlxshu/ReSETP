@@ -16,7 +16,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from typing import Iterable
 
 from setp_solver.charge_timing import (
     ChargeTimingContexts,
@@ -107,27 +106,6 @@ class ScoredChargeOption:
     time_cost: float = 0.0
 
 
-@dataclass(frozen=True)
-class ChargeRequest:
-    vehicle_id: str
-    station_id: str
-    earliest_start_second: float
-    latest_start_second: float
-    energy_kwh: float
-    occupancy_seconds: float
-
-
-@dataclass(frozen=True)
-class ScheduledCharge:
-    request: ChargeRequest
-    start_second: float
-    carbon_kg: float
-
-    @property
-    def end_second(self) -> float:
-        return float(self.start_second) + float(self.request.occupancy_seconds)
-
-
 def integrated_charge_carbon_kg(
     start_second: float,
     occupancy_seconds: float,
@@ -173,80 +151,6 @@ def integrated_charge_carbon_kg(
         )
         total += float(slot.y_skt_kwh) * float(row["actual_gco2_per_kwh"]) / 1000.0
     return float(total)
-
-
-def charge_start_candidates(
-    earliest_start_second: float,
-    latest_start_second: float,
-    occupancy_seconds: float,
-) -> tuple[float, ...]:
-    """Enumerate all breakpoints needed for exact piecewise-constant timing.
-
-    For uniform-power charging over a piecewise-constant carbon profile, the
-    integrated objective is piecewise linear in the start time.  A minimum is
-    attained at a window endpoint, a slot boundary, or a slot boundary minus
-    the charge duration.  Evaluating exactly those points is therefore enough
-    for the timing-only subproblem.
-    """
-
-    earliest = float(earliest_start_second)
-    latest = float(latest_start_second)
-    duration = float(occupancy_seconds)
-    if earliest < 0.0:
-        raise ValueError("earliest charging start must be non-negative")
-    if latest + 1e-9 < earliest:
-        raise ValueError("latest charging start precedes earliest start")
-    if duration < 0.0:
-        raise ValueError("charging duration must be non-negative")
-
-    points = {earliest, latest}
-    first_boundary = math.floor((earliest - duration) / CARBON_SLOT_SECONDS) - 1
-    last_boundary = math.ceil((latest + duration) / CARBON_SLOT_SECONDS) + 1
-    for index in range(first_boundary, last_boundary + 1):
-        boundary = float(index) * CARBON_SLOT_SECONDS
-        for candidate in (boundary, boundary - duration):
-            if earliest - 1e-9 <= candidate <= latest + 1e-9:
-                points.add(min(latest, max(earliest, candidate)))
-    return tuple(sorted(round(point, 9) for point in points))
-
-
-def select_integrated_carbon_start(
-    earliest_start_second: float,
-    latest_start_second: float,
-    occupancy_seconds: float,
-    energy_kwh: float,
-    instance: Instance,
-    carbon_profile: list[dict[str, object]],
-    *,
-    station_id: str | None = None,
-) -> ChargeTimingChoice:
-    """Choose the feasible start with minimum full-interval emissions."""
-
-    candidates = charge_start_candidates(
-        earliest_start_second,
-        latest_start_second,
-        occupancy_seconds,
-    )
-    scored = [
-        (
-            integrated_charge_carbon_kg(
-                start,
-                occupancy_seconds,
-                energy_kwh,
-                instance,
-                carbon_profile,
-                station_id=station_id,
-            ),
-            start,
-        )
-        for start in candidates
-    ]
-    carbon_kg, start = min(scored, key=lambda item: (item[0], item[1]))
-    return ChargeTimingChoice(
-        start_second=float(start),
-        carbon_kg=float(carbon_kg),
-        candidates_evaluated=len(scored),
-    )
 
 
 def score_charge_option(
@@ -411,107 +315,3 @@ def select_charge_option(
             item.timing.start_second,
         ),
     )
-
-
-def schedule_charge_requests_exact(
-    requests: Iterable[ChargeRequest],
-    instance: Instance,
-    carbon_profile: list[dict[str, object]],
-    *,
-    station_capacity: dict[str, int],
-    max_states: int = 100_000,
-) -> tuple[ScheduledCharge, ...]:
-    """Exactly schedule a small set of fixed-station charge requests.
-
-    This branch-and-bound routine is intentionally a micro-gate oracle, not a
-    large-instance production scheduler.  It proves the station-capacity and
-    whole-interval carbon semantics before a scalable label scheduler is
-    connected to ALNS.
-    """
-
-    pending = list(requests)
-    if any(request.occupancy_seconds < 0.0 for request in pending):
-        raise ValueError("charging duration must be non-negative")
-    choices = {
-        request: charge_start_candidates(
-            request.earliest_start_second,
-            request.latest_start_second,
-            request.occupancy_seconds,
-        )
-        for request in pending
-    }
-    ordered = sorted(
-        pending,
-        key=lambda request: (
-            len(choices[request]),
-            request.latest_start_second - request.earliest_start_second,
-            request.station_id,
-            request.vehicle_id,
-        ),
-    )
-
-    best_cost = math.inf
-    best_schedule: tuple[ScheduledCharge, ...] | None = None
-    partial: list[ScheduledCharge] = []
-    states = 0
-
-    def capacity_ok(candidate: ScheduledCharge) -> bool:
-        capacity = int(station_capacity.get(candidate.request.station_id, 1))
-        if capacity <= 0:
-            return False
-        relevant = [
-            scheduled
-            for scheduled in partial
-            if scheduled.request.station_id == candidate.request.station_id
-        ]
-        boundaries = {candidate.start_second, candidate.end_second}
-        for scheduled in relevant:
-            boundaries.add(scheduled.start_second)
-            boundaries.add(scheduled.end_second)
-        ordered_bounds = sorted(boundaries)
-        for left, right in zip(ordered_bounds, ordered_bounds[1:]):
-            if right <= left:
-                continue
-            probe = (left + right) / 2.0
-            active = int(candidate.start_second <= probe < candidate.end_second)
-            active += sum(int(item.start_second <= probe < item.end_second) for item in relevant)
-            if active > capacity:
-                return False
-        return True
-
-    def visit(index: int, carbon_so_far: float) -> None:
-        nonlocal best_cost, best_schedule, states
-        states += 1
-        if states > int(max_states):
-            raise RuntimeError("exact charging micro-scheduler state limit exceeded")
-        if carbon_so_far >= best_cost - 1e-12:
-            return
-        if index >= len(ordered):
-            best_cost = float(carbon_so_far)
-            best_schedule = tuple(sorted(partial, key=lambda item: (item.start_second, item.request.vehicle_id)))
-            return
-
-        request = ordered[index]
-        candidates = []
-        for start in choices[request]:
-            carbon_kg = integrated_charge_carbon_kg(
-                start,
-                request.occupancy_seconds,
-                request.energy_kwh,
-                instance,
-                carbon_profile,
-                station_id=request.station_id,
-            )
-            candidates.append((carbon_kg, start))
-        for carbon_kg, start in sorted(candidates, key=lambda item: (item[0], item[1])):
-            candidate = ScheduledCharge(request=request, start_second=float(start), carbon_kg=float(carbon_kg))
-            if not capacity_ok(candidate):
-                continue
-            partial.append(candidate)
-            visit(index + 1, carbon_so_far + float(carbon_kg))
-            partial.pop()
-
-    visit(0, 0.0)
-    if best_schedule is None:
-        raise ValueError("no station-capacity-feasible charging schedule")
-    return best_schedule

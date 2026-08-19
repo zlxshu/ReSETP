@@ -198,7 +198,6 @@ def main() -> int:
             "max_runtime_seconds": args.max_runtime_seconds,
             "default_components": {
                 "copied_hgs": True,
-                "dcrex": False,
                 "public_customer_depot_reassignment": False,
                 "initial_population_preeducation": False,
             },
@@ -270,7 +269,6 @@ def main() -> int:
                 "completed_delivery",
                 "total_delivery",
                 "round_func",
-                "dcrex_enabled",
                 "customer_depot_reassignment_enabled",
                 "initial_population_preeducation_enabled",
             )
@@ -290,7 +288,6 @@ def main() -> int:
                     "completed_delivery": served_delivery,
                     "total_delivery": total_delivery,
                     "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
-                    "dcrex_enabled": False,
                     "customer_depot_reassignment_enabled": False,
                     "initial_population_preeducation_enabled": False,
                 }
@@ -331,7 +328,6 @@ def main() -> int:
                 "total_delivery": total_delivery,
                 "default_components": {
                     "copied_hgs": True,
-                    "dcrex": False,
                     "public_customer_depot_reassignment": False,
                     "initial_population_preeducation": False,
                 },
@@ -348,7 +344,7 @@ def main() -> int:
             f"得到成本 {cost}，完整服务 {len(set(visits))}/{len(clients)} 个客户、"
             f"需求 {served_delivery}/{total_delivery}，运行 {result.runtime:.3f} 秒。\n\n"
             "本包用于检查默认公开接口和完整服务；"
-            "公开端直接进入独立复制的 HGS 主体，DCREX、客户重分车场与"
+            "公开端直接进入独立复制的 HGS 主体，客户重分车场与"
             "初始种群预教育默认关闭。"
             "迭代数尚未按各自收敛标定，因此不是正式性能比较。\n\n"
             "## 交付前九条自检\n\n"

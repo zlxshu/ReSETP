@@ -16,6 +16,10 @@ if str(SCRIPTS) not in sys.path:
 from run_problem_hgs_private_technical import _build_context, _policy  # noqa: E402
 from setp_solver.algorithms.problem_hgs.charging import (  # noqa: E402
     ChargingFeasibilityPrescreen,
+    repair_changed_duties,
+)
+from setp_solver.algorithms.problem_hgs.education import (  # noqa: E402
+    _screen_route_clock,
 )
 from setp_solver.algorithms.problem_hgs.evaluation import (  # noqa: E402
     DutyFullEvaluator,
@@ -118,6 +122,91 @@ def test_prescreen_does_not_touch_other_channels(combat_input):
         channel=move.channel,
     ) is None
     assert prescreen.statistics()["eligible_candidates"] == 0
+
+
+def test_fairness_channel_reuses_route_clock_and_keeps_its_own_accounting(
+    combat_input,
+):
+    initial, context, policy = combat_input
+    move = RelocateMove(
+        action_id="fairness-route-clock",
+        channel="fairness_cross_depot",
+        source_duty_id="CV_D_foshan_2",
+        source_trip_index=1,
+        customer_id="C032",
+        target_duty_id="CV_D_guangzhou_1",
+        target_trip_index=1,
+        target_position=0,
+    )
+    prescreen = ChargingFeasibilityPrescreen(context, policy)
+
+    failure = _screen_route_clock(
+        prescreen,
+        initial,
+        move.apply(initial),
+        changed_duty_ids=move.changed_duty_ids,
+        channel=move.channel,
+        preserve_explicit_charging_duty_ids=frozenset(),
+    )
+
+    assert failure is not None
+    by_channel = prescreen.statistics()["by_channel"]
+    assert by_channel["fairness_cross_depot"]["rejected_candidates"] == 1
+    assert "depot_collaboration" not in by_channel
+
+
+@pytest.mark.parametrize(
+    ("target_trip", "target_position"),
+    ((1, 0), (2, 1)),
+)
+def test_frvcpy_route_clock_bypass_removal_is_exact_on_spot_checks(
+    combat_input,
+    target_trip,
+    target_position,
+):
+    initial, context, policy = combat_input
+    move = RelocateMove(
+        action_id=f"frvcpy-equivalence-{target_trip}-{target_position}",
+        channel="depot_collaboration",
+        source_duty_id="CV_D_foshan_2",
+        source_trip_index=1,
+        customer_id="C032",
+        target_duty_id="CV_D_guangzhou_1",
+        target_trip_index=target_trip,
+        target_position=target_position,
+    )
+    candidate = move.apply(initial)
+    screen = ChargingFeasibilityPrescreen(
+        context,
+        replace(
+            policy,
+            frvcpy_enabled=False,
+            charging_gap_enabled=False,
+        ),
+    )
+    expected = screen.screen(
+        initial,
+        candidate,
+        changed_duty_ids=move.changed_duty_ids,
+        channel=move.channel,
+    )
+    assert expected is not None
+
+    with pytest.raises(type(expected)) as caught:
+        repair_changed_duties(
+            initial,
+            candidate,
+            changed_duty_ids=set(move.changed_duty_ids),
+            context=context,
+            policy=replace(
+                policy,
+                frvcpy_enabled=True,
+                charging_gap_enabled=True,
+            ),
+            cache=None,
+        )
+
+    assert str(caught.value) == str(expected)
 
 
 def test_trajectory_recorder_can_drop_all_rows():

@@ -33,6 +33,23 @@ class Node:
     # physical facility and its charger capacity.
     physical_station_id: str | None = None
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "node_type", self.node_type.lower())
+
+
+class IndexedTimeProfile(list[dict[str, Any]]):
+    """Time-profile rows with the legacy city normalization indexed once."""
+
+    def __init__(self, rows: Sequence[dict[str, Any]] = ()) -> None:
+        super().__init__(rows)
+        city_rows: dict[str, list[dict[str, Any]]] = {}
+        for row in self:
+            city_value = row.get("city")
+            if city_value not in {None, ""}:
+                city = str(city_value).strip().lower()
+                city_rows.setdefault(city, []).append(row)
+        self.city_rows = MappingProxyType(city_rows)
+
 
 @dataclass(frozen=True)
 class RoadProfileMatrices:

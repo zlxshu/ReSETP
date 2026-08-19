@@ -9,6 +9,7 @@
 #include "Solution.h"
 
 #include <functional>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 
@@ -45,6 +46,35 @@ public:
         size_t numUpdates = 0;
     };
 
+    /** One proxy-improving move, materialised from a shared base solution. */
+    struct Candidate
+    {
+    private:
+        std::shared_ptr<Solution> solution_;
+
+    public:
+        Cost proxyDelta;
+        size_t scanOrdinal;
+
+        Solution const &solution() const { return *solution_; }
+
+        Candidate(Solution solution, Cost proxyDelta, size_t scanOrdinal)
+            : solution_(std::make_shared<Solution>(std::move(solution))),
+              proxyDelta(proxyDelta),
+              scanOrdinal(scanOrdinal)
+        {
+        }
+    };
+
+    /** Work counters for the most recent promising-candidate scan. */
+    struct CandidateStatistics
+    {
+        size_t numEvaluated = 0;
+        size_t numPromising = 0;
+        size_t numMaterialised = 0;
+        size_t numReturned = 0;
+    };
+
 private:
     using Neighbours = std::vector<std::vector<size_t>>;
 
@@ -72,6 +102,14 @@ private:
 
     size_t numUpdates_ = 0;         // modification counter
     bool searchCompleted_ = false;  // No further improving move found?
+    CandidateStatistics candidateStatistics_;
+
+    // Retains one materialised candidate when it belongs in the bounded list.
+    void retainCandidate(std::vector<Candidate> &candidates,
+                         Solution candidate,
+                         Cost proxyDelta,
+                         size_t scanOrdinal,
+                         size_t limit);
 
     // Load an initial solution that we will attempt to improve.
     void loadSolution(Solution const &solution);
@@ -162,6 +200,21 @@ public:
      * Returns search statistics for the currently loaded solution.
      */
     Statistics statistics() const;
+
+    /** Returns work counters for the most recent candidate scan. */
+    CandidateStatistics candidateStatistics() const;
+
+    /**
+     * Returns at most ``limit`` one-step proxy-improving candidates.
+     *
+     * Every returned solution is materialised from ``solution`` itself: no
+     * candidate is allowed to become the base of another candidate.  The
+     * result is ordered by proxy delta and then stable scan order.
+     */
+    std::vector<Candidate>
+    promisingCandidates(Solution const &solution,
+                         CostEvaluator const &costEvaluator,
+                         size_t limit);
 
     /**
      * Iteratively calls ``search()`` and ``intensify()`` until no further
