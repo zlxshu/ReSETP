@@ -176,7 +176,7 @@ ENTERPRISE_NATIVE_PROBE_EXPECTATIONS = {
 }
 
 _FULL_EVALUATION_ACCEPTANCE_CHANNELS = frozenset(
-    {"hgs_population", "route_layer_crossover"}
+    {"duty_crossover", "hgs_population", "route_layer_crossover"}
 )
 
 
@@ -3785,12 +3785,14 @@ def main() -> int:
     convergence_fields = (
         "cycle",
         "wall_seconds",
+        "actual_full_model_evaluations",
         "has_feasible",
         "best_feasible_raw_cost",
     )
     diagnostics_fields = (
         "cycle",
         "wall_seconds",
+        "actual_full_model_evaluations",
         "current_solution_raw_cost",
         "current_solution_penalized_cost",
         "physical_feasible",
@@ -3831,6 +3833,7 @@ def main() -> int:
                 {
                     "cycle": int(state.iterations),
                     "wall_seconds": f"{float(state.elapsed_seconds):.9f}",
+                    "actual_full_model_evaluations": evaluator.full_calls,
                     "has_feasible": True,
                     "best_feasible_raw_cost": f"{last_logged_best:.12f}",
                 }
@@ -3843,6 +3846,7 @@ def main() -> int:
                 {
                     "cycle": int(state.iterations),
                     "wall_seconds": f"{float(state.elapsed_seconds):.9f}",
+                    "actual_full_model_evaluations": evaluator.full_calls,
                     "current_solution_raw_cost": (
                         state.current_solution_raw_cost
                     ),
@@ -3980,6 +3984,7 @@ def main() -> int:
             {
                 "cycle": int(result.iterations),
                 "wall_seconds": f"{terminal_wall_seconds:.9f}",
+                "actual_full_model_evaluations": evaluator.full_calls,
                 "has_feasible": bool(result.best_evaluation.feasible),
                 "best_feasible_raw_cost": (
                     f"{float(result.best_evaluation.total_cost):.12f}"
@@ -4012,6 +4017,7 @@ def main() -> int:
             {
                 "cycle": int(result.iterations),
                 "wall_seconds": f"{terminal_wall_seconds:.9f}",
+                "actual_full_model_evaluations": evaluator.full_calls,
                 "current_solution_raw_cost": float(
                     result.best_evaluation.total_cost
                 ),

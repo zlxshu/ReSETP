@@ -1091,6 +1091,16 @@ def build_integrated_private_hgs(
             viable,
             key=lambda item: (item[0], item[1]),
         )
+        before_penalized = float(
+            complete_penalties.cost(first.evaluation.full)
+        )
+        after_penalized = float(
+            complete_penalties.cost(evaluated.evaluation.full)
+        )
+        accepted = bool(
+            evaluated.evaluation.full.feasible
+            and after_penalized < before_penalized - 1.0e-9
+        )
         accounting.mechanism.record_crossover(
             "TRIP_ASSIGNMENT",
             sum(
@@ -1107,6 +1117,15 @@ def build_integrated_private_hgs(
             evaluation=evaluated.evaluation.full,
         )
         accounting.mechanism.record_outcome(constructed)
+        if accepted:
+            accounting.mechanism.record_acceptance("duty_crossover")
+            accounting.mechanism.record_accepted_effect(
+                "duty_crossover",
+                first.solution,
+                first.evaluation.full,
+                evaluated.solution,
+                evaluated.evaluation.full,
+            )
         if trajectory_sink is not None:
             emit(
                 _trajectory_row(
@@ -1116,7 +1135,7 @@ def build_integrated_private_hgs(
                     before=first.solution,
                     before_evaluation=first.evaluation.full,
                     outcome=constructed,
-                    accepted=False,
+                    accepted=accepted,
                 )
             )
         return evaluated

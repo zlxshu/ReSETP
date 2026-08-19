@@ -809,14 +809,8 @@ def _committed_sha256(
         return hashlib.sha256(b"static-no-commitment").hexdigest()
     committed_ids = {
         *state.cut.completed_route_ids,
-        *state.cut.in_progress_route_ids,
         *(route.vehicle_id for route in state.prior_committed_solution.routes),
     }
-    source = (
-        evaluation.prepared_solution
-        if evaluation is not None
-        else state.prior_committed_solution
-    )
     locked_action_keys = {
         (
             action.vehicle_id,
@@ -829,28 +823,33 @@ def _committed_sha256(
             *state.cut.locked_charging_actions,
         )
     }
-    routes = []
-    actions = []
+    routes_by_id = {}
     if evaluation is None:
-        source_routes = (
-            *state.prior_committed_solution.routes,
-            *(
-                route
-                for route in state.source_solution.routes
-                if route.vehicle_id in committed_ids
-            ),
+        routes_by_id.update(
+            (route.vehicle_id, route)
+            for route in state.prior_committed_solution.routes
+        )
+        history_source = (
+            state.source_full_execution_solution or state.source_solution
+        )
+        routes_by_id.update(
+            (route.vehicle_id, route)
+            for route in history_source.routes
+            if route.vehicle_id in state.cut.completed_route_ids
         )
         source_actions = (
             *state.prior_committed_solution.charging_actions,
             *state.cut.locked_charging_actions,
         )
     else:
-        source_routes = tuple(
-            route for route in source.routes if route.vehicle_id in committed_ids
+        routes_by_id.update(
+            (route.vehicle_id, route)
+            for route in evaluation.prepared_solution.routes
+            if route.vehicle_id in committed_ids
         )
         source_actions = tuple(
             action
-            for action in source.charging_actions
+            for action in evaluation.prepared_solution.charging_actions
             if action.vehicle_id in committed_ids
             or (
                 action.vehicle_id,
@@ -860,12 +859,13 @@ def _committed_sha256(
             )
             in locked_action_keys
         )
-    routes.extend(asdict(route) for route in source_routes)
-    actions.extend(asdict(action) for action in source_actions)
     payload = {
-        "routes": sorted(routes, key=lambda row: row["vehicle_id"]),
+        "routes": sorted(
+            (asdict(route) for route in routes_by_id.values()),
+            key=lambda row: row["vehicle_id"],
+        ),
         "charging_actions": sorted(
-            actions,
+            (asdict(action) for action in source_actions),
             key=lambda row: (
                 row["vehicle_id"],
                 row["charge_day_offset"],
@@ -873,6 +873,24 @@ def _committed_sha256(
                 row["station_id"],
             ),
         ),
+        "frozen_arc_prefix_by_route_id": {
+            str(route_id): [list(arc) for arc in arcs]
+            for route_id, arcs in sorted(
+                state.cut.frozen_arc_prefix_by_route_id.items()
+            )
+        },
+        "trigger_vehicle_state": {
+            str(asset_id): {
+                "position": asset.trigger_position_node_id,
+                "time": asset.trigger_time,
+                "remaining_load_kg": asset.trigger_remaining_load_kg,
+                "remaining_battery_kwh": asset.trigger_remaining_battery_kwh,
+                "locked_arc": list(asset.locked_arc or ()),
+                "executed_prefix": list(asset.executed_prefix),
+            }
+            for asset_id, asset in sorted(state.cut.asset_states.items())
+            if asset.continuation_route_id is not None
+        },
     }
     return hashlib.sha256(
         json.dumps(

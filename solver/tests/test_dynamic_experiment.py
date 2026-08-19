@@ -208,3 +208,104 @@ def test_main3b_halt_package_is_failed_and_has_no_done(tmp_path: Path) -> None:
     assert (output / "failure.json").is_file()
     decision = json.loads((output / "decision.json").read_text("utf-8"))
     assert decision["accepted"] is False
+
+
+def test_formal_budget_rows_use_actual_hgs_counts() -> None:
+    rows = []
+    for arm, actual_calls in (
+        (harness.ARM_DYNAMIC, 6),
+        (harness.ARM_MECHANICAL, 0),
+        (harness.ARM_STATIC, 1),
+    ):
+        rows.append(
+            {
+                "instance_id": "case",
+                "seed": 11,
+                "arm": arm,
+                "role": "test",
+                "customers_served": 60,
+                "customers_total": 60,
+                "demand_served_kg": 1000.0,
+                "demand_total_kg": 1000.0,
+                "unserved_customer_ids": "",
+                "enabled_vehicles": 8,
+                "total_distance_km": 100.0,
+                "total_cost": 5000.0,
+                "fuel_direct_emissions_kg": 10.0,
+                "charging_indirect_emissions_kg": 2.0,
+                "total_emissions_kg": 12.0,
+                "actual_wall_clock_seconds": 1.25,
+                "mechanical_insertion_count": (
+                    10 if arm == harness.ARM_MECHANICAL else ""
+                ),
+                **harness._arm_budget_fields(
+                    arm=arm,
+                    decision_count=6,
+                    decision_budget_seconds=64.5,
+                    arm_actual_seconds=1.25,
+                    shared_initial_plan_seconds=2.0,
+                    actual_hgs_call_count=actual_calls,
+                    mechanical_insertion_actual_seconds=(
+                        0.75 if arm == harness.ARM_MECHANICAL else ""
+                    ),
+                ),
+            }
+        )
+    assert harness._formal_budget_errors({"raw_rows": rows}) == []
+    assert rows[0]["hgs_budget_seconds_total"] == 387.0
+    assert rows[1]["hgs_budget_seconds_per_call"] == ""
+    assert rows[1]["mechanical_insertion_actual_wall_clock_seconds"] == 0.75
+    assert rows[1]["total_actual_wall_clock_seconds_including_shared_initial"] == 2.75
+    table10, table10_errors = harness._table10_rows(
+        {"raw_rows": rows}, []
+    )
+    assert table10_errors == []
+    assert len(table10) == 3
+    assert table10[0]["demand_served_kg"] == 1000.0
+    rows[0]["hgs_call_count"] = 5
+    assert "budget/call mismatch" in harness._formal_budget_errors(
+        {"raw_rows": rows}
+    )[0]
+
+
+def test_route_evidence_is_fail_closed_and_draws_figure5(tmp_path: Path) -> None:
+    snapshot = {
+        "coordinates": {"D": [0.0, 0.0], "A": [1.0, 1.0], "V": [0.5, 0.5]},
+        "routes": [
+            {
+                "physical_vehicle_id": "EV1",
+                "frozen_arcs": [["D", "V"]],
+                "unexecuted_arcs": [["V", "A"], ["A", "D"]],
+                "virtual_origin_node_ids": ["V"],
+            }
+        ],
+    }
+    row = {
+        "instance_id": "case",
+        "seed": 11,
+        "arm": harness.ARM_DYNAMIC,
+        "batch_index": 1,
+        "trigger_second": 100.0,
+        "trigger_cause": "demand_threshold",
+        "customer_ids": "A",
+        "route_snapshot_before_json": json.dumps(snapshot),
+        "route_snapshot_after_json": json.dumps(snapshot | {"version": 2}),
+        "old_unexecuted_arc_count_before": 1,
+        "changed_old_old_unexecuted_arc_count": 1,
+        "changed_old_old_unexecuted_arc_ids_json": '[["A", "B"]]',
+        "old_customer_count": 2,
+        "old_customers_changed_vehicle_count": 1,
+        "old_customers_changed_vehicle_ids_json": '["A"]',
+        "vehicles_with_old_customer_changes_count": 2,
+        "vehicles_with_old_customer_changes_ids_json": '["EV1", "CV1"]',
+        "dynamic_vehicle_states_json": '[{"physical_vehicle_id": "EV1"}]',
+        "frozen_prefixes_json": '{"EV1::t0": [["D", "V"]]}',
+    }
+    table9, errors = harness._validated_route_evidence([row])
+    assert errors == []
+    assert table9[0]["future_route_changed"] is True
+    figure = tmp_path / "figure5.svg"
+    harness._write_figure5_svg(figure, table9[0])
+    assert "virtual origin" in figure.read_text("utf-8")
+    row["dynamic_vehicle_states_json"] = "[]"
+    assert "vehicle states are empty" in harness._validated_route_evidence([row])[1][0]

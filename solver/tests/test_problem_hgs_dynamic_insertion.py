@@ -15,10 +15,16 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from run_problem_hgs_private_technical import _build_context, _policy  # noqa: E402
-from setp_solver.algorithms.problem_hgs import dynamic_insertion  # noqa: E402
+from setp_solver.algorithms.problem_hgs import (  # noqa: E402
+    dynamic_insertion,
+    evaluation as problem_hgs_evaluation,
+)
 from setp_solver.algorithms.problem_hgs.dynamic import (  # noqa: E402
     DutyDynamicState,
+    DynamicPrefixAccountingCorrection,
+    _merge_execution_history,
     future_individual_from_cut,
+    prepare_dynamic_candidate,
 )
 from setp_solver.algorithms.problem_hgs.dynamic_insertion import (  # noqa: E402
     DynamicInsertionOperator,
@@ -26,15 +32,20 @@ from setp_solver.algorithms.problem_hgs.dynamic_insertion import (  # noqa: E402
 )
 from setp_solver.algorithms.problem_hgs.evaluation import (  # noqa: E402
     DutyFullEvaluator,
+    _aggregate_dynamic_prefix_accounting,
+    _validate_dynamic_state_customers,
 )
 from setp_solver.china81 import ENDOGENOUS_FLEET_PARAMETERS  # noqa: E402
+from setp_solver.instance_loader import Node  # noqa: E402
 from setp_solver.search.dynamic_multitrip_schedule import (  # noqa: E402
+    CertificateCut,
     DynamicAssetState,
     cut_certificate_at_trigger,
 )
 from setp_solver.search.multitrip_schedule import (  # noqa: E402
     prepare_multitrip_solution,
 )
+from setp_solver.solution import Route, Solution  # noqa: E402
 
 
 INSTANCE_ID = "cn-prd-50c-01-V3-TWO-SHIFT-GZ-FS"
@@ -108,10 +119,7 @@ def _build_dynamic_fixture(trigger: float):
         for node in bundle.instance.nodes
         if node.node_type.lower() == "c"
     }
-    committed_route_ids = {
-        *cut.completed_route_ids,
-        *cut.in_progress_route_ids,
-    }
+    committed_route_ids = set(cut.completed_route_ids)
     committed_customers = {
         node_id
         for route in source_solution.routes
@@ -119,6 +127,12 @@ def _build_dynamic_fixture(trigger: float):
         for node_id in route.node_sequence[1:-1]
         if node_id in customer_ids
     }
+    committed_customers.update(
+        node_id
+        for asset in cut.asset_states.values()
+        for node_id in tuple(getattr(asset, "executed_prefix", ()))
+        if node_id in customer_ids
+    )
     state = DutyDynamicState(
         source_solution=source_solution,
         cut=cut,
@@ -216,11 +230,33 @@ def test_revealed_order_is_inserted_without_changing_commitment_and_passes_ruler
     )
 
 
-def test_in_progress_trips_are_frozen_as_whole_routes(
+def test_in_progress_trips_freeze_only_executed_prefix_and_inherit_live_state(
     in_progress_dynamic_fixture,
 ) -> None:
-    _bundle, future, context, revealed, _committed = in_progress_dynamic_fixture
+    bundle, future, context, revealed, committed = in_progress_dynamic_fixture
     assert context.dynamic_state.cut.in_progress_route_ids
+    continuation_assets = [
+        asset
+        for asset in context.dynamic_state.asset_states.values()
+        if getattr(asset, "continuation_route_id", None) is not None
+        and tuple(getattr(asset, "editable_suffix", ()))
+    ]
+    assert continuation_assets
+    future_customers = {
+        customer_id
+        for duty in future.duties
+        for trip in duty.trips
+        for customer_id in trip.customer_ids
+    }
+    original_suffix_customers = {
+        node_id
+        for asset in continuation_assets
+        for node_id in tuple(getattr(asset, "editable_suffix", ()))
+        if node_id in context.dynamic_state.future_customer_ids
+    }
+    assert original_suffix_customers
+    assert original_suffix_customers.issubset(future_customers)
+    assert original_suffix_customers.isdisjoint(committed)
     evaluator = DutyFullEvaluator(context)
 
     result = DynamicInsertionOperator(enabled=True, random_seed=11).apply(
@@ -235,6 +271,37 @@ def test_in_progress_trips_are_frozen_as_whole_routes(
         result.accounting.committed_sha256_before
         == result.accounting.committed_sha256_after
     )
+    prepared = prepare_dynamic_candidate(
+        result.individual,
+        context.dynamic_state,
+        bundle,
+    )
+    future_by_id = {
+        route.vehicle_id: route for route in prepared.future_solution.routes
+    }
+    full_by_id = {
+        route.vehicle_id: route
+        for route in prepared.full_execution_solution.routes
+    }
+    for asset in continuation_assets:
+        route_id = str(asset.continuation_route_id)
+        origin = (
+            getattr(asset, "virtual_origin_node_id", None)
+            or getattr(asset, "position_node_id", None)
+        )
+        assert origin is not None
+        assert future_by_id[route_id].node_sequence[0] == origin
+        inherited = prepared.future_check_context.vehicle_states[route_id]
+        assert inherited.position_node_id == origin
+        assert inherited.current_time == pytest.approx(asset.available_second)
+        assert inherited.remaining_load_kg == pytest.approx(
+            asset.remaining_load_kg
+        )
+        assert inherited.remaining_battery_kwh == pytest.approx(
+            asset.remaining_battery_kwh
+        )
+        prefix = tuple(asset.executed_prefix)
+        assert tuple(full_by_id[route_id].node_sequence[: len(prefix)]) == prefix
 
 
 def test_standby_scenario_interface_rejects_non_public_artifacts() -> None:
@@ -255,6 +322,202 @@ def test_standby_scenario_interface_rejects_non_public_artifacts() -> None:
             ),
             decision_horizon_second=30_600.0,
         )
+
+
+def test_second_cut_keeps_history_before_the_previous_virtual_origin() -> None:
+    route_id = "CV_D0_1#T1"
+    current = Route(route_id, "cv", "D0", ["V1", "C2", "C3", "D0"])
+    full = Route(
+        route_id,
+        "cv",
+        "D0",
+        ["D0", "C1", "V1", "C2", "C3", "D0"],
+    )
+    asset = DynamicAssetState(
+        "CV_D0_1",
+        "cv",
+        "D0",
+        20.0,
+        0.0,
+        1,
+        position_node_id="V2",
+        remaining_load_kg=3.0,
+        continuation_route_id=route_id,
+        continuation_trip_index=1,
+        executed_prefix=("V1", "C2"),
+        editable_suffix=("C3",),
+        release_node_id="C3",
+        virtual_origin_node_id="V2",
+    )
+    state = DutyDynamicState(
+        source_solution=Solution(routes=[current]),
+        source_full_execution_solution=Solution(routes=[full]),
+        cut=CertificateCut(
+            trigger_second=20.0,
+            source_certificate_sha256="0" * 64,
+            completed_route_ids=(),
+            in_progress_route_ids=(route_id,),
+            editable_route_ids=(),
+            locked_charging_actions=(),
+            asset_states=MappingProxyType({"CV_D0_1": asset}),
+        ),
+        asset_states=MappingProxyType({"CV_D0_1": asset}),
+        future_customer_ids=frozenset({"C3"}),
+        customer_appearance_second={"C1": 0.0, "C2": 0.0, "C3": 0.0},
+        charging_strategy="aware",
+        charging_intensity_field="forecast_gco2_per_kwh",
+    )
+
+    merged = _merge_execution_history(
+        state,
+        Solution(
+            routes=[Route(route_id, "cv", "D0", ["V2", "C3", "D0"])]
+        ),
+    )
+
+    assert merged.routes[0].node_sequence == [
+        "D0",
+        "C1",
+        "V1",
+        "C2",
+        "V2",
+        "C3",
+        "D0",
+    ]
+    _validate_dynamic_state_customers(
+        state,
+        SimpleNamespace(
+            instance=SimpleNamespace(
+                nodes=[
+                    Node("D0", "d", 0.0, 0.0),
+                    Node("C1", "c", 1.0, 0.0),
+                    Node("C2", "c", 2.0, 0.0),
+                    Node("C3", "c", 3.0, 0.0),
+                ]
+            )
+        ),
+    )
+    return_asset = replace(
+        asset,
+        position_node_id="D0",
+        continuation_route_id=None,
+        continuation_trip_index=None,
+        executed_prefix=("V1", "C2", "C3"),
+        editable_suffix=(),
+        release_node_id="D0",
+        virtual_origin_node_id=None,
+    )
+    return_assets = MappingProxyType({"CV_D0_1": return_asset})
+    return_state = replace(
+        state,
+        cut=replace(state.cut, asset_states=return_assets),
+        asset_states=return_assets,
+        future_customer_ids=frozenset(),
+    )
+    _validate_dynamic_state_customers(
+        return_state,
+        SimpleNamespace(
+            instance=SimpleNamespace(
+                nodes=[
+                    Node("D0", "d", 0.0, 0.0),
+                    Node("C1", "c", 1.0, 0.0),
+                    Node("C2", "c", 2.0, 0.0),
+                    Node("C3", "c", 3.0, 0.0),
+                ]
+            )
+        ),
+    )
+
+
+def test_prefix_accounting_totals_keep_completed_route_corrections() -> None:
+    corrections = {
+        "CV_D0_1#T1": DynamicPrefixAccountingCorrection(
+            home_depot_id="D0",
+            fuel_liters=2.0,
+            fuel_cost=15.0,
+            cv_emissions_kg=5.36,
+        ),
+        "EV_D1_1#T1": DynamicPrefixAccountingCorrection(
+            home_depot_id="D1",
+            ev_drive_kwh=4.0,
+        ),
+    }
+
+    totals = _aggregate_dynamic_prefix_accounting(corrections)
+
+    assert totals.fuel_liters == pytest.approx(2.0)
+    assert totals.fuel_cost_by_depot == (("D0", 15.0), ("D1", 0.0))
+    assert totals.cv_emissions_by_depot == (("D0", 5.36), ("D1", 0.0))
+    assert totals.ev_drive_kwh == pytest.approx(4.0)
+
+
+def test_active_prefix_accounting_overwrites_prior_cumulative_value(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        problem_hgs_evaluation,
+        "_arc_loads",
+        lambda *_args: [1.0, 0.0],
+    )
+    monkeypatch.setattr(
+        problem_hgs_evaluation,
+        "_prefix_energy_at_terminal_load",
+        lambda _route, _prefix, _virtual, load, _bundle: SimpleNamespace(
+            fuel_liters=float(load),
+            ev_drive_kwh=0.0,
+        ),
+    )
+    monkeypatch.setattr(
+        problem_hgs_evaluation,
+        "diesel_price_for_route",
+        lambda *_args: 1.0,
+    )
+    route_id = "CV_D0_1#T1"
+    prior = DynamicPrefixAccountingCorrection(
+        home_depot_id="D0",
+        fuel_liters=10.0,
+        fuel_cost=10.0,
+        cv_emissions_kg=20.0,
+    )
+    completed = DynamicPrefixAccountingCorrection(
+        home_depot_id="D0",
+        fuel_liters=5.0,
+        fuel_cost=5.0,
+        cv_emissions_kg=10.0,
+    )
+    state = SimpleNamespace(
+        prior_prefix_accounting_by_route_id={
+            route_id: prior,
+            "CV_D0_2#T1": completed,
+        },
+        asset_states={
+            "CV_D0_1": SimpleNamespace(
+                continuation_route_id=route_id,
+                virtual_origin_node_id="V2",
+                remaining_load_kg=3.0,
+            )
+        },
+    )
+    bundle = SimpleNamespace(
+        instance=SimpleNamespace(nodes=[]),
+        prices=SimpleNamespace(diesel_ef=2.0),
+    )
+    solution = Solution(
+        routes=[
+            Route(route_id, "cv", "D0", ["D0", "V2", "D0"]),
+            Route("CV_D0_2#T1", "cv", "D0", ["D0", "D0"]),
+        ]
+    )
+
+    corrections = problem_hgs_evaluation._dynamic_prefix_accounting_by_route_id(
+        solution,
+        state,
+        bundle,
+    )
+
+    assert corrections[route_id].fuel_liters == pytest.approx(2.0)
+    assert corrections[route_id].cv_emissions_kg == pytest.approx(4.0)
+    assert corrections["CV_D0_2#T1"] == completed
 
 
 def test_public_standby_scenario_is_scored_by_complete_evaluator(

@@ -17,6 +17,7 @@ from setp_solver.search.dynamic_multitrip_schedule import (
     DynamicAssetState,
     cut_certificate_at_trigger,
     cut_dynamic_certificate_at_trigger,
+    instance_with_inherited_virtual_origins,
     prepare_dynamic_multitrip_solution,
     reschedule_dynamic_charging,
 )
@@ -24,6 +25,7 @@ from setp_solver.search.metaheuristic_baselines import solution_from_dict
 from setp_solver.search.multitrip_schedule import (
     MultiTripCertificate,
     ScheduledTrip,
+    prepare_multitrip_solution,
     route_timing,
 )
 from setp_solver.solution import ChargingAction, Route, Solution, physical_vehicle_id
@@ -526,6 +528,192 @@ def test_added_order_waits_for_sole_in_progress_asset_to_return_to_depot() -> No
     assert certificate.trips[0].departure_second >= certified_return
 
 
+def test_in_progress_cut_keeps_entered_arc_and_releases_editable_suffix() -> None:
+    prices = replace(
+        UK_2025_PRICES,
+        B_battery_kwh=100.0,
+        initial_ev_battery_kwh=0.0,
+    )
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, due_time=20_000.0),
+            Node("C1", "c", 1.0, 0.0, demand=3.0, due_time=20_000.0, service_time=60.0),
+            Node("C2", "c", 2.0, 0.0, demand=7.0, due_time=20_000.0),
+        ],
+        distance_matrix=[
+            [0.0, 1_000.0, 2_000.0],
+            [1_000.0, 0.0, 1_000.0],
+            [2_000.0, 1_000.0, 0.0],
+        ],
+        ev_kwh_per_meter=0.001,
+        num_cv=0,
+        num_ev=1,
+    )
+    source, certificate = prepare_multitrip_solution(
+        Solution(routes=[Route("source", "ev", "D0", ["D0", "C1", "C2", "D0"])]),
+        instance,
+        prices,
+    )
+    route = source.routes[0]
+    trip = certificate.trips[0]
+    first_travel = 1_000.0 / UK_2025_PRICES.v_speed_ms
+    second_travel = 1_000.0 / UK_2025_PRICES.v_speed_ms
+    trigger = trip.departure_second + first_travel + 60.0 + second_travel / 2.0
+
+    cut = cut_certificate_at_trigger(
+        source,
+        certificate,
+        instance,
+        prices,
+        trigger_second=trigger,
+    )
+
+    state = cut.asset_states["EV_D0_1"]
+    assert state.continuation_route_id == route.vehicle_id
+    assert state.continuation_trip_index == 1
+    assert state.executed_prefix == ("D0", "C1")
+    assert state.locked_arc == ("C1", "C2")
+    assert state.trigger_arc_progress == pytest.approx(0.5)
+    assert state.trigger_remaining_load_kg == pytest.approx(7.0)
+    assert state.remaining_load_kg == pytest.approx(7.0)
+    assert state.editable_suffix == ("C2",)
+    assert cut.frozen_arc_prefix_by_route_id[route.vehicle_id] == (
+        ("D0", "C1"),
+        ("C1", "C2"),
+    )
+    assert cut.unexecuted_arc_suffix_by_route_id[route.vehicle_id] == (("C2", "D0"),)
+
+    dynamic_instance = instance_with_inherited_virtual_origins(
+        instance,
+        cut.asset_states,
+    )
+    assert dynamic_instance.distance(state.virtual_origin_node_id, "C2") == pytest.approx(0.0)
+    continuation = Solution(
+        routes=[
+            Route(
+                "open-continuation",
+                "ev",
+                "D0",
+                [state.virtual_origin_node_id, "C2", "D0"],
+            )
+        ]
+    )
+    prepared, dynamic_certificate = prepare_dynamic_multitrip_solution(
+        continuation,
+        dynamic_instance,
+        prices,
+        asset_states=cut.asset_states,
+        stage_start_second=trigger,
+    )
+    assert prepared.routes[0].vehicle_id == route.vehicle_id
+    assert prepared.routes[0].node_sequence[0] == state.virtual_origin_node_id
+    assert dynamic_certificate.trips[0].trip_index == 1
+    assert dynamic_certificate.trips[0].departure_second >= state.available_second
+
+    pre_release_trigger = (trigger + state.available_second) / 2.0
+    pre_release_cut = cut_dynamic_certificate_at_trigger(
+        prepared,
+        dynamic_certificate,
+        dynamic_instance,
+        prices,
+        inherited_asset_states=cut.asset_states,
+        previous_stage_start_second=trigger,
+        trigger_second=pre_release_trigger,
+    )
+    carried = pre_release_cut.asset_states["EV_D0_1"]
+    assert route.vehicle_id in pre_release_cut.in_progress_route_ids
+    assert carried.locked_arc == ("C1", "C2")
+    assert carried.trigger_arc_progress == pytest.approx(0.75)
+    assert carried.release_node_id == "C2"
+    assert carried.virtual_origin_node_id == state.virtual_origin_node_id
+    assert carried.position_node_id != "D0"
+    assert carried.available_second == pytest.approx(state.available_second)
+    assert state.trigger_remaining_battery_kwh > carried.trigger_remaining_battery_kwh
+    assert carried.trigger_remaining_battery_kwh > carried.remaining_battery_kwh
+
+    returned_with_cargo, cargo_certificate = prepare_dynamic_multitrip_solution(
+        Solution(
+            routes=[
+                Route(
+                    "open-return-with-cargo",
+                    "ev",
+                    "D0",
+                    [state.virtual_origin_node_id, "D0"],
+                )
+            ]
+        ),
+        dynamic_instance,
+        prices,
+        asset_states=cut.asset_states,
+        stage_start_second=trigger,
+    )
+    cargo_trip = cargo_certificate.trips[0]
+    cargo_trigger = (cargo_trip.departure_second + cargo_trip.return_second) / 2.0
+    cargo_cut = cut_dynamic_certificate_at_trigger(
+        returned_with_cargo,
+        cargo_certificate,
+        dynamic_instance,
+        prices,
+        inherited_asset_states=cut.asset_states,
+        previous_stage_start_second=trigger,
+        trigger_second=cargo_trigger,
+    )
+    cargo_state = cargo_cut.asset_states["EV_D0_1"]
+    assert cargo_state.remaining_load_kg == pytest.approx(7.0)
+    assert cargo_state.trigger_remaining_load_kg == pytest.approx(7.0)
+    assert cargo_state.continuation_route_id is None
+    assert cargo_state.in_progress_route_id == route.vehicle_id
+    assert state.remaining_battery_kwh > cargo_state.trigger_remaining_battery_kwh
+    assert cargo_state.trigger_remaining_battery_kwh > cargo_state.remaining_battery_kwh
+
+    empty_future, empty_certificate = prepare_dynamic_multitrip_solution(
+        Solution(),
+        dynamic_instance,
+        prices,
+        asset_states=cargo_cut.asset_states,
+        stage_start_second=cargo_trigger,
+    )
+    later_cargo_cut = cut_dynamic_certificate_at_trigger(
+        empty_future,
+        empty_certificate,
+        dynamic_instance,
+        prices,
+        inherited_asset_states=cargo_cut.asset_states,
+        previous_stage_start_second=cargo_trigger,
+        trigger_second=(cargo_trigger + cargo_trip.return_second) / 2.0,
+    )
+    later_cargo_state = later_cargo_cut.asset_states["EV_D0_1"]
+    assert later_cargo_state.remaining_load_kg == pytest.approx(7.0)
+    assert later_cargo_state.position_node_id != "D0"
+    assert (
+        later_cargo_state.trigger_remaining_battery_kwh
+        < cargo_state.trigger_remaining_battery_kwh
+    )
+    assert (
+        later_cargo_state.trigger_remaining_battery_kwh
+        > later_cargo_state.remaining_battery_kwh
+    )
+
+    continued_trip = dynamic_certificate.trips[0]
+    second_trigger = (
+        continued_trip.departure_second + continued_trip.return_second
+    ) / 2.0
+    second_cut = cut_dynamic_certificate_at_trigger(
+        prepared,
+        dynamic_certificate,
+        dynamic_instance,
+        prices,
+        inherited_asset_states=cut.asset_states,
+        previous_stage_start_second=trigger,
+        trigger_second=second_trigger,
+    )
+    second_state = second_cut.asset_states["EV_D0_1"]
+    assert second_state.locked_arc == ("C2", "D0")
+    assert second_state.continuation_route_id is None
+    assert second_state.release_node_id == "D0"
+    assert second_state.next_trip_index == 2
+
+
 def test_frozen_221_customer_cut_and_one_event_continuation_use_only_10_plus_10_assets() -> None:
     solution, certificate, bundle, prices = _formal_221_customer_case()
     trigger = 30_000.0
@@ -550,14 +738,17 @@ def test_frozen_221_customer_cut_and_one_event_continuation_use_only_10_plus_10_
     assert sum(state.vehicle_type == "cv" for state in cut.asset_states.values()) == 10
     assert sum(state.vehicle_type == "ev" for state in cut.asset_states.values()) == 10
 
-    # EV_D0_5 is still serving T1 at the trigger.  It must be released at the
-    # certified return with that trip's end battery; its not-yet-started T2
-    # charge is deliberately not inherited.
+    # EV_D0_5 is still serving T1 at the trigger.  Only its executed arc prefix
+    # is frozen; the remaining visits continue from one inherited virtual
+    # origin on the same physical vehicle and trip id.
     frozen_t1 = next(trip for trip in certificate.trips if trip.route_id == "EV_D0_5#T1")
     asset = cut.asset_states["EV_D0_5"]
-    assert asset.available_second == pytest.approx(frozen_t1.return_second)
-    assert asset.remaining_battery_kwh == pytest.approx(frozen_t1.end_battery_kwh)
-    assert asset.next_trip_index == 2
+    assert trigger <= asset.available_second < frozen_t1.return_second
+    assert asset.continuation_route_id == frozen_t1.route_id
+    assert asset.continuation_trip_index == frozen_t1.trip_index
+    assert asset.virtual_origin_node_id is not None
+    assert asset.editable_suffix
+    assert asset.next_trip_index == 1
 
     route_lookup = {route.vehicle_id: route for route in solution.routes}
     original = route_lookup["EV_D0_5#T2"]
@@ -682,6 +873,9 @@ def test_frozen_221_customer_plan_can_be_cut_again_without_losing_idle_assets() 
         running_action.charge_start_second + running_action.occupancy_minutes * 60.0
     )
     assert running_state.remaining_battery_kwh == pytest.approx(running_trip.start_battery_kwh)
+    assert float(running_action.start_energy_kwh or 0.0) < float(
+        running_state.trigger_remaining_battery_kwh
+    ) < running_state.remaining_battery_kwh
     assert running_state.next_trip_index == running_trip.trip_index
 
     first_plan_lookup = {route.vehicle_id: route for route in first_plan.routes}

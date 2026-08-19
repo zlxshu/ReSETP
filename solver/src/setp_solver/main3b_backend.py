@@ -184,13 +184,16 @@ class ProductionState:
     static_certificate: Any
     planning_dynamic_state: DutyDynamicState | None = None
     planning_future: PreparedDynamicCandidate | None = None
+    planning_evaluation: FullEvaluation | None = None
     planning_individual: DutyIndividual | None = None
     planning_active_customer_ids: frozenset[str] = frozenset()
     planning_trigger_second: float | None = None
     deferred_customer_ids: tuple[str, ...] = ()
     timing_by_route: Mapping[str, Any] = MappingProxyType({})
+    route_change_evidence: Mapping[str, Any] = MappingProxyType({})
     diagnostics: tuple[Mapping[str, Any], ...] = ()
     outsourced_customer_ids: tuple[str, ...] = ()
+    mechanical_insertion_wall_seconds: float = 0.0
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -213,7 +216,14 @@ class ProductionState:
             "timing_by_route",
             MappingProxyType(dict(self.timing_by_route)),
         )
+        object.__setattr__(
+            self,
+            "route_change_evidence",
+            MappingProxyType(dict(self.route_change_evidence)),
+        )
         object.__setattr__(self, "diagnostics", tuple(self.diagnostics))
+        if self.mechanical_insertion_wall_seconds < 0.0:
+            raise ValueError("mechanical insertion time must be non-negative")
 
     @property
     def unserved_customer_ids(self) -> tuple[str, ...]:
@@ -299,7 +309,6 @@ class ProductionBackend:
             next_state = replace(current, stage_index=current.stage_index + 1)
             return next_state, "rolling_no_new_unserved_suffix"
 
-        started = _now()
         policy = _policy(frame.evaluator)
         try:
             insertion = DynamicInsertionOperator(
@@ -364,11 +373,10 @@ class ProductionBackend:
                 "rolling_defer_no_feasible_candidate",
             )
 
-        remaining = max(0.0, float(deadline_seconds) - (_now() - started))
         candidate, evaluation, run_result = self._run_hgs(
             insertion.individual,
             frame.context,
-            remaining,
+            float(deadline_seconds),
             arm="rolling_dynamic",
             stage_index=current.stage_index + 1,
         )
@@ -423,6 +431,7 @@ class ProductionBackend:
             )
             frame = self._build_stage(problem, work, attempt_active, trigger)
             stage_evaluation = frame.evaluator.evaluate(frame.initial_future)
+            insertion_started = _now()
             try:
                 result = insert_revealed_customer(
                     frame.initial_future,
@@ -430,6 +439,7 @@ class ProductionBackend:
                     frame.evaluator,
                 )
             except MechanicalInsertionFailure as error:
+                insertion_elapsed = _now() - insertion_started
                 detail_rows.append(f"{customer_id}:defer")
                 work = _deferred_state(
                     work,
@@ -451,6 +461,13 @@ class ProductionBackend:
                         ],
                     },
                 )
+                work = replace(
+                    work,
+                    mechanical_insertion_wall_seconds=(
+                        work.mechanical_insertion_wall_seconds
+                        + insertion_elapsed
+                    ),
+                )
                 continue
             except (TypeError, ValueError) as error:
                 raise ProductionBackendHalt(
@@ -458,6 +475,7 @@ class ProductionBackend:
                     f"{customer_id}: {type(error).__name__}: {error}"
                 ) from error
 
+            insertion_elapsed = _now() - insertion_started
             _assert_committed_history_unchanged(frame.evaluator, result.evaluation)
             work = _successful_state(
                 work,
@@ -476,6 +494,13 @@ class ProductionBackend:
                         for key, value in result.decision.rejected_candidates
                     ],
                 },
+            )
+            work = replace(
+                work,
+                mechanical_insertion_wall_seconds=(
+                    work.mechanical_insertion_wall_seconds
+                    + insertion_elapsed
+                ),
             )
             detail_rows.append(
                 f"{customer_id}:{result.decision.candidate_class}"
@@ -497,6 +522,7 @@ class ProductionBackend:
                 "kind": "batch_summary",
                 "decisions": list(detail_rows),
             },
+            route_change_evidence=work.route_change_evidence,
         )
         return report, ";".join(detail_rows)
 
@@ -506,7 +532,32 @@ class ProductionBackend:
         all_customer_ids: Sequence[str],
         deadline_seconds: float,
     ) -> ProductionState:
-        base = self.initial_plan(problem, deadline_seconds)
+        # S is one all-information HGS solve.  Its starting individual is the
+        # existing feasible visible-order plan plus mechanical insertions; it
+        # must not consume a hidden preliminary HGS budget.
+        base_context = _static_context(problem.base_context, problem.base_bundle)
+        base_evaluation = DutyFullEvaluator(base_context).evaluate(
+            problem.base_initial
+        )
+        if not base_evaluation.feasible:
+            raise ProductionBackendHalt(
+                "full-information static seed is infeasible before insertion"
+            )
+        base = ProductionState(
+            individual=problem.base_initial,
+            evaluation=base_evaluation,
+            bundle=problem.base_bundle,
+            context=base_context,
+            active_customer_ids=problem.static_customer_ids,
+            dynamic_state=None,
+            stage_index=0,
+            base_individual=problem.base_initial,
+            static_solution=base_evaluation.prepared_solution,
+            static_certificate=base_evaluation.certificate,
+            planning_individual=problem.base_initial,
+            planning_active_customer_ids=problem.static_customer_ids,
+            timing_by_route=_timing_map(base_evaluation.certificate),
+        )
         current = base.individual
         active = set(problem.static_customer_ids)
         dynamic_ids = [
@@ -574,7 +625,7 @@ class ProductionBackend:
             _context_with_bundle(problem.base_context, problem.full_bundle, problem),
             problem.full_bundle,
         )
-        candidate, evaluation, _ = self._run_hgs(
+        candidate, evaluation, run_result = self._run_hgs(
             current,
             context,
             deadline_seconds,
@@ -600,7 +651,14 @@ class ProductionBackend:
                 {*problem.static_customer_ids, *problem.dynamic_customer_ids}
             ),
             timing_by_route=_timing_map(evaluation.certificate),
-            diagnostics=tuple(diagnostics),
+            diagnostics=(
+                *diagnostics,
+                {
+                    "arm": "full_information_static_reference",
+                    "kind": "problem_hgs_stage",
+                    "termination_status": run_result.termination_status,
+                },
+            ),
         )
 
     def evaluate(
@@ -769,18 +827,21 @@ class ProductionBackend:
             prior = Solution()
             certified_history = frozenset()
             timing = _timing_map(source_certificate)
+            inherited_evaluation_instance = None
+            source_full_execution_solution = None
+            prior_prefix_accounting = MappingProxyType({})
         else:
             if previous.planning_dynamic_state is None:
                 raise ProductionBackendHalt(
                     "dynamic continuation has a future solution but no "
                     "dynamic asset state"
                 )
-            source_solution = previous.planning_future.future_solution
+            cut_source_solution = previous.planning_future.future_solution
             source_certificate = previous.planning_future.future_certificate
             cut = cut_dynamic_certificate_at_trigger(
-                source_solution,
+                cut_source_solution,
                 source_certificate,
-                bundle.instance,
+                previous.planning_future.evaluation_instance,
                 bundle.prices,
                 inherited_asset_states=previous.planning_dynamic_state.asset_states,
                 previous_stage_start_second=float(
@@ -791,35 +852,54 @@ class ProductionBackend:
                     previous.planning_dynamic_state.cut.locked_charging_actions
                 ),
             )
+            source_solution = cut_source_solution
+            source_full_execution_solution = (
+                previous.planning_future.full_execution_solution
+            )
+            inherited_evaluation_instance = (
+                previous.planning_future.evaluation_instance
+            )
+            if previous.planning_evaluation is None:
+                raise ProductionBackendHalt(
+                    "dynamic continuation has a future solution but no "
+                    "matching complete evaluation"
+                )
+            prior_prefix_accounting = (
+                previous.planning_evaluation.dynamic_prefix_accounting_by_route_id
+            )
             assets = MappingProxyType(dict(cut.asset_states))
             prior = _advance_prior_history(previous.planning_dynamic_state)
             certified_history = frozenset(
                 {
                     *previous.planning_dynamic_state.certified_dynamic_route_ids,
                     *cut.completed_route_ids,
-                    *cut.in_progress_route_ids,
                 }
             )
             timing = dict(previous.timing_by_route)
             timing.update(_timing_map(source_certificate))
 
-        committed_route_ids = {
-            *cut.completed_route_ids,
-            *cut.in_progress_route_ids,
-        }
+        committed_route_ids = set(cut.completed_route_ids)
+        history_customer_solution = (
+            source_full_execution_solution or source_solution
+        )
+        executed_prefix_customers = _executed_history_customers(
+            cut,
+            history_customer_solution,
+            active_customer_ids,
+        )
         committed_customers = {
             customer_id
             for route in (
                 *prior.routes,
                 *(
                     route
-                    for route in source_solution.routes
+                    for route in history_customer_solution.routes
                     if route.vehicle_id in committed_route_ids
                 ),
             )
             for customer_id in route.node_sequence[1:-1]
             if customer_id in active_customer_ids
-        }
+        }.union(executed_prefix_customers)
         dynamic_state = DutyDynamicState(
             source_solution=source_solution,
             cut=cut,
@@ -833,8 +913,11 @@ class ProductionBackend:
             },
             charging_strategy="aware",
             charging_intensity_field="forecast_gco2_per_kwh",
+            inherited_evaluation_instance=inherited_evaluation_instance,
+            source_full_execution_solution=source_full_execution_solution,
             prior_committed_solution=prior,
             certified_dynamic_route_ids=certified_history,
+            prior_prefix_accounting_by_route_id=prior_prefix_accounting,
         )
         initial_future = future_individual_from_cut(
             dynamic_state,
@@ -1084,6 +1167,11 @@ def _successful_state(
         for item in previous.deferred_customer_ids
         if item not in active_customer_ids
     )
+    route_change_evidence = _dynamic_route_change_evidence(
+        frame.initial_future,
+        candidate,
+        frame,
+    )
     return ProductionState(
         individual=candidate,
         evaluation=evaluation,
@@ -1097,12 +1185,17 @@ def _successful_state(
         static_certificate=previous.static_certificate,
         planning_dynamic_state=frame.dynamic_state,
         planning_future=prepared,
+        planning_evaluation=evaluation,
         planning_individual=candidate,
         planning_active_customer_ids=active_customer_ids,
         planning_trigger_second=frame.trigger_second,
         deferred_customer_ids=deferred,
         timing_by_route=timing,
+        route_change_evidence=route_change_evidence,
         diagnostics=(*previous.diagnostics, dict(diagnostics)),
+        mechanical_insertion_wall_seconds=(
+            previous.mechanical_insertion_wall_seconds
+        ),
     )
 
 
@@ -1115,6 +1208,7 @@ def _deferred_state(
     deferred_customer_ids: Sequence[str],
     stage_index: int,
     diagnostic: Mapping[str, Any],
+    route_change_evidence: Mapping[str, Any] | None = None,
 ) -> ProductionState:
     timing = dict(previous.timing_by_route)
     timing.update(frame.timing_by_route)
@@ -1131,12 +1225,25 @@ def _deferred_state(
         static_certificate=previous.static_certificate,
         planning_dynamic_state=previous.planning_dynamic_state,
         planning_future=previous.planning_future,
+        planning_evaluation=previous.planning_evaluation,
         planning_individual=previous.planning_individual,
         planning_active_customer_ids=previous.planning_active_customer_ids,
         planning_trigger_second=previous.planning_trigger_second,
         deferred_customer_ids=tuple(dict.fromkeys(map(str, deferred_customer_ids))),
         timing_by_route=timing,
+        route_change_evidence=(
+            _dynamic_route_change_evidence(
+                frame.initial_future,
+                frame.initial_future,
+                frame,
+            )
+            if route_change_evidence is None
+            else route_change_evidence
+        ),
         diagnostics=(*previous.diagnostics, dict(diagnostic)),
+        mechanical_insertion_wall_seconds=(
+            previous.mechanical_insertion_wall_seconds
+        ),
     )
 
 
@@ -1171,7 +1278,6 @@ def _committed_history_sha256(
 
     committed_route_ids = {
         *state.cut.completed_route_ids,
-        *state.cut.in_progress_route_ids,
         *(route.vehicle_id for route in state.prior_committed_solution.routes),
     }
     locked_actions = (
@@ -1189,11 +1295,14 @@ def _committed_history_sha256(
     }
 
     if evaluation is None:
+        history_source = (
+            state.source_full_execution_solution or state.source_solution
+        )
         source_routes = (
             *state.prior_committed_solution.routes,
             *(
                 route
-                for route in state.source_solution.routes
+                for route in history_source.routes
                 if route.vehicle_id in committed_route_ids
             ),
         )
@@ -1233,6 +1342,38 @@ def _committed_history_sha256(
                 row["station_id"],
             ),
         ),
+        "frozen_arc_prefix_by_route_id": {
+            str(route_id): [list(arc) for arc in arcs]
+            for route_id, arcs in sorted(
+                getattr(
+                    state.cut,
+                    "frozen_arc_prefix_by_route_id",
+                    {},
+                ).items()
+            )
+        },
+        "trigger_vehicle_state": {
+            str(asset_id): {
+                "position": getattr(asset, "trigger_position_node_id", None),
+                "time": getattr(asset, "trigger_time", None),
+                "remaining_load_kg": getattr(
+                    asset,
+                    "trigger_remaining_load_kg",
+                    None,
+                ),
+                "remaining_battery_kwh": getattr(
+                    asset,
+                    "trigger_remaining_battery_kwh",
+                    None,
+                ),
+                "locked_arc": list(getattr(asset, "locked_arc", ()) or ()),
+                "executed_prefix": list(
+                    getattr(asset, "executed_prefix", ())
+                ),
+            }
+            for asset_id, asset in sorted(state.cut.asset_states.items())
+            if getattr(asset, "continuation_route_id", None) is not None
+        },
     }
     return hashlib.sha256(
         json.dumps(
@@ -1268,14 +1409,60 @@ def _full_asset_registry(
     return MappingProxyType(assets)
 
 
+def _executed_history_customers(
+    cut: Any,
+    full_source: Solution,
+    active_customer_ids: frozenset[str],
+) -> set[str]:
+    """Recover earlier prefixes when a continuation is cut more than once."""
+
+    route_by_id = {route.vehicle_id: route for route in full_source.routes}
+    committed: set[str] = set()
+    for asset in cut.asset_states.values():
+        prefix = tuple(getattr(asset, "executed_prefix", ()))
+        route_id = getattr(asset, "continuation_route_id", None)
+        if prefix and route_id is None:
+            candidates = [
+                candidate
+                for candidate in cut.in_progress_route_ids
+                if physical_vehicle_id(candidate)
+                == str(asset.physical_vehicle_id)
+            ]
+            if len(candidates) > 1:
+                raise ProductionBackendHalt(
+                    "dynamic asset has multiple in-progress source routes"
+                )
+            if candidates:
+                route_id = candidates[0]
+        history: tuple[str, ...] = ()
+        if prefix and route_id in route_by_id:
+            sequence = tuple(route_by_id[str(route_id)].node_sequence)
+            positions = [
+                index
+                for index in range(len(sequence) - len(prefix) + 1)
+                if sequence[index : index + len(prefix)] == prefix
+            ]
+            if len(positions) != 1:
+                raise ProductionBackendHalt(
+                    "dynamic continuation cannot locate its unique prior prefix"
+                )
+            history = sequence[: positions[0]]
+        committed.update(
+            str(node_id)
+            for node_id in (*history, *prefix)
+            if str(node_id) in active_customer_ids
+        )
+    return committed
+
+
 def _advance_prior_history(state: DutyDynamicState) -> Solution:
     prior = state.prior_committed_solution or Solution()
-    committed_ids = {
-        *state.cut.completed_route_ids,
-        *state.cut.in_progress_route_ids,
-    }
+    committed_ids = set(state.cut.completed_route_ids)
     routes = {route.vehicle_id: route for route in prior.routes}
-    for route in state.source_solution.routes:
+    history_source = (
+        state.source_full_execution_solution or state.source_solution
+    )
+    for route in history_source.routes:
         if route.vehicle_id not in committed_ids:
             continue
         old = routes.get(route.vehicle_id)
@@ -1313,6 +1500,252 @@ def _served_customers(solution: Solution, bundle: Any) -> frozenset[str]:
         for route in solution.routes
         for node_id in route.node_sequence[1:-1]
         if node_id in customer_ids
+    )
+
+
+def _dynamic_route_change_evidence(
+    before: DutyIndividual,
+    after: DutyIndividual,
+    frame: _StageFrame,
+) -> Mapping[str, Any]:
+    """Count route edits without turning the statistic into a search rule."""
+
+    old_customers = {
+        customer_id
+        for duty in before.duties
+        for trip in duty.trips
+        for customer_id in trip.customer_ids
+    }
+    before_arcs = _old_customer_arcs(before, old_customers)
+    after_arcs = _old_customer_arcs(after, old_customers)
+    removed_arcs = tuple(sorted(before_arcs.difference(after_arcs)))
+    before_assignment = _customer_vehicle_assignment(before, old_customers)
+    after_assignment = _customer_vehicle_assignment(after, old_customers)
+    changed_customers = tuple(
+        sorted(
+            customer_id
+            for customer_id in old_customers
+            if before_assignment.get(customer_id)
+            != after_assignment.get(customer_id)
+        )
+    )
+    changed_vehicles = tuple(
+        sorted(
+            {
+                vehicle_id
+                for customer_id in changed_customers
+                for vehicle_id in (
+                    before_assignment.get(customer_id),
+                    after_assignment.get(customer_id),
+                )
+                if vehicle_id is not None
+            }
+        )
+    )
+    cut = frame.dynamic_state.cut
+    states = [
+        asdict(state)
+        for _, state in sorted(cut.asset_states.items())
+        if getattr(state, "continuation_route_id", None) is not None
+    ]
+    frozen_prefixes = {
+        str(route_id): [list(arc) for arc in arcs]
+        for route_id, arcs in sorted(
+            getattr(cut, "frozen_arc_prefix_by_route_id", {}).items()
+        )
+        if arcs
+    }
+    return MappingProxyType(
+        {
+            "route_snapshot_before_json": _route_snapshot_json(
+                before,
+                frame,
+                new_customer_ids=before.unserved_customers,
+            ),
+            "route_snapshot_after_json": _route_snapshot_json(
+                after,
+                frame,
+                new_customer_ids=before.unserved_customers,
+            ),
+            "old_unexecuted_arc_count_before": len(before_arcs),
+            "changed_old_old_unexecuted_arc_count": len(removed_arcs),
+            "changed_old_old_unexecuted_arc_ids_json": json.dumps(
+                [list(arc) for arc in removed_arcs],
+                ensure_ascii=False,
+                sort_keys=True,
+                allow_nan=False,
+            ),
+            "old_customer_count": len(old_customers),
+            "old_customers_changed_vehicle_count": len(changed_customers),
+            "old_customers_changed_vehicle_ids_json": json.dumps(
+                list(changed_customers),
+                ensure_ascii=False,
+                allow_nan=False,
+            ),
+            "vehicles_with_old_customer_changes_count": len(changed_vehicles),
+            "vehicles_with_old_customer_changes_ids_json": json.dumps(
+                list(changed_vehicles),
+                ensure_ascii=False,
+                allow_nan=False,
+            ),
+            "dynamic_vehicle_states_json": json.dumps(
+                states,
+                ensure_ascii=False,
+                sort_keys=True,
+                allow_nan=False,
+            ),
+            "frozen_prefixes_json": json.dumps(
+                frozen_prefixes,
+                ensure_ascii=False,
+                sort_keys=True,
+                allow_nan=False,
+            ),
+        }
+    )
+
+
+def _old_customer_arcs(
+    individual: DutyIndividual,
+    old_customers: set[str],
+) -> set[tuple[str, str]]:
+    return {
+        (left, right)
+        for duty in individual.duties
+        for trip in duty.trips
+        for left, right in zip(
+            trip.effective_route_visits,
+            trip.effective_route_visits[1:],
+        )
+        if left in old_customers and right in old_customers
+    }
+
+
+def _customer_vehicle_assignment(
+    individual: DutyIndividual,
+    customer_ids: set[str],
+) -> dict[str, str]:
+    return {
+        customer_id: duty.physical_vehicle_id
+        for duty in individual.duties
+        for trip in duty.trips
+        for customer_id in trip.customer_ids
+        if customer_id in customer_ids
+    }
+
+
+def _route_snapshot_json(
+    individual: DutyIndividual,
+    frame: _StageFrame,
+    *,
+    new_customer_ids: Sequence[str],
+) -> str:
+    cut = frame.dynamic_state.cut
+    frozen_by_route = getattr(cut, "frozen_arc_prefix_by_route_id", {})
+    frozen_by_asset: dict[str, list[tuple[str, str]]] = {}
+    for route_id, arcs in frozen_by_route.items():
+        frozen_by_asset.setdefault(physical_vehicle_id(str(route_id)), []).extend(
+            (str(left), str(right)) for left, right in arcs
+        )
+    new_ids = set(map(str, new_customer_ids))
+    routes: list[dict[str, Any]] = []
+    represented_assets: set[str] = set()
+    for duty in individual.duties:
+        asset_state = cut.asset_states.get(duty.physical_vehicle_id)
+        virtual_origin = (
+            None
+            if asset_state is None
+            else getattr(asset_state, "virtual_origin_node_id", None)
+        )
+        for position, trip in enumerate(duty.trips):
+            visits = list(map(str, trip.effective_route_visits))
+            start = duty.home_depot_id
+            virtual_ids: list[str] = []
+            if position == 0 and virtual_origin:
+                start = str(virtual_origin)
+                virtual_ids.append(start)
+            if visits and visits[0] == start:
+                sequence = [*visits, duty.home_depot_id]
+            else:
+                sequence = [start, *visits, duty.home_depot_id]
+            unexecuted_arcs = [
+                [left, right]
+                for left, right in zip(sequence, sequence[1:])
+            ]
+            frozen_arcs = (
+                frozen_by_asset.get(duty.physical_vehicle_id, [])
+                if position == 0
+                else []
+            )
+            routes.append(
+                {
+                    "physical_vehicle_id": duty.physical_vehicle_id,
+                    "route_id": duty.route_id(trip.trip_index),
+                    "node_sequence": sequence,
+                    "frozen_arcs": [list(arc) for arc in frozen_arcs],
+                    "unexecuted_arcs": unexecuted_arcs,
+                    "virtual_origin_node_ids": virtual_ids,
+                    "new_customer_ids": [
+                        node_id for node_id in sequence if node_id in new_ids
+                    ],
+                }
+            )
+            represented_assets.add(duty.physical_vehicle_id)
+    for asset_id, arcs in sorted(frozen_by_asset.items()):
+        if asset_id in represented_assets:
+            continue
+        asset_state = cut.asset_states.get(asset_id)
+        virtual_origin = (
+            None
+            if asset_state is None
+            else getattr(asset_state, "virtual_origin_node_id", None)
+        )
+        home_depot = (
+            None
+            if asset_state is None
+            else asset_state.home_depot_id
+        )
+        continuation_sequence = (
+            [str(virtual_origin), str(home_depot)]
+            if virtual_origin and home_depot
+            else []
+        )
+        routes.append(
+            {
+                "physical_vehicle_id": asset_id,
+                "route_id": (
+                    getattr(asset_state, "continuation_route_id", None)
+                    or "frozen-prefix-only"
+                ),
+                "node_sequence": continuation_sequence,
+                "frozen_arcs": [list(arc) for arc in arcs],
+                "unexecuted_arcs": (
+                    [continuation_sequence]
+                    if continuation_sequence
+                    else []
+                ),
+                "virtual_origin_node_ids": (
+                    [str(virtual_origin)] if virtual_origin else []
+                ),
+                "new_customer_ids": [],
+            }
+        )
+    coordinates = {
+        str(node.node_id): [float(node.x), float(node.y)]
+        for node in frame.bundle.instance.nodes
+    }
+    for state in cut.asset_states.values():
+        virtual_id = getattr(state, "virtual_origin_node_id", None)
+        release_id = getattr(state, "release_node_id", None)
+        if virtual_id and release_id in coordinates:
+            coordinates[str(virtual_id)] = list(coordinates[str(release_id)])
+    return json.dumps(
+        {
+            "routes": routes,
+            "coordinates": coordinates,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        allow_nan=False,
     )
 
 
@@ -1424,12 +1857,34 @@ def _details(
         "charging_emissions_kg": float(
             evaluation.breakdown.get("E_ev_indirect", 0.0)
         ),
+        "total_distance_km": float(
+            evaluation.breakdown.get("distance_total", 0.0)
+        )
+        / 1_000.0,
+        "fuel_direct_emissions_kg": float(
+            evaluation.breakdown.get("E_cv_direct", 0.0)
+        ),
+        "charging_indirect_emissions_kg": float(
+            evaluation.breakdown.get("E_ev_indirect", 0.0)
+        ),
         "committed_history_preserved": True,
         "committed_history_sha256": _committed_history_sha256(
             DutyFullEvaluator(state.context),
             evaluation=evaluation,
         ),
         "candidate_stage_count": len(state.diagnostics),
+        "actual_hgs_call_count": sum(
+            row.get("kind") == "problem_hgs_stage"
+            for row in state.diagnostics
+        ),
+        "mechanical_insertion_count": sum(
+            row.get("kind") == "mechanical_insertion"
+            for row in state.diagnostics
+        ),
+        "mechanical_insertion_actual_wall_clock_seconds": float(
+            state.mechanical_insertion_wall_seconds
+        ),
+        **dict(state.route_change_evidence),
     }
 
 

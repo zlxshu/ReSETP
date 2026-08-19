@@ -30,9 +30,10 @@ import json
 import math
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass, replace
 from enum import Enum
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 from setp_solver.check import (
@@ -41,6 +42,7 @@ from setp_solver.check import (
     FLEET_SIZE,
     PROFIT_FAIRNESS,
     TIME_WINDOW,
+    DynamicCheckContext,
     FairnessContext,
     Violation,
     check_solution,
@@ -50,14 +52,25 @@ from setp_solver.china81_completion import (
     _depot_fleet_violations,
     annotate_cross_site_services,
 )
-from setp_solver.cost import evaluate
+from setp_solver.cost import (
+    _arc_loads,
+    _evaluate_route,
+    diesel_price_for_route,
+    evaluate,
+)
+from setp_solver.instance_loader import Instance
 from setp_solver.mapping_identity import mapping_sha256
 from setp_solver.profit import calculate_depot_profits, depot_profit_values
 from setp_solver.search.multitrip_schedule import (
     MultiTripCertificate,
     prepare_multitrip_solution,
 )
-from setp_solver.solution import ChargingAction, Route, Solution
+from setp_solver.solution import (
+    ChargingAction,
+    Route,
+    Solution,
+    physical_vehicle_id,
+)
 
 from .contracts import (
     CHARGING_ENERGY_GAP,
@@ -67,7 +80,12 @@ from .contracts import (
     ChargingGap,
     ChargingGapDutyIndividual,
 )
-from .dynamic import DutyDynamicState, prepare_dynamic_candidate
+from .dynamic import (
+    DutyDynamicState,
+    DynamicPrefixAccountingCorrection,
+    full_executed_prefix,
+    prepare_dynamic_candidate,
+)
 from .model import DutyIndividual, PhysicalVehicleDuty
 
 _EQUIVALENCE_ABS_TOL = 1.0e-9
@@ -273,6 +291,9 @@ class FullEvaluation:
     charging_rejection_reason: str | None = None
     charging_affected_duty_ids: tuple[str, ...] = ()
     charging_clock_witnesses: tuple[ChargingClockWitness, ...] = ()
+    dynamic_prefix_accounting_by_route_id: Mapping[
+        str, DynamicPrefixAccountingCorrection
+    ] = field(default_factory=dict)
 
     @property
     def feasible(self) -> bool:
@@ -284,6 +305,16 @@ class _DutySlice:
     fingerprint: str
     prepared_solution: Solution
     zero_quota_breakdown: Mapping[str, float]
+
+
+@dataclass(frozen=True)
+class _DynamicPrefixAccountingTotals:
+    fuel_liters: float = 0.0
+    fuel_cost: float = 0.0
+    cv_emissions_kg: float = 0.0
+    ev_drive_kwh: float = 0.0
+    fuel_cost_by_depot: tuple[tuple[str, float], ...] = ()
+    cv_emissions_by_depot: tuple[tuple[str, float], ...] = ()
 
 
 def _remove_certified_dynamic_battery_duplicates(
@@ -393,10 +424,7 @@ def _validate_dynamic_state_customers(
         raise ValueError(
             "dynamic evaluation cannot see a customer before its appearance"
         )
-    committed_route_ids = {
-        *state.cut.completed_route_ids,
-        *state.cut.in_progress_route_ids,
-    }
+    committed_route_ids = set(state.cut.completed_route_ids)
     committed_customers = {
         node_id
         for route in (
@@ -410,12 +438,55 @@ def _validate_dynamic_state_customers(
         for node_id in route.node_sequence[1:-1]
         if node_id in all_customers
     }
+    committed_customers.update(
+        node_id
+        for asset in state.asset_states.values()
+        for node_id in _asset_full_executed_prefix(state, asset)
+        if node_id in all_customers
+    )
     expected_future = all_customers.difference(committed_customers)
     if set(state.future_customer_ids) != expected_future:
         raise ValueError(
             "dynamic future customers must be exactly the customers outside "
             "the committed execution history"
         )
+
+
+def _asset_full_executed_prefix(
+    state: DutyDynamicState,
+    asset: Any,
+) -> tuple[str, ...]:
+    prefix = tuple(getattr(asset, "executed_prefix", ()))
+    route_id = getattr(asset, "continuation_route_id", None)
+    if not prefix:
+        return prefix
+    if route_id is None:
+        candidates = [
+            candidate
+            for candidate in state.cut.in_progress_route_ids
+            if physical_vehicle_id(candidate)
+            == str(asset.physical_vehicle_id)
+        ]
+        if len(candidates) > 1:
+            raise ValueError(
+                "dynamic asset has multiple in-progress source routes"
+            )
+        if not candidates:
+            return prefix
+        route_id = candidates[0]
+    source_routes = {
+        route.vehicle_id: route
+        for route in (
+            state.source_full_execution_solution or state.source_solution
+        ).routes
+    }
+    try:
+        source_route = source_routes[str(route_id)]
+    except KeyError as exc:
+        raise ValueError(
+            "dynamic history omits an active continuation route"
+        ) from exc
+    return full_executed_prefix(source_route, prefix)
 
 
 def _shift_minimum_departure_second_by_customer(
@@ -511,6 +582,7 @@ class DutyFullEvaluator:
             else None
         )
         dynamic_state = self.context.dynamic_state
+        dynamic_prepared = None
         if dynamic_state is None:
             decoded = individual.to_solution()
             try:
@@ -557,6 +629,7 @@ class DutyFullEvaluator:
             )
             prepared = dynamic.full_execution_solution
             certificate = dynamic.future_certificate
+            dynamic_prepared = dynamic
         annotated = annotate_cross_site_services(
             prepared,
             self.context.bundle.customer_home_depot,
@@ -598,6 +671,31 @@ class DutyFullEvaluator:
                 ()
                 if gap_candidate is None
                 else gap_candidate.charging_clock_witnesses
+            ),
+            evaluation_instance=(
+                None
+                if dynamic_prepared is None
+                else dynamic_prepared.evaluation_instance
+            ),
+            dynamic_future_solution=(
+                None
+                if dynamic_prepared is None
+                else dynamic_prepared.future_solution
+            ),
+            dynamic_future_check_instance=(
+                None
+                if dynamic_prepared is None
+                else dynamic_prepared.future_check_instance
+            ),
+            dynamic_future_check_context=(
+                None
+                if dynamic_prepared is None
+                else dynamic_prepared.future_check_context
+            ),
+            dynamic_frozen_prefixes=(
+                None
+                if dynamic_prepared is None
+                else dynamic_prepared.frozen_prefixes
             ),
         )
 
@@ -653,8 +751,32 @@ class DutyFullEvaluator:
         charging_rejection_reason: str | None = None,
         charging_affected_duty_ids: tuple[str, ...] = (),
         charging_clock_witnesses: tuple[ChargingClockWitness, ...] = (),
+        evaluation_instance: Instance | None = None,
+        dynamic_future_solution: Solution | None = None,
+        dynamic_future_check_instance: Instance | None = None,
+        dynamic_future_check_context: DynamicCheckContext | None = None,
+        dynamic_frozen_prefixes: Mapping[str, tuple[str, ...]] | None = None,
     ) -> FullEvaluation:
-        bundle = self.context.bundle
+        bundle = (
+            self.context.bundle
+            if evaluation_instance is None
+            else replace(
+                self.context.bundle,
+                instance=evaluation_instance,
+            )
+        )
+        prefix_accounting_by_route_id = (
+            MappingProxyType({})
+            if self.context.dynamic_state is None
+            else _dynamic_prefix_accounting_by_route_id(
+                prepared,
+                self.context.dynamic_state,
+                bundle,
+            )
+        )
+        prefix_correction = _aggregate_dynamic_prefix_accounting(
+            prefix_accounting_by_route_id
+        )
         profit_breakdowns = calculate_depot_profits(
             prepared,
             bundle.instance,
@@ -664,7 +786,13 @@ class DutyFullEvaluator:
             prior_profit=dict(self.context.prior_profit),
             carbon_quota_kg=float(self.context.carbon_quota_kg),
         )
-        profits = depot_profit_values(profit_breakdowns)
+        profits = _correct_dynamic_depot_profits(
+            depot_profit_values(profit_breakdowns),
+            profit_breakdowns,
+            prefix_correction,
+            bundle,
+            carbon_quota_kg=float(self.context.carbon_quota_kg),
+        )
         fairness_context = FairnessContext(
             depot_profit=profits,
             independent_profit=dict(self.context.independent_profit),
@@ -676,6 +804,13 @@ class DutyFullEvaluator:
             bundle.prices,
             fairness_context=fairness_context,
             fairness_enabled=bool(self.context.fairness_enabled),
+            dynamic_context=(
+                None
+                if not dynamic_frozen_prefixes
+                else DynamicCheckContext(
+                    frozen_prefixes=dict(dynamic_frozen_prefixes),
+                )
+            ),
         )
         if self.context.rebuilt_route_constraints is not None:
             violations.extend(
@@ -717,6 +852,23 @@ class DutyFullEvaluator:
                     self.context.dynamic_state.certified_dynamic_route_ids
                 ),
             )
+            if (
+                dynamic_future_solution is None
+                or dynamic_future_check_instance is None
+                or dynamic_future_check_context is None
+            ):
+                raise ValueError(
+                    "dynamic evaluation is missing its inherited-state check"
+                )
+            violations.extend(
+                check_solution(
+                    dynamic_future_solution,
+                    dynamic_future_check_instance,
+                    bundle.prices,
+                    fairness_enabled=False,
+                    dynamic_context=dynamic_future_check_context,
+                )
+            )
         violations.extend(
             _depot_fleet_violations(
                 prepared,
@@ -756,7 +908,14 @@ class DutyFullEvaluator:
                 prepared,
                 self.context,
                 carbon_quota_kg=float(self.context.carbon_quota_kg),
+                bundle=bundle,
             )
+        )
+        exact_breakdown = _correct_dynamic_breakdown(
+            exact_breakdown,
+            prefix_correction,
+            bundle,
+            carbon_quota_kg=float(self.context.carbon_quota_kg),
         )
         margins = {
             depot_id: float(profits.get(depot_id, 0.0))
@@ -790,6 +949,9 @@ class DutyFullEvaluator:
             charging_rejection_reason=charging_rejection_reason,
             charging_affected_duty_ids=tuple(charging_affected_duty_ids),
             charging_clock_witnesses=tuple(charging_clock_witnesses),
+            dynamic_prefix_accounting_by_route_id=(
+                prefix_accounting_by_route_id
+            ),
         )
 
     def _validate_customer_partition(self, individual: DutyIndividual) -> None:
@@ -1017,6 +1179,236 @@ def assert_evaluations_equivalent(
         raise AssertionError("incremental charging affected duties differ")
     if left.charging_clock_witnesses != right.charging_clock_witnesses:
         raise AssertionError("incremental charging clock witnesses differ")
+    if (
+        dict(left.dynamic_prefix_accounting_by_route_id)
+        != dict(right.dynamic_prefix_accounting_by_route_id)
+    ):
+        raise AssertionError("dynamic prefix accounting differs from full truth")
+
+
+def _dynamic_prefix_accounting_by_route_id(
+    solution: Solution,
+    state: DutyDynamicState,
+    bundle: China81Bundle,
+) -> Mapping[str, DynamicPrefixAccountingCorrection]:
+    """Restore the certified load on arcs driven before reoptimization."""
+
+    routes = {route.vehicle_id: route for route in solution.routes}
+    nodes = {node.node_id: node for node in bundle.instance.nodes}
+    corrections = dict(state.prior_prefix_accounting_by_route_id)
+    for route_id, correction in corrections.items():
+        route = routes.get(route_id)
+        if route is None or route.home_depot_id != correction.home_depot_id:
+            raise ValueError(
+                "dynamic prefix accounting is detached from execution history"
+            )
+    for asset in state.asset_states.values():
+        route_id = getattr(asset, "continuation_route_id", None)
+        virtual_id = getattr(asset, "virtual_origin_node_id", None)
+        if route_id is None or virtual_id is None:
+            continue
+        try:
+            route = routes[str(route_id)]
+            virtual_index = route.node_sequence.index(str(virtual_id))
+        except (KeyError, ValueError) as exc:
+            raise ValueError(
+                "dynamic accounting lost its inherited virtual origin"
+            ) from exc
+        if virtual_index < 1:
+            raise ValueError("dynamic virtual origin has no executed prefix")
+        candidate_loads = _arc_loads(route.node_sequence, nodes)
+        candidate_load = float(candidate_loads[virtual_index - 1])
+        inherited_load = float(getattr(asset, "remaining_load_kg", 0.0))
+        prefix = route.node_sequence[: virtual_index + 1]
+        candidate_energy = _prefix_energy_at_terminal_load(
+            route,
+            prefix,
+            str(virtual_id),
+            candidate_load,
+            bundle,
+        )
+        inherited_energy = _prefix_energy_at_terminal_load(
+            route,
+            prefix,
+            str(virtual_id),
+            inherited_load,
+            bundle,
+        )
+        prior = corrections.get(str(route_id))
+        if prior is not None and prior.home_depot_id != route.home_depot_id:
+            raise ValueError("dynamic prefix accounting changed home depot")
+        if route.vehicle_type == "cv":
+            fuel_delta = float(
+                inherited_energy.fuel_liters
+                - candidate_energy.fuel_liters
+            )
+            fuel_cost_delta = fuel_delta * diesel_price_for_route(
+                route,
+                bundle.instance,
+                bundle.prices,
+            )
+            emissions_delta = fuel_delta * float(bundle.prices.diesel_ef)
+            corrections[str(route_id)] = DynamicPrefixAccountingCorrection(
+                home_depot_id=route.home_depot_id,
+                fuel_liters=fuel_delta,
+                fuel_cost=fuel_cost_delta,
+                cv_emissions_kg=emissions_delta,
+            )
+        else:
+            ev_delta = float(
+                inherited_energy.ev_drive_kwh
+                - candidate_energy.ev_drive_kwh
+            )
+            corrections[str(route_id)] = DynamicPrefixAccountingCorrection(
+                home_depot_id=route.home_depot_id,
+                ev_drive_kwh=ev_delta,
+            )
+    return MappingProxyType(dict(sorted(corrections.items())))
+
+
+def _aggregate_dynamic_prefix_accounting(
+    corrections: Mapping[str, DynamicPrefixAccountingCorrection],
+) -> _DynamicPrefixAccountingTotals:
+    fuel_by_depot: dict[str, float] = {}
+    emissions_by_depot: dict[str, float] = {}
+    for correction in corrections.values():
+        depot_id = correction.home_depot_id
+        fuel_by_depot[depot_id] = (
+            fuel_by_depot.get(depot_id, 0.0) + float(correction.fuel_cost)
+        )
+        emissions_by_depot[depot_id] = (
+            emissions_by_depot.get(depot_id, 0.0)
+            + float(correction.cv_emissions_kg)
+        )
+    return _DynamicPrefixAccountingTotals(
+        fuel_liters=sum(float(item.fuel_liters) for item in corrections.values()),
+        fuel_cost=sum(float(item.fuel_cost) for item in corrections.values()),
+        cv_emissions_kg=sum(
+            float(item.cv_emissions_kg) for item in corrections.values()
+        ),
+        ev_drive_kwh=sum(
+            float(item.ev_drive_kwh) for item in corrections.values()
+        ),
+        fuel_cost_by_depot=tuple(sorted(fuel_by_depot.items())),
+        cv_emissions_by_depot=tuple(sorted(emissions_by_depot.items())),
+    )
+
+
+def _prefix_energy_at_terminal_load(
+    route: Route,
+    prefix: list[str],
+    virtual_node_id: str,
+    terminal_load_kg: float,
+    bundle: China81Bundle,
+):
+    proxy_nodes = [
+        (
+            replace(
+                node,
+                node_type="c",
+                demand=float(terminal_load_kg),
+            )
+            if node.node_id == virtual_node_id
+            else node
+        )
+        for node in bundle.instance.nodes
+    ]
+    proxy_instance = replace(bundle.instance, nodes=proxy_nodes)
+    return _evaluate_route(
+        replace(route, node_sequence=list(prefix)),
+        proxy_instance,
+        {node.node_id: node for node in proxy_instance.nodes},
+        bundle.prices,
+    )
+
+
+def _correct_dynamic_depot_profits(
+    profits: Mapping[str, float],
+    profit_breakdowns: Mapping[str, Any],
+    correction: _DynamicPrefixAccountingTotals,
+    bundle: China81Bundle,
+    *,
+    carbon_quota_kg: float,
+) -> dict[str, float]:
+    if _dynamic_correction_is_zero(correction):
+        return {key: float(value) for key, value in profits.items()}
+    fuel_cost = dict(correction.fuel_cost_by_depot)
+    emissions_delta = dict(correction.cv_emissions_by_depot)
+    corrected_emissions = {
+        depot_id: float(row.emissions_kg)
+        + float(emissions_delta.get(depot_id, 0.0))
+        for depot_id, row in profit_breakdowns.items()
+    }
+    total_emissions = sum(corrected_emissions.values())
+    if total_emissions < -1.0e-9:
+        raise ValueError("dynamic prefix correction made emissions negative")
+    total_carbon_cost = (
+        0.0
+        if math.isinf(float(carbon_quota_kg))
+        else (total_emissions - float(carbon_quota_kg))
+        * float(bundle.prices.carbon_price)
+    )
+    corrected: dict[str, float] = {}
+    for depot_id, row in profit_breakdowns.items():
+        new_carbon_cost = (
+            0.0
+            if total_emissions <= 1.0e-12
+            else total_carbon_cost
+            * corrected_emissions[depot_id]
+            / total_emissions
+        )
+        corrected[depot_id] = (
+            float(profits[depot_id])
+            - float(fuel_cost.get(depot_id, 0.0))
+            - (new_carbon_cost - float(row.cost_carbon))
+        )
+    return corrected
+
+
+def _correct_dynamic_breakdown(
+    breakdown: Mapping[str, float],
+    correction: _DynamicPrefixAccountingTotals,
+    bundle: China81Bundle,
+    *,
+    carbon_quota_kg: float,
+) -> dict[str, float]:
+    corrected = dict(breakdown)
+    if _dynamic_correction_is_zero(correction):
+        return corrected
+    carbon_delta = (
+        0.0
+        if math.isinf(float(carbon_quota_kg))
+        else float(correction.cv_emissions_kg)
+        * float(bundle.prices.carbon_price)
+    )
+    corrected["fuel_liters"] += float(correction.fuel_liters)
+    corrected["cost_fuel"] += float(correction.fuel_cost)
+    corrected["E_cv_direct"] += float(correction.cv_emissions_kg)
+    corrected["E_total"] += float(correction.cv_emissions_kg)
+    corrected["ev_drive_kwh"] += float(correction.ev_drive_kwh)
+    corrected["cost_carbon"] += carbon_delta
+    corrected["total_cost"] += float(correction.fuel_cost) + carbon_delta
+    corrected["dynamic_prefix_fuel_liters_correction"] = float(
+        correction.fuel_liters
+    )
+    corrected["dynamic_prefix_ev_drive_kwh_correction"] = float(
+        correction.ev_drive_kwh
+    )
+    return corrected
+
+
+def _dynamic_correction_is_zero(
+    correction: _DynamicPrefixAccountingTotals,
+) -> bool:
+    return all(
+        abs(float(value)) <= 1.0e-15
+        for value in (
+            correction.fuel_liters,
+            correction.fuel_cost,
+            correction.cv_emissions_kg,
+            correction.ev_drive_kwh,
+        )
+    )
 
 
 def _measure_violations(
@@ -1084,26 +1476,28 @@ def _evaluate_with_context_cost(
     context: DutyEvaluationContext,
     *,
     carbon_quota_kg: float,
+    bundle: China81Bundle | None = None,
 ) -> dict[str, float]:
     """Evaluate every complete candidate with the bundle's exact costs."""
 
+    active_bundle = context.bundle if bundle is None else bundle
     breakdown = dict(
         evaluate(
             solution,
-            context.bundle.instance,
-            context.bundle.time_profile,
-            context.bundle.prices,
+            active_bundle.instance,
+            active_bundle.time_profile,
+            active_bundle.prices,
             carbon_quota_kg=carbon_quota_kg,
         )
     )
     if float(context.ev_daily_fixed_premium_cny) > 0.0:
-        cv_fixed = context.bundle.instance.vehicle_fixed_cost_per_day(
+        cv_fixed = active_bundle.instance.vehicle_fixed_cost_per_day(
             "cv",
-            fallback=float(context.bundle.prices.vehicle_fixed_cost),
+            fallback=float(active_bundle.prices.vehicle_fixed_cost),
         )
-        ev_fixed = context.bundle.instance.vehicle_fixed_cost_per_day(
+        ev_fixed = active_bundle.instance.vehicle_fixed_cost_per_day(
             "ev",
-            fallback=float(context.bundle.prices.vehicle_fixed_cost),
+            fallback=float(active_bundle.prices.vehicle_fixed_cost),
         )
         authority_premium = ev_fixed - cv_fixed
         configured_premium = float(context.ev_daily_fixed_premium_cny)

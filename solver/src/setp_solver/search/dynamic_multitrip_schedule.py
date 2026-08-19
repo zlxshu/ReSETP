@@ -17,7 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any
 
@@ -35,7 +35,7 @@ from ..cost import (
     charging_curve_for_action,
     ev_instance_arc_energy_kwh,
 )
-from ..instance_loader import Instance
+from ..instance_loader import Instance, Node, RoadProfileMatrices
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import (
     ChargingAction,
@@ -48,6 +48,7 @@ from .certificate_execution import (
     COMPLETED,
     IN_PROGRESS,
     NOT_STARTED,
+    _replay_trip,
     build_certificate_execution_ledger,
 )
 from .multitrip_schedule import (
@@ -73,6 +74,22 @@ class DynamicAssetState:
     available_second: float
     remaining_battery_kwh: float
     next_trip_index: int
+    position_node_id: str | None = None
+    remaining_load_kg: float = 0.0
+    continuation_route_id: str | None = None
+    in_progress_route_id: str | None = None
+    continuation_trip_index: int | None = None
+    executed_prefix: tuple[str, ...] = ()
+    frozen_arcs: tuple[tuple[str, str], ...] = ()
+    locked_arc: tuple[str, str] | None = None
+    editable_suffix: tuple[str, ...] = ()
+    trigger_position_node_id: str | None = None
+    release_node_id: str | None = None
+    virtual_origin_node_id: str | None = None
+    trigger_time: float | None = None
+    trigger_arc_progress: float | None = None
+    trigger_remaining_load_kg: float | None = None
+    trigger_remaining_battery_kwh: float | None = None
 
 
 @dataclass(frozen=True)
@@ -86,6 +103,12 @@ class CertificateCut:
     editable_route_ids: tuple[str, ...]
     locked_charging_actions: tuple[ChargingAction, ...]
     asset_states: Mapping[str, DynamicAssetState]
+    frozen_arc_prefix_by_route_id: Mapping[
+        str, tuple[tuple[str, str], ...]
+    ] = field(default_factory=lambda: MappingProxyType({}))
+    unexecuted_arc_suffix_by_route_id: Mapping[
+        str, tuple[tuple[str, str], ...]
+    ] = field(default_factory=lambda: MappingProxyType({}))
 
 
 @dataclass(frozen=True)
@@ -141,6 +164,8 @@ def cut_certificate_at_trigger(
     if not _finite(trigger):
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: trigger time is not finite")
     ledger = build_certificate_execution_ledger(solution, certificate, instance, prices)
+    route_by_id = {route.vehicle_id: route for route in solution.routes}
+    trip_by_id = {trip.route_id: trip for trip in certificate.trips}
 
     completed: list[str] = []
     in_progress: list[str] = []
@@ -157,12 +182,14 @@ def cut_certificate_at_trigger(
             raise ValueError(f"{DYNAMIC_CONTRACT_ID}: unknown execution state {state!r}")
 
     actions_by_asset: dict[str, list[tuple[float, float, ChargingAction]]] = {}
+    actions_by_route: dict[str, list[ChargingAction]] = {}
     route_to_asset = {
         route_id: execution.physical_vehicle_id
         for route_id, execution in ledger.routes.items()
     }
     locked_actions: list[ChargingAction] = []
     for action in solution.charging_actions:
+        actions_by_route.setdefault(action.vehicle_id, []).append(action)
         try:
             asset_id = route_to_asset[action.vehicle_id]
         except KeyError as exc:
@@ -184,13 +211,36 @@ def cut_certificate_at_trigger(
         else float(certificate.initial_battery_kwh)
     )
     states: dict[str, DynamicAssetState] = {}
+    frozen_arcs: dict[str, tuple[tuple[str, str], ...]] = {}
+    unexecuted_arcs: dict[str, tuple[tuple[str, str], ...]] = {}
+    for route_id, route in route_by_id.items():
+        arcs = tuple(zip(route.node_sequence, route.node_sequence[1:]))
+        if route_id in completed:
+            frozen_arcs[route_id] = arcs
+            unexecuted_arcs[route_id] = ()
+        elif route_id in editable:
+            frozen_arcs[route_id] = ()
+            unexecuted_arcs[route_id] = arcs
     for asset_id, asset in ledger.assets.items():
         chain = [ledger.routes[route_id] for route_id in asset.route_ids]
         started = [trip for trip in chain if trip.state_at(trigger) != NOT_STARTED]
         running = [trip for trip in chain if trip.state_at(trigger) == IN_PROGRESS]
-        available = trigger
         if running:
-            available = max(available, max(trip.return_second for trip in running))
+            execution = running[0]
+            live_state, frozen, unexecuted = _in_progress_asset_state(
+                route_by_id[execution.route_id],
+                trip_by_id[execution.route_id],
+                execution,
+                instance,
+                prices,
+                actions_by_route.get(execution.route_id, ()),
+                trigger,
+            )
+            states[asset_id] = live_state
+            frozen_arcs[execution.route_id] = frozen
+            unexecuted_arcs[execution.route_id] = unexecuted
+            continue
+        available = trigger
 
         if asset.vehicle_type == "ev":
             battery = initial_battery - sum(trip.drive_energy_kwh for trip in started)
@@ -204,8 +254,20 @@ def cut_certificate_at_trigger(
                     f"{DYNAMIC_CONTRACT_ID}: {asset_id} battery {battery:.9f} is outside capacity"
                 )
             battery = min(battery_cap, max(0.0, battery))
+            trigger_battery = battery
+            for start, end, action in actions_by_asset.get(asset_id, []):
+                if start <= trigger < end:
+                    trigger_battery = _battery_during_actions(
+                        battery - float(action.energy_kwh),
+                        (action,),
+                        trigger,
+                        instance,
+                        prices,
+                    )
+                    break
         else:
             battery = 0.0
+            trigger_battery = 0.0
 
         next_index = max((trip.trip_index for trip in started), default=0) + 1
         states[asset_id] = DynamicAssetState(
@@ -215,6 +277,13 @@ def cut_certificate_at_trigger(
             available_second=float(available),
             remaining_battery_kwh=float(battery),
             next_trip_index=int(next_index),
+            position_node_id=asset.home_depot_id,
+            remaining_load_kg=0.0,
+            trigger_position_node_id=asset.home_depot_id,
+            release_node_id=asset.home_depot_id,
+            trigger_time=trigger,
+            trigger_remaining_load_kg=0.0,
+            trigger_remaining_battery_kwh=float(trigger_battery),
         )
 
     locked_actions.sort(
@@ -232,6 +301,10 @@ def cut_certificate_at_trigger(
         editable_route_ids=tuple(sorted(editable)),
         locked_charging_actions=tuple(locked_actions),
         asset_states=MappingProxyType(dict(states)),
+        frozen_arc_prefix_by_route_id=MappingProxyType(dict(frozen_arcs)),
+        unexecuted_arc_suffix_by_route_id=MappingProxyType(
+            dict(unexecuted_arcs)
+        ),
     )
 
 
@@ -275,23 +348,43 @@ def cut_dynamic_certificate_at_trigger(
     )
     inherited = _validate_asset_states(inherited_asset_states, battery_cap)
     trip_by_id = {trip.route_id: trip for trip in certificate.trips}
+    route_by_id = {route.vehicle_id: route for route in solution.routes}
 
     completed: list[str] = []
     in_progress: list[str] = []
     editable: list[str] = []
     for trip in certificate.trips:
-        state = _trip_state(trip, trigger)
-        if state == COMPLETED:
+        execution_state = _trip_state(trip, trigger)
+        inherited_state = inherited.get(trip.physical_vehicle_id)
+        tracked_route_id = (
+            inherited_state.continuation_route_id
+            if inherited_state is not None
+            else None
+        ) or (
+            inherited_state.in_progress_route_id
+            if inherited_state is not None
+            else None
+        )
+        carried_in_progress = (
+            inherited_state is not None
+            and tracked_route_id == trip.route_id
+            and trigger < float(inherited_state.available_second) - _TOL
+        )
+        if carried_in_progress:
+            in_progress.append(trip.route_id)
+        elif execution_state == COMPLETED:
             completed.append(trip.route_id)
-        elif state == IN_PROGRESS:
+        elif execution_state == IN_PROGRESS:
             in_progress.append(trip.route_id)
         else:
             editable.append(trip.route_id)
 
     actions_by_asset: dict[str, list[tuple[float, float, ChargingAction]]] = {}
+    actions_by_route: dict[str, list[ChargingAction]] = {}
     newly_locked: list[ChargingAction] = []
     for action in solution.charging_actions:
         trip = trip_by_id[action.vehicle_id]
+        actions_by_route.setdefault(action.vehicle_id, []).append(action)
         start = _absolute_charge_start(action)
         end = start + float(action.occupancy_minutes) * 60.0
         actions_by_asset.setdefault(trip.physical_vehicle_id, []).append((start, end, action))
@@ -299,13 +392,67 @@ def cut_dynamic_certificate_at_trigger(
             newly_locked.append(action)
 
     states: dict[str, DynamicAssetState] = {}
+    frozen_arcs: dict[str, tuple[tuple[str, str], ...]] = {}
+    unexecuted_arcs: dict[str, tuple[tuple[str, str], ...]] = {}
+    for route_id, route in route_by_id.items():
+        arcs = tuple(zip(route.node_sequence, route.node_sequence[1:]))
+        if route_id in completed:
+            frozen_arcs[route_id] = arcs
+            unexecuted_arcs[route_id] = ()
+        elif route_id in editable:
+            frozen_arcs[route_id] = ()
+            unexecuted_arcs[route_id] = arcs
     for asset_id, state in inherited.items():
         chain = [trip for trip in certificate.trips if trip.physical_vehicle_id == asset_id]
+        tracked_route_id = state.continuation_route_id or state.in_progress_route_id
+        if tracked_route_id is not None and trigger < float(state.available_second) - _TOL:
+            carried = _carry_unreleased_state(state, trigger)
+            states[asset_id] = carried
+            route_id = str(tracked_route_id)
+            if route_id in route_by_id:
+                frozen_arcs[route_id] = tuple(state.frozen_arcs)
+                route = route_by_id[route_id]
+                unexecuted_arcs[route_id] = tuple(
+                    zip(route.node_sequence, route.node_sequence[1:])
+                )
+            continue
         started = [trip for trip in chain if _trip_state(trip, trigger) != NOT_STARTED]
         running = [trip for trip in chain if _trip_state(trip, trigger) == IN_PROGRESS]
-        available = max(trigger, float(state.available_second))
         if running:
-            available = max(available, max(float(trip.return_second) for trip in running))
+            trip = running[0]
+            route = route_by_id[trip.route_id]
+            execution = _replay_trip(
+                route,
+                trip,
+                instance,
+                prices,
+                actions_by_route.get(trip.route_id, []),
+            )
+            live_state, frozen, unexecuted = _in_progress_asset_state(
+                route,
+                trip,
+                execution,
+                instance,
+                prices,
+                actions_by_route.get(trip.route_id, ()),
+                trigger,
+                inherited_remaining_load_kg=(
+                    state.remaining_load_kg
+                    if tracked_route_id == trip.route_id
+                    else None
+                ),
+                inherited_battery_kwh=(
+                    state.remaining_battery_kwh
+                    if tracked_route_id == trip.route_id
+                    and state.vehicle_type == "ev"
+                    else None
+                ),
+            )
+            states[asset_id] = live_state
+            frozen_arcs[trip.route_id] = frozen
+            unexecuted_arcs[trip.route_id] = unexecuted
+            continue
+        available = max(trigger, float(state.available_second))
 
         if state.vehicle_type == "ev":
             battery = float(state.remaining_battery_kwh)
@@ -323,8 +470,20 @@ def cut_dynamic_certificate_at_trigger(
                     f"{DYNAMIC_CONTRACT_ID}: {asset_id} continued battery {battery:.9f} is outside capacity"
                 )
             battery = min(battery_cap, max(0.0, battery))
+            trigger_battery = battery
+            for start, end, action in actions_by_asset.get(asset_id, []):
+                if start <= trigger < end:
+                    trigger_battery = _battery_during_actions(
+                        battery - float(action.energy_kwh),
+                        (action,),
+                        trigger,
+                        instance,
+                        prices,
+                    )
+                    break
         else:
             battery = 0.0
+            trigger_battery = 0.0
 
         next_index = max(
             int(state.next_trip_index),
@@ -337,6 +496,13 @@ def cut_dynamic_certificate_at_trigger(
             available_second=float(available),
             remaining_battery_kwh=float(battery),
             next_trip_index=next_index,
+            position_node_id=state.home_depot_id,
+            remaining_load_kg=0.0,
+            trigger_position_node_id=state.home_depot_id,
+            release_node_id=state.home_depot_id,
+            trigger_time=trigger,
+            trigger_remaining_load_kg=0.0,
+            trigger_remaining_battery_kwh=float(trigger_battery),
         )
 
     locked = _deduplicated_actions(
@@ -350,6 +516,10 @@ def cut_dynamic_certificate_at_trigger(
         editable_route_ids=tuple(sorted(editable)),
         locked_charging_actions=tuple(locked),
         asset_states=MappingProxyType(dict(states)),
+        frozen_arc_prefix_by_route_id=MappingProxyType(dict(frozen_arcs)),
+        unexecuted_arc_suffix_by_route_id=MappingProxyType(
+            dict(unexecuted_arcs)
+        ),
     )
 
 
@@ -380,6 +550,20 @@ def prepare_dynamic_multitrip_solution(
     if len({route.vehicle_id for route in solution.routes}) != len(solution.routes):
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: open route ids are not unique")
     route_by_id = {route.vehicle_id: route for route in solution.routes}
+    virtual_state_by_node = {
+        state.virtual_origin_node_id: state
+        for state in asset_states.values()
+        if state.virtual_origin_node_id is not None
+    }
+    open_routes = [
+        route
+        for route in solution.routes
+        if route.node_sequence and route.node_sequence[0] != route.home_depot_id
+    ]
+    if any(route.node_sequence[0] not in virtual_state_by_node for route in open_routes):
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: open route has no inherited virtual origin")
+    if len({route.node_sequence[0] for route in open_routes}) != len(open_routes):
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: a virtual origin is used more than once")
     node_types = {
         node.node_id: node.node_type.lower() for node in instance.nodes
     }
@@ -456,6 +640,12 @@ def prepare_dynamic_multitrip_solution(
                 None
                 if minimum_departure_second_by_route is None
                 else minimum_departure_second_by_route.get(route.vehicle_id)
+            ),
+            allowed_open_start_node_ids=frozenset(virtual_state_by_node),
+            inherited_load_kg=(
+                virtual_state_by_node[route.node_sequence[0]].remaining_load_kg
+                if route.node_sequence[0] in virtual_state_by_node
+                else None
             ),
         )
         for route in solution.routes
@@ -816,9 +1006,14 @@ def _dynamic_assignment_candidates(
     ] = []
     for asset_id, asset in working.items():
         state = asset.state
+        open_start = route.node_sequence[0] != route.home_depot_id
         if (
             state.vehicle_type != route.vehicle_type.lower()
             or state.home_depot_id != route.home_depot_id
+            or (
+                open_start
+                and state.virtual_origin_node_id != route.node_sequence[0]
+            )
         ):
             continue
         boundary = max(stage_start, asset.available_second)
@@ -832,9 +1027,13 @@ def _dynamic_assignment_candidates(
                 0.0,
                 profile.latest_departure_second - boundary,
             )
-            possible_battery = charging_curve.reachable_energy_kwh(
-                asset.battery_kwh,
-                available_seconds,
+            possible_battery = (
+                asset.battery_kwh
+                if open_start
+                else charging_curve.reachable_energy_kwh(
+                    asset.battery_kwh,
+                    available_seconds,
+                )
             )
             if possible_battery + _TOL < required_departure:
                 continue
@@ -844,7 +1043,7 @@ def _dynamic_assignment_candidates(
                     asset.battery_kwh,
                     asset.battery_kwh + needed,
                 )
-                if needed > _TOL
+                if needed > _TOL and not open_start
                 else 0.0
             )
             departure = max(profile.preferred_departure_second, energy_ready)
@@ -1037,13 +1236,27 @@ def validate_dynamic_multitrip_certificate(
                 raise ValueError(
                     f"{DYNAMIC_CONTRACT_ID}: one trip has multiple depot charges"
                 )
-            returned = route_timing(
-                route,
-                instance,
-                prices,
-                charging_actions=actions,
-                forced_departure_second=float(trip.departure_second),
-            ).return_second
+            is_open_start = route.node_sequence[0] != route.home_depot_id
+            if is_open_start and actions:
+                raise ValueError(
+                    f"{DYNAMIC_CONTRACT_ID}: an open continuation cannot start a new charge"
+                )
+            returned = (
+                _return_at_departure(
+                    route,
+                    instance,
+                    prices,
+                    float(trip.departure_second),
+                )
+                if is_open_start
+                else route_timing(
+                    route,
+                    instance,
+                    prices,
+                    charging_actions=actions,
+                    forced_departure_second=float(trip.departure_second),
+                ).return_second
+            )
             if abs(returned - float(trip.return_second)) > _TOL:
                 raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {trip.route_id} return clock drifted")
             profile = _route_profile(
@@ -1051,6 +1264,11 @@ def validate_dynamic_multitrip_certificate(
                 instance,
                 prices,
                 public_charging_actions=tuple(public_actions),
+                allowed_open_start_node_ids=frozenset(
+                    item.virtual_origin_node_id
+                    for item in states.values()
+                    if item.virtual_origin_node_id is not None
+                ),
             )
 
             if state.vehicle_type == "cv":
@@ -1121,15 +1339,20 @@ def validate_dynamic_multitrip_certificate(
                     if charge_start < boundary - _TOL or charge_end > float(trip.departure_second) + _TOL:
                         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: charge falls outside the legal gap")
                 start_battery = battery + charge_energy
-                timing = route_timing(
-                    route,
-                    instance,
-                    prices,
-                    charging_actions=actions,
-                    forced_departure_second=float(trip.departure_second),
+                timing = (
+                    None
+                    if is_open_start
+                    else route_timing(
+                        route,
+                        instance,
+                        prices,
+                        charging_actions=actions,
+                        forced_departure_second=float(trip.departure_second),
+                    )
                 )
                 if (
-                    timing.required_departure_battery_kwh is not None
+                    timing is not None
+                    and timing.required_departure_battery_kwh is not None
                     and abs(
                         start_battery
                         - float(timing.required_departure_battery_kwh)
@@ -1142,7 +1365,11 @@ def validate_dynamic_multitrip_certificate(
                     )
                 end_battery = (
                     start_battery
-                    + float(timing.public_charge_energy_kwh)
+                    + float(
+                        0.0
+                        if timing is None
+                        else timing.public_charge_energy_kwh
+                    )
                     - profile.drive_energy_kwh
                 )
                 if start_battery > battery_cap + _TOL or end_battery < -_TOL:
@@ -1154,7 +1381,11 @@ def validate_dynamic_multitrip_certificate(
                 if (
                     abs(
                         float(trip.in_route_charge_energy_kwh)
-                        - float(timing.public_charge_energy_kwh)
+                        - float(
+                            0.0
+                            if timing is None
+                            else timing.public_charge_energy_kwh
+                        )
                     )
                     > _TOL
                 ):
@@ -1428,6 +1659,386 @@ def _validate_asset_states(
     return normalized
 
 
+def instance_with_inherited_virtual_origins(
+    instance: Instance,
+    asset_states: Mapping[str, DynamicAssetState],
+) -> Instance:
+    """Add immutable zero-offset copies of legal continuation nodes."""
+
+    existing = {node.node_id: node for node in instance.nodes}
+    additions = [
+        state
+        for state in asset_states.values()
+        if state.virtual_origin_node_id is not None
+        and state.virtual_origin_node_id not in existing
+    ]
+    if not additions:
+        return instance
+    max_due = max(float(node.due_time) for node in instance.nodes)
+    source_id_by_new: dict[str, str] = {}
+    extra_nodes: list[Node] = []
+    for state in additions:
+        source_id = str(state.release_node_id)
+        if source_id not in existing:
+            raise ValueError(
+                f"{DYNAMIC_CONTRACT_ID}: virtual origin has unknown release node {source_id}"
+            )
+        virtual_id = str(state.virtual_origin_node_id)
+        if virtual_id in source_id_by_new:
+            raise ValueError(f"{DYNAMIC_CONTRACT_ID}: duplicate virtual origin {virtual_id}")
+        source = existing[source_id]
+        source_id_by_new[virtual_id] = source_id
+        extra_nodes.append(
+            Node(
+                virtual_id,
+                "v",
+                float(source.x),
+                float(source.y),
+                ready_time=0.0,
+                due_time=max(max_due, float(state.available_second)),
+                city=source.city,
+            )
+        )
+
+    nodes = [*instance.nodes, *extra_nodes]
+    base_ids = [node.node_id for node in instance.nodes]
+    all_ids = [node.node_id for node in nodes]
+    base_index = {node_id: index for index, node_id in enumerate(base_ids)}
+
+    def source_index(node_id: str) -> int:
+        return base_index[source_id_by_new.get(node_id, node_id)]
+
+    distance = [
+        [
+            float(instance.distance_matrix[source_index(left)][source_index(right)])
+            for right in all_ids
+        ]
+        for left in all_ids
+    ]
+    road_profiles = None
+    if instance.road_profiles is not None:
+        road_profiles = {
+            profile: RoadProfileMatrices(
+                distance_m=tuple(
+                    tuple(matrices.distance_m[source_index(left)][source_index(right)] for right in all_ids)
+                    for left in all_ids
+                ),
+                duration_s=tuple(
+                    tuple(matrices.duration_s[source_index(left)][source_index(right)] for right in all_ids)
+                    for left in all_ids
+                ),
+                sum_v2d_m3_s2=tuple(
+                    tuple(matrices.sum_v2d_m3_s2[source_index(left)][source_index(right)] for right in all_ids)
+                    for left in all_ids
+                ),
+            )
+            for profile, matrices in instance.road_profiles.items()
+        }
+    return replace(
+        instance,
+        nodes=nodes,
+        distance_matrix=distance,
+        road_profiles=road_profiles,
+    )
+
+
+def _in_progress_asset_state(
+    route: Route,
+    trip: ScheduledTrip,
+    execution: Any,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any,
+    actions: Sequence[ChargingAction],
+    trigger: float,
+    *,
+    inherited_remaining_load_kg: float | None = None,
+    inherited_battery_kwh: float | None = None,
+) -> tuple[
+    DynamicAssetState,
+    tuple[tuple[str, str], ...],
+    tuple[tuple[str, str], ...],
+]:
+    """Replay one active trip to its next legal dvrpsim release boundary."""
+
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    sequence = tuple(route.node_sequence)
+    arcs = tuple(zip(sequence, sequence[1:]))
+    planned_loads = _arc_loads(list(sequence), node_lookup)
+    remaining_load = (
+        float(planned_loads[0])
+        if inherited_remaining_load_kg is None and planned_loads
+        else float(inherited_remaining_load_kg or 0.0)
+    )
+    loads: list[float] = []
+    load_cursor = remaining_load
+    for to_id in sequence[1:]:
+        loads.append(load_cursor)
+        target = node_lookup[to_id]
+        if target.node_type == "c":
+            load_cursor -= float(target.demand)
+    if load_cursor < -_TOL:
+        raise ValueError(
+            f"{DYNAMIC_CONTRACT_ID}: inherited load cannot serve its active route"
+        )
+    battery = (
+        float(
+            trip.start_battery_kwh
+            if inherited_battery_kwh is None
+            else inherited_battery_kwh
+        )
+        if route.vehicle_type == "ev"
+        else 0.0
+    )
+    if (
+        route.vehicle_type == "ev"
+        and inherited_battery_kwh is not None
+        and abs(float(trip.start_battery_kwh or 0.0) - battery) > _TOL
+    ):
+        raise ValueError(
+            f"{DYNAMIC_CONTRACT_ID}: inherited battery disagrees with continuation"
+        )
+    public_actions: dict[str, list[ChargingAction]] = {}
+    for action in actions:
+        node = node_lookup.get(action.station_id)
+        if node is not None and node.node_type == "f":
+            public_actions.setdefault(action.station_id, []).append(action)
+    for station_actions in public_actions.values():
+        station_actions.sort(key=lambda item: float(item.charge_start_second))
+
+    for arc_index, target_event in enumerate(execution.nodes[1:]):
+        source_event = execution.nodes[arc_index]
+        from_id, to_id = arcs[arc_index]
+        arc_energy = 0.0
+        if route.vehicle_type == "ev":
+            arc_energy = ev_instance_arc_energy_kwh(
+                instance,
+                from_id,
+                to_id,
+                loads[arc_index],
+                prices,
+            )
+        if trigger < float(target_event.arrival_second) - _TOL:
+            duration = float(target_event.arrival_second) - float(
+                source_event.departure_second
+            )
+            progress = (
+                1.0
+                if duration <= _TOL
+                else min(
+                    1.0,
+                    max(
+                        0.0,
+                        (trigger - float(source_event.departure_second))
+                        / duration,
+                    ),
+                )
+            )
+            return _continued_state(
+                route,
+                trip,
+                trigger,
+                release_node_id=to_id,
+                release_second=float(target_event.arrival_second),
+                executed_prefix=sequence[: arc_index + 1],
+                editable_suffix=sequence[arc_index + 1 : -1],
+                locked_arc=(from_id, to_id),
+                trigger_position=f"{from_id}->{to_id}@{progress:.9f}",
+                progress=progress,
+                trigger_load=remaining_load,
+                release_load=remaining_load,
+                trigger_battery=battery - arc_energy * progress,
+                release_battery=battery - arc_energy,
+                frozen_arcs=arcs[: arc_index + 1],
+                unexecuted_arcs=arcs[arc_index + 1 :],
+            )
+
+        battery -= arc_energy
+        frozen_count = arc_index + 1
+        target = node_lookup[to_id]
+        if trigger < float(target_event.service_start_second) - _TOL:
+            return _continued_state(
+                route,
+                trip,
+                trigger,
+                release_node_id=to_id,
+                release_second=trigger,
+                executed_prefix=sequence[: arc_index + 1],
+                editable_suffix=sequence[arc_index + 1 : -1],
+                locked_arc=None,
+                trigger_position=to_id,
+                progress=None,
+                trigger_load=remaining_load,
+                release_load=remaining_load,
+                trigger_battery=battery,
+                release_battery=battery,
+                frozen_arcs=arcs[:frozen_count],
+                unexecuted_arcs=arcs[frozen_count:],
+            )
+
+        station_actions = public_actions.get(to_id, [])
+        release_battery = battery + sum(
+            float(action.energy_kwh) for action in station_actions
+        )
+        if trigger < float(target_event.departure_second) - _TOL:
+            trigger_battery = _battery_during_actions(
+                battery,
+                station_actions,
+                trigger,
+                instance,
+                prices,
+            )
+            release_load = remaining_load
+            if target.node_type == "c":
+                release_load -= float(target.demand)
+            return _continued_state(
+                route,
+                trip,
+                trigger,
+                release_node_id=to_id,
+                release_second=float(target_event.departure_second),
+                executed_prefix=sequence[: arc_index + 2],
+                editable_suffix=sequence[arc_index + 2 : -1],
+                locked_arc=None,
+                trigger_position=to_id,
+                progress=None,
+                trigger_load=release_load,
+                release_load=release_load,
+                trigger_battery=trigger_battery,
+                release_battery=release_battery,
+                frozen_arcs=arcs[:frozen_count],
+                unexecuted_arcs=arcs[frozen_count:],
+            )
+        battery = release_battery
+        if target.node_type == "c":
+            remaining_load -= float(target.demand)
+
+    raise ValueError(f"{DYNAMIC_CONTRACT_ID}: active route has no live boundary")
+
+
+def _continued_state(
+    route: Route,
+    trip: ScheduledTrip,
+    trigger: float,
+    *,
+    release_node_id: str,
+    release_second: float,
+    executed_prefix: tuple[str, ...],
+    editable_suffix: tuple[str, ...],
+    locked_arc: tuple[str, str] | None,
+    trigger_position: str,
+    progress: float | None,
+    trigger_load: float,
+    release_load: float,
+    trigger_battery: float,
+    release_battery: float,
+    frozen_arcs: tuple[tuple[str, str], ...],
+    unexecuted_arcs: tuple[tuple[str, str], ...],
+) -> tuple[DynamicAssetState, tuple[tuple[str, str], ...], tuple[tuple[str, str], ...]]:
+    continuation = release_node_id != route.home_depot_id or bool(editable_suffix)
+    virtual_id = (
+        f"__VIRTUAL_ORIGIN__{trip.physical_vehicle_id}__T{trip.trip_index}"
+        f"__S{int(round(trigger * 1_000_000.0))}"
+        if continuation
+        else None
+    )
+    state = DynamicAssetState(
+        physical_vehicle_id=trip.physical_vehicle_id,
+        vehicle_type=route.vehicle_type,
+        home_depot_id=route.home_depot_id,
+        available_second=float(release_second),
+        remaining_battery_kwh=float(release_battery),
+        next_trip_index=(int(trip.trip_index) if continuation else int(trip.trip_index) + 1),
+        position_node_id=virtual_id or trigger_position,
+        remaining_load_kg=float(release_load),
+        continuation_route_id=(route.vehicle_id if continuation else None),
+        in_progress_route_id=route.vehicle_id,
+        continuation_trip_index=(int(trip.trip_index) if continuation else None),
+        executed_prefix=tuple(executed_prefix),
+        frozen_arcs=tuple(frozen_arcs),
+        locked_arc=locked_arc,
+        editable_suffix=tuple(editable_suffix),
+        trigger_position_node_id=trigger_position,
+        release_node_id=release_node_id,
+        virtual_origin_node_id=virtual_id,
+        trigger_time=float(trigger),
+        trigger_arc_progress=progress,
+        trigger_remaining_load_kg=float(trigger_load),
+        trigger_remaining_battery_kwh=float(trigger_battery),
+    )
+    return state, tuple(frozen_arcs), tuple(unexecuted_arcs)
+
+
+def _carry_unreleased_state(
+    state: DynamicAssetState,
+    trigger: float,
+) -> DynamicAssetState:
+    """Advance evidence inside an already locked boundary without releasing it."""
+
+    previous_trigger = state.trigger_time
+    if previous_trigger is None or trigger < float(previous_trigger) - _TOL:
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: unreleased state has no valid trigger clock")
+    release = float(state.available_second)
+    if trigger >= release - _TOL:
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: released state cannot be carried")
+    progress = state.trigger_arc_progress
+    trigger_battery = float(
+        state.trigger_remaining_battery_kwh
+        if state.trigger_remaining_battery_kwh is not None
+        else state.remaining_battery_kwh
+    )
+    position = state.trigger_position_node_id
+    if state.locked_arc is not None and progress is not None:
+        remaining_fraction = 1.0 - float(progress)
+        remaining_seconds = release - float(previous_trigger)
+        if remaining_fraction <= _TOL or remaining_seconds <= _TOL:
+            raise ValueError(f"{DYNAMIC_CONTRACT_ID}: locked arc has no remaining extent")
+        full_duration = remaining_seconds / remaining_fraction
+        progress = min(
+            1.0,
+            float(progress) + (trigger - float(previous_trigger)) / full_duration,
+        )
+        elapsed_fraction = (trigger - float(previous_trigger)) / remaining_seconds
+        trigger_battery += (
+            float(state.remaining_battery_kwh) - trigger_battery
+        ) * elapsed_fraction
+        position = (
+            f"{state.locked_arc[0]}->{state.locked_arc[1]}@{progress:.9f}"
+        )
+    return replace(
+        state,
+        trigger_position_node_id=position,
+        trigger_time=float(trigger),
+        trigger_arc_progress=progress,
+        trigger_remaining_load_kg=float(state.remaining_load_kg),
+        trigger_remaining_battery_kwh=float(trigger_battery),
+    )
+
+
+def _battery_during_actions(
+    inherited: float,
+    actions: Sequence[ChargingAction],
+    trigger: float,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> float:
+    battery = float(inherited)
+    for action in actions:
+        start = _absolute_charge_start(action)
+        end = start + float(action.occupancy_minutes) * 60.0
+        if trigger <= start:
+            break
+        if trigger >= end - _TOL:
+            battery += float(action.energy_kwh)
+            continue
+        curve_state = charging_curve_for_action(action, instance, prices)
+        if curve_state is None:
+            fraction = (trigger - start) / max(_TOL, end - start)
+            return battery + float(action.energy_kwh) * fraction
+        curve, start_energy, _ = curve_state
+        return curve.reachable_energy_kwh(start_energy, trigger - start)
+    return battery
+
+
 def _route_profile(
     route: Route,
     instance: Instance,
@@ -1435,12 +2046,20 @@ def _route_profile(
     *,
     public_charging_actions: tuple[ChargingAction, ...] = (),
     minimum_departure_second: float | None = None,
+    allowed_open_start_node_ids: frozenset[str] = frozenset(),
+    inherited_load_kg: float | None = None,
 ) -> _RouteProfile:
     if route.vehicle_type.lower() not in {"cv", "ev"}:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has an unknown vehicle type")
     if len(route.node_sequence) < 2:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has no trip")
-    if route.node_sequence[0] != route.home_depot_id or route.node_sequence[-1] != route.home_depot_id:
+    if (
+        route.node_sequence[-1] != route.home_depot_id
+        or (
+            route.node_sequence[0] != route.home_depot_id
+            and route.node_sequence[0] not in allowed_open_start_node_ids
+        )
+    ):
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} is not depot closed")
     nodes = {node.node_id: node for node in instance.nodes}
     unknown = [node_id for node_id in route.node_sequence if node_id not in nodes]
@@ -1459,7 +2078,7 @@ def _route_profile(
             f"{DYNAMIC_CONTRACT_ID}: every dynamic public-station visit must "
             "have a charging action and vice versa"
         )
-    load = sum(
+    planned_demand = sum(
         float(nodes[node_id].demand)
         for node_id in route.node_sequence
         if nodes[node_id].node_type.lower() == "c"
@@ -1468,13 +2087,18 @@ def _route_profile(
         route.vehicle_type,
         fallback=_price(prices, "Q_capacity"),
     )
+    load = planned_demand if inherited_load_kg is None else float(inherited_load_kg)
     if load > capacity + _TOL:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} exceeds capacity")
+    if planned_demand > load + _TOL:
+        raise ValueError(
+            f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} exceeds inherited load"
+        )
     speed = _price(prices, "v_speed_ms")
     if speed <= 0.0:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: vehicle speed must be positive")
 
-    origin = nodes[route.home_depot_id]
+    origin = nodes[route.node_sequence[0]]
     elapsed = float(origin.service_time)
     departure_floor = float(origin.ready_time) + float(origin.service_time)
     if minimum_departure_second is not None:
@@ -1514,7 +2138,12 @@ def _route_profile(
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has no feasible clock")
     preferred = min(preferred, latest)
 
-    loads = _arc_loads(route.node_sequence, nodes)
+    loads: list[float] = []
+    load_cursor = load
+    for to_id in route.node_sequence[1:]:
+        loads.append(load_cursor)
+        if nodes[to_id].node_type.lower() == "c":
+            load_cursor -= float(nodes[to_id].demand)
     energy = 0.0
     if route.vehicle_type.lower() == "ev":
         energy = sum(

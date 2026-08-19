@@ -15,7 +15,11 @@ from run_problem_hgs_private_technical import (  # noqa: E402
 
 
 def test_route_layer_acceptance_without_education_acceptance_passes_sentinel_gate() -> None:
-    accepted = {"hgs_population": 2, "route_layer_crossover": 1}
+    accepted = {
+        "duty_crossover": 1,
+        "hgs_population": 2,
+        "route_layer_crossover": 1,
+    }
 
     classification = _sentinel_acceptance_classification(accepted)
 

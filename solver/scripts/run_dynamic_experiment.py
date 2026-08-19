@@ -56,6 +56,9 @@ ARM_DYNAMIC = "rolling_dynamic"
 ARM_MECHANICAL = "mechanical_online_p38"
 ARM_STATIC = "full_information_static_reference"
 REFERENCE_ROLE = "reference_only_not_fair_comparator"
+FORMAL_DECISION_BUDGET_SECONDS = 64.5
+FORMAL_STATIC_BUDGET_SECONDS = 387.0
+FORMAL_DECISION_COUNT = 6
 
 
 @dataclass(frozen=True)
@@ -76,6 +79,14 @@ class DualShiftTriggerProtocol:
 
 
 Q569_4_T30_DUALSHIFT = DualShiftTriggerProtocol()
+Q417_T30_DUALSHIFT = DualShiftTriggerProtocol(
+    policy_id="Q417_T30_DUALSHIFT",
+    demand_threshold_kg=417.0,
+    source=(
+        "2026-08-19 user-approved local protocol: 417 kg demand trigger, "
+        "30-minute maximum wait, and two legal reception shifts"
+    ),
+)
 
 RAW_RUN_FIELDS = (
     "instance_id",
@@ -87,9 +98,19 @@ RAW_RUN_FIELDS = (
     "evaluator_identity",
     "wall_clock_budget_seconds_per_decision",
     "scheduled_decision_count",
+    "hgs_call_count",
+    "hgs_budget_seconds_per_call",
+    "hgs_budget_seconds_total",
+    "mechanical_insertion_actual_wall_clock_seconds",
+    "mechanical_insertion_count",
+    "shared_initial_plan_actual_wall_clock_seconds",
+    "total_actual_wall_clock_seconds_including_shared_initial",
     "actual_wall_clock_seconds",
     "total_cost",
     "total_emissions_kg",
+    "total_distance_km",
+    "fuel_direct_emissions_kg",
+    "charging_indirect_emissions_kg",
     "full_evaluation_feasible",
     "customers_served",
     "customers_total",
@@ -159,6 +180,38 @@ EVENT_LOG_FIELDS = (
     "charging_emissions_kg",
     "committed_history_sha256",
     "committed_history_preserved",
+    "route_snapshot_before_json",
+    "route_snapshot_after_json",
+    "old_unexecuted_arc_count_before",
+    "changed_old_old_unexecuted_arc_count",
+    "changed_old_old_unexecuted_arc_ids_json",
+    "old_customer_count",
+    "old_customers_changed_vehicle_count",
+    "old_customers_changed_vehicle_ids_json",
+    "vehicles_with_old_customer_changes_count",
+    "vehicles_with_old_customer_changes_ids_json",
+    "dynamic_vehicle_states_json",
+    "frozen_prefixes_json",
+)
+
+TABLE9_FIELDS = (
+    "instance_id", "seed", "batch_index", "trigger_second", "trigger_cause",
+    "new_customer_ids", "future_route_changed", "old_unexecuted_arc_count_before",
+    "changed_old_old_unexecuted_arc_count", "changed_old_old_unexecuted_arc_ids_json",
+    "old_customer_count", "old_customers_changed_vehicle_count",
+    "old_customers_changed_vehicle_ids_json", "vehicles_with_old_customer_changes_count",
+    "vehicles_with_old_customer_changes_ids_json", "dynamic_vehicle_states_json",
+    "frozen_prefixes_json", "route_snapshot_before_json", "route_snapshot_after_json",
+)
+TABLE10_FIELDS = (
+    "instance_id", "seed", "arm", "role", "customers_served", "customers_total",
+    "completion_ratio", "demand_served_kg", "demand_total_kg", "unserved_customer_ids",
+    "enabled_vehicles", "route_adjustment_count", "total_distance_km", "total_cost",
+    "fuel_direct_emissions_kg", "charging_indirect_emissions_kg", "total_emissions_kg",
+    "hgs_call_count", "hgs_budget_seconds_per_call", "hgs_budget_seconds_total",
+    "mechanical_insertion_actual_wall_clock_seconds", "mechanical_insertion_count",
+    "shared_initial_plan_actual_wall_clock_seconds",
+    "actual_wall_clock_seconds", "total_actual_wall_clock_seconds_including_shared_initial",
 )
 
 FLEET_USAGE_FIELDS = (
@@ -797,6 +850,18 @@ _DETAIL_EVENT_KEYS = (
     "charging_emissions_kg",
     "committed_history_sha256",
     "committed_history_preserved",
+    "route_snapshot_before_json",
+    "route_snapshot_after_json",
+    "old_unexecuted_arc_count_before",
+    "changed_old_old_unexecuted_arc_count",
+    "changed_old_old_unexecuted_arc_ids_json",
+    "old_customer_count",
+    "old_customers_changed_vehicle_count",
+    "old_customers_changed_vehicle_ids_json",
+    "vehicles_with_old_customer_changes_count",
+    "vehicles_with_old_customer_changes_ids_json",
+    "dynamic_vehicle_states_json",
+    "frozen_prefixes_json",
 )
 
 
@@ -909,11 +974,25 @@ def _raw_row(
     shared_stream: SharedEventStream,
     backend: ExperimentBackend,
     wall_clock_seconds: float,
+    shared_initial_plan_seconds: float,
     role: str,
 ) -> dict[str, Any]:
     all_orders = problem.orders
     unserved = tuple(getattr(outcome.state, "unserved_customer_ids", ()))
     outsourced = tuple(getattr(outcome.state, "outsourced_customer_ids", ()))
+    budget_fields = _arm_budget_fields(
+        arm=outcome.arm,
+        decision_count=len(shared_stream.batches),
+        decision_budget_seconds=wall_clock_seconds,
+        arm_actual_seconds=outcome.actual_wall_clock_seconds,
+        shared_initial_plan_seconds=shared_initial_plan_seconds,
+        actual_hgs_call_count=outcome.evaluation.details.get(
+            "actual_hgs_call_count", ""
+        ),
+        mechanical_insertion_actual_seconds=outcome.evaluation.details.get(
+            "mechanical_insertion_actual_wall_clock_seconds", ""
+        ),
+    )
     return {
         "instance_id": problem.instance_id,
         "seed": seed,
@@ -922,11 +1001,22 @@ def _raw_row(
         "run_status": outcome.run_status,
         "event_stream_sha256": shared_stream.sha256,
         "evaluator_identity": backend.evaluator_identity,
-        "wall_clock_budget_seconds_per_decision": wall_clock_seconds,
-        "scheduled_decision_count": len(shared_stream.batches),
+        **budget_fields,
+        "mechanical_insertion_count": outcome.evaluation.details.get(
+            "mechanical_insertion_count", ""
+        ),
         "actual_wall_clock_seconds": outcome.actual_wall_clock_seconds,
         "total_cost": outcome.evaluation.total_cost,
         "total_emissions_kg": outcome.evaluation.total_emissions_kg,
+        "total_distance_km": outcome.evaluation.details.get(
+            "total_distance_km", ""
+        ),
+        "fuel_direct_emissions_kg": outcome.evaluation.details.get(
+            "fuel_direct_emissions_kg", ""
+        ),
+        "charging_indirect_emissions_kg": outcome.evaluation.details.get(
+            "charging_indirect_emissions_kg", ""
+        ),
         "full_evaluation_feasible": outcome.evaluation.full_evaluation_feasible,
         "customers_served": outcome.evaluation.customers_served,
         "customers_total": len(all_orders),
@@ -960,6 +1050,46 @@ def _raw_row(
     }
 
 
+def _arm_budget_fields(
+    *,
+    arm: str,
+    decision_count: int,
+    decision_budget_seconds: float,
+    arm_actual_seconds: float,
+    shared_initial_plan_seconds: float,
+    actual_hgs_call_count: int | str,
+    mechanical_insertion_actual_seconds: float | str = "",
+) -> dict[str, Any]:
+    """Record the approved S/M/D timing contract without conflating clocks."""
+    planned_calls, per_call, scheduled, mechanical = {
+        ARM_DYNAMIC: (decision_count, decision_budget_seconds, decision_count, ""),
+        ARM_STATIC: (1, decision_budget_seconds * decision_count, 1, ""),
+        ARM_MECHANICAL: (
+            0,
+            "",
+            decision_count,
+            mechanical_insertion_actual_seconds,
+        ),
+    }[arm]
+    accounted_actual = (
+        float(mechanical)
+        if arm == ARM_MECHANICAL and mechanical != ""
+        else arm_actual_seconds
+    )
+    return {
+        "wall_clock_budget_seconds_per_decision": per_call,
+        "scheduled_decision_count": scheduled,
+        "hgs_call_count": actual_hgs_call_count,
+        "hgs_budget_seconds_per_call": per_call,
+        "hgs_budget_seconds_total": float(per_call) * planned_calls if per_call != "" else 0.0,
+        "mechanical_insertion_actual_wall_clock_seconds": mechanical,
+        "shared_initial_plan_actual_wall_clock_seconds": shared_initial_plan_seconds,
+        "total_actual_wall_clock_seconds_including_shared_initial": (
+            shared_initial_plan_seconds + accounted_actual
+        ),
+    }
+
+
 def _assess_raw_row(row: Mapping[str, Any]) -> RunAcceptance:
     return assess_run(
         termination_ok=row.get("run_status") == "completed",
@@ -981,6 +1111,7 @@ def _assess_results(
     results: Mapping[str, Any],
     *,
     audit_ok: bool = True,
+    extra_failure_reasons: Sequence[str] = (),
     success_verdict: str,
     failure_verdict: str,
 ) -> RunAcceptance:
@@ -1000,7 +1131,7 @@ def _assess_results(
             for row in rows
         ),
         audit_ok=audit_ok,
-        extra_failure_reasons=tuple(
+        extra_failure_reasons=tuple(extra_failure_reasons) + tuple(
             f"{row.get('instance_id')} seed={row.get('seed')} arm={row.get('arm')}: "
             f"{row.get('acceptance_failure_reasons')}"
             for row in rows
@@ -1009,6 +1140,137 @@ def _assess_results(
         success_verdict=success_verdict,
         failure_verdict=failure_verdict,
     )
+
+
+_ROUTE_JSON = (
+    "route_snapshot_before_json", "route_snapshot_after_json",
+    "changed_old_old_unexecuted_arc_ids_json",
+    "old_customers_changed_vehicle_ids_json",
+    "vehicles_with_old_customer_changes_ids_json",
+    "dynamic_vehicle_states_json", "frozen_prefixes_json",
+)
+_ROUTE_COUNTS = (
+    "old_unexecuted_arc_count_before", "changed_old_old_unexecuted_arc_count",
+    "old_customer_count", "old_customers_changed_vehicle_count",
+    "vehicles_with_old_customer_changes_count",
+)
+
+
+def _validated_route_evidence(event_rows):
+    rows, errors = [], []
+    for row in (item for item in event_rows if item.get("arm") == ARM_DYNAMIC):
+        label = f"seed={row.get('seed')} batch={row.get('batch_index')}"
+        try:
+            if any(row.get(key) in (None, "") for key in (*_ROUTE_JSON, *_ROUTE_COUNTS)):
+                raise ValueError("missing field")
+            decoded = {key: json.loads(str(row[key])) for key in _ROUTE_JSON}
+            counts = {key: int(row[key]) for key in _ROUTE_COUNTS}
+            pairs = ((2, 1), (3, 3), (4, 4))
+            if any(count < 0 for count in counts.values()) or any(
+                len(set(map(str, decoded[_ROUTE_JSON[j]]))) != counts[_ROUTE_COUNTS[c]]
+                for j, c in pairs
+            ):
+                raise ValueError("count/cardinality mismatch")
+            if counts[_ROUTE_COUNTS[1]] > counts[_ROUTE_COUNTS[0]] or counts[_ROUTE_COUNTS[3]] > counts[_ROUTE_COUNTS[2]]:
+                raise ValueError("changed count exceeds old-item denominator")
+            if not isinstance(decoded[_ROUTE_JSON[5]], list) or not decoded[_ROUTE_JSON[5]]:
+                raise ValueError("vehicle states are empty")
+            if not isinstance(decoded[_ROUTE_JSON[6]], dict) or not decoded[_ROUTE_JSON[6]]:
+                raise ValueError("frozen prefixes are empty")
+            before, after = decoded[_ROUTE_JSON[0]], decoded[_ROUTE_JSON[1]]
+            values = {key: row[key] for key in (*_ROUTE_JSON, *_ROUTE_COUNTS)}
+            rows.append({
+                "instance_id": row["instance_id"], "seed": row["seed"],
+                "batch_index": row["batch_index"], "trigger_second": row["trigger_second"],
+                "trigger_cause": row["trigger_cause"], "new_customer_ids": row["customer_ids"],
+                "future_route_changed": before != after, **values,
+            })
+        except (TypeError, ValueError, json.JSONDecodeError) as error:
+            errors.append(f"{label} invalid route evidence: {error}")
+    if not rows:
+        errors.append("route evidence has no valid rolling-dynamic rows")
+    return rows, errors
+
+
+def _formal_budget_errors(results):
+    expected = {ARM_DYNAMIC: (6, 64.5), ARM_STATIC: (1, 387.0), ARM_MECHANICAL: (0, "")}
+    errors = []
+    for row in results["raw_rows"]:
+        calls, seconds = expected[str(row["arm"])]
+        try:
+            valid = int(row["hgs_call_count"]) == calls and (
+                (seconds == "" and row["hgs_budget_seconds_per_call"] == "")
+                or (seconds != "" and math.isclose(float(row["hgs_budget_seconds_per_call"]), seconds))
+            )
+        except (TypeError, ValueError):
+            valid = False
+        if not valid:
+            errors.append(f"seed={row['seed']} arm={row['arm']} budget/call mismatch")
+        if row["arm"] == ARM_MECHANICAL:
+            try:
+                mechanical_seconds = float(
+                    row["mechanical_insertion_actual_wall_clock_seconds"]
+                )
+                total_seconds = float(
+                    row["total_actual_wall_clock_seconds_including_shared_initial"]
+                )
+                initial_seconds = float(
+                    row["shared_initial_plan_actual_wall_clock_seconds"]
+                )
+                valid_mechanical_clock = (
+                    mechanical_seconds >= 0.0
+                    and math.isclose(
+                        total_seconds,
+                        initial_seconds + mechanical_seconds,
+                    )
+                )
+            except (KeyError, TypeError, ValueError):
+                valid_mechanical_clock = False
+            if not valid_mechanical_clock:
+                errors.append(
+                    f"seed={row['seed']} M mechanical clock mismatch"
+                )
+    return errors
+
+
+def _table10_rows(results, table9_rows):
+    output, errors = [], []
+    changed = sum(bool(row["future_route_changed"]) for row in table9_rows)
+    for row in results["raw_rows"]:
+        required = ("total_distance_km", "fuel_direct_emissions_kg", "charging_indirect_emissions_kg")
+        if any(row.get(key) in (None, "") for key in required):
+            errors.append(f"seed={row['seed']} arm={row['arm']} Table 10 fields missing")
+            continue
+        if row["arm"] == ARM_MECHANICAL and row.get("mechanical_insertion_count") in (None, ""):
+            errors.append(f"seed={row['seed']} M mechanical insertion count missing")
+            continue
+        adjustments = changed if row["arm"] == ARM_DYNAMIC else int(row["mechanical_insertion_count"]) if row["arm"] == ARM_MECHANICAL else 0
+        values = {**row, "completion_ratio": float(row["customers_served"]) / float(row["customers_total"]), "route_adjustment_count": adjustments}
+        output.append({key: values[key] for key in TABLE10_FIELDS})
+    return output, errors
+
+
+def _write_figure5_svg(path, row):
+    snapshots = [json.loads(str(row[key])) for key in _ROUTE_JSON[:2]]
+    points = [tuple(map(float, xy)) for snap in snapshots for xy in snap["coordinates"].values()]
+    xs, ys = zip(*points, strict=True); xmin, xmax, ymin, ymax = min(xs), max(xs), min(ys), max(ys)
+    svg = ['<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500">', '<rect width="100%" height="100%" fill="white"/>']
+    for index, snap in enumerate(snapshots):
+        offset = 25 + 490 * index; coords = snap["coordinates"]
+        svg += [f'<rect x="{offset}" y="40" width="460" height="390" fill="none" stroke="#444"/>', f'<text x="{offset + 230}" y="25" text-anchor="middle">({"ab"[index]}) {"before" if index == 0 else "after"}</text>']
+        for route in snap["routes"]:
+            virtual = set(route.get("virtual_origin_node_ids", []))
+            for key, colour, dash in (("frozen_arcs", "#6b7280", ""), ("unexecuted_arcs", "#2563eb", ' stroke-dasharray="6 4"')):
+                for left, right in route[key]:
+                    xy = []
+                    for node in (left, right):
+                        x, y = map(float, coords[node]); xy += [offset + 30 + 400 * (x - xmin) / max(xmax - xmin, 1), 410 - 340 * (y - ymin) / max(ymax - ymin, 1)]
+                    svg.append(f'<line x1="{xy[0]:.1f}" y1="{xy[1]:.1f}" x2="{xy[2]:.1f}" y2="{xy[3]:.1f}" stroke="{colour}"{dash}/>')
+                    for node, x, y in ((left, xy[0], xy[1]), (right, xy[2], xy[3])):
+                        fill = "#7c3aed" if node in virtual else "#f97316" if node in str(row["new_customer_ids"]).split("|") else "white"
+                        svg.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="{fill}" stroke="#111"/>')
+    svg += ['<text x="500" y="470" text-anchor="middle">gray: frozen | blue dashed: unexecuted | orange: new | purple: virtual origin</text>', '</svg>']
+    path.write_text("\n".join(svg) + "\n", encoding="utf-8")
 
 
 def run_paired_pipeline(
@@ -1054,7 +1316,9 @@ def run_paired_pipeline(
                 if method_name == "for_seed"
                 else method(shared_stream)
             )
+        initial_started = perf_counter()
         initial_state = active_backend.initial_plan(problem, wall_clock_seconds)
+        initial_plan_seconds = perf_counter() - initial_started
         dynamic = _run_online_arm(
             problem=problem,
             seed=int(seed),
@@ -1102,6 +1366,7 @@ def run_paired_pipeline(
                 shared_stream=shared_stream,
                 backend=active_backend,
                 wall_clock_seconds=wall_clock_seconds,
+                shared_initial_plan_seconds=initial_plan_seconds,
                 role=role,
             )
             raw_row.update(_assess_raw_row(raw_row).row_fields())
@@ -1385,6 +1650,21 @@ def _write_main3b_package(
     protected_before: Mapping[str, str],
     protected_after: Mapping[str, str],
 ) -> RunAcceptance:
+    table9_rows, route_evidence_errors = _validated_route_evidence(
+        results["event_rows"]
+    )
+    table10_rows, table10_errors = _table10_rows(results, table9_rows)
+    batch_errors = [
+        f"seed={seed} Table 9 does not contain batches 1..6"
+        for seed in seeds
+        if sorted(int(row["batch_index"]) for row in table9_rows if int(row["seed"]) == int(seed)) != list(range(1, 7))
+    ]
+    evidence_errors = [
+        *_formal_budget_errors(results),
+        *route_evidence_errors,
+        *table10_errors,
+        *batch_errors,
+    ]
     output_dir.mkdir(parents=True, exist_ok=False)
     streams_dir = output_dir / "shared_event_streams"
     streams_dir.mkdir()
@@ -1404,6 +1684,28 @@ def _write_main3b_package(
         PAIRED_RESULT_FIELDS,
         results["paired_rows"],
     )
+    _write_csv(
+        output_dir / "table9_dynamic_state_and_route_changes.csv",
+        TABLE9_FIELDS,
+        table9_rows,
+    )
+    _write_csv(
+        output_dir / "table10_three_arm_summary.csv",
+        TABLE10_FIELDS,
+        table10_rows,
+    )
+    figure5_row = next(
+        (row for row in table9_rows if row["future_route_changed"]),
+        table9_rows[0] if table9_rows else None,
+    )
+    if figure5_row is not None and not route_evidence_errors:
+        try:
+            _write_figure5_svg(
+                output_dir / "figure5_route_before_after.svg",
+                figure5_row,
+            )
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            evidence_errors.append(f"Figure 5 route evidence invalid: {error}")
     for seed, payload in sorted(results["stream_payloads"].items()):
         _write_json(streams_dir / f"seed_{seed}.json", payload)
 
@@ -1447,14 +1749,19 @@ def _write_main3b_package(
             "per_reveal_events.csv": list(EVENT_LOG_FIELDS),
             "fleet_usage.csv": list(FLEET_USAGE_FIELDS),
             "paired_results.csv": list(PAIRED_RESULT_FIELDS),
+            "table9_dynamic_state_and_route_changes.csv": list(TABLE9_FIELDS),
+            "table10_three_arm_summary.csv": list(TABLE10_FIELDS),
         },
+        "route_evidence_complete": not evidence_errors,
     }
     acceptance = _assess_results(
         results,
         audit_ok=(
             source_hash_before == source_hash_after
             and dict(protected_before) == dict(protected_after)
+            and not evidence_errors
         ),
+        extra_failure_reasons=evidence_errors,
         success_verdict="MAIN3B_DONE",
         failure_verdict="MAIN3B_FAILED",
     )
@@ -1481,6 +1788,12 @@ def _write_main3b_package(
         source_hash_after=source_hash_after,
         protected_before=protected_before,
         protected_after=protected_after,
+    )
+    changed_arcs = sum(int(row["changed_old_old_unexecuted_arc_count"]) for row in table9_rows)
+    changed_vehicles = {v for row in table9_rows for v in json.loads(str(row["vehicles_with_old_customer_changes_ids_json"]))}
+    report += (
+        f"\n## 表9／图5／表10\n\n`FACT` {len(table9_rows)} 个决策点累计改变"
+        f" {changed_arcs} 条旧-旧未执行弧，涉及 {len(changed_vehicles)} 辆实体车；表10有 {len(table10_rows)} 行。\n"
     )
     if not acceptance.accepted:
         report = report.replace("MAIN3B_DONE", "MAIN3B_FAILED", 1)
@@ -1618,35 +1931,26 @@ def _write_artifact_hashes(output_dir: Path) -> None:
 
 
 def _main3b_git_diff(repo: Path) -> str:
-    tracked = (
-        "solver/scripts/run_dynamic_experiment.py",
-        "solver/src/setp_solver/algorithms/problem_hgs/mechanical_baseline.py",
+    approved_scope = (
+        "solver/src/setp_solver/search/dynamic_multitrip_schedule.py",
+        "solver/src/setp_solver/algorithms/problem_hgs/dynamic.py",
+        "solver/src/setp_solver/algorithms/problem_hgs/evaluation.py",
         "solver/src/setp_solver/algorithms/problem_hgs/dynamic_insertion.py",
-    )
-    new_files = (
         "solver/src/setp_solver/main3b_backend.py",
+        "solver/scripts/run_dynamic_experiment.py",
+        "solver/tests/test_dynamic_multitrip_schedule.py",
+        "solver/tests/test_problem_hgs_dynamic_insertion.py",
         "solver/tests/test_main3b_protocol.py",
+        "solver/tests/test_dynamic_experiment.py",
     )
-    chunks: list[str] = []
-    tracked_result = subprocess.run(
-        ["git", "diff", "--", *tracked],
+    result = subprocess.run(
+        ["git", "diff", "--", *approved_scope],
         cwd=repo,
         check=False,
         capture_output=True,
         text=True,
     )
-    chunks.append(tracked_result.stdout)
-    for relative in new_files:
-        path = repo / relative
-        result = subprocess.run(
-            ["git", "diff", "--no-index", "--", "/dev/null", str(path)],
-            cwd=repo,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        chunks.append(result.stdout)
-    return "\n".join(chunk for chunk in chunks if chunk)
+    return result.stdout
 
 
 def _main3b_report(
@@ -1881,9 +2185,9 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--trigger-protocol",
-        choices=("qiu", "q569_4_t30_dualshift"),
+        choices=("qiu", "q417_t30_dualshift", "q569_4_t30_dualshift"),
         help=(
-            "Formal runs use Q569_4_T30_DUALSHIFT when omitted; dry-run "
+            "Formal runs use Q417_T30_DUALSHIFT when omitted; dry-run "
             "keeps the legacy QIU protocol."
         ),
     )
@@ -1906,6 +2210,10 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 
 
 def _formal_preflight(args: argparse.Namespace) -> None:
+    if not math.isclose(args.wall_clock_seconds, FORMAL_DECISION_BUDGET_SECONDS):
+        raise PendingUserDecisionError(
+            "formal execution requires the approved 64.5-second D batch budget"
+        )
     if args.infeasible_policy is None:
         raise PendingUserDecisionError(
             "formal execution blocked: the no-feasible-candidate accounting "
@@ -1933,12 +2241,16 @@ def _selected_protocol(
     requested: str | None,
 ) -> TriggerProtocol | DualShiftTriggerProtocol:
     if dry_run:
-        return QIU_TRIGGER_PROTOCOL if requested in (None, "qiu") else Q569_4_T30_DUALSHIFT
-    return (
-        QIU_TRIGGER_PROTOCOL
-        if requested == "qiu"
-        else Q569_4_T30_DUALSHIFT
-    )
+        if requested in (None, "qiu"):
+            return QIU_TRIGGER_PROTOCOL
+        if requested == "q569_4_t30_dualshift":
+            return Q569_4_T30_DUALSHIFT
+        return Q417_T30_DUALSHIFT
+    if requested == "qiu":
+        return QIU_TRIGGER_PROTOCOL
+    if requested == "q569_4_t30_dualshift":
+        return Q569_4_T30_DUALSHIFT
+    return Q417_T30_DUALSHIFT
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -1990,7 +2302,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     from setp_solver.main3b_backend import (  # noqa: PLC0415
         ProductionBackend,
-        ProductionBackendHalt,
         build_production_problem,
     )
 
@@ -2025,7 +2336,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             backend=ProductionBackend(),
             protocol=protocol,
         )
-    except ProductionBackendHalt as error:
+    except Exception as error:
         source_hashes_after = package_file_hashes(target_dir)
         protected_after = {
             str(path.relative_to(repo)): _file_sha256(path)
