@@ -1,6 +1,0 @@
-{
-  "verdict": "HALT_REDUCED_FULL_TOO_SLOW_SYNC_ENV",
-  "reason": "147456-timestep episode-safe reduced_full training ran about 10 minutes, produced only one PPO iteration and zero completed episodes; worker CPU was highly imbalanced, so continuing would be a multi-hour synchronous-env run rather than a small probe.",
-  "env_eval_rows": 0,
-  "next_step": "Do not long-train reduced_full in current synchronous per-step env. Prefer block-level controller or offline imitation/action-value learning next."
-}

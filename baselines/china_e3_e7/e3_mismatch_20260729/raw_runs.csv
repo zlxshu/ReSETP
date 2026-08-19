@@ -1,7 +1,0 @@
-stage,record_type,instance_id,mismatch_intensity_nominal_pct,eligible_multi_depot_instances,excluded_single_depot_instances,route_counts_by_depot,total_fleet_caps_by_depot,violation_count,search_evaluations,status,note
-gate2,applicability_summary,ALL,,45,36,,,0,0,PASS_D3_MULTI_DEPOT_CURRENT_SOURCE,"45/45 current-source four-layer replays passed; 36 single-depot instances excluded"
-preregistration,main_input_preflight,cn-prd-50c-01-V2-LOCATIONS,0,,,"D_guangzhou:4;D_shenzhen:5","D_guangzhou:5;D_shenzhen:7",0,0,PASS,"common input completed and independently checked"
-preregistration,main_input_preflight,cn-prd-50c-01-V2-LOCATIONS,25,,,"D_guangzhou:4;D_shenzhen:5","D_guangzhou:5;D_shenzhen:7",0,0,PASS,"13/50 customers reassigned; common input completed and independently checked"
-preregistration,main_input_preflight,cn-prd-50c-01-V2-LOCATIONS,50,,,"D_guangzhou:5;D_shenzhen:4","D_guangzhou:5;D_shenzhen:7",0,0,PASS,"25/50 customers reassigned; common input completed and independently checked"
-preregistration,stability_input_preflight,cn-jjj-100c-01-V2-LOCATIONS,50,,,"D_tianjin:10","D_tianjin:7",,0,HALT_D2A_TOTAL_FLEET_CAP,"frozen hash-ranked assignment cannot produce a D2-A-feasible common LOCK/FREE input"
-preregistration,stability_contract_audit,MULTI_DEPOT_WITH_3_OR_4_DEPOTS,50,12,,,,,0,HALT_DESTINATION_RULE_UNDEFINED,"another depot is not uniquely defined for the 6 three-depot and 6 four-depot instances; approval required before freezing a rule"

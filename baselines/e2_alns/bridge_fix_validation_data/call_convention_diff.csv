@@ -1,6 +1,0 @@
-field,baseline_bridge,main_alns,risk
-policy.max_cv/max_ev,"_ThinPolicy(max_cv=1e9, max_ev=1e9)","SearchPolicy(max_cv=instance.num_cv, max_ev=instance.num_ev)",bridge may enumerate routes that can only fail at final fleet-cap check
-partial solution,_routes_without_customers + _actions_for_routes,_remove_customers removes empty routes and keeps actions for kept vehicles/stations,mostly equivalent; Phase A records partial route/action counts
-allow_new_route,always True,True except route_elimination_removal forces False,not a direct mismatch for the five bridge destroy operators
-None handling,returns infeasible _OperatorOutcome detail=strong_repair_failed,returns source_solution/current state and continues,baseline LNS falls back to decoder path after bridge failure
-shared repair function,repair_removed_customers from feasible_repair.py,same function,"fix must be bridge-side call convention, not shared repair semantics"

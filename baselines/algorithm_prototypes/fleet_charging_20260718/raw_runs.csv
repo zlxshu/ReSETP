@@ -1,9 +1,0 @@
-candidate_id,budget,status,complete_candidate_evaluations,screen_evaluations,route_oracle_calls,oracle_cache_hits,reference_evaluations,active,selected_mode,selected_candidate,objective_abstract,regret_abstract,independent_replay_pass,notes
-FC-C02,0,PASS_FUNCTION_ONLY,0,0,0,0,0,False,,,,,,Repeated requests intentionally expose cache accounting; no CNY/formal SOC/cross-trip semantics.
-FC-C02,1,PASS_FUNCTION_ONLY,1,0,1,0,1,True,EV_WITH_CHARGE,FC-C02-ABSTRACT-NL-01,4.0,,True,Repeated requests intentionally expose cache accounting; no CNY/formal SOC/cross-trip semantics.
-FC-C02,2,PASS_FUNCTION_ONLY,2,0,1,1,2,True,EV_WITH_CHARGE,FC-C02-ABSTRACT-NL-01,4.0,,True,Repeated requests intentionally expose cache accounting; no CNY/formal SOC/cross-trip semantics.
-FC-C02,5,PASS_FUNCTION_ONLY,5,0,1,4,5,True,EV_WITH_CHARGE,FC-C02-ABSTRACT-NL-01,4.0,,True,Repeated requests intentionally expose cache accounting; no CNY/formal SOC/cross-trip semantics.
-FC-C05,0,PASS_FUNCTION_ONLY,0,0,0,0,0,False,,,,,,Score function is injected abstractly; no formal objective or physical contract is selected.
-FC-C05,1,PASS_FUNCTION_ONLY,1,6,1,0,1,False,EV_WITH_CHARGE,M1,5.0,,True,Score function is injected abstractly; no formal objective or physical contract is selected.
-FC-C05,2,PASS_FUNCTION_ONLY,2,6,1,0,1,True,EV_WITH_CHARGE,M1,5.0,2.0,True,Score function is injected abstractly; no formal objective or physical contract is selected.
-FC-C05,5,PASS_FUNCTION_ONLY,5,6,1,1,1,True,EV_WITH_CHARGE,M1,5.0,2.0,True,Score function is injected abstractly; no formal objective or physical contract is selected.
