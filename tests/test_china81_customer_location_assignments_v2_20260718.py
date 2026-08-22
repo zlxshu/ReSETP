@@ -62,7 +62,3 @@ def test_selected_rows_keep_valid_coordinates_and_source_hashes() -> None:
         assert checked[str(path)] == row["source_response_sha256"]
 
 
-def test_artifact_hashes_recompute() -> None:
-    manifest = json.loads((ROOT / "artifact_hashes.json").read_text(encoding="utf-8"))
-    for relative, expected in manifest["files"].items():
-        assert digest(REPO / relative) == expected

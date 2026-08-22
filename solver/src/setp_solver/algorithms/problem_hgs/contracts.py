@@ -29,10 +29,6 @@ if TYPE_CHECKING:
     from .evaluation import FullEvaluation
 
 
-CHARGING_ENERGY_GAP = "CHARGING_ENERGY_GAP"
-CHARGING_WINDOW_GAP = "CHARGING_WINDOW_GAP"
-
-
 class CandidateStatus(StrEnum):
     EVALUATED = "EVALUATED"
     NO_CHANGE = "NO_CHANGE"
@@ -50,85 +46,8 @@ class ChargingCandidateStatus(StrEnum):
     """Charging-subproblem state, separate from complete feasibility."""
 
     READY = "READY"
-    BEST_EFFORT = "BEST_EFFORT"
     REJECTED_INTERFACE = "REJECTED_INTERFACE"
     REJECTED_CHARGING = "REJECTED_CHARGING"
-
-
-@dataclass(frozen=True)
-class ChargingGap:
-    """Unscaled native-unit charging deficit kept as two independent terms."""
-
-    missing_energy_kwh: float = 0.0
-    window_shortage_seconds: float = 0.0
-
-    def __post_init__(self) -> None:
-        energy = float(self.missing_energy_kwh)
-        window = float(self.window_shortage_seconds)
-        if not math.isfinite(energy) or energy < 0.0:
-            raise ValueError("charging missing energy must be finite and nonnegative")
-        if not math.isfinite(window) or window < 0.0:
-            raise ValueError("charging window shortage must be finite and nonnegative")
-        object.__setattr__(self, "missing_energy_kwh", energy)
-        object.__setattr__(self, "window_shortage_seconds", window)
-
-    @property
-    def active(self) -> bool:
-        return bool(
-            self.missing_energy_kwh > 0.0
-            or self.window_shortage_seconds > 0.0
-        )
-
-    @property
-    def values(self) -> tuple[float, float]:
-        return self.missing_energy_kwh, self.window_shortage_seconds
-
-
-@dataclass(frozen=True)
-class ChargingClockWitness:
-    """One independently replayable S1-clock row used to derive a gap."""
-
-    duty_id: str
-    route_id: str
-    trip_index: int
-    window_mode: str
-    departure_second: float
-    return_second: float
-    available_window_seconds: float
-    required_window_seconds: float
-    energy_before_window_kwh: float
-    reachable_energy_kwh: float
-    required_departure_energy_kwh: float
-
-
-@dataclass(frozen=True)
-class ChargingGapDutyIndividual(DutyIndividual):
-    """A structurally intact Duty candidate carrying a charging sidecar."""
-
-    charging_candidate_status: ChargingCandidateStatus = (
-        ChargingCandidateStatus.BEST_EFFORT
-    )
-    charging_gap: ChargingGap = field(default_factory=ChargingGap)
-    charging_rejection_reason: str | None = None
-    affected_duty_ids: tuple[str, ...] = ()
-    charging_clock_witnesses: tuple[ChargingClockWitness, ...] = ()
-
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        status = ChargingCandidateStatus(self.charging_candidate_status)
-        affected = tuple(sorted(str(value) for value in self.affected_duty_ids))
-        witnesses = tuple(self.charging_clock_witnesses)
-        if status != ChargingCandidateStatus.BEST_EFFORT:
-            raise ValueError("a charging-gap Duty must be BEST_EFFORT")
-        if not self.charging_gap.active:
-            raise ValueError("BEST_EFFORT requires a nonzero charging gap")
-        if not affected:
-            raise ValueError("BEST_EFFORT requires at least one affected duty")
-        if not witnesses:
-            raise ValueError("BEST_EFFORT requires an S1 clock witness")
-        object.__setattr__(self, "charging_candidate_status", status)
-        object.__setattr__(self, "affected_duty_ids", affected)
-        object.__setattr__(self, "charging_clock_witnesses", witnesses)
 
 
 @dataclass(frozen=True)
@@ -137,29 +56,20 @@ class ChargingRepairOutcome:
 
     status: ChargingCandidateStatus
     candidate: DutyIndividual | None
-    gap: ChargingGap = field(default_factory=ChargingGap)
     reason_code: str | None = None
     affected_duty_ids: tuple[str, ...] = ()
-    clock_witnesses: tuple[ChargingClockWitness, ...] = ()
     error: Exception | None = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         status = ChargingCandidateStatus(self.status)
         affected = tuple(sorted(str(value) for value in self.affected_duty_ids))
-        witnesses = tuple(self.clock_witnesses)
         if status == ChargingCandidateStatus.READY:
-            if self.candidate is None or self.gap.active:
-                raise ValueError("READY requires a candidate and a zero gap")
-        elif status == ChargingCandidateStatus.BEST_EFFORT:
-            if self.candidate is None or not self.gap.active or not witnesses:
-                raise ValueError(
-                    "BEST_EFFORT requires a candidate, nonzero gap, and clock witness"
-                )
+            if self.candidate is None:
+                raise ValueError("READY requires a candidate")
         elif self.candidate is not None:
             raise ValueError("a rejected charging outcome cannot carry a candidate")
         object.__setattr__(self, "status", status)
         object.__setattr__(self, "affected_duty_ids", affected)
-        object.__setattr__(self, "clock_witnesses", witnesses)
 
     @property
     def fingerprint(self) -> str | None:
@@ -180,34 +90,19 @@ class CandidateOutcome:
     wall_seconds: float = 0.0
     work_accounting: Mapping[str, int] = field(default_factory=dict)
     charging_candidate_status: ChargingCandidateStatus | None = None
-    charging_gap: ChargingGap | None = None
-    charging_clock_witnesses: tuple[ChargingClockWitness, ...] = ()
 
     def __post_init__(self) -> None:
         evaluation = self.evaluation
-        candidate = self.candidate
         status = self.charging_candidate_status
-        gap = self.charging_gap
-        witnesses = tuple(self.charging_clock_witnesses)
         if evaluation is not None:
             status = status or getattr(
                 evaluation,
                 "charging_candidate_status",
                 None,
             )
-            gap = gap or getattr(evaluation, "charging_gap", None)
-            witnesses = witnesses or tuple(
-                getattr(evaluation, "charging_clock_witnesses", ())
-            )
-        if isinstance(candidate, ChargingGapDutyIndividual):
-            status = status or candidate.charging_candidate_status
-            gap = gap or candidate.charging_gap
-            witnesses = witnesses or candidate.charging_clock_witnesses
         if status is not None:
             status = ChargingCandidateStatus(status)
         object.__setattr__(self, "charging_candidate_status", status)
-        object.__setattr__(self, "charging_gap", gap)
-        object.__setattr__(self, "charging_clock_witnesses", witnesses)
 
     @property
     def evaluated(self) -> bool:
@@ -233,11 +128,6 @@ class SearchAccounting:
     rejected_actions: Counter[str] = field(default_factory=Counter)
     charging_rejection_reasons: Counter[str] = field(default_factory=Counter)
     charging_candidate_statuses: Counter[str] = field(default_factory=Counter)
-    charging_gap_ledger: list[dict[str, Any]] = field(default_factory=list)
-    charging_gap_a2_evaluations: int = 0
-    charging_gap_a2_violation_counts: Counter[str] = field(
-        default_factory=Counter
-    )
     no_change_actions: Counter[str] = field(default_factory=Counter)
     full_evaluations: int = 0
     initialization_full_evaluations: int = 0
@@ -262,12 +152,6 @@ class SearchAccounting:
     education_depth_cap_triggers_while_improving: int = 0
     education_cache_hits: int = 0
     education_cache_misses: int = 0
-    truth_shortlist_batches: int = 0
-    truth_shortlist_exact_evaluations: int = 0
-    truth_shortlist_accepted: int = 0
-    truth_reselections: int = 0
-    truth_reselection_reasons: Counter[str] = field(default_factory=Counter)
-    truth_winner_proxy_ranks: Counter[int] = field(default_factory=Counter)
     charging_repair_cache_hits: int = 0
     charging_repair_cache_misses: int = 0
     population_admission_attempts: int = 0
@@ -317,52 +201,6 @@ class SearchAccounting:
             self.charging_candidate_statuses[
                 outcome.charging_candidate_status.value
             ] += 1
-        if outcome.charging_gap is not None and outcome.charging_gap.active:
-            self.charging_gap_ledger.append(
-                {
-                    "action_id": str(outcome.action_id),
-                    "channel": str(outcome.channel),
-                    "candidate_status": (
-                        None
-                        if outcome.charging_candidate_status is None
-                        else outcome.charging_candidate_status.value
-                    ),
-                    "complete_feasible": (
-                        None
-                        if outcome.evaluation is None
-                        else bool(outcome.evaluation.feasible)
-                    ),
-                    "candidate_fingerprint": (
-                        None
-                        if outcome.candidate is None
-                        else outcome.candidate.fingerprint
-                    ),
-                    "missing_energy_kwh": float(
-                        outcome.charging_gap.missing_energy_kwh
-                    ),
-                    "window_shortage_seconds": float(
-                        outcome.charging_gap.window_shortage_seconds
-                    ),
-                    "charging_rejection_reason": (
-                        outcome.charging_rejection_reason
-                        or getattr(
-                            outcome.evaluation,
-                            "charging_rejection_reason",
-                            None,
-                        )
-                    ),
-                }
-            )
-            if outcome.evaluation is not None:
-                gap_types = Counter(
-                    violation.type
-                    for violation in outcome.evaluation.violations
-                    if violation.type
-                    in {CHARGING_ENERGY_GAP, CHARGING_WINDOW_GAP}
-                )
-                if gap_types:
-                    self.charging_gap_a2_evaluations += 1
-                    self.charging_gap_a2_violation_counts.update(gap_types)
         if outcome.evaluated:
             self.evaluated_actions[outcome.channel] += 1
             if outcome.evaluation is not None:
@@ -385,22 +223,6 @@ class SearchAccounting:
 
     def record_acceptance(self, channel: str) -> None:
         self.accepted_actions[channel] += 1
-
-    def record_truth_shortlist_batch(self, exact_evaluations: int) -> None:
-        self.truth_shortlist_batches += 1
-        self.truth_shortlist_exact_evaluations += int(exact_evaluations)
-
-    def record_truth_shortlist_acceptance(
-        self,
-        *,
-        proxy_rank: int,
-        reselection_reason: str | None,
-    ) -> None:
-        self.truth_shortlist_accepted += 1
-        self.truth_winner_proxy_ranks[int(proxy_rank)] += 1
-        if reselection_reason is not None:
-            self.truth_reselections += 1
-            self.truth_reselection_reasons[str(reselection_reason)] += 1
 
     def record_accepted_effect(
         self,
@@ -611,13 +433,6 @@ class SearchAccounting:
             "charging_candidate_statuses": dict(
                 sorted(self.charging_candidate_statuses.items())
             ),
-            "charging_gap_ledger": list(self.charging_gap_ledger),
-            "charging_gap_a2_evaluations": int(
-                self.charging_gap_a2_evaluations
-            ),
-            "charging_gap_a2_violation_counts": dict(
-                sorted(self.charging_gap_a2_violation_counts.items())
-            ),
             "no_change_actions": dict(sorted(self.no_change_actions.items())),
             "full_evaluations": int(self.full_evaluations),
             "initialization_full_evaluations": int(
@@ -753,11 +568,6 @@ class SearchAccounting:
                 sorted(
                     self.schedule_rejected_candidates_by_channel_and_status.items()
                 )
-            ),
-            "penalty_adaptation": (
-                None
-                if self.penalty_manager is None
-                else self.penalty_manager.telemetry()
             ),
         }
 

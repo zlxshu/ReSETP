@@ -140,7 +140,7 @@ class ScheduleOracleContext:
         evaluation_sha256: str,
         depot_charge_window_mode: str,
     ) -> "ScheduleOracleContext":
-        node_by_id = {node.node_id: node for node in instance.nodes}
+        node_by_id = instance.node_lookup
         customer_count = sum(
             node.node_type.lower() == "c" for node in instance.nodes
         )
@@ -1250,7 +1250,7 @@ def build_capacity_calendar(
 ) -> dict[tuple[str, int, int], CapacityCalendarEntry]:
     """Mirror ``check.py:_check_station_capacity`` without touching it."""
 
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     customer_count = sum(
         node.node_type.lower() == "c" for node in instance.nodes
     )

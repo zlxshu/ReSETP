@@ -990,10 +990,10 @@ class ProductionBackend:
         )
         identity = FrozenPopulationIdentity(
             source_id=f"main3b:{arm}:stage-{stage_index}",
-            value_sha256=population_sha256((candidate,)),
+            value_sha256=population_sha256((candidate,) * 4),
         )
         result = run_integrated_problem_hgs(
-            (candidate,),
+            (candidate,) * 4,
             evaluator=evaluator,
             charging_policy=_policy(evaluator),
             parameters=parameters,
@@ -1004,7 +1004,7 @@ class ProductionBackend:
             ),
             arm=arm,
             route_engine=route_engine,
-            initial_evaluations=(initial_evaluation,),
+            initial_evaluations=(initial_evaluation,) * 4,
             initialization_full_evaluation_count=1,
             initialization_wall_seconds=initialization_wall,
             cross_depot_enabled=True,

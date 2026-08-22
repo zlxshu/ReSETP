@@ -98,6 +98,9 @@ class Instance:
     vehicle_parameters: Mapping[str, VehicleTypeParameters] | None = None
     demand_mass_per_unit_kg: float | None = None
     _node_index: dict[str, int] = field(init=False, repr=False, compare=False)
+    _node_lookup: dict[str, "Node"] = field(
+        init=False, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -107,6 +110,11 @@ class Instance:
                 node.node_id: idx
                 for idx, node in enumerate(self.nodes)
             },
+        )
+        object.__setattr__(
+            self,
+            "_node_lookup",
+            {node.node_id: node for node in self.nodes},
         )
         if self.road_profiles is None and self.vehicle_parameters is None:
             return
@@ -181,6 +189,16 @@ class Instance:
     @property
     def node_index(self) -> dict[str, int]:
         return self._node_index
+
+    @property
+    def node_lookup(self) -> dict[str, "Node"]:
+        """Node objects by id, built once with the instance.
+
+        Callers must treat the mapping as read-only; build a copy before
+        inserting synthetic nodes.
+        """
+
+        return self._node_lookup
 
     def distance(self, from_node_id: str, to_node_id: str) -> float:
         left, right = self._indices(from_node_id, to_node_id)

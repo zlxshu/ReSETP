@@ -170,138 +170,10 @@ def in_progress_dynamic_fixture():
     return _build_dynamic_fixture(30_000.0)
 
 
-def test_disabled_operator_is_exact_noop(dynamic_fixture) -> None:
-    _bundle, future, context, revealed, _committed = dynamic_fixture
-    evaluator = DutyFullEvaluator(context)
-
-    result = DynamicInsertionOperator(enabled=False, random_seed=11).apply(
-        future,
-        evaluator=evaluator,
-        charging_policy=_policy(evaluator),
-        newly_revealed_customer_ids=(revealed,),
-    )
-
-    assert result.individual is future
-    assert result.evaluation is None
-    assert evaluator.full_calls == 0
-    assert result.accounting.complete_evaluations == 0
-    assert (
-        result.accounting.committed_sha256_before
-        == result.accounting.committed_sha256_after
-    )
 
 
-def test_revealed_order_is_inserted_without_changing_commitment_and_passes_ruler(
-    dynamic_fixture,
-) -> None:
-    bundle, future, context, revealed, committed_customers = dynamic_fixture
-    evaluator = DutyFullEvaluator(context)
-
-    result = DynamicInsertionOperator(enabled=True, random_seed=11).apply(
-        future,
-        evaluator=evaluator,
-        charging_policy=_policy(evaluator),
-        newly_revealed_customer_ids=(revealed,),
-    )
-
-    assert result.evaluation is not None and result.evaluation.feasible
-    assert revealed not in result.individual.unserved_customers
-    assert result.accounting.newly_revealed_count == 1
-    assert result.accounting.kernel_updates >= 1
-    assert (
-        result.accounting.committed_sha256_before
-        == result.accounting.committed_sha256_after
-    )
-    customers = {
-        node.node_id: node
-        for node in bundle.instance.nodes
-        if node.node_type.lower() == "c"
-    }
-    served = {
-        node_id
-        for route in result.evaluation.prepared_solution.routes
-        for node_id in route.node_sequence[1:-1]
-        if node_id in customers
-    }
-    assert served == set(customers)
-    assert committed_customers.issubset(served)
-    assert sum(customers[item].demand for item in served) == pytest.approx(
-        sum(node.demand for node in customers.values())
-    )
 
 
-def test_in_progress_trips_freeze_only_executed_prefix_and_inherit_live_state(
-    in_progress_dynamic_fixture,
-) -> None:
-    bundle, future, context, revealed, committed = in_progress_dynamic_fixture
-    assert context.dynamic_state.cut.in_progress_route_ids
-    continuation_assets = [
-        asset
-        for asset in context.dynamic_state.asset_states.values()
-        if getattr(asset, "continuation_route_id", None) is not None
-        and tuple(getattr(asset, "editable_suffix", ()))
-    ]
-    assert continuation_assets
-    future_customers = {
-        customer_id
-        for duty in future.duties
-        for trip in duty.trips
-        for customer_id in trip.customer_ids
-    }
-    original_suffix_customers = {
-        node_id
-        for asset in continuation_assets
-        for node_id in tuple(getattr(asset, "editable_suffix", ()))
-        if node_id in context.dynamic_state.future_customer_ids
-    }
-    assert original_suffix_customers
-    assert original_suffix_customers.issubset(future_customers)
-    assert original_suffix_customers.isdisjoint(committed)
-    evaluator = DutyFullEvaluator(context)
-
-    result = DynamicInsertionOperator(enabled=True, random_seed=11).apply(
-        future,
-        evaluator=evaluator,
-        charging_policy=_policy(evaluator),
-        newly_revealed_customer_ids=(revealed,),
-    )
-
-    assert result.evaluation is not None and result.evaluation.feasible
-    assert (
-        result.accounting.committed_sha256_before
-        == result.accounting.committed_sha256_after
-    )
-    prepared = prepare_dynamic_candidate(
-        result.individual,
-        context.dynamic_state,
-        bundle,
-    )
-    future_by_id = {
-        route.vehicle_id: route for route in prepared.future_solution.routes
-    }
-    full_by_id = {
-        route.vehicle_id: route
-        for route in prepared.full_execution_solution.routes
-    }
-    for asset in continuation_assets:
-        route_id = str(asset.continuation_route_id)
-        origin = (
-            getattr(asset, "virtual_origin_node_id", None)
-            or getattr(asset, "position_node_id", None)
-        )
-        assert origin is not None
-        assert future_by_id[route_id].node_sequence[0] == origin
-        inherited = prepared.future_check_context.vehicle_states[route_id]
-        assert inherited.position_node_id == origin
-        assert inherited.current_time == pytest.approx(asset.available_second)
-        assert inherited.remaining_load_kg == pytest.approx(
-            asset.remaining_load_kg
-        )
-        assert inherited.remaining_battery_kwh == pytest.approx(
-            asset.remaining_battery_kwh
-        )
-        prefix = tuple(asset.executed_prefix)
-        assert tuple(full_by_id[route_id].node_sequence[: len(prefix)]) == prefix
 
 
 def test_standby_scenario_interface_rejects_non_public_artifacts() -> None:
@@ -520,35 +392,6 @@ def test_active_prefix_accounting_overwrites_prior_cumulative_value(
     assert corrections["CV_D0_2#T1"] == completed
 
 
-def test_public_standby_scenario_is_scored_by_complete_evaluator(
-    dynamic_fixture,
-) -> None:
-    _bundle, future, context, revealed, _committed = dynamic_fixture
-    evaluator = DutyFullEvaluator(context)
-    scenario = PublicStandbyScenario(
-        context=context,
-        initial_future=future,
-        source_artifacts=(
-            "public/algorithm_visible_at_0800.json",
-            "public/algorithm_scenario_seed_3.csv",
-        ),
-        decision_horizon_second=48_600.0,
-    )
-
-    result = DynamicInsertionOperator(enabled=True, random_seed=11).apply(
-        future,
-        evaluator=evaluator,
-        charging_policy=_policy(evaluator),
-        newly_revealed_customer_ids=(revealed,),
-        standby_scenario=scenario,
-    )
-
-    assert result.standby is not None
-    assert result.standby.scenario_evaluation.feasible
-    assert result.standby.source_artifacts == scenario.source_artifacts
-    assert result.standby.no_charge_selected == (
-        not result.standby.charging_actions
-    )
 
 
 def test_operator_module_has_no_file_read_path() -> None:

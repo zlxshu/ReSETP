@@ -87,7 +87,7 @@ def command(unit: Unit) -> list[str]:
         "--instance-id", INSTANCE, "--seed", str(unit.seed),
         "--carbon-price", "0.20", "--iterations", "1000000000",
         "--max-runtime-seconds", str(RUNTIME_SECONDS),
-        "--stagnation-patience", "500", "--penalty-solutions-between-updates", "50",
+        "--stagnation-patience", "500",
         "--fleet-parameter-class", "endogenous", "--population-mode", "copied_hgs_defaults",
         "--proposal-mode", "system", "--proposal-config", "combat", "--trajectory", "off",
         "--charge-timing-policy", "cost_plus_carbon", "--arm", f"ablation_{unit.arm}",

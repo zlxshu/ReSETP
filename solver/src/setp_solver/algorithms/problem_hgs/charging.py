@@ -21,7 +21,6 @@ sum rather than the Cartesian product of legal start times.
 from __future__ import annotations
 
 import hashlib
-import os
 from collections import Counter
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field, replace
@@ -38,7 +37,6 @@ from setp_solver.algorithms.resetp_alns.support.charging import (
     repair_route_charging_candidates,
 )
 from setp_solver.charging_action import _curve_aware_action
-from setp_solver.charging_curve import curve_for_charging_node
 from setp_solver.cost import route_departure_second, time_profile_rows_for_node
 from setp_solver.search.multitrip_schedule import (
     STATIC_PREHORIZON_SECONDS,
@@ -53,9 +51,6 @@ from .evaluation import DutyEvaluationContext, evaluation_context_sha256
 from .frvcpy_adapter import solve_fixed_route_charging
 from .contracts import (
     ChargingCandidateStatus,
-    ChargingClockWitness,
-    ChargingGap,
-    ChargingGapDutyIndividual,
     ChargingRepairOutcome,
 )
 from .model import (
@@ -80,18 +75,6 @@ CHARGING_REASON_REPAIR_ATTEMPT_CAP = "REPAIR_ATTEMPT_CAP"
 CHARGING_REASON_SCHEDULE_CONFLICT = "SCHEDULE_CONFLICT"
 CHARGING_REASON_PRESCREEN_REJECT = "PRESCREEN_REJECT"
 CHARGING_REASON_OTHER = "CHARGING_REPAIR_OTHER"
-SC3_CHARGING_GAP_ENV = "SETP_SC3_CHARGING_GAP"
-
-
-def _charging_gap_enabled_from_environment() -> bool:
-    raw = os.environ.get(SC3_CHARGING_GAP_ENV, "0").strip().lower()
-    if raw in {"", "0", "false", "no", "off"}:
-        return False
-    if raw in {"1", "true", "yes", "on"}:
-        return True
-    raise ValueError(
-        f"{SC3_CHARGING_GAP_ENV} must be an explicit boolean, got {raw!r}"
-    )
 
 
 def charging_rejection_reason(error: Exception) -> str:
@@ -212,7 +195,6 @@ class ChargingFeasibilityPrescreen:
     checked_by_channel: Counter[str] = field(default_factory=Counter)
     rejected_by_channel: Counter[str] = field(default_factory=Counter)
     passed_by_channel: Counter[str] = field(default_factory=Counter)
-    deferred_to_gap_by_channel: Counter[str] = field(default_factory=Counter)
     rejected_by_channel_and_reason: Counter[str] = field(
         default_factory=Counter
     )
@@ -277,10 +259,6 @@ class ChargingFeasibilityPrescreen:
                     changed_duty_ids=changed_duty_ids,
                     expected=wrapped,
                 )
-                if self.policy.charging_gap_enabled:
-                    self.deferred_to_gap_by_channel[channel] += 1
-                    self.passed_by_channel[channel] += 1
-                    return None
                 self.rejected_by_channel[channel] += 1
                 self.rejected_by_channel_and_reason[
                     f"{channel}:{reason}"
@@ -390,9 +368,6 @@ class ChargingFeasibilityPrescreen:
                 0.0 if checked == 0 else float(rejected) / float(checked)
             ),
             "entered_full_repair": int(passed),
-            "deferred_to_charging_gap": int(
-                sum(self.deferred_to_gap_by_channel.values())
-            ),
             "by_channel": {
                 channel: {
                     "eligible_candidates": int(
@@ -402,9 +377,6 @@ class ChargingFeasibilityPrescreen:
                         self.rejected_by_channel[channel]
                     ),
                     "entered_full_repair": int(self.passed_by_channel[channel]),
-                    "deferred_to_charging_gap": int(
-                        self.deferred_to_gap_by_channel[channel]
-                    ),
                     "reasons": {
                         reason: int(
                             self.rejected_by_channel_and_reason[
@@ -445,9 +417,6 @@ class ChargingRepairPolicy:
     ] | None
     first_trip_prev_night_enabled: bool = False
     frvcpy_enabled: bool = False
-    charging_gap_enabled: bool = field(
-        default_factory=_charging_gap_enabled_from_environment
-    )
 
 
 def _route_repair_window_modes(
@@ -636,11 +605,6 @@ def repair_changed_duties(
     if not preserved_ids.issubset(changed_duty_ids):
         raise ValueError("explicit charging scope must be part of changed duties")
     rebuilt: list[PhysicalVehicleDuty] = []
-    gap_energy_kwh = 0.0
-    gap_window_seconds = 0.0
-    gap_duty_ids: list[str] = []
-    gap_witnesses: list[ChargingClockWitness] = []
-    first_gap_reason: str | None = None
     for duty in candidate.duties:
         if duty.physical_vehicle_id not in changed_duty_ids:
             rebuilt.append(duty)
@@ -682,32 +646,6 @@ def repair_changed_duties(
                 )
             )
         except (TypeError, ValueError) as error:
-            if policy.charging_gap_enabled:
-                reason = charging_rejection_reason(error)
-                try:
-                    best_effort_duty, gap, witnesses = (
-                        _best_effort_ev_duty_with_gap(
-                            reference_duty,
-                            duty,
-                            context=context,
-                            policy=policy,
-                            reason_code=reason,
-                        )
-                    )
-                except (TypeError, ValueError):
-                    pass
-                else:
-                    if gap.active:
-                        rebuilt.append(best_effort_duty)
-                        gap_energy_kwh += float(gap.missing_energy_kwh)
-                        gap_window_seconds += float(
-                            gap.window_shortage_seconds
-                        )
-                        gap_duty_ids.append(duty.physical_vehicle_id)
-                        gap_witnesses.extend(witnesses)
-                        if first_gap_reason is None:
-                            first_gap_reason = reason
-                        continue
             raise ChargingRepairFailure(
                 duty.physical_vehicle_id,
                 error,
@@ -715,29 +653,7 @@ def repair_changed_duties(
         rebuilt.append(repaired)
 
     result = replace(candidate, duties=tuple(rebuilt))
-    if policy.charging_gap_enabled:
-        result = DutyIndividual(
-            duties=tuple(rebuilt),
-            unserved_customers=tuple(candidate.unserved_customers),
-            version=int(candidate.version),
-            source=str(candidate.source),
-        )
     assert_locks_preserved(reference, result)
-    if gap_duty_ids:
-        gap = ChargingGap(
-            missing_energy_kwh=gap_energy_kwh,
-            window_shortage_seconds=gap_window_seconds,
-        )
-        return ChargingGapDutyIndividual(
-            duties=result.duties,
-            unserved_customers=result.unserved_customers,
-            version=result.version,
-            source=result.source,
-            charging_gap=gap,
-            charging_rejection_reason=first_gap_reason,
-            affected_duty_ids=tuple(gap_duty_ids),
-            charging_clock_witnesses=tuple(gap_witnesses),
-        )
     return result
 
 
@@ -751,20 +667,15 @@ def repair_changed_duties_outcome(
     cache: ChargingRepairCache | None = None,
     preserve_explicit_charging_duty_ids: set[str] | None = None,
 ) -> ChargingRepairOutcome:
-    """Return READY, BEST_EFFORT, or a typed rejection for one candidate."""
+    """Return READY or a typed rejection for one candidate."""
 
-    enabled_policy = (
-        policy
-        if policy.charging_gap_enabled
-        else replace(policy, charging_gap_enabled=True)
-    )
     try:
         result = repair_changed_duties(
             reference,
             candidate,
             changed_duty_ids=changed_duty_ids,
             context=context,
-            policy=enabled_policy,
+            policy=policy,
             cache=cache,
             preserve_explicit_charging_duty_ids=(
                 preserve_explicit_charging_duty_ids
@@ -786,227 +697,11 @@ def repair_changed_duties_outcome(
             affected_duty_ids=tuple(sorted(changed_duty_ids)),
             error=error,
         )
-    if isinstance(result, ChargingGapDutyIndividual):
-        return ChargingRepairOutcome(
-            status=ChargingCandidateStatus.BEST_EFFORT,
-            candidate=result,
-            gap=result.charging_gap,
-            reason_code=result.charging_rejection_reason,
-            affected_duty_ids=result.affected_duty_ids,
-            clock_witnesses=result.charging_clock_witnesses,
-        )
     return ChargingRepairOutcome(
         status=ChargingCandidateStatus.READY,
         candidate=result,
         affected_duty_ids=tuple(sorted(changed_duty_ids)),
     )
-
-
-_GAP_ELIGIBLE_REASONS = frozenset(
-    {
-        CHARGING_REASON_NO_FEASIBLE_WINDOW,
-        CHARGING_REASON_INSUFFICIENT_ENERGY,
-        CHARGING_REASON_NO_FEASIBLE_INSERT,
-        CHARGING_REASON_SCHEDULE_CONFLICT,
-    }
-)
-
-
-def _best_effort_ev_duty_with_gap(
-    reference: PhysicalVehicleDuty,
-    duty: PhysicalVehicleDuty,
-    *,
-    context: DutyEvaluationContext,
-    policy: ChargingRepairPolicy,
-    reason_code: str,
-) -> tuple[
-    PhysicalVehicleDuty,
-    ChargingGap,
-    tuple[ChargingClockWitness, ...],
-]:
-    """Keep the route/asset skeleton and quantify its exact charging deficit."""
-
-    if reason_code not in _GAP_ELIGIBLE_REASONS:
-        raise ValueError("charging failure does not expose a physical gap")
-    if duty.vehicle_type != "ev" or not duty.trips:
-        raise ValueError("BEST_EFFORT requires a nonempty EV duty")
-    trip_indices = {int(trip.trip_index) for trip in duty.trips}
-    locked_sessions = tuple(
-        session
-        for session in reference.charging_sessions
-        if session.locked and int(session.trip_index) in trip_indices
-    )
-    safe = replace(
-        duty,
-        charging_sessions=locked_sessions,
-        schedule=None,
-    )
-    gap, witnesses = _measure_ev_duty_charging_gap(
-        safe,
-        context=context,
-        policy=policy,
-    )
-    return safe, gap, witnesses
-
-
-def _measure_ev_duty_charging_gap(
-    duty: PhysicalVehicleDuty,
-    *,
-    context: DutyEvaluationContext,
-    policy: ChargingRepairPolicy,
-) -> tuple[ChargingGap, tuple[ChargingClockWitness, ...]]:
-    """Replay the existing S1 clock and nonlinear curve in native units."""
-
-    instance = context.bundle.instance
-    prices = context.bundle.prices
-    nodes = {node.node_id: node for node in instance.nodes}
-    depot = nodes.get(duty.home_depot_id)
-    if depot is None or depot.node_type.lower() != "d":
-        raise ValueError("BEST_EFFORT duty has no registered home depot")
-    capacity = float(
-        instance.battery_capacity_kwh(
-            fallback=float(prices.B_battery_kwh),
-        )
-    )
-    curve = curve_for_charging_node(
-        prices,
-        node_type="d",
-        capacity_kwh=capacity,
-        reference_power_kw=float(prices.depot_charge_power_kw),
-    )
-    sessions_by_trip: dict[int, list[DutyChargingSession]] = {}
-    for session in duty.charging_sessions:
-        sessions_by_trip.setdefault(int(session.trip_index), []).append(session)
-
-    previous_energy = float(prices.initial_ev_battery_kwh)
-    previous_return: float | None = None
-    missing_energy = 0.0
-    window_shortage = 0.0
-    witnesses: list[ChargingClockWitness] = []
-    for position, trip in enumerate(duty.trips):
-        route = Route(
-            vehicle_id=duty.route_id(trip.trip_index),
-            vehicle_type="ev",
-            home_depot_id=duty.home_depot_id,
-            node_sequence=[
-                duty.home_depot_id,
-                *trip.effective_route_visits,
-                duty.home_depot_id,
-            ],
-        )
-        actions = [
-            _session_to_action(session, route.vehicle_id)
-            for session in sessions_by_trip.get(int(trip.trip_index), ())
-        ]
-        timing = route_timing(
-            route,
-            instance,
-            prices,
-            charging_actions=actions,
-            validate_battery=False,
-        )
-        departure = float(route_departure_second(route, instance, prices))
-        depot_actions = [
-            action
-            for action in actions
-            if action.station_id == duty.home_depot_id
-        ]
-        public_actions = [
-            action
-            for action in actions
-            if action.station_id != duty.home_depot_id
-        ]
-        explicit_depot_energy = sum(
-            float(action.energy_kwh) for action in depot_actions
-        )
-        energy_before_window = min(
-            capacity,
-            max(0.0, previous_energy + explicit_depot_energy),
-        )
-        required_departure = (
-            max(0.0, float(timing.required_departure_battery_kwh))
-            if timing.required_departure_battery_kwh is not None
-            else max(
-                0.0,
-                float(timing.drive_energy_kwh)
-                - sum(float(action.energy_kwh) for action in public_actions),
-            )
-        )
-        if position == 0 and policy.first_trip_prev_night_enabled:
-            window_mode = "same_day_or_prev_night"
-            base_window = max(departure, STATIC_PREHORIZON_SECONDS)
-        elif position == 0 and policy.depot_charge_window_mode == (
-            "same_day_predeparture"
-        ):
-            window_mode = "same_day_predeparture"
-            base_window = departure
-        elif position == 0:
-            window_mode = "prev_night"
-            base_window = STATIC_PREHORIZON_SECONDS
-        else:
-            if previous_return is None:
-                raise AssertionError("missing preceding trip return")
-            window_mode = "full_gap"
-            base_window = departure - previous_return
-        occupied = sum(
-            float(action.occupancy_minutes) * 60.0
-            for action in depot_actions
-        )
-        available = max(0.0, float(base_window) - occupied)
-        target = min(capacity, max(energy_before_window, required_departure))
-        required_seconds = (
-            0.0
-            if target <= energy_before_window
-            else float(curve.duration_seconds(energy_before_window, target))
-        )
-        reachable = (
-            energy_before_window
-            if target <= energy_before_window
-            else min(
-                target,
-                float(
-                    curve.reachable_energy_kwh(
-                        energy_before_window,
-                        available,
-                    )
-                ),
-            )
-        )
-        trip_missing = max(0.0, required_departure - reachable)
-        trip_shortage = max(0.0, required_seconds - available)
-        missing_energy += trip_missing
-        window_shortage += trip_shortage
-        witnesses.append(
-            ChargingClockWitness(
-                duty_id=duty.physical_vehicle_id,
-                route_id=route.vehicle_id,
-                trip_index=int(trip.trip_index),
-                window_mode=window_mode,
-                departure_second=departure,
-                return_second=float(timing.return_second),
-                available_window_seconds=available,
-                required_window_seconds=required_seconds,
-                energy_before_window_kwh=energy_before_window,
-                reachable_energy_kwh=reachable,
-                required_departure_energy_kwh=required_departure,
-            )
-        )
-        previous_energy = max(
-            0.0,
-            reachable
-            + sum(float(action.energy_kwh) for action in public_actions)
-            - float(timing.drive_energy_kwh),
-        )
-        previous_return = float(timing.return_second)
-
-    return (
-        ChargingGap(
-            missing_energy_kwh=missing_energy,
-            window_shortage_seconds=window_shortage,
-        ),
-        tuple(witnesses),
-    )
-
 
 def repair_changed_duties_candidates(
     reference: DutyIndividual,
@@ -1918,7 +1613,7 @@ def _place_frvcpy_charging_actions(
 
     instance = context.bundle.instance
     prices = context.bundle.prices
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     actions: list[ChargingAction] = []
     public_by_station: dict[str, ChargingAction] = {}
     depot_action: ChargingAction | None = None

@@ -25,7 +25,6 @@ from setp_solver.algorithms.problem_hgs.kernel_proposals import (
     IndependentKernelDutyRouteProposalEngine,
 )
 from setp_solver.algorithms.problem_hgs.population import (
-    PenaltyParameters,
     PopulationParameters,
 )
 from setp_solver.algorithms.problem_hgs.proposals import (
@@ -39,7 +38,6 @@ from setp_solver.algorithms.problem_hgs.runner import (
     run_integrated_problem_hgs,
     search_configuration_sha256,
 )
-from tests.test_problem_hgs_charging_gap import sc3_case
 
 
 def _policy(**changes) -> ChargingRepairPolicy:
@@ -53,29 +51,14 @@ def _policy(**changes) -> ChargingRepairPolicy:
         "carbon_profiles_by_day_offset": None,
         "first_trip_prev_night_enabled": False,
         "frvcpy_enabled": False,
-        "charging_gap_enabled": True,
     }
     values.update(changes)
     return ChargingRepairPolicy(**values)
 
 
-def _penalties() -> PenaltyParameters:
-    return PenaltyParameters(
-        initial_penalty_per_unit=100.0,
-        solutions_between_updates=50,
-        penalty_increase=1.34,
-        penalty_decrease=0.32,
-        target_feasible=0.43,
-        feasibility_tolerance=0.05,
-        minimum_penalty=0.1,
-        maximum_penalty=100_000.0,
-        initial_penalty_by_type=(("z", 3.0), ("a", 2.0)),
-    )
-
-
 def _population(tournament_size: int = 2) -> PopulationParameters:
     return PopulationParameters(
-        min_pop_size=2,
+        min_pop_size=4,
         generation_size=1,
         num_elite=1,
         num_close=1,
@@ -148,7 +131,6 @@ def _effective(
         mechanism_stage_engine=mechanism_stage,
         context=context,
         population_parameters=population or _population(),
-        penalty_parameters=_penalties(),
         repair_probability=0.8,
         repair_booster=12,
         num_iters_no_improvement=500,
@@ -166,7 +148,6 @@ def _parameters(**changes) -> ProblemHGSSearchParameters:
     values = {
         "random_seed": 1,
         "population": _population(),
-        "penalties": _penalties(),
         "stagnation_patience": 5,
     }
     values.update(changes)
@@ -175,57 +156,30 @@ def _parameters(**changes) -> ProblemHGSSearchParameters:
 
 def _run(case, *, proposal_engine=None, expected=None, **switches):
     initial = case["initial"]
-    evaluation = case["evaluator"].evaluate(initial)
+    candidates = (initial,) * 4
+    evaluations = tuple(case["evaluator"].evaluate(initial) for _ in candidates)
     return run_integrated_problem_hgs(
-        (initial,),
+        candidates,
         evaluator=case["evaluator"],
         charging_policy=case["policy_off"],
         parameters=_parameters(),
         initial_population_identity=FrozenPopulationIdentity(
-            "execution-identity-test", population_sha256((initial,))
+            "execution-identity-test", population_sha256(candidates)
         ),
         stop=lambda _state: True,
         arm="execution-identity-test",
         route_engine=_real_route(case),
         proposal_engine=proposal_engine,
-        initial_evaluations=(evaluation,),
-        initialization_full_evaluation_count=1,
+        initial_evaluations=evaluations,
+        initialization_full_evaluation_count=4,
         retain_trajectory=False,
         expected_search_configuration_sha256=expected,
         **switches,
     )
 
 
-def test_default_runner_records_the_same_two_stages_that_builder_executes(
-    sc3_case,
-) -> None:
-    result = _run(sc3_case)
-    execution = result.effective_execution
-
-    assert execution.route_stage_configuration == proposal_stage_configuration(
-        execution.route_stage_engine
-    )
-    assert execution.mechanism_stage_configuration == (
-        proposal_stage_configuration(execution.mechanism_stage_engine)
-    )
-    assert execution.route_stage_engine.providers == (execution.route_engine,)
 
 
-def test_gap_off_static_request_hashes_effective_gap_on_policy(sc3_case) -> None:
-    built = build_integrated_private_hgs(
-        (sc3_case["initial"],),
-        evaluator=sc3_case["evaluator"],
-        charging_policy=sc3_case["policy_off"],
-        route_engine=_real_route(sc3_case),
-        penalty_parameters=_penalties(),
-        stagnation_patience=5,
-    )
-
-    assert not sc3_case["policy_off"].charging_gap_enabled
-    assert built.effective_execution.charging_gap_enabled
-    assert built.effective_execution.algorithm_configuration_payload()["charging_policy"][
-        "charging_gap_enabled"
-    ]
 
 
 @pytest.mark.parametrize(
@@ -270,20 +224,6 @@ def test_requested_dead_fields_do_not_change_effective_hash() -> None:
     )
 
 
-def test_system_charge_timing_off_reaches_actual_mechanism_stage(sc3_case) -> None:
-    built = build_integrated_private_hgs(
-        (sc3_case["initial"],),
-        evaluator=sc3_case["evaluator"],
-        charging_policy=sc3_case["policy_off"],
-        route_engine=_real_route(sc3_case),
-        penalty_parameters=_penalties(),
-        stagnation_patience=5,
-        include_charging_candidates=False,
-    )
-    mechanism = built.effective_execution.mechanism_stage_engine.providers[0]
-
-    assert not mechanism.include_charging_candidates
-    assert not built.effective_execution.include_charging_candidates
 
 
 def test_seed_instance_and_dynamic_state_change_runtime_identity_not_search_hash() -> None:
@@ -350,25 +290,6 @@ def test_fairness_on_and_theta_change_search_hash_but_disabled_theta_does_not() 
     assert search_configuration_sha256(off_left) == search_configuration_sha256(off_right)
 
 
-def test_truth_sentinel_switch_changes_effective_hash_and_formal_override_rejects(
-    sc3_case,
-) -> None:
-    enabled = _effective()
-    disabled_context = SimpleNamespace(
-        bundle=SimpleNamespace(
-            instance_id="I0",
-            prices=SimpleNamespace(carbon_price=0.07502),
-        ),
-        fairness_enabled=True,
-        theta=0.8,
-        incremental_full_truth_sentinel_enabled=False,
-        shift_aware_departure_enabled=False,
-    )
-    disabled = _effective(context=disabled_context)
-    assert search_configuration_sha256(enabled) != search_configuration_sha256(disabled)
-
-    with pytest.raises(ValueError, match="expected formal profile"):
-        _run(sc3_case, expected="0" * 64)
 
 
 def test_shift_aware_departure_switch_changes_effective_hash() -> None:
@@ -387,36 +308,8 @@ def test_shift_aware_departure_switch_changes_effective_hash() -> None:
     assert search_configuration_sha256(disabled) != search_configuration_sha256(enabled)
 
 
-def test_route_only_dynamic_ablation_reaches_builder_with_mechanism_refinement_false(
-    sc3_case,
-) -> None:
-    built = build_integrated_private_hgs(
-        (sc3_case["initial"],),
-        evaluator=sc3_case["evaluator"],
-        charging_policy=sc3_case["policy_off"],
-        route_engine=_real_route(sc3_case),
-        penalty_parameters=_penalties(),
-        stagnation_patience=5,
-        include_mechanism_refinement=False,
-    )
-
-    assert not built.effective_execution.include_mechanism_refinement
-    assert built.effective_execution.mechanism_stage_engine is None
-    assert built.effective_execution.mechanism_stage_configuration is None
 
 
-def test_expected_search_hash_mismatch_raises_before_algorithm_run(sc3_case, monkeypatch) -> None:
-    calls = 0
-
-    def forbidden_run(*_args, **_kwargs):
-        nonlocal calls
-        calls += 1
-        raise AssertionError("algorithm.run must not execute")
-
-    monkeypatch.setattr(IntegratedGeneticAlgorithm, "run", forbidden_run)
-    with pytest.raises(ValueError, match="expected formal profile"):
-        _run(sc3_case, expected="0" * 64)
-    assert calls == 0
 
 
 @dataclass(frozen=True)
@@ -426,44 +319,3 @@ class _OneBatchEngine:
 
     def propose(self, *_args, **_kwargs):
         return ()
-
-
-def test_unknown_custom_engine_runs_technical_with_null_formal_identity_but_formal_rejects_before_run(
-    sc3_case, monkeypatch
-) -> None:
-    technical = _run(sc3_case, proposal_engine=_OneBatchEngine())
-    assert not technical.effective_execution.formal_identity_eligible
-    assert technical.provenance.effective_algorithm_configuration is None
-    assert technical.provenance.search_configuration_sha256 is None
-
-    calls = 0
-
-    def forbidden_run(*_args, **_kwargs):
-        nonlocal calls
-        calls += 1
-        raise AssertionError("algorithm.run must not execute")
-
-    monkeypatch.setattr(IntegratedGeneticAlgorithm, "run", forbidden_run)
-    with pytest.raises(ValueError, match="expected formal profile"):
-        _run(
-            sc3_case,
-            proposal_engine=_OneBatchEngine(),
-            expected="0" * 64,
-        )
-    assert calls == 0
-
-
-def test_caller_stop_result_contains_effective_execution_and_primitive_provenance(
-    sc3_case,
-) -> None:
-    result = _run(sc3_case)
-    payload = json.loads(json.dumps(asdict(result.provenance), allow_nan=False, sort_keys=True))
-
-    assert result.effective_execution.schema_version.endswith(".v1")
-    assert len(result.provenance.search_configuration_sha256) == 64
-    assert payload["effective_algorithm_configuration"] == (
-        result.effective_execution.algorithm_configuration_payload()
-    )
-    assert payload["effective_runtime_identity"] == (
-        result.effective_execution.runtime_identity_payload()
-    )

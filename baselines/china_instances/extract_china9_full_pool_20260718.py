@@ -1136,7 +1136,7 @@ def run(args: argparse.Namespace) -> int:
         },
     )
     clean_appledouble(output)
-    hash_artifacts(output, [Path(__file__), REPO / "baselines/china_instances/test_extract_china9_full_pool_20260718.py"])
+    hash_artifacts(output, [Path(__file__)])
     clean_appledouble(output)
     return 0
 

@@ -28,21 +28,10 @@ from setp_solver.algorithms.problem_hgs.integrated_private import (
 from setp_solver.algorithms.problem_hgs.kernel_proposals import (
     IndependentKernelDutyRouteProposalEngine,
 )
-from setp_solver.algorithms.problem_hgs.population import PenaltyParameters
 from setp_solver.search.metaheuristic_baselines import solution_to_dict
 
 
 SEED = 11
-PENALTIES = PenaltyParameters(
-    initial_penalty_per_unit=100.0,
-    solutions_between_updates=50,
-    penalty_increase=1.34,
-    penalty_decrease=0.32,
-    target_feasible=0.43,
-    feasibility_tolerance=0.05,
-    minimum_penalty=0.1,
-    maximum_penalty=100_000.0,
-)
 
 
 def _private_accounting_payload(accounting) -> dict:
@@ -145,7 +134,6 @@ def _run_arm(
         evaluator=evaluator,
         charging_policy=policy,
         route_engine=route_engine,
-        penalty_parameters=PENALTIES,
         stagnation_patience=500,
         include_mechanism_refinement=include_mechanisms,
         include_whole_duty_type_exchange=True,
@@ -218,7 +206,6 @@ def main() -> int:
         initial,
         preparation_evaluator,
         preparation_policy,
-        require_distinct_selection=False,
     )
 
     rows = []

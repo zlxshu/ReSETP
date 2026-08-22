@@ -557,7 +557,7 @@ def solve_charging_fixed_route(
 
     if route.vehicle_type.lower() != "ev":
         return []
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     if not route.node_sequence:
         return []
 
@@ -855,7 +855,7 @@ def repair_route_charging_candidates(
     node_types = {node.node_id: node.node_type.lower() for node in instance.nodes}
     if route.vehicle_type.lower() != "ev" or not route.node_sequence:
         return finish(candidates)
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     remaining_customers = [
         node_id
         for node_id in route.node_sequence[1:]
@@ -1015,7 +1015,7 @@ def _repair_route_charging_candidate(
 
     if route.vehicle_type.lower() != "ev":
         return route, []
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     stations = [node for node in instance.nodes if node.node_type.lower() == "f"]
 
     original_targets = [node_id for node_id in route.node_sequence[1:] if node_lookup[node_id].node_type.lower() != "f"]
@@ -1667,7 +1667,7 @@ def _screen_forced_public_station(
 ) -> _ForcedStationScreen | None:
     """Apply the existing exact first-insertion rules before route rebuild."""
 
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     original_targets = [
         node_id
         for node_id in route.node_sequence[1:]
@@ -1825,7 +1825,7 @@ def _station_screen_profile(
             _latest_charge_start_for_downstream(
                 station_id,
                 future_targets,
-                {node.node_id: node for node in instance.nodes},
+                instance.node_lookup,
                 instance,
                 prices,
                 occupancy,

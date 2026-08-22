@@ -298,8 +298,6 @@ def evaluate_move(
             charging_rejection_reason=charging_outcome.reason_code,
             wall_seconds=perf_counter() - started,
             charging_candidate_status=charging_outcome.status,
-            charging_gap=charging_outcome.gap,
-            charging_clock_witnesses=charging_outcome.clock_witnesses,
         )
     candidate = charging_outcome.candidate
     if candidate.fingerprint == current.fingerprint:
@@ -395,7 +393,6 @@ def _screen_route_clock(
         prescreen.checked_by_channel,
         prescreen.rejected_by_channel,
         prescreen.passed_by_channel,
-        prescreen.deferred_to_gap_by_channel,
     )
     before = tuple(counter[alias] for counter in counters)
     reasons_before = dict(prescreen.rejected_by_channel_and_reason)
@@ -516,21 +513,12 @@ def educate_best_improvement(
         moves = chain((first_move,), proposed)
         incremental = DutyIncrementalEvaluator(evaluator)
         accounting.record_cache_seed(incremental.seed(current))
-        round_charging_policy = (
-            charging_policy
-            if (
-                getattr(evaluator.context, "dynamic_state", None) is not None
-                or not isinstance(charging_policy, ChargingRepairPolicy)
-                or charging_policy.charging_gap_enabled
-            )
-            else replace(charging_policy, charging_gap_enabled=True)
-        )
         round_charging_repair_cache = (
             charging_repair_cache
             if charging_repair_cache is not None
             else ChargingRepairCache(
                 evaluator.context,
-                round_charging_policy,
+                charging_policy,
             )
         )
         round_rows: list[TrajectoryRow] = []
@@ -539,47 +527,7 @@ def educate_best_improvement(
         best_row_index = None
         sentinel_mismatch = False
         stop_after_round = False
-        truth_batch_active = False
-        truth_batch_closed = False
-        truth_batch_exact_evaluations = 0
-        truth_best = None
-        truth_best_key = None
-        truth_best_row_index = None
-        truth_selected_proxy_rank = None
-        truth_selected_exact_cost = None
-        truth_rank_one_exact_cost = None
         for move in moves:
-            proxy_rank = getattr(move, "proxy_rank", None)
-            is_truth_shortlist_move = proxy_rank is not None
-            if is_truth_shortlist_move and truth_batch_closed:
-                raise ValueError(
-                    "truth-guided route candidates must form one contiguous batch"
-                )
-            if truth_batch_active and not is_truth_shortlist_move:
-                accounting.record_truth_shortlist_batch(
-                    truth_batch_exact_evaluations
-                )
-                if truth_best is not None:
-                    best = truth_best
-                    best_key = (
-                        float(penalized_cost(truth_best.evaluation)),
-                        truth_best.action_id,
-                    )
-                    best_row_index = truth_best_row_index
-                    truth_selected_proxy_rank = int(truth_best_key[1])
-                    truth_selected_exact_cost = float(truth_best_key[0])
-                truth_batch_active = False
-                truth_batch_closed = True
-                if (
-                    best is not None
-                    and _meaningfully_better(
-                        float(penalized_cost(best.evaluation)),
-                        float(penalized_cost(current_evaluation)),
-                    )
-                ):
-                    break
-            if is_truth_shortlist_move:
-                truth_batch_active = True
             if (
                 not stop_after_round
                 and stop_requested is not None
@@ -590,7 +538,7 @@ def educate_best_improvement(
                 current,
                 move,
                 evaluator=evaluator,
-                charging_policy=round_charging_policy,
+                charging_policy=charging_policy,
                 incremental_evaluator=incremental,
                 charging_repair_cache=round_charging_repair_cache,
                 verify_full_truth=False,
@@ -618,35 +566,11 @@ def educate_best_improvement(
                 sentinel_mismatch
                 or outcome.status == CandidateStatus.SENTINEL_MISMATCH
             )
-            if is_truth_shortlist_move and outcome.evaluated:
-                truth_batch_exact_evaluations += 1
             if (
                 outcome.evaluated
                 and outcome.evaluation is not None
                 and outcome.candidate is not None
             ):
-                if is_truth_shortlist_move:
-                    exact_cost = float(penalized_cost(outcome.evaluation))
-                    proxy_rank = int(proxy_rank)
-                    truth_candidate_key = (
-                        exact_cost,
-                        proxy_rank,
-                        outcome.action_id,
-                    )
-                    if proxy_rank == 1:
-                        truth_rank_one_exact_cost = exact_cost
-                    if (
-                        truth_best_key is None
-                        or truth_candidate_key < truth_best_key
-                    ):
-                        truth_best = outcome
-                        truth_best_key = truth_candidate_key
-                        truth_best_row_index = (
-                            len(round_rows) - 1
-                            if record_trajectory
-                            else None
-                        )
-                    continue
                 candidate_key = (
                     float(penalized_cost(outcome.evaluation)),
                     outcome.action_id,
@@ -657,8 +581,6 @@ def educate_best_improvement(
                     best_row_index = (
                         len(round_rows) - 1 if record_trajectory else None
                     )
-                    truth_selected_proxy_rank = None
-                    truth_selected_exact_cost = None
                 if (
                     selection_policy == "first"
                     and _meaningfully_better(
@@ -667,19 +589,6 @@ def educate_best_improvement(
                     )
                 ):
                     break
-        if truth_batch_active:
-            accounting.record_truth_shortlist_batch(
-                truth_batch_exact_evaluations
-            )
-            if truth_best is not None:
-                best = truth_best
-                best_key = (
-                    float(penalized_cost(truth_best.evaluation)),
-                    truth_best.action_id,
-                )
-                best_row_index = truth_best_row_index
-                truth_selected_proxy_rank = int(truth_best_key[1])
-                truth_selected_exact_cost = float(truth_best_key[0])
         accepted = bool(
             best is not None
             and _meaningfully_better(
@@ -716,21 +625,6 @@ def educate_best_improvement(
                 round_rows[best_row_index],
                 accepted=True,
             )
-        truth_reselection_reason = None
-        if (
-            truth_selected_proxy_rank is not None
-            and truth_selected_proxy_rank > 1
-        ):
-            if truth_rank_one_exact_cost is None:
-                truth_reselection_reason = "proxy_rank_one_rejected_by_complete_chain"
-            elif (
-                truth_selected_exact_cost is not None
-                and _meaningfully_better(
-                    truth_selected_exact_cost,
-                    truth_rank_one_exact_cost,
-                )
-            ):
-                truth_reselection_reason = "strict_complete_penalised_cost"
         if record_trajectory:
             if trajectory_sink is None:
                 rows.extend(round_rows)
@@ -742,11 +636,6 @@ def educate_best_improvement(
             if not accepted or best is None:
                 return finish_after_stop()
             accounting.record_acceptance(best.channel)
-            if truth_selected_proxy_rank is not None:
-                accounting.record_truth_shortlist_acceptance(
-                    proxy_rank=truth_selected_proxy_rank,
-                    reselection_reason=truth_reselection_reason,
-                )
             accounting.record_accepted_effect(
                 best.channel,
                 current,
@@ -760,11 +649,6 @@ def educate_best_improvement(
         if not accepted or best is None:
             break
         accounting.record_acceptance(best.channel)
-        if truth_selected_proxy_rank is not None:
-            accounting.record_truth_shortlist_acceptance(
-                proxy_rank=truth_selected_proxy_rank,
-                reselection_reason=truth_reselection_reason,
-            )
         accounting.record_accepted_effect(
             best.channel,
             current,

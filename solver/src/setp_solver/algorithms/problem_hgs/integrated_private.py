@@ -1,11 +1,4 @@
-"""The common HGS control loop specialised to complete Duty individuals.
-
-The private search never ranks a projected native route.  Crossover, charging
-completion, local education, population survival, parent selection, and repair
-all see the same complete-model cost and feasibility scale.  The copied native
-route kernel remains one proposal provider inside Duty education; it is not a
-second genetic algorithm or an alternative acceptance authority.
-"""
+"""The common HGS control loop over complete Duty individuals."""
 
 from __future__ import annotations
 
@@ -40,10 +33,7 @@ from .contracts import (
     SearchAccounting,
     TrajectoryRow,
 )
-from .crossover import (
-    DutyCrossoverResult,
-    trip_assignment_exchange_candidates,
-)
+from .crossover import trip_assignment_exchange
 from .education import _trajectory_row, educate_best_improvement
 from .evaluation import (
     DutyFullEvaluator,
@@ -68,9 +58,8 @@ from .hybrid_decoder import (
 from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
 from .model import DutyIndividual
 from .population import (
-    AdaptivePenaltyManager,
-    PenaltyParameters,
     PopulationParameters,
+    SelfAdaptivePenalty,
     broken_pairs_distance,
 )
 from .schedule_capture import emit_schedule_capture
@@ -127,7 +116,7 @@ class IntegratedPrivateHGSBundle:
     population: object
     charging_prescreen: ChargingFeasibilityPrescreen | None
     charging_repair_cache: ChargingRepairCache
-    complete_penalty_manager: AdaptivePenaltyManager
+    complete_penalty_manager: SelfAdaptivePenalty
     effective_execution: EffectiveExecutionBundle
 
 class _DutyRngAdapter:
@@ -152,7 +141,6 @@ def build_integrated_private_hgs(
     evaluator: DutyFullEvaluator,
     charging_policy: ChargingRepairPolicy,
     route_engine: IndependentKernelDutyRouteProposalEngine,
-    penalty_parameters: PenaltyParameters,
     stagnation_patience: int,
     include_mechanism_refinement: bool = True,
     include_whole_duty_type_exchange: bool = True,
@@ -179,6 +167,8 @@ def build_integrated_private_hgs(
 
     if not initial_candidates:
         raise ValueError("integrated private HGS requires initial candidates")
+    if len(initial_candidates) < SelfAdaptivePenalty.minimum_reference_size:
+        raise ValueError("self-adaptive penalty requires four initial candidates")
     if stagnation_patience < 1:
         raise ValueError("stagnation patience must be positive")
     if education_depth_limit is not None and education_depth_limit < 1:
@@ -215,20 +205,12 @@ def build_integrated_private_hgs(
     if objective_mode != "single_objective":
         raise ValueError("only single-objective population mode is supported")
     copied_parameters = SolveParams()
-    complete_penalties = AdaptivePenaltyManager(penalty_parameters)
+    complete_penalties = SelfAdaptivePenalty()
     accounting = PrivateIntegratedAccounting()
-    search_charging_policy = (
-        charging_policy
-        if (
-            getattr(evaluator.context, "dynamic_state", None) is not None
-            or charging_policy.charging_gap_enabled
-        )
-        else replace(charging_policy, charging_gap_enabled=True)
-    )
     if proposal_engine is None:
         mechanism_engine = MechanismProposalEngine(
             evaluator.context,
-            search_charging_policy,
+            charging_policy,
             include_charging_candidates=include_charging_candidates,
             cross_depot_enabled=cross_depot_enabled,
             multi_trip_enabled=multi_trip_enabled,
@@ -261,14 +243,15 @@ def build_integrated_private_hgs(
             ub_diversity=population_parameters.ub_diversity,
         )
     )
+    if kernel_population_parameters.min_pop_size < SelfAdaptivePenalty.minimum_reference_size:
+        raise ValueError("self-adaptive penalty requires min_pop_size >= 4")
     effective_execution = build_effective_execution_bundle(
-        policy=search_charging_policy,
+        policy=charging_policy,
         route_engine=route_engine,
         route_stage_engine=route_stage_engine,
         mechanism_stage_engine=mechanism_stage_engine,
         context=evaluator.context,
         population_parameters=kernel_population_parameters,
-        penalty_parameters=penalty_parameters,
         repair_probability=copied_parameters.genetic.repair_probability,
         repair_booster=copied_parameters.penalty.repair_booster,
         num_iters_no_improvement=stagnation_patience,
@@ -309,7 +292,6 @@ def build_integrated_private_hgs(
             replace(
                 effective_execution.effective_charging_policy,
                 frvcpy_enabled=False,
-                charging_gap_enabled=False,
             ),
             audit_limit=effective_execution.charging_prescreen_audit_limit,
         )
@@ -326,7 +308,7 @@ def build_integrated_private_hgs(
             result_sink=accounting.mechanism.record_schedule_oracle_result,
         )
     education_cache: dict[
-        tuple[bool, str, str, tuple[tuple[str, float], ...]],
+        tuple[bool, str, str, int],
         EvaluatedSolution[
             DutyIndividual,
             PrivateIntegratedEvaluation,
@@ -506,8 +488,6 @@ def build_integrated_private_hgs(
         raw_candidate: DutyIndividual,
         changed_duty_ids: frozenset[str],
     ) -> ChargingRepairOutcome:
-        """Use P81 gap retention only where its static semantics are defined."""
-
         if getattr(evaluator.context, "dynamic_state", None) is None:
             return repair_changed_duties_outcome(
                 reference,
@@ -741,10 +721,6 @@ def build_integrated_private_hgs(
                         charging_candidate_status=(
                             charging_outcome.status
                         ),
-                        charging_gap=charging_outcome.gap,
-                        charging_clock_witnesses=(
-                            charging_outcome.clock_witnesses
-                        ),
                     )
                 )
                 accounting.crossover_noops += 1
@@ -773,7 +749,8 @@ def build_integrated_private_hgs(
                 return first
 
             accounting.mechanism.record_route_layer_evaluation()
-            accounting.mechanism.record_crossover("ROUTE_LAYER_OX", 1)
+            if evaluated.solution.duties != first.solution.duties:
+                accounting.mechanism.record_crossover("ROUTE_LAYER_OX", 1)
             constructed = CandidateOutcome(
                 action_id=route_action_id,
                 channel="route_layer_crossover",
@@ -846,16 +823,6 @@ def build_integrated_private_hgs(
                     if charging_outcome is None
                     else charging_outcome.status
                 ),
-                charging_gap=(
-                    None
-                    if charging_outcome is None
-                    else charging_outcome.gap
-                ),
-                charging_clock_witnesses=(
-                    ()
-                    if charging_outcome is None
-                    else charging_outcome.clock_witnesses
-                ),
             )
             accounting.mechanism.record_outcome(outcome)
             if trajectory_sink is not None:
@@ -872,7 +839,7 @@ def build_integrated_private_hgs(
                 )
 
         try:
-            crossed_candidates = trip_assignment_exchange_candidates(
+            crossed = trip_assignment_exchange(
                 (first.solution, second.solution),
                 rng,
                 customer_coordinates,
@@ -914,71 +881,46 @@ def build_integrated_private_hgs(
                     )
                 )
             return first
-        viable: list[
-            tuple[
-                float,
-                str,
-                DutyCrossoverResult,
-                EvaluatedSolution[
-                    DutyIndividual,
-                    PrivateIntegratedEvaluation,
-                ],
-            ]
-        ] = []
-        for crossed in crossed_candidates:
-            if crossed.unserved_customers:
-                accounting.rejected_candidates += 1
-                error = ValueError(
-                    "crossover produced incomplete customer service"
-                )
-                accounting.rejection_reasons[str(error)] += 1
-                reject(error)
-                continue
-            try:
-                assert_candidate_routes_single_shift(
-                    crossed.child,
-                    getattr(
-                        evaluator.context,
-                        "rebuilt_route_constraints",
-                        None,
-                    ),
-                )
-                assert_fleet_activation_allowed(
-                    first.solution,
-                    crossed.child,
-                    enabled=effective_execution.fleet_activation_enabled,
-                )
-                charging_outcome = repair_search_candidate(
+        if crossed.unserved_customers:
+            accounting.rejected_candidates += 1
+            error = ValueError(
+                "crossover produced incomplete customer service"
+            )
+            accounting.rejection_reasons[str(error)] += 1
+            reject(error)
+            accounting.crossover_noops += 1
+            return first
+        try:
+            assert_candidate_routes_single_shift(
+                crossed.child,
+                getattr(
+                    evaluator.context,
+                    "rebuilt_route_constraints",
+                    None,
+                ),
+            )
+            assert_fleet_activation_allowed(
+                first.solution,
+                crossed.child,
+                enabled=effective_execution.fleet_activation_enabled,
+            )
+            charging_outcome = repair_search_candidate(
+                first.solution,
+                crossed.child,
+                crossed.changed_duty_ids,
+            )
+        except (TypeError, ValueError) as error:
+            evaluated = (
+                coordinate_candidate(
                     first.solution,
                     crossed.child,
                     crossed.changed_duty_ids,
+                    channel="duty_crossover",
                 )
-            except (TypeError, ValueError) as error:
-                rescued = None
-                if effective_execution.schedule_cross_repair_fallback:
-                    rescued = coordinate_candidate(
-                        first.solution,
-                        crossed.child,
-                        crossed.changed_duty_ids,
-                        channel="duty_crossover",
-                    )
-                if rescued is not None:
-                    accounting.mechanism.schedule_rescued_candidates_by_channel[
-                        "duty_crossover"
-                    ] += 1
-                    viable.append(
-                        (
-                            float(
-                                complete_penalties.cost(
-                                    rescued.evaluation.full
-                                )
-                            ),
-                            rescued.solution.fingerprint,
-                            crossed,
-                            rescued,
-                        )
-                    )
-                    continue
+                if effective_execution.schedule_cross_repair_fallback
+                else None
+            )
+            if evaluated is None:
                 accounting.rejected_candidates += 1
                 accounting.rejection_reasons[
                     f"{type(error).__name__}: {error}"
@@ -1001,96 +943,78 @@ def build_integrated_private_hgs(
                         error=error,
                     )
                 reject(error)
-                continue
+                accounting.crossover_noops += 1
+                return first
+            accounting.mechanism.schedule_rescued_candidates_by_channel[
+                "duty_crossover"
+            ] += 1
+        else:
             if charging_outcome.candidate is None:
                 error = charging_outcome.error or ValueError(
                     charging_outcome.reason_code
                     or charging_outcome.status.value
                 )
-                rescued = None
-                if effective_execution.schedule_cross_repair_fallback:
-                    rescued = coordinate_candidate(
+                evaluated = (
+                    coordinate_candidate(
                         first.solution,
                         crossed.child,
                         crossed.changed_duty_ids,
                         channel="duty_crossover",
                     )
-                if rescued is not None:
-                    accounting.mechanism.schedule_rescued_candidates_by_channel[
-                        "duty_crossover"
+                    if effective_execution.schedule_cross_repair_fallback
+                    else None
+                )
+                if evaluated is None:
+                    accounting.rejected_candidates += 1
+                    accounting.rejection_reasons[
+                        f"{type(error).__name__}: {error}"
                     ] += 1
-                    viable.append(
-                        (
-                            float(
-                                complete_penalties.cost(
-                                    rescued.evaluation.full
-                                )
-                            ),
-                            rescued.solution.fingerprint,
-                            crossed,
-                            rescued,
-                        )
+                    reject(
+                        error,
+                        forced_status=(
+                            CandidateStatus.REJECTED_INTERFACE
+                            if charging_outcome.status
+                            == ChargingCandidateStatus.REJECTED_INTERFACE
+                            else CandidateStatus.REJECTED_CHARGING
+                        ),
+                        charging_outcome=charging_outcome,
                     )
-                    continue
-                accounting.rejected_candidates += 1
-                accounting.rejection_reasons[
-                    f"{type(error).__name__}: {error}"
+                    accounting.crossover_noops += 1
+                    return first
+                accounting.mechanism.schedule_rescued_candidates_by_channel[
+                    "duty_crossover"
                 ] += 1
-                reject(
-                    error,
-                    forced_status=(
-                        CandidateStatus.REJECTED_INTERFACE
-                        if charging_outcome.status
-                        == ChargingCandidateStatus.REJECTED_INTERFACE
-                        else CandidateStatus.REJECTED_CHARGING
-                    ),
-                    charging_outcome=charging_outcome,
+            else:
+                completed = charging_outcome.candidate
+                emit_schedule_capture(
+                    channel="crossover",
+                    action_id="trip-assignment",
+                    iteration=accounting.crossover_calls,
+                    reference=first.solution,
+                    raw_candidate=crossed.child,
+                    changed_duty_ids=frozenset(crossed.changed_duty_ids),
+                    context=evaluator.context,
+                    a0_status="FEASIBLE",
+                    error=None,
                 )
-                continue
-            completed = charging_outcome.candidate
-            emit_schedule_capture(
-                channel="crossover",
-                action_id="trip-assignment",
-                iteration=accounting.crossover_calls,
-                reference=first.solution,
-                raw_candidate=crossed.child,
-                changed_duty_ids=frozenset(crossed.changed_duty_ids),
-                context=evaluator.context,
-                a0_status="FEASIBLE",
-                error=None,
-            )
-            evaluated = evaluate(completed)
-            if (
-                evaluated is None
-                and effective_execution.schedule_cross_repair_fallback
-            ):
-                evaluated = coordinate_candidate(
-                    first.solution,
-                    crossed.child,
-                    crossed.changed_duty_ids,
-                    channel="duty_crossover",
-                )
-                if evaluated is not None:
-                    accounting.mechanism.schedule_rescued_candidates_by_channel[
-                        "duty_crossover"
-                    ] += 1
-            if evaluated is None:
-                continue
-            viable.append(
-                (
-                    float(complete_penalties.cost(evaluated.evaluation.full)),
-                    evaluated.solution.fingerprint,
-                    crossed,
-                    evaluated,
-                )
-            )
-        if not viable:
-            accounting.crossover_noops += 1
-            return first
-        _cost, _fingerprint, crossed, evaluated = min(
-            viable,
-            key=lambda item: (item[0], item[1]),
-        )
+                evaluated = evaluate(completed)
+                if (
+                    evaluated is None
+                    and effective_execution.schedule_cross_repair_fallback
+                ):
+                    evaluated = coordinate_candidate(
+                        first.solution,
+                        crossed.child,
+                        crossed.changed_duty_ids,
+                        channel="duty_crossover",
+                    )
+                    if evaluated is not None:
+                        accounting.mechanism.schedule_rescued_candidates_by_channel[
+                            "duty_crossover"
+                        ] += 1
+                if evaluated is None:
+                    accounting.crossover_noops += 1
+                    return first
         before_penalized = float(
             complete_penalties.cost(first.evaluation.full)
         )
@@ -1101,13 +1025,11 @@ def build_integrated_private_hgs(
             evaluated.evaluation.full.feasible
             and after_penalized < before_penalized - 1.0e-9
         )
-        accounting.mechanism.record_crossover(
-            "TRIP_ASSIGNMENT",
-            sum(
-                candidate.deterministic_work_units
-                for candidate in crossed_candidates
-            ),
-        )
+        if evaluated.solution.duties != first.solution.duties:
+            accounting.mechanism.record_crossover(
+                "TRIP_ASSIGNMENT",
+                crossed.deterministic_work_units,
+            )
         constructed = CandidateOutcome(
             action_id="trip-assignment",
             channel="duty_crossover",
@@ -1156,7 +1078,7 @@ def build_integrated_private_hgs(
             bool(repair),
             engine.identity_sha256,
             candidate.solution.fingerprint,
-            tuple(sorted(complete_penalties.penalties.items())),
+            complete_penalties.revision,
         )
         cached = education_cache.get(cache_key)
         if cached is not None:
@@ -1279,9 +1201,6 @@ def build_integrated_private_hgs(
             engine=effective_execution.mechanism_stage_engine,
         )
 
-    def register(evaluation: PrivateIntegratedEvaluation) -> None:
-        complete_penalties.register(evaluation.full)
-
     adapter = IntegratedProblemAdapter(
         evaluate=evaluate,
         refine=refine,
@@ -1290,8 +1209,9 @@ def build_integrated_private_hgs(
         penalised_cost=lambda evaluation: complete_penalties.cost(
             evaluation.full
         ),
-        register=register,
+        register=None,
         fingerprint=lambda individual: individual.fingerprint,
+        minimum_initial_population_size=SelfAdaptivePenalty.minimum_reference_size,
         breed=breed,
         repair=repair,
         finalise=finalise,
@@ -1300,6 +1220,12 @@ def build_integrated_private_hgs(
         broken_pairs_distance,
         is_feasible=adapter.is_feasible,
         penalised_cost=adapter.penalised_cost,
+        refresh_penalties=lambda evaluations: complete_penalties.update(
+            tuple(evaluation.full for evaluation in evaluations)
+        ),
+        minimum_penalty_population_size=(
+            SelfAdaptivePenalty.minimum_reference_size
+        ),
         fingerprint=adapter.fingerprint,
         params=kernel_population_parameters,
     )

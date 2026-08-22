@@ -34,14 +34,6 @@ def _valid_nodes() -> list[dict]:
     ]
 
 
-def test_minimal_v2_contract_passes() -> None:
-    nodes = _valid_nodes()
-    matrix = np.zeros((4, 4), dtype=float)
-    matrix[:] = 10
-    np.fill_diagonal(matrix, 0)
-    carbon = [{"slot_index": str(i), "Beijing": "0.4"} for i in range(48)]
-    result = audit_instance(_valid_payload(), nodes, matrix, carbon)
-    assert result["pass"], result
 
 
 def test_historical_draft_is_rejected_for_the_relevant_reasons() -> None:

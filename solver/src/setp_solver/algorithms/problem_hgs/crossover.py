@@ -57,27 +57,6 @@ def trip_assignment_exchange(
     customer_vehicle_type_by_id: Mapping[str, str] | None = None,
     multi_trip_enabled: bool = True,
 ) -> DutyCrossoverResult:
-    """Return the first candidate in the randomized exact assignment order."""
-
-    return trip_assignment_exchange_candidates(
-        parents,
-        rng,
-        customer_coordinates,
-        customer_home_depot_by_id=customer_home_depot_by_id,
-        customer_vehicle_type_by_id=customer_vehicle_type_by_id,
-        multi_trip_enabled=multi_trip_enabled,
-    )[0]
-
-
-def trip_assignment_exchange_candidates(
-    parents: tuple[DutyIndividual, DutyIndividual],
-    rng: random.Random,
-    customer_coordinates: Mapping[str, tuple[float, float]],
-    *,
-    customer_home_depot_by_id: Mapping[str, str] | None = None,
-    customer_vehicle_type_by_id: Mapping[str, str] | None = None,
-    multi_trip_enabled: bool = True,
-) -> tuple[DutyCrossoverResult, ...]:
     """Append one compatible donor trip and remove its former occurrences.
 
     This problem-adapted operator changes the
@@ -169,40 +148,35 @@ def trip_assignment_exchange_candidates(
     if not candidates:
         raise ValueError("trip assignment found no compatible movable trip")
 
-    start = rng.randrange(len(candidates))
-    ordered_candidates = candidates[start:] + candidates[:start]
-    results: list[DutyCrossoverResult] = []
-    for donor_duty, donor_trip, receivers in ordered_candidates:
-        donor_centroid = _customer_centroid(
-            donor_trip.customer_ids,
-            customer_coordinates,
-        )
-        ordered_receivers = sorted(
-            receivers,
-            key=lambda duty: (
-                _squared_distance(
-                    _duty_centroid(
-                        duty,
-                        customer_coordinates,
-                        donor_centroid,
-                    ),
+    donor_duty, donor_trip, receivers = candidates[
+        rng.randrange(len(candidates))
+    ]
+    donor_centroid = _customer_centroid(
+        donor_trip.customer_ids,
+        customer_coordinates,
+    )
+    receiver = min(
+        receivers,
+        key=lambda duty: (
+            _squared_distance(
+                _duty_centroid(
+                    duty,
+                    customer_coordinates,
                     donor_centroid,
                 ),
-                duty.physical_vehicle_id,
+                donor_centroid,
             ),
-        )
-        results.extend(
-            _build_trip_assignment_candidate(
-                first,
-                second,
-                donor_duty,
-                donor_trip,
-                receiver,
-                universe,
-            )
-            for receiver in ordered_receivers
-        )
-    return tuple(results)
+            duty.physical_vehicle_id,
+        ),
+    )
+    return _build_trip_assignment_candidate(
+        first,
+        second,
+        donor_duty,
+        donor_trip,
+        receiver,
+        universe,
+    )
 
 
 def _build_trip_assignment_candidate(

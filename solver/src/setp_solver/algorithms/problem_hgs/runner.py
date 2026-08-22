@@ -40,7 +40,6 @@ from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
 from .model import DutyIndividual
 from .population import (
     EvaluatedDutyCandidate,
-    PenaltyParameters,
     PopulationParameters,
 )
 from .proposals import (
@@ -55,7 +54,6 @@ SINGLE_OBJECTIVE = "single_objective"
 class ProblemHGSSearchParameters:
     random_seed: int
     population: PopulationParameters
-    penalties: PenaltyParameters
     stagnation_patience: int = 500
     crossover_mode: str = "fast_only"
     include_whole_duty_type_exchange: bool = True
@@ -132,7 +130,6 @@ class ProblemHGSSearchState:
     fairness_feasible: bool | None = None
     violation_counts: tuple[tuple[str, int], ...] = ()
     violation_magnitudes: tuple[tuple[str, float], ...] = ()
-    penalty_coefficients: tuple[tuple[str, float], ...] = ()
     outer_repair_calls: int = 0
     outer_refinement_calls: int = 0
 
@@ -287,10 +284,6 @@ def run_integrated_problem_hgs(
         initialization_full_evaluation_count = len(initial_evaluations)
     elif initialization_full_evaluation_count is None:
         initialization_full_evaluation_count = len(initial_evaluations)
-    if initialization_full_evaluation_count < len(initial_evaluations):
-        raise ValueError(
-            "initialization evaluation count cannot be below retained evaluations"
-        )
 
     trajectory_enabled = trajectory_sink is not None or retain_trajectory
     trajectory = _TrajectoryRecorder(
@@ -315,13 +308,14 @@ def run_integrated_problem_hgs(
         counts: Counter[str] = Counter()
         magnitudes: Counter[str] = Counter()
         if exact is not None:
-            for violation, magnitude in zip(
+            for violation, magnitude, axis in zip(
                 exact.violations,
                 exact.violation_magnitudes,
+                exact.violation_axes,
                 strict=True,
             ):
                 counts[violation.type] += 1
-                magnitudes[violation.type] += float(magnitude)
+                magnitudes[axis] += float(magnitude)
         has_feasible = bool(exact is not None and exact.feasible)
         best_feasible_raw_cost = (
             float(exact.total_cost) if has_feasible else None
@@ -374,11 +368,6 @@ def run_integrated_problem_hgs(
             ),
             violation_counts=tuple(sorted(counts.items())),
             violation_magnitudes=tuple(sorted(magnitudes.items())),
-            penalty_coefficients=(
-                ()
-                if penalty_manager is None
-                else tuple(sorted(penalty_manager.penalties.items()))
-            ),
             outer_repair_calls=(
                 0 if bundle is None else bundle.accounting.repair_calls
             ),
@@ -411,7 +400,6 @@ def run_integrated_problem_hgs(
         evaluator=evaluator,
         charging_policy=charging_policy,
         route_engine=route_engine,
-        penalty_parameters=parameters.penalties,
         stagnation_patience=parameters.stagnation_patience,
         include_mechanism_refinement=include_mechanism_refinement,
         include_whole_duty_type_exchange=(
@@ -526,7 +514,7 @@ def run_integrated_problem_hgs(
         initial_candidate_count=len(initial_candidates),
     )
     result = bundle.algorithm.run(_IntegratedStop())
-    iterations = result.accounting.iterations
+    accounting.restarts = result.accounting.restarts
     accounting.repair_calls += int(bundle.accounting.repair_calls)
     accounting.outer_refinement_calls += int(
         bundle.accounting.mechanism_calls
@@ -561,7 +549,7 @@ def run_integrated_problem_hgs(
     return _finish_result(
         best,
         evaluator,
-        iterations,
+        result.accounting.iterations,
         accounting,
         trajectory.retained,
         started,

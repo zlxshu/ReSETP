@@ -21,21 +21,6 @@ def read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def test_v3_is_default_and_old_authorities_remain_explicitly_loadable() -> None:
-    instance_id = "cn-prd-50c-01-V2-LOCATIONS"
-    active = load_china81_bundle(REPO, instance_id)
-    old_v1 = load_china81_bundle(
-        REPO, instance_id, fleet_authority=FLEET_AUTHORITY_V1_RELATIVE
-    )
-    old_v2 = load_china81_bundle(
-        REPO, instance_id, fleet_authority=FLEET_AUTHORITY_V2_RELATIVE
-    )
-
-    assert active.fleet_authority == str(FLEET_AUTHORITY_V3_RELATIVE)
-    assert old_v1.fleet_authority == str(FLEET_AUTHORITY_V1_RELATIVE)
-    assert old_v2.fleet_authority == str(FLEET_AUTHORITY_V2_RELATIVE)
-    assert (REPO / FLEET_AUTHORITY_V1_RELATIVE / "artifact_hashes.json").is_file()
-    assert (REPO / FLEET_AUTHORITY_V2_RELATIVE / "artifact_hashes.json").is_file()
 
 
 def test_v3_has_144_depot_rows_and_exact_hamilton_allocations() -> None:

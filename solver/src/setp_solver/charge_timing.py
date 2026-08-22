@@ -467,8 +467,14 @@ class ChargeTimingContext:
         policy: str,
         intensity_field: str,
     ) -> float:
+        # v2026-08-21: the answer never depends on where the action currently
+        # sits on the clock -- every candidate is scored on a shifted copy, and
+        # both the candidate set and the geometry are clock-independent.  The
+        # incoming ``charge_start_second`` is therefore normalised out of the
+        # key, otherwise re-timing the same action during repair misses the
+        # cache and re-scores its whole candidate set.
         key = (
-            action,
+            replace(action, charge_start_second=0.0),
             float(earliest),
             float(latest),
             policy,

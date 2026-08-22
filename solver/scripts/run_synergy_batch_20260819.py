@@ -86,7 +86,7 @@ def command(unit: Unit, *, runtime_seconds: int = 600) -> list[str]:
     argv += [
         "--seed", str(unit.seed), "--carbon-price", "0.07502",
         "--iterations", "1000000000", "--max-runtime-seconds", str(runtime_seconds),
-        "--stagnation-patience", "500", "--penalty-solutions-between-updates", "50",
+        "--stagnation-patience", "500",
         "--fleet-parameter-class", "endogenous", "--population-mode", "copied_hgs_defaults",
         "--proposal-mode", "system", "--proposal-config", "combat", "--trajectory", "off",
         "--education-depth-limit", "1", "--charge-timing-policy", "cost_plus_carbon",

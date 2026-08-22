@@ -9,18 +9,17 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Any
 
 from .charging import ChargingRepairPolicy
 from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
-from .population import PenaltyParameters
 from .proposals import MechanismProposalEngine, SequentialProposalEngine
 
 
 SCHEMA_VERSION = "resetp.problem_hgs.effective_execution.v1"
 POLICY_FIELDS = tuple(
-    "strategy carbon_weight depot_charge_window_mode charge_timing_policy charge_amount_strategy public_station_candidate_mode first_trip_prev_night_enabled frvcpy_enabled charging_gap_enabled".split()
+    "strategy carbon_weight depot_charge_window_mode charge_timing_policy charge_amount_strategy public_station_candidate_mode first_trip_prev_night_enabled frvcpy_enabled".split()
 )
 MECHANISM_FIELDS = tuple(
     "include_charging_candidates include_non_charging_candidates include_structural_channels cross_depot_enabled multi_trip_enabled type_exchange_enabled".split()
@@ -98,14 +97,6 @@ def _stage_configuration(engine: object | None) -> dict[str, object] | None:
         return None
 
 
-def _penalty_configuration(parameters: PenaltyParameters) -> dict[str, object]:
-    payload = asdict(parameters)
-    payload["initial_penalty_by_type"] = [
-        [str(name), float(value)] for name, value in sorted(parameters.initial_penalty_by_type)
-    ]
-    return _primitive(payload)
-
-
 def _engine_value(engine: object | None, name: str) -> str | None:
     return None if engine is None else str(getattr(engine, name))
 
@@ -131,7 +122,6 @@ class EffectiveExecutionBundle:
     public_station_candidate_mode: str
     first_trip_prev_night_enabled: bool
     frvcpy_enabled: bool
-    charging_gap_enabled: bool
     carbon_price_cny_per_kg: float
     fairness_enabled: bool
     fairness_theta: float | None
@@ -145,7 +135,6 @@ class EffectiveExecutionBundle:
     num_close: int
     lb_diversity: float
     ub_diversity: float
-    project_penalty_parameters: dict[str, object]
     repair_probability: float
     repair_booster: int
     num_iters_no_improvement: int
@@ -179,7 +168,6 @@ class EffectiveExecutionBundle:
                 "theta": self.fairness_theta,
             },
             "population": {key: getattr(self, key) for key in POPULATION_FIELDS},
-            "project_penalty_parameters": _primitive(self.project_penalty_parameters),
             "copied_kernel": {
                 "repair_probability": self.repair_probability,
                 "repair_booster": self.repair_booster,
@@ -205,7 +193,6 @@ def build_effective_execution_bundle(
     mechanism_stage_engine: object | None,
     context: object,
     population_parameters: object,
-    penalty_parameters: PenaltyParameters,
     repair_probability: float,
     repair_booster: int,
     num_iters_no_improvement: int,
@@ -247,7 +234,6 @@ def build_effective_execution_bundle(
         num_close=int(population_parameters.num_close),
         lb_diversity=float(population_parameters.lb_diversity),
         ub_diversity=float(population_parameters.ub_diversity),
-        project_penalty_parameters=_penalty_configuration(penalty_parameters),
         repair_probability=float(repair_probability),
         repair_booster=int(repair_booster),
         num_iters_no_improvement=int(num_iters_no_improvement),

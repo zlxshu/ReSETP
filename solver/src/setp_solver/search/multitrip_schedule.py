@@ -408,7 +408,7 @@ def route_timing(
         raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} has no trip")
     if route.node_sequence[0] != route.home_depot_id or route.node_sequence[-1] != route.home_depot_id:
         raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} does not return to its home depot")
-    nodes = {node.node_id: node for node in instance.nodes}
+    nodes = instance.node_lookup
     if any(node_id not in nodes for node_id in route.node_sequence):
         raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} references an unknown node")
     route_actions = [
@@ -977,7 +977,7 @@ def _validate_continuous_soc_route_bounds(
     upper_battery_kwh: float,
     contract_id: str,
 ) -> None:
-    nodes = {node.node_id: node for node in instance.nodes}
+    nodes = instance.node_lookup
     loads = _arc_loads(route.node_sequence, nodes)
     actions_by_station: dict[str, list[ChargingAction]] = {}
     for action in charging_actions:

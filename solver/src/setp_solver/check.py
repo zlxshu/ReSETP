@@ -105,7 +105,7 @@ def check_solution(
     dynamic_context: DynamicCheckContext | None = None,
 ) -> list[Violation]:
     violations: list[Violation] = []
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     charging_by_vehicle_node = _charging_index(solution.charging_actions)
 
     violations.extend(_check_structure(solution, node_lookup))
@@ -423,7 +423,7 @@ def _check_charging_trip_overlap(
     cross-trip check using the same route/station predicate.
     """
 
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     routes_by_id = {route.vehicle_id: route for route in solution.routes}
     intervals_by_physical: dict[str, list[tuple[float, float, Route]]] = defaultdict(list)
     for route in solution.routes:

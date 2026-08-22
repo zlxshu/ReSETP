@@ -248,7 +248,6 @@ current_solution_penalized_cost
 physical_feasible
 fairness_feasible
 violation_counts
-penalty_coefficients
 outer_repair_calls
 fleet_cap_semantics
 total_emissions_kg

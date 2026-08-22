@@ -344,8 +344,8 @@ def main() -> int:
             >= args.max_runtime_seconds
         ),
     )
-    if built.actual_size < 1:
-        raise RuntimeError("dynamic population construction is empty")
+    if built.actual_size < 4:
+        raise RuntimeError("dynamic population construction returned fewer than four candidates")
     candidates = built.candidates
     initial_evaluations = built.evaluations
     initial_evaluation = built.evaluations[0]

@@ -234,7 +234,7 @@ def _build_frvcpy_instance(
     dict[int, _ChargingVertex],
     list[list[float]],
 ]:
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     if route.vehicle_type.lower() != "ev":
         raise ValueError("frvcpy charging requires an EV route")
     if (

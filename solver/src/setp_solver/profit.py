@@ -85,7 +85,7 @@ def calculate_depot_profits(
     supplied ``d_i^0``.
     """
 
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     depot_ids = sorted(node.node_id for node in instance.nodes if node.node_type.lower() == "d")
     owners = customer_home_depot or infer_customer_home_depots(instance)
     prior = prior_profit or {}

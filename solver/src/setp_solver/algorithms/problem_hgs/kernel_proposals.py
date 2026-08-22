@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from decimal import ROUND_HALF_UP, Decimal
 from itertools import groupby
 
@@ -62,8 +63,6 @@ class IndependentKernelDutyRouteProposalEngine:
         multi_trip_enabled: bool = True,
         type_exchange_enabled: bool = True,
         shift_aware_ev_unit_cost_enabled: bool = False,
-        truth_guided_route_boundary_enabled: bool = False,
-        truth_candidate_limit: int | None = None,
     ) -> None:
         if kernel_version != "0.12.2":
             raise RuntimeError("Duty route proposals require IndependentKernel 0.12.2 HGS")
@@ -89,28 +88,6 @@ class IndependentKernelDutyRouteProposalEngine:
         self.shift_aware_ev_unit_cost_enabled = bool(
             shift_aware_ev_unit_cost_enabled
         )
-        self.truth_guided_route_boundary_enabled = bool(
-            truth_guided_route_boundary_enabled
-        )
-        if self.truth_guided_route_boundary_enabled:
-            if truth_candidate_limit is None or int(truth_candidate_limit) < 1:
-                raise ValueError(
-                    "truth-guided route boundary requires a positive candidate limit"
-                )
-            self.truth_candidate_limit = int(truth_candidate_limit)
-        else:
-            if truth_candidate_limit is not None:
-                raise ValueError(
-                    "truth candidate limit requires the truth-guided route boundary"
-                )
-            self.truth_candidate_limit = None
-        self._truth_boundary_batches = 0
-        self._truth_boundary_proxy_evaluated = 0
-        self._truth_boundary_proxy_promising = 0
-        self._truth_boundary_proxy_materialised = 0
-        self._truth_boundary_native_returned = 0
-        self._truth_boundary_duty_emitted = 0
-        self._truth_boundary_random_proxy_education_bypassed = 0
         if not self.stream_role:
             raise ValueError("route proposal stream role cannot be empty")
         self._fleet_registry = tuple(
@@ -161,13 +138,10 @@ class IndependentKernelDutyRouteProposalEngine:
         self._native_random_solution_calls = 0
         self._greedy_repair_calls = 0
         self._initialization_prepopulation_local_search_calls = 0
-        self._local_search = LocalSearch(
-            self._data,
-            rng,
-            compute_neighbours(self._data, params.neighbourhood),
-        )
+        neighbours = compute_neighbours(self._data, params.neighbourhood)
         if self.rebuilt_shift_neighbours_only:
-            self._restrict_neighbours_to_rebuilt_shift()
+            neighbours = self._restrict_neighbours_to_rebuilt_shift(params.neighbourhood)
+        self._local_search = LocalSearch(self._data, rng, neighbours)
         self._node_operator_names: list[str] = []
         self._route_operator_names: list[str] = []
         self._depot_split_operator = None
@@ -235,11 +209,6 @@ class IndependentKernelDutyRouteProposalEngine:
                 if self.shift_aware_ev_unit_cost_enabled
                 else ""
             )
-            + (
-                f"truth-guided-route-boundary-epsilon-{self.truth_candidate_limit}:"
-                if self.truth_guided_route_boundary_enabled
-                else ""
-            )
             + self.stream_role
         )
         dynamic_identity = None
@@ -294,13 +263,6 @@ class IndependentKernelDutyRouteProposalEngine:
             identity["type_exchange_enabled"] = False
         if self.shift_aware_ev_unit_cost_enabled:
             identity["shift_aware_ev_proxy"] = self._shift_aware_ev_proxy
-        if self.truth_guided_route_boundary_enabled:
-            identity["truth_guided_route_boundary"] = {
-                "enabled": True,
-                "candidate_limit": self.truth_candidate_limit,
-                "candidate_scope": "proxy-proven-one-step-improvements",
-                "truth_scope": "complete-duty-penalised-cost",
-            }
         if self.depot_assignment_operator_enabled:
             identity["depot_assignment_operator"] = {
                 "name": "DepotSplit",
@@ -374,24 +336,6 @@ class IndependentKernelDutyRouteProposalEngine:
         return dict(self._shift_aware_ev_proxy)
 
     @property
-    def truth_boundary_statistics(self) -> dict[str, int | bool | None]:
-        """Return cumulative work at the proxy-to-truth route boundary."""
-
-        return {
-            "enabled": self.truth_guided_route_boundary_enabled,
-            "candidate_limit": self.truth_candidate_limit,
-            "batches": self._truth_boundary_batches,
-            "proxy_evaluated": self._truth_boundary_proxy_evaluated,
-            "proxy_promising": self._truth_boundary_proxy_promising,
-            "proxy_materialised": self._truth_boundary_proxy_materialised,
-            "native_returned": self._truth_boundary_native_returned,
-            "duty_candidates_emitted": self._truth_boundary_duty_emitted,
-            "random_proxy_education_bypassed": (
-                self._truth_boundary_random_proxy_education_bypassed
-            ),
-        }
-
-    @property
     def native_initialization_statistics(self) -> dict[str, int]:
         """Return lineage-only counters for native population construction."""
 
@@ -426,25 +370,26 @@ class IndependentKernelDutyRouteProposalEngine:
         self._depot_split_evaluations += int(statistics.num_evaluations)
         self._depot_split_applications += int(statistics.num_applications)
 
-    def _restrict_neighbours_to_rebuilt_shift(self) -> None:
+    def _restrict_neighbours_to_rebuilt_shift(self, params) -> list[list[int]]:
         contract = self._context.rebuilt_route_constraints
         if contract is None:
             raise ValueError(
                 "same-shift neighbours require rebuilt route constraints"
             )
         shifts = contract.customer_shift_by_id
-        neighbours = self._local_search.neighbours
+        neighbours = compute_neighbours(
+            self._data,
+            replace(params, num_neighbours=self._data.num_clients - 1),
+        )
         for customer_id, shift_id in shifts.items():
-            if customer_id not in self._location_by_node_id:
-                continue
             location = self._location_by_node_id[customer_id]
             neighbours[location] = [
                 other
                 for other in neighbours[location]
                 if self._node_id_by_location.get(other) in shifts
                 and shifts[self._node_id_by_location[other]] == shift_id
-            ]
-        self._local_search.neighbours = neighbours
+            ][: params.num_neighbours]
+        return neighbours
 
     def project(
         self,
@@ -495,77 +440,6 @@ class IndependentKernelDutyRouteProposalEngine:
                 "with an embedded lock"
             )
         warm = self._project(individual)
-        if self.truth_guided_route_boundary_enabled:
-            candidates = self._local_search.promising_candidates(
-                warm,
-                self._cost_evaluator,
-                self.truth_candidate_limit,
-            )
-            statistics = self._local_search.candidate_statistics
-            self._truth_boundary_batches += 1
-            self._truth_boundary_proxy_evaluated += int(
-                statistics.num_evaluated
-            )
-            self._truth_boundary_proxy_promising += int(
-                statistics.num_promising
-            )
-            self._truth_boundary_proxy_materialised += int(
-                statistics.num_materialised
-            )
-            self._truth_boundary_native_returned += int(
-                statistics.num_returned
-            )
-
-            decoded: list[
-                tuple[
-                    int,
-                    tuple[tuple[str, tuple[tuple[str, ...], ...]], ...],
-                ]
-            ] = []
-            seen: set[
-                tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
-            ] = set()
-            for candidate in candidates:
-                replacements = self._decode_changes(
-                    individual,
-                    candidate.solution,
-                )
-                if (
-                    not replacements
-                    or replacements in seen
-                    or not self._mechanism_locks_preserved(
-                        individual,
-                        replacements,
-                    )
-                    or not self._shift_safe_replacements(replacements)
-                ):
-                    continue
-                seen.add(replacements)
-                decoded.append((int(candidate.proxy_delta), replacements))
-
-            moves = tuple(
-                DutySkeletonMove(
-                    action_id=(
-                        "setp_hgs_kernel-truth-shortlist:"
-                        f"{proxy_rank}:"
-                        + hashlib.sha256(
-                            repr(replacements).encode("utf-8")
-                        ).hexdigest()[:16]
-                    ),
-                    channel="route_kernel_truth",
-                    replacements=replacements,
-                    dynamic_future_only=dynamic is not None,
-                    proxy_rank=proxy_rank,
-                    proxy_delta=proxy_delta,
-                )
-                for proxy_rank, (proxy_delta, replacements) in enumerate(
-                    decoded,
-                    start=1,
-                )
-            )
-            self._truth_boundary_duty_emitted += len(moves)
-            return moves
-
         improved = self._local_search(warm, self._cost_evaluator)
         self._record_depot_split_statistics()
         replacements = self._decode_changes(individual, improved)
@@ -614,8 +488,6 @@ class IndependentKernelDutyRouteProposalEngine:
             self._data,
             self._rng,
         )
-        if self.truth_guided_route_boundary_enabled:
-            self._truth_boundary_random_proxy_education_bypassed += 1
         replacements = self._decode_changes(individual, random_solution)
         if not self._mechanism_locks_preserved(individual, replacements):
             return None

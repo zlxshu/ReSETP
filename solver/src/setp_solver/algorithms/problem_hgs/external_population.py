@@ -4,20 +4,12 @@
 # git_commit_author=Leixishu Zhou (not evidence of content authorship)
 # original_author=UNKNOWN
 # pre_move_sha256=539d83f64ffbfd92fe3ebf5f91a23d53beffb7c5b75fe53f45227e395654620e
-"""Copied HGS population semantics with an external complete evaluator.
-
-This module preserves the feasible/infeasible subpopulation, biased-fitness,
-binary-tournament, diversity, duplicate-removal, and survivor-selection logic
-from :mod:`setp_hgs_kernel.Population` and ``cpp/SubPopulation.cpp``.  The only
-intentional change is that feasibility and penalised cost are supplied by a
-problem adapter.  That lets the same HGS population rank a public native
-solution or a decoded full-problem solution without maintaining a second GA.
-"""
+"""Copied HGS population semantics with external complete evaluation."""
 
 from __future__ import annotations
 
 from bisect import bisect_left
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Callable, Generic, TypeVar
 
 from setp_hgs_kernel._setp_hgs_kernel import PopulationParams
@@ -39,36 +31,33 @@ class EvaluatedSolution(Generic[SolutionT, EvaluationT]):
 class _Item(Generic[SolutionT, EvaluationT]):
     candidate: EvaluatedSolution[SolutionT, EvaluationT]
     fitness: float = 0.0
-    proximity: list[tuple[float, int]] | None = None
-
-    def __post_init__(self) -> None:
-        if self.proximity is None:
-            self.proximity = []
+    proximity: list[tuple[float, int]] = field(default_factory=list)
 
 
 class ExternalPopulation(Generic[SolutionT, EvaluationT]):
-    """HGS population whose rank is determined by complete-model evaluation."""
-
     def __init__(
         self,
         diversity_op: Callable[[SolutionT, SolutionT], float],
         *,
         is_feasible: Callable[[EvaluationT], bool],
         penalised_cost: Callable[[EvaluationT], float],
+        refresh_penalties: Callable[[tuple[EvaluationT, ...]], None],
+        minimum_penalty_population_size: int,
         fingerprint: Callable[[SolutionT], str],
         params: PopulationParams | None = None,
     ) -> None:
         self._diversity_op = diversity_op
         self._is_feasible = is_feasible
         self._penalised_cost = penalised_cost
+        self._refresh_penalties_callback = refresh_penalties
+        self._minimum_penalty_population_size = minimum_penalty_population_size
         self._fingerprint = fingerprint
         self._params = params if params is not None else PopulationParams()
         self._feasible: list[_Item[SolutionT, EvaluationT]] = []
         self._infeasible: list[_Item[SolutionT, EvaluationT]] = []
+        self._penalties_dirty = True
 
-    def __iter__(self) -> Iterator[
-        EvaluatedSolution[SolutionT, EvaluationT]
-    ]:
+    def __iter__(self) -> Iterator[EvaluatedSolution[SolutionT, EvaluationT]]:
         for item in (*self._feasible, *self._infeasible):
             yield item.candidate
 
@@ -78,6 +67,7 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
     def clear(self) -> None:
         self._feasible.clear()
         self._infeasible.clear()
+        self._penalties_dirty = True
 
     def add(
         self,
@@ -89,9 +79,7 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             else self._infeasible
         )
         item = _Item(candidate)
-        assert item.proximity is not None
         for other in subpopulation:
-            assert other.proximity is not None
             distance = self._diversity_op(
                 candidate.solution,
                 other.candidate.solution,
@@ -107,9 +95,12 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             )
             item.proximity.insert(item_position, (distance, id(other)))
         subpopulation.append(item)
+        self._penalties_dirty = True
+        self._refresh_penalties()
         retained = True
         if len(subpopulation) > self._params.max_pop_size:
             retained = self._purge(subpopulation, candidate)
+            self._refresh_penalties()
         return retained
 
     def select(self, rng, k: int = 2) -> tuple[
@@ -118,6 +109,7 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
     ]:
         if len(self) == 0:
             raise ValueError("cannot select from an empty population")
+        self._refresh_penalties()
         self._update_fitness(self._feasible)
         self._update_fitness(self._infeasible)
         first = self._tournament(rng, k)
@@ -140,11 +132,10 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             tries += 1
         return first, second
 
-    def best_feasible(
-        self,
-    ) -> EvaluatedSolution[SolutionT, EvaluationT] | None:
+    def best_feasible(self) -> EvaluatedSolution[SolutionT, EvaluationT] | None:
         if not self._feasible:
             return None
+        self._refresh_penalties()
         return min(
             (item.candidate for item in self._feasible),
             key=lambda item: self._penalised_cost(item.evaluation),
@@ -156,16 +147,13 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
         candidates = tuple(self)
         if not candidates:
             return None
+        self._refresh_penalties()
         return min(
             candidates,
             key=lambda item: self._penalised_cost(item.evaluation),
         )
 
-    def _tournament(
-        self,
-        rng,
-        k: int,
-    ) -> EvaluatedSolution[SolutionT, EvaluationT]:
+    def _tournament(self, rng, k: int) -> EvaluatedSolution[SolutionT, EvaluationT]:
         if k <= 0:
             raise ValueError("tournament size must be positive")
         items = (*self._feasible, *self._infeasible)
@@ -185,8 +173,10 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             if subpopulation[duplicate].candidate is inserted:
                 retained = False
             self._remove(subpopulation, duplicate)
+            self._penalties_dirty = True
 
         while len(subpopulation) > self._params.min_pop_size:
+            self._refresh_penalties()
             self._update_fitness(subpopulation)
             worst = max(
                 range(len(subpopulation)),
@@ -195,7 +185,16 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             if subpopulation[worst].candidate is inserted:
                 retained = False
             self._remove(subpopulation, worst)
+            self._penalties_dirty = True
         return retained
+
+    def _refresh_penalties(self) -> None:
+        if not self._penalties_dirty:
+            return
+        evaluations = tuple(candidate.evaluation for candidate in self)
+        if len(evaluations) >= self._minimum_penalty_population_size:
+            self._refresh_penalties_callback(evaluations)
+            self._penalties_dirty = False
 
     def _duplicate_index(
         self,
@@ -203,7 +202,6 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
     ) -> int | None:
         by_identity = {id(item): item for item in subpopulation}
         for index, item in enumerate(subpopulation):
-            assert item.proximity is not None
             if not item.proximity:
                 continue
             other = by_identity[item.proximity[0][1]]
@@ -225,7 +223,6 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
         for item in subpopulation:
             if item is removed:
                 continue
-            assert item.proximity is not None
             item.proximity[:] = [
                 entry
                 for entry in item.proximity
@@ -249,7 +246,6 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
         diversity: list[tuple[float, int]] = []
         for cost_rank, idx in enumerate(by_cost):
             proximity = subpopulation[idx].proximity
-            assert proximity is not None
             closest = proximity[: self._params.num_close]
             total_distance = 0.0
             for distance, _identity in closest:

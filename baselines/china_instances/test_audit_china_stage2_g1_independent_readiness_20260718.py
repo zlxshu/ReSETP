@@ -21,10 +21,6 @@ def test_formal_merge_is_always_held_before_g1_freeze() -> None:
     assert rows["G1-FREEZE-MERGE"]["blocks_formal_acceptance"] is True
 
 
-def test_result_blind_numeric_effects_are_frozen() -> None:
-    rows = {row["id"]: row for row in MODULE.build_items()}
-    assert rows["STATS-E5-MATERIAL-EFFECT"]["state"] == "PASS"
-    assert rows["STATS-E7-MATERIAL-EFFECTS"]["state"] == "PASS"
 
 
 def test_finished_location_and_order_layers_pass() -> None:

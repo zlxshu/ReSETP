@@ -41,7 +41,7 @@ def _curve_aware_action(
                 reference_power_kw=float(reference_power_kw),
             )
         else:
-            nodes = {node.node_id: node for node in instance.nodes}
+            nodes = instance.node_lookup
             station = nodes.get(station_id)
             if station is None or station.node_type.lower() not in {"d", "f"}:
                 raise ValueError(

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
-from functools import cache
+from functools import cache, cached_property
 from hashlib import sha256
 from math import isfinite
 from typing import Iterable, Sequence
@@ -182,6 +182,9 @@ def _spec_from_values(
     )
 
 
+_NODE_SPEC_CACHE: dict[tuple[int, str], tuple[object, ChargingCurveSpec]] = {}
+
+
 def spec_for_charging_node(
     parameters: object,
     *,
@@ -194,6 +197,21 @@ def spec_for_charging_node(
     station-specific triple is rejected instead of being silently mixed with
     the legacy curve.
     """
+
+    cache_key = (id(parameters), node_type)
+    cached = _NODE_SPEC_CACHE.get(cache_key)
+    if cached is not None and cached[0] is parameters:
+        return cached[1]
+    spec = _spec_for_charging_node_uncached(parameters, node_type=node_type)
+    _NODE_SPEC_CACHE[cache_key] = (parameters, spec)
+    return spec
+
+
+def _spec_for_charging_node_uncached(
+    parameters: object,
+    *,
+    node_type: str,
+) -> ChargingCurveSpec:
 
     normalized_type = str(node_type).strip().lower()
     if normalized_type == "d":
@@ -350,7 +368,7 @@ class PiecewiseChargingCurve:
     def capacity_kwh(self) -> float:
         return self.energy_breakpoints_kwh[-1]
 
-    @property
+    @cached_property
     def physical_parameter_sha256(self) -> str:
         """Hash the normalized curve together with its physical scaling."""
 
@@ -366,7 +384,7 @@ class PiecewiseChargingCurve:
         ).encode("utf-8")
         return sha256(payload).hexdigest()
 
-    @property
+    @cached_property
     def segment_powers_kw(self) -> tuple[float, ...]:
         return tuple(
             3600.0 * (energy_right - energy_left) / (time_right - time_left)

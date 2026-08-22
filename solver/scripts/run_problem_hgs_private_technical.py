@@ -17,7 +17,6 @@ import json
 import math
 import os
 import platform
-import random
 import subprocess
 import sys
 import traceback
@@ -84,9 +83,6 @@ from setp_solver.algorithms.problem_hgs.operators import (
     generate_problem_moves,
 )
 from setp_solver.algorithms.problem_hgs.population import (
-    AdaptivePenaltyManager,
-    DutyPopulation,
-    PenaltyParameters,
     PopulationParameters,
 )
 from setp_solver.algorithms.resetp_alns.support.charging import (
@@ -448,90 +444,6 @@ def _write_charging_diagnosis_probe(
         writer.writerows(rows)
 
 
-def _write_failure_package(output: Path, error: Exception) -> bool:
-    """Complete an output directory created by this invocation as failed."""
-
-    metadata_path = output / "metadata.json"
-    if not metadata_path.is_file():
-        return False
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    if metadata.get("status") != "RUNNING":
-        return False
-    repo = Path(__file__).resolve().parents[2]
-    metadata["protected_hashes_after"] = {
-        path: _sha256(repo / path) for path in PROTECTED
-    }
-    with (output / "raw_runs.csv").open(
-        "w", encoding="utf-8", newline=""
-    ) as handle:
-        writer = csv.DictWriter(
-            handle,
-            fieldnames=("verdict", "error_type", "error"),
-            lineterminator="\n",
-        )
-        writer.writeheader()
-        writer.writerow(
-            {
-                "verdict": PROBE_FAILURE_VERDICT,
-                "error_type": type(error).__name__,
-                "error": str(error),
-            }
-        )
-    failure_reason = f"{type(error).__name__}: {error}"
-    acceptance = assess_run(
-        termination_ok=None,
-        feasible_ok=None,
-        customers_complete=None,
-        demand_complete=None,
-        audit_ok=None,
-        extra_failure_reasons=(failure_reason,),
-        success_verdict=PROBE_SUCCESS_VERDICT,
-        failure_verdict=PROBE_FAILURE_VERDICT,
-    )
-    decision = {
-        "traceback": traceback.format_exc(),
-        "user_decision_changed": False,
-    }
-    enterprise_failure_ending = ""
-    if metadata.get("requested_enterprise_id") is not None:
-        constructor = metadata.get(
-            "requested_enterprise_init_constructor",
-            "random",
-        )
-        enterprise_failure_ending = f"""
-## 直接给用户
-
-{metadata['requested_enterprise_id']} 的 `{constructor}` 初始化探针真实结局是：**失败**。原始初始化拒绝记录如已产生，保存在同包的 `native_initialization_diagnostics.json`。本次调用只保存失败现场；本轮执行者按用户预批退路继续收尾。
-"""
-    report = f"""# Problem-HGS 真实输入技术试跑失败报告
-
-## 结论
-
-本次技术试跑在生成正式结果包前失败。错误类型为 `{type(error).__name__}`，错误信息为：{error}。失败没有被改写成完成；完整调用栈保存在 `decision.json`。
-
-## 交付前九条自检
-
-1. 每个事实是否有出处？——错误类型、错误信息和调用栈来自本次异常，保存在 `decision.json`。
-2. 有没有把建议或担忧写成已决？——没有；这里只记录失败。
-3. 是否超出任务范围？——没有；只补齐本次失败现场。
-4. 是否碰受保护文件？——本失败包不修改受保护文件；实际运行前后哈希以 `metadata.json` 已保存内容为准。
-5. 是否留下新的待决选项？——没有。
-6. 是否使用自造术语？——没有。
-7. 失败、跳过、超时、异常是否如实保留？——本次异常已如实保留。
-8. 四件套是否齐全？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json` 和 `report.md` 将由本失败收口一次写齐。
-9. 交接记录是否同步？——失败包只保存现场；项目交接记录在任务收尾时统一同步。
-{enterprise_failure_ending}
-"""
-    for sidecar in output.glob("._*"):
-        sidecar.unlink()
-    finalize_five_file_package(
-        output,
-        acceptance=acceptance,
-        metadata=metadata,
-        decision=decision,
-        report_text=report,
-    )
-    return True
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -571,14 +483,13 @@ def _parameters(
     crossover_mode: str = "fast_only",
     population_mode: str = "copied_hgs_defaults",
     objective_mode: str = SINGLE_OBJECTIVE,
-    penalty_solutions_between_updates: int = 50,
     education_depth_limit: int | None = None,
 ) -> ProblemHGSSearchParameters:
     if population_mode == "copied_hgs_defaults":
         population = PopulationParameters.copied_hgs_defaults()
     elif population_mode == "technical_two_parent":
         population = PopulationParameters(
-            min_pop_size=2,
+            min_pop_size=4,
             generation_size=2,
             num_elite=1,
             num_close=1,
@@ -591,16 +502,6 @@ def _parameters(
     return ProblemHGSSearchParameters(
         random_seed=int(random_seed),
         population=population,
-        penalties=PenaltyParameters(
-            initial_penalty_per_unit=100.0,
-            solutions_between_updates=int(penalty_solutions_between_updates),
-            penalty_increase=1.34,
-            penalty_decrease=0.32,
-            target_feasible=0.43,
-            feasibility_tolerance=0.05,
-            minimum_penalty=0.1,
-            maximum_penalty=100_000.0,
-        ),
         stagnation_patience=stagnation_patience,
         crossover_mode=crossover_mode,
         objective_mode=objective_mode,
@@ -739,26 +640,6 @@ def _build_context(
     ),
     depot_charging_scenario_name: str = "60kw",
 ):
-    if instance_id == DEPOT_SWAP_INSTANCE_ID:
-        if depot_charging_scenario_name != "60kw":
-            raise ValueError(
-                "DEPOTSWAP instance is frozen at the 60 kW depot scenario"
-            )
-        return _build_depot_swap_context(
-            repo,
-            instance_id,
-            fleet_parameters=fleet_parameters,
-        )
-    if instance_id.endswith("-V3-TWO-SHIFT-FS"):
-        if depot_charging_scenario_name != "60kw":
-            raise ValueError("FS suite is frozen at the 60 kW depot scenario")
-        return _build_saved_suite_context(
-            repo,
-            instance_id,
-            package_root=repo / "data/ChinaInstances/china81_suite_v3_20260812",
-            report_root=repo / "solver/reports/suite_rebuild_20260812",
-            fleet_parameters=fleet_parameters,
-        )
     if instance_id.endswith("-V3-TWO-SHIFT-DP"):
         if depot_charging_scenario_name != "60kw":
             raise ValueError("DP suite is frozen at the 60 kW depot scenario")
@@ -767,16 +648,6 @@ def _build_context(
             instance_id,
             package_root=repo / "data/ChinaInstances/china81_depotpair_rebuild_v1_20260812",
             report_root=repo / "solver/reports/suite_depotpair_rebuild_20260812",
-            fleet_parameters=fleet_parameters,
-        )
-    if instance_id.endswith("-V3-TWO-SHIFT-METRO"):
-        if depot_charging_scenario_name != "60kw":
-            raise ValueError("METRO suite is frozen at the 60 kW depot scenario")
-        return _build_saved_suite_context(
-            repo,
-            instance_id,
-            package_root=repo / "data/ChinaInstances/china81_metro_suite_v1_20260812",
-            report_root=repo / "solver/reports/metro_rebuild_20260812",
             fleet_parameters=fleet_parameters,
         )
     if instance_id.endswith("-V3-TWO-SHIFT-PRDFIX"):
@@ -1334,47 +1205,6 @@ def _load_v3_suite_bundle(
     return bundle, orders_by_customer
 
 
-def _assert_saved_suite_replay(
-    built_nodes: Sequence[Mapping[str, Any]],
-    saved_nodes: Sequence[Mapping[str, Any]],
-    built_orders: Sequence[Mapping[str, Any]],
-    saved_orders: Sequence[Mapping[str, Any]],
-    *,
-    label: str,
-) -> None:
-    node_fields = ("node_id", "node_type", "city", "latitude", "longitude")
-    if [tuple(str(row[field]) for field in node_fields) for row in built_nodes] != [
-        tuple(str(row[field]) for field in node_fields) for row in saved_nodes
-    ]:
-        raise RuntimeError(f"{label} runtime rebuild differs from saved nodes")
-    built_by_customer = {str(row["customer_id"]): row for row in built_orders}
-    saved_by_customer = {str(row["customer_id"]): row for row in saved_orders}
-    if set(built_by_customer) != set(saved_by_customer):
-        raise RuntimeError(f"{label} runtime rebuild customer identities differ")
-    exact_fields = (
-        "home_depot_id",
-        "shift_id",
-        "source_instance_id_location",
-        "source_customer_id_location",
-    )
-    numeric_fields = (
-        "time_window_early_minute",
-        "time_window_late_minute",
-        "source_volume_m3",
-        "demand_kg",
-    )
-    for customer_id, built_row in built_by_customer.items():
-        saved_row = saved_by_customer[customer_id]
-        for field in exact_fields:
-            if str(built_row[field]) != str(saved_row[field]):
-                raise RuntimeError(
-                    f"{label} saved order identity differs for {customer_id}/{field}"
-                )
-        for field in numeric_fields:
-            if abs(float(built_row[field]) - float(saved_row[field])) > 1.0e-9:
-                raise RuntimeError(
-                    f"{label} saved order value differs for {customer_id}/{field}"
-                )
 
 
 def _suite_context_from_built(
@@ -1582,777 +1412,14 @@ def _build_saved_suite_context(
     )
 
 
-def _build_fs_suite_context(
-    repo: Path,
-    instance_id: str,
-    *,
-    fleet_parameters: China81FleetParameterClass,
-):
-    """Load one saved FS suite instance without loading an old V2 lane."""
-    package_root = repo / "data/ChinaInstances/china81_suite_v3_20260812"
-    report_root = repo / "solver/reports/suite_rebuild_20260812"
-    bundle, orders_by_customer = _load_v3_suite_bundle(
-        repo,
-        package_root=package_root,
-        instance_id=instance_id,
-        fleet_parameters=fleet_parameters,
-    )
-    return _suite_context_from_built(
-        repo,
-        instance_id,
-        package_root=package_root,
-        report_root=report_root,
-        built=SimpleNamespace(
-            identity=SimpleNamespace(region=bundle.region),
-            instance=bundle.instance,
-            time_profile=bundle.time_profile,
-            prices=bundle.prices,
-            source_bundle=bundle,
-            customer_home_depot=bundle.customer_home_depot,
-            orders_by_customer=orders_by_customer,
-        ),
-        template=bundle,
-        matrix_authority=bundle.road_matrix_authority,
-        fleet_parameters=fleet_parameters,
-    )
 
 
-def _build_dp_suite_context(
-    repo: Path,
-    instance_id: str,
-    *,
-    fleet_parameters: China81FleetParameterClass,
-):
-    """Load one saved DP suite instance without loading an old V2 lane."""
-    package_root = repo / "data/ChinaInstances/china81_depotpair_rebuild_v1_20260812"
-    report_root = repo / "solver/reports/suite_depotpair_rebuild_20260812"
-    bundle, orders_by_customer = _load_v3_suite_bundle(
-        repo,
-        package_root=package_root,
-        instance_id=instance_id,
-        fleet_parameters=fleet_parameters,
-    )
-    return _suite_context_from_built(
-        repo,
-        instance_id,
-        package_root=package_root,
-        report_root=report_root,
-        built=SimpleNamespace(
-            identity=SimpleNamespace(region=bundle.region),
-            instance=bundle.instance,
-            time_profile=bundle.time_profile,
-            prices=bundle.prices,
-            source_bundle=bundle,
-            customer_home_depot=bundle.customer_home_depot,
-            orders_by_customer=orders_by_customer,
-        ),
-        template=bundle,
-        matrix_authority=bundle.road_matrix_authority,
-        fleet_parameters=fleet_parameters,
-    )
 
 
-def _build_depot_swap_context(
-    repo: Path,
-    instance_id: str,
-    *,
-    fleet_parameters: China81FleetParameterClass,
-):
-    """Load the saved P56 same-city depot swap through the China81 bundle."""
-
-    package_root = repo / DEPOT_SWAP_PACKAGE
-    saved_root = package_root / "instances" / instance_id
-
-    metadata = json.loads(
-        (package_root / "metadata.json").read_text(encoding="utf-8")
-    )
-    expected_authorities = {
-        "static_input_authority": str(DEPOT_SWAP_PACKAGE),
-        "finite_fleet_authority": str(DEPOT_SWAP_PACKAGE),
-        "road_matrix_authority": str(
-            DEPOT_SWAP_PACKAGE / "directed_matrices"
-        ),
-    }
-    for field, expected in expected_authorities.items():
-        if str(metadata.get(field, "")) != expected:
-            raise ValueError(
-                f"DEPOTSWAP metadata {field} disagrees with the saved package"
-            )
-
-    with (package_root / "instance_catalog.csv").open(
-        newline="", encoding="utf-8-sig"
-    ) as handle:
-        catalog_rows = [
-            row
-            for row in csv.DictReader(handle)
-            if row["instance_id"] == instance_id
-        ]
-    if len(catalog_rows) != 1:
-        raise ValueError("DEPOTSWAP catalog row is not unique")
-    catalog = catalog_rows[0]
-    if not str(catalog.get("matrix_source_instance_id", "")).strip():
-        raise ValueError("DEPOTSWAP catalog has no matrix source identity")
-
-    with (package_root / "fleet_caps.csv").open(
-        newline="", encoding="utf-8-sig"
-    ) as handle:
-        fleet_rows = [
-            row
-            for row in csv.DictReader(handle)
-            if row["instance_id"] == instance_id
-        ]
-    if len(fleet_rows) != int(catalog["depot_count"]):
-        raise ValueError("DEPOTSWAP fleet rows do not cover every depot")
-    fleet_parameter_classes = {
-        str(row["fleet_parameter_class"]).strip()
-        for row in fleet_rows
-    }
-    if fleet_parameter_classes != {fleet_parameters.parameter_class_id}:
-        raise ValueError(
-            "DEPOTSWAP runner fleet class disagrees with fleet_caps.csv"
-        )
-    charger_capacity_defaults = {
-        str(row["depot_charger_capacity_default"]).strip().upper()
-        for row in fleet_rows
-    }
-    if charger_capacity_defaults != {"UNBOUNDED"}:
-        raise ValueError(
-            "DEPOTSWAP charger capacity mode is absent or inconsistent"
-        )
-
-    script = repo / "solver/scripts/build_instance_depot_swap_jjj_20260813.py"
-    spec = importlib.util.spec_from_file_location(
-        "problem_hgs_depot_swap_adapter_20260814",
-        script,
-    )
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot import DEPOTSWAP adapter: {script}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    built = module.load_saved_depot_swap_built(package_root)
-    if built.identity.new_instance_id != instance_id:
-        raise ValueError("DEPOTSWAP dedicated adapter returned another instance")
-
-    runtime_dates = {
-        str(row["date"]).strip()
-        for row in built.time_profile
-    }
-    runtime_cities = {
-        str(row["city"]).strip().lower()
-        for row in built.time_profile
-    }
-    if len(runtime_dates) != 1 or not runtime_cities:
-        raise ValueError(
-            "DEPOTSWAP inherited runtime profile identity is incomplete"
-        )
-    built_depot_time_windows = {
-        node.node_id: (float(node.ready_time), float(node.due_time))
-        for node in built.instance.nodes
-        if node.node_type.lower() == "d"
-    }
-    if not built_depot_time_windows:
-        raise ValueError("DEPOTSWAP dedicated adapter returned no depot windows")
-
-    source_instance = Path(str(metadata.get("source_instance", "")))
-    if not source_instance.name:
-        raise ValueError("DEPOTSWAP metadata has no source instance identity")
-    source_metadata_path = repo / source_instance.parent.parent / "metadata.json"
-    source_metadata = json.loads(
-        source_metadata_path.read_text(encoding="utf-8")
-    )
-    formal_search_allowed = source_metadata.get("formal_search_allowed")
-    if type(formal_search_allowed) is not bool:
-        raise TypeError("DEPOTSWAP source package has no formal-search identity")
-
-    bundle = load_china81_bundle(
-        repo,
-        instance_id,
-        date=next(iter(runtime_dates)),
-        static_input_authority=metadata["static_input_authority"],
-        road_matrix_authority=metadata["road_matrix_authority"],
-        runtime_parameter_authority=DEPOT_SWAP_RUNTIME_PARAMETER_AUTHORITY,
-        fleet_authority=metadata["finite_fleet_authority"],
-        fleet_parameters=fleet_parameters,
-        model_config=ModelConfig(
-            strict_multitrip=True,
-            depot_charger_capacity_mode=DEPOT_CHARGER_CAPACITY_UNBOUNDED,
-        ),
-        matrix_source_from_catalog=True,
-        customer_home_depot_from_orders=True,
-        runtime_cities=runtime_cities,
-        depot_time_windows=built_depot_time_windows,
-    )
-    bundle = replace(
-        bundle,
-        formal_search_allowed=formal_search_allowed,
-        source_paths=MappingProxyType(
-            {
-                **dict(bundle.source_paths),
-                "dedicated_adapter": str(script.relative_to(repo)),
-                "matrix_reference": str(
-                    (saved_root / "matrix_reference.json").relative_to(repo)
-                ),
-                "health_witness_routes": str(
-                    (package_root / "health_witness_routes.csv").relative_to(repo)
-                ),
-                "shift_contract": str(
-                    (saved_root / "shift_contract.json").relative_to(repo)
-                ),
-                "vehicle_cost_contract": str(
-                    (package_root / "vehicle_cost_contract.json").relative_to(repo)
-                ),
-            }
-        ),
-    )
-    if list(bundle.time_profile) != [dict(row) for row in built.time_profile]:
-        raise RuntimeError(
-            "DEPOTSWAP runtime tariff/carbon profile differs from construction"
-        )
-    if bundle.prices != built.prices:
-        raise RuntimeError("DEPOTSWAP runtime prices differ from construction")
-    if dict(bundle.customer_home_depot) != dict(built.customer_home_depot):
-        raise RuntimeError(
-            "DEPOTSWAP explicit customer depots differ from construction"
-        )
-    runtime_depot_time_windows = {
-        node.node_id: (float(node.ready_time), float(node.due_time))
-        for node in bundle.instance.nodes
-        if node.node_type.lower() == "d"
-    }
-    if runtime_depot_time_windows != built_depot_time_windows:
-        raise RuntimeError(
-            "DEPOTSWAP runtime depot windows differ from construction"
-        )
-    if (
-        bundle.instance.num_cv != built.instance.num_cv
-        or bundle.instance.num_ev != built.instance.num_ev
-    ):
-        raise RuntimeError("DEPOTSWAP runtime fleet totals differ from construction")
-    for row in fleet_rows:
-        scenario = bundle.charger_scenario_by_node.get(row["depot_id"])
-        expected = {
-            "charger_count": configured_depot_gun_count(row),
-            "active_concurrency_limit": DEPOT_CHARGER_CAPACITY_UNBOUNDED,
-            "capacity_mode": DEPOT_CHARGER_CAPACITY_UNBOUNDED,
-            "charge_power_kw": float(row["depot_charge_power_kw"]),
-            "parameter_class": row["charger_parameter_class"],
-        }
-        if scenario is None or dict(scenario) != expected:
-            raise RuntimeError(
-                f"DEPOTSWAP charger scenario differs for {row['depot_id']}"
-            )
-
-    with (package_root / "health_witness_routes.csv").open(
-        newline="", encoding="utf-8-sig"
-    ) as handle:
-        witness_rows = [
-            row
-            for row in csv.DictReader(handle)
-            if row["instance_id"] == instance_id
-        ]
-    individual = adapt_witness_rows_to_duty(
-        witness_rows,
-        instance_id=instance_id,
-        bundle=bundle,
-        register_idle_duties=_with_registered_idle_duties,
-    )
-    neutral = {
-        node.node_id: 1.0
-        for node in bundle.instance.nodes
-        if node.node_type.lower() == "d"
-    }
-    shift_contract = json.loads(
-        (saved_root / "shift_contract.json").read_text(encoding="utf-8")
-    )
-    shift_windows = {
-        shift_id: (
-            float(row["start_minute"]) * 60.0,
-            float(row["end_minute"]) * 60.0,
-        )
-        for shift_id, row in shift_contract["shifts"].items()
-    }
-    vehicle_cost_contract = json.loads(
-        (package_root / "vehicle_cost_contract.json").read_text(encoding="utf-8")
-    )
-    ev_daily_fixed_premium_cny = float(
-        vehicle_cost_contract["ev"]["daily_fixed_premium_vs_cv_cny"]
-    )
-    context = DutyEvaluationContext(
-        bundle=bundle,
-        independent_profit=neutral,
-        independent_profit_identity=FrozenMappingIdentity(
-            source_id="fairness-disabled-neutral-not-pi0",
-            value_sha256=mapping_sha256(neutral),
-            externally_frozen=False,
-        ),
-        prior_profit={depot_id: 0.0 for depot_id in neutral},
-        theta=0.0,
-        carbon_quota_kg=0.0,
-        depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
-        fairness_enabled=False,
-        ev_daily_fixed_premium_cny=ev_daily_fixed_premium_cny,
-        shift_aware_departure_enabled=True,
-        rebuilt_route_constraints=RebuiltRouteConstraintContract(
-            source_id=str((saved_root / "shift_contract.json").relative_to(repo)),
-            customer_shift_by_id={
-                customer_id: str(row["shift_id"])
-                for customer_id, row in built.orders_by_customer.items()
-            },
-            customer_volume_m3_by_id={
-                customer_id: float(row["source_volume_m3"])
-                for customer_id, row in built.orders_by_customer.items()
-            },
-            shift_window_second_by_id=shift_windows,
-            vehicle_volume_capacity_m3=float(
-                shift_contract["vehicle_volume_capacity_m3"]
-            ),
-        ),
-    )
-    return bundle, individual, neutral, context
 
 
-def _build_prdfix_suite_context(
-    repo: Path,
-    instance_id: str,
-    *,
-    fleet_parameters: China81FleetParameterClass,
-):
-    """Read the frozen PRDFIX suite through its deterministic build adapter."""
-
-    from setp_solver.private_instance_rebuild_20260811 import (
-        EV_DAILY_FIXED_PREMIUM_CNY,
-    )
-
-    script = repo / "solver/scripts/build_suite_prd_fix_20260812.py"
-    spec = importlib.util.spec_from_file_location(
-        "convergence_prdfix_suite_adapter_20260812",
-        script,
-    )
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot import PRDFIX suite adapter: {script}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-
-    suite_root = repo / "data/ChinaInstances/china81_suite_prd_fix_v1_20260812"
-    report_root = repo / "solver/reports/suite_prd_fix_20260812"
-    health_rows = module.read_csv(report_root / "suite_health_v3.csv")
-    matches = [row for row in health_rows if row["instance_id"] == instance_id]
-    if len(matches) != 1:
-        raise ValueError(f"PRDFIX health table is not unique for {instance_id}")
-    health = matches[0]
-    source_id = str(health["source_instance_id"])
-    region = str(health["region"])
-    size = int(health["customer_count"])
-    replicate = str(health["replicate"])
-    prior_matches = [
-        row
-        for row in module.read_csv(module.SOURCE_HEALTH)
-        if row["source_instance_id"] == source_id
-    ]
-    if len(prior_matches) != 1:
-        raise ValueError(f"prior depot-pair health row is not unique for {source_id}")
-    prior_health = prior_matches[0]
-    geometry, _, _ = module.source_geometry(prior_health, module.SOURCE_DP)
-    template = module.dp.load_china81_bundle(
-        repo,
-        f"cn-{region}-200c-{replicate}-V2-LOCATIONS",
-        fleet_parameters=fleet_parameters,
-    )
-    source_bundle = module.load_existing_dp_bundle(
-        health,
-        template,
-        geometry.home_depot_by_source_customer,
-    )
-    module.base.SOURCE_STATIC = module.SOURCE_DP / "source_pools"
-    module.base.SOURCE_MATRICES = module.SOURCE_DP / "directed_matrices"
-    built = module.base.build_instance(
-        module.new_identity(region, size, replicate),
-        module.base.source_orders_by_instance()[source_id],
-        geometry,
-        module.OneBundleCache(source_bundle),
-    )
-    saved_root = suite_root / "instances" / instance_id
-    saved_nodes = module.read_csv(saved_root / "nodes.csv")
-    saved_orders = module.read_csv(saved_root / "orders.csv")
-    if [dict(row) for row in built.node_rows] != saved_nodes:
-        raise RuntimeError("PRDFIX runtime rebuild differs from saved nodes.csv")
-    rebuilt_orders = [
-        {key: str(value) for key, value in row.items()}
-        for row in built.order_rows
-    ]
-    if rebuilt_orders != saved_orders:
-        raise RuntimeError("PRDFIX runtime rebuild differs from saved orders.csv")
-
-    fleet_rows = [
-        row
-        for row in module.read_csv(suite_root / "fleet_caps.csv")
-        if row["instance_id"] == instance_id
-    ]
-    depot_ids = {
-        node.node_id for node in built.instance.nodes if node.node_type == "d"
-    }
-    if {row["depot_id"] for row in fleet_rows} != depot_ids:
-        raise RuntimeError("PRDFIX fleet rows disagree with runtime depots")
-    fleet_caps = MappingProxyType(
-        {
-            row["depot_id"]: MappingProxyType(
-                {
-                    "num_cv": int(row["base_all_cv_routes_Rd"]),
-                    "num_ev": int(row["base_all_ev_routes_Re"]),
-                    "total_fleet_cap": (
-                        int(row["base_all_cv_routes_Rd"])
-                        + int(row["base_all_ev_routes_Re"])
-                    ),
-                }
-            )
-            for row in fleet_rows
-        }
-    )
-    if not any(
-        caps["num_cv"] > 0 and caps["num_ev"] > 0
-        for caps in fleet_caps.values()
-    ):
-        raise ValueError("PRDFIX endogenous fleet has no active mixed depot")
-    instance = replace(
-        built.instance,
-        num_cv=sum(caps["num_cv"] for caps in fleet_caps.values()),
-        num_ev=sum(caps["num_ev"] for caps in fleet_caps.values()),
-    )
-    charger_scenario = MappingProxyType(
-        {
-            row["depot_id"]: MappingProxyType(
-                {
-                    "charger_count": configured_depot_gun_count(row),
-                    "active_concurrency_limit": "UNBOUNDED",
-                    "capacity_mode": "unbounded",
-                    "charge_power_kw": float(row["depot_charge_power_kw"]),
-                    "parameter_class": row["charger_parameter_class"],
-                }
-            )
-            for row in fleet_rows
-        }
-    )
-    bundle = replace(
-        template,
-        instance_id=instance_id,
-        region=region,
-        instance=instance,
-        time_profile=list(built.time_profile),
-        prices=built.prices,
-        source_paths=MappingProxyType(
-            {
-                **dict(template.source_paths),
-                "suite": str(suite_root.relative_to(repo)),
-                "instance": str(saved_root.relative_to(repo)),
-                "matrix_reference": str(
-                    (saved_root / "matrix_reference.json").relative_to(repo)
-                ),
-                "health_witness_routes": str(
-                    (report_root / "health_witness_routes.csv").relative_to(repo)
-                ),
-            }
-        ),
-        customer_home_depot=built.customer_home_depot,
-        fleet_caps_by_depot=fleet_caps,
-        fleet_parameter_class_id=fleet_parameters.parameter_class_id,
-        has_additional_total_fleet_cap=(
-            fleet_parameters.has_additional_total_fleet_cap
-        ),
-        charger_scenario_by_node=charger_scenario,
-        static_input_authority=str(suite_root.relative_to(repo)),
-        road_matrix_authority=str(
-            (module.SOURCE_DP / "directed_matrices").relative_to(repo)
-        ),
-        fleet_authority=str(suite_root.relative_to(repo)),
-        formal_search_allowed=False,
-    )
-
-    witness_rows = [
-        row
-        for row in module.read_csv(report_root / "health_witness_routes.csv")
-        if row["instance_id"] == instance_id
-    ]
-    if not witness_rows or {row["witness_status"] for row in witness_rows} != {"PASS"}:
-        raise ValueError("PRDFIX saved health witness is absent or failed")
-    individual = adapt_witness_rows_to_duty(
-        witness_rows,
-        instance_id=instance_id,
-        bundle=bundle,
-        register_idle_duties=_with_registered_idle_duties,
-    )
-    neutral = {
-        node.node_id: 1.0
-        for node in bundle.instance.nodes
-        if node.node_type.lower() == "d"
-    }
-    shift_contract = json.loads(
-        (saved_root / "shift_contract.json").read_text(encoding="utf-8")
-    )
-    shift_windows = {
-        shift_id: (
-            float(row["start_minute"]) * 60.0,
-            float(row["end_minute"]) * 60.0,
-        )
-        for shift_id, row in shift_contract["shifts"].items()
-    }
-    context = DutyEvaluationContext(
-        bundle=bundle,
-        independent_profit=neutral,
-        independent_profit_identity=FrozenMappingIdentity(
-            source_id="fairness-disabled-neutral-not-pi0",
-            value_sha256=mapping_sha256(neutral),
-            externally_frozen=False,
-        ),
-        prior_profit={depot_id: 0.0 for depot_id in neutral},
-        theta=0.0,
-        carbon_quota_kg=0.0,
-        depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
-        fairness_enabled=False,
-        ev_daily_fixed_premium_cny=EV_DAILY_FIXED_PREMIUM_CNY,
-        shift_aware_departure_enabled=True,
-        rebuilt_route_constraints=RebuiltRouteConstraintContract(
-            source_id=str((saved_root / "shift_contract.json").relative_to(repo)),
-            customer_shift_by_id={
-                customer_id: str(row["shift_id"])
-                for customer_id, row in built.orders_by_customer.items()
-            },
-            customer_volume_m3_by_id={
-                customer_id: float(row["source_volume_m3"])
-                for customer_id, row in built.orders_by_customer.items()
-            },
-            shift_window_second_by_id=shift_windows,
-            vehicle_volume_capacity_m3=float(
-                shift_contract["vehicle_volume_capacity_m3"]
-            ),
-        ),
-    )
-    return bundle, individual, neutral, context
 
 
-def _close_metro_initial_clock(
-    initial: DutyIndividual,
-    context: DutyEvaluationContext,
-) -> tuple[DutyIndividual, dict[str, Any]]:
-    """Close one lost saved clock without changing the METRO instance.
-
-    The saved health witness carries exact departure minutes, while the legacy
-    ``Route`` adapter does not.  If replay exposes exactly one shift-start
-    violation, enumerate equal-size one-customer exchanges between routes in
-    that same registered shift.  Route orders and partner routes are visited
-    in lexical order, and the first exact-full-model feasible candidate wins;
-    objective values never participate in selection.
-    """
-
-    evaluator = DutyFullEvaluator(context)
-    base = evaluator.evaluate(initial)
-    evidence: dict[str, Any] = {
-        "applied": False,
-        "selection_rule": (
-            "first lexicographic same-shift one-customer exchange and route "
-            "orders passing the existing route clock and exact full evaluator; "
-            "cost ignored"
-        ),
-        "base_feasible": bool(base.feasible),
-        "base_violations": [asdict(item) for item in base.violations],
-        "route_clock_candidates": 0,
-        "exact_full_candidates": 0,
-        "exact_full_evaluations_including_base": int(evaluator.full_calls),
-    }
-    if base.feasible:
-        return initial, evidence
-    if len(base.violations) != 1:
-        raise RuntimeError(
-            "METRO initial clock closure requires exactly one replay violation"
-        )
-    violation = base.violations[0]
-    if violation.type != "TIME_WINDOW" or "#T" not in violation.vehicle_id:
-        raise RuntimeError(
-            "METRO initial clock closure received a non-clock violation"
-        )
-    target_duty_id, trip_suffix = violation.vehicle_id.rsplit("#T", 1)
-    target_trip_index = int(trip_suffix)
-    duty_by_id = {
-        duty.physical_vehicle_id: duty for duty in initial.duties
-    }
-    target_duty = duty_by_id.get(target_duty_id)
-    if target_duty is None or target_trip_index > len(target_duty.trips):
-        raise RuntimeError("METRO clock violation refers to an absent duty trip")
-    target_trip = target_duty.trips[target_trip_index - 1]
-    contract = context.rebuilt_route_constraints
-    if contract is None:
-        raise RuntimeError("METRO clock closure needs the rebuilt shift contract")
-    target_shifts = {
-        contract.customer_shift_by_id[customer]
-        for customer in target_trip.customer_ids
-    }
-    if len(target_shifts) != 1:
-        raise RuntimeError("METRO target route crosses registered shifts")
-    shift_id = next(iter(target_shifts))
-    shift_start, shift_end = contract.shift_window_second_by_id[shift_id]
-
-    partners = []
-    for duty in initial.duties:
-        for trip in duty.trips:
-            if (
-                duty.physical_vehicle_id == target_duty_id
-                and trip.trip_index == target_trip_index
-            ) or not trip.customer_ids:
-                continue
-            shifts = {
-                contract.customer_shift_by_id[customer]
-                for customer in trip.customer_ids
-            }
-            if shifts == {shift_id}:
-                partners.append((duty, trip))
-    partners.sort(
-        key=lambda item: (item[0].physical_vehicle_id, item[1].trip_index)
-    )
-
-    order_cache: dict[tuple[str, tuple[str, ...]], tuple[tuple[str, ...], ...]] = {}
-
-    def feasible_orders(
-        depot_id: str,
-        customers: tuple[str, ...],
-    ) -> tuple[tuple[str, ...], ...]:
-        key = (depot_id, tuple(sorted(customers)))
-        cached = order_cache.get(key)
-        if cached is not None:
-            return cached
-        accepted = []
-        for order in permutations(key[1]):
-            try:
-                timing = route_timing(
-                    Route(
-                        vehicle_id="CV_METRO_CLOCK_CHECK#T1",
-                        vehicle_type="cv",
-                        home_depot_id=depot_id,
-                        node_sequence=[depot_id, *order, depot_id],
-                    ),
-                    context.bundle.instance,
-                    context.bundle.prices,
-                    validate_battery=False,
-                )
-            except ValueError:
-                continue
-            if (
-                timing.earliest_departure_second >= float(shift_start) - 1.0e-6
-                and timing.return_second <= float(shift_end) + 1.0e-6
-            ):
-                accepted.append(tuple(order))
-        result = tuple(accepted)
-        order_cache[key] = result
-        return result
-
-    for partner_duty, partner_trip in partners:
-        for target_customer in sorted(target_trip.customer_ids):
-            for partner_customer in sorted(partner_trip.customer_ids):
-                target_customers = tuple(
-                    customer
-                    for customer in target_trip.customer_ids
-                    if customer != target_customer
-                ) + (partner_customer,)
-                partner_customers = tuple(
-                    customer
-                    for customer in partner_trip.customer_ids
-                    if customer != partner_customer
-                ) + (target_customer,)
-                target_orders = feasible_orders(
-                    target_duty.home_depot_id,
-                    target_customers,
-                )
-                partner_orders = feasible_orders(
-                    partner_duty.home_depot_id,
-                    partner_customers,
-                )
-                evidence["route_clock_candidates"] += (
-                    len(target_orders) * len(partner_orders)
-                )
-                for target_order in target_orders:
-                    for partner_order in partner_orders:
-                        rebuilt_duties = []
-                        for duty in initial.duties:
-                            rebuilt_trips = []
-                            for trip in duty.trips:
-                                identity = (
-                                    duty.physical_vehicle_id,
-                                    trip.trip_index,
-                                )
-                                if identity == (
-                                    target_duty_id,
-                                    target_trip_index,
-                                ):
-                                    rebuilt_trips.append(
-                                        replace(
-                                            trip,
-                                            customer_ids=target_order,
-                                            route_visits=(),
-                                        )
-                                    )
-                                elif identity == (
-                                    partner_duty.physical_vehicle_id,
-                                    partner_trip.trip_index,
-                                ):
-                                    rebuilt_trips.append(
-                                        replace(
-                                            trip,
-                                            customer_ids=partner_order,
-                                            route_visits=(),
-                                        )
-                                    )
-                                else:
-                                    rebuilt_trips.append(trip)
-                            rebuilt_duties.append(
-                                replace(
-                                    duty,
-                                    trips=tuple(rebuilt_trips),
-                                    schedule=None,
-                                )
-                            )
-                        candidate = replace(
-                            initial,
-                            duties=tuple(rebuilt_duties),
-                            source="metro-exact-clock-closure",
-                        )
-                        evidence["exact_full_candidates"] += 1
-                        evaluation = evaluator.evaluate(candidate)
-                        if not evaluation.feasible:
-                            continue
-                        evidence.update(
-                            {
-                                "applied": True,
-                                "target_duty_id": target_duty_id,
-                                "target_trip_index": target_trip_index,
-                                "partner_duty_id": (
-                                    partner_duty.physical_vehicle_id
-                                ),
-                                "partner_trip_index": partner_trip.trip_index,
-                                "exchanged_customers": {
-                                    target_duty_id: target_customer,
-                                    partner_duty.physical_vehicle_id: (
-                                        partner_customer
-                                    ),
-                                },
-                                "target_order": list(target_order),
-                                "partner_order": list(partner_order),
-                                "selected_fingerprint": candidate.fingerprint,
-                                "selected_feasible": True,
-                                "selected_cost_observed_after_selection": (
-                                    evaluation.total_cost
-                                ),
-                                "exact_full_evaluations_including_base": int(
-                                    evaluator.full_calls
-                                ),
-                            }
-                        )
-                        return candidate, evidence
-    evidence["exact_full_evaluations_including_base"] = int(
-        evaluator.full_calls
-    )
-    raise RuntimeError(
-        "METRO initial clock could not be closed by the registered shift replay"
-    )
 
 
 def _private_rebuild_health_witness_initial(repo: Path, bundle) -> Solution:
@@ -2802,10 +1869,7 @@ def _prepare_population(
     initial: DutyIndividual,
     evaluator: DutyFullEvaluator,
     policy: ChargingRepairPolicy,
-    parameters: ProblemHGSSearchParameters | None = None,
     *,
-    random_seed: int = SEED,
-    require_distinct_selection: bool = True,
     mechanism_enabled: Mapping[str, bool] | None = None,
 ):
     initial_evaluation = evaluator.evaluate(initial)
@@ -2896,31 +1960,101 @@ def _prepare_population(
     if second is None or second_evaluation is None:
         raise RuntimeError("no deterministic, fully evaluated distinct second parent")
 
-    candidates = (initial, second)
-    parameters = parameters or _parameters(random_seed=random_seed)
-    penalties = AdaptivePenaltyManager(parameters.penalties)
-    population = DutyPopulation(parameters.population, penalties)
-    population.add(initial, initial_evaluation)
-    population.add(second, second_evaluation)
-    left, right = population.select(random.Random(random_seed))
-    selected = {
-        "left_fingerprint": left.individual.fingerprint,
-        "right_fingerprint": right.individual.fingerprint,
-        "distinct": left.individual.fingerprint != right.individual.fingerprint,
-    }
-    if require_distinct_selection and not selected["distinct"]:
-        raise RuntimeError(
-            f"seed {random_seed} did not select structurally distinct parents"
-        )
+    candidates = (initial, second, initial, second)
     return (
         candidates,
         initial_evaluation,
         reverse_record,
         attempts,
-        selected,
-        (initial_evaluation, second_evaluation),
+        (initial_evaluation, second_evaluation) * 2,
     )
 
+
+
+def _write_failure_package(output: Path, error: Exception) -> bool:
+    """Complete an output directory created by this invocation as failed."""
+
+    metadata_path = output / "metadata.json"
+    if not metadata_path.is_file():
+        return False
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if metadata.get("status") != "RUNNING":
+        return False
+    repo = Path(__file__).resolve().parents[2]
+    metadata["protected_hashes_after"] = {
+        path: _sha256(repo / path) for path in PROTECTED
+    }
+    with (output / "raw_runs.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=("verdict", "error_type", "error"),
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerow(
+            {
+                "verdict": PROBE_FAILURE_VERDICT,
+                "error_type": type(error).__name__,
+                "error": str(error),
+            }
+        )
+    failure_reason = f"{type(error).__name__}: {error}"
+    acceptance = assess_run(
+        termination_ok=None,
+        feasible_ok=None,
+        customers_complete=None,
+        demand_complete=None,
+        audit_ok=None,
+        extra_failure_reasons=(failure_reason,),
+        success_verdict=PROBE_SUCCESS_VERDICT,
+        failure_verdict=PROBE_FAILURE_VERDICT,
+    )
+    decision = {
+        "traceback": traceback.format_exc(),
+        "user_decision_changed": False,
+    }
+    enterprise_failure_ending = ""
+    if metadata.get("requested_enterprise_id") is not None:
+        constructor = metadata.get(
+            "requested_enterprise_init_constructor",
+            "random",
+        )
+        enterprise_failure_ending = f"""
+## 直接给用户
+
+{metadata['requested_enterprise_id']} 的 `{constructor}` 初始化探针真实结局是：**失败**。原始初始化拒绝记录如已产生，保存在同包的 `native_initialization_diagnostics.json`。本次调用只保存失败现场；本轮执行者按用户预批退路继续收尾。
+"""
+    report = f"""# Problem-HGS 真实输入技术试跑失败报告
+
+## 结论
+
+本次技术试跑在生成正式结果包前失败。错误类型为 `{type(error).__name__}`，错误信息为：{error}。失败没有被改写成完成；完整调用栈保存在 `decision.json`。
+
+## 交付前九条自检
+
+1. 每个事实是否有出处？——错误类型、错误信息和调用栈来自本次异常，保存在 `decision.json`。
+2. 有没有把建议或担忧写成已决？——没有；这里只记录失败。
+3. 是否超出任务范围？——没有；只补齐本次失败现场。
+4. 是否碰受保护文件？——本失败包不修改受保护文件；实际运行前后哈希以 `metadata.json` 已保存内容为准。
+5. 是否留下新的待决选项？——没有。
+6. 是否使用自造术语？——没有。
+7. 失败、跳过、超时、异常是否如实保留？——本次异常已如实保留。
+8. 四件套是否齐全？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json` 和 `report.md` 将由本失败收口一次写齐。
+9. 交接记录是否同步？——失败包只保存现场；项目交接记录在任务收尾时统一同步。
+{enterprise_failure_ending}
+"""
+    for sidecar in output.glob("._*"):
+        sidecar.unlink()
+    finalize_five_file_package(
+        output,
+        acceptance=acceptance,
+        metadata=metadata,
+        decision=decision,
+        report_text=report,
+    )
+    return True
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -2968,15 +2102,6 @@ def main() -> int:
         ),
     )
     parser.add_argument(
-        "--penalty-solutions-between-updates",
-        type=int,
-        default=50,
-        help=(
-            "typed adaptive-penalty update window; default 50 preserves "
-            "copied HGS behavior"
-        ),
-    )
-    parser.add_argument(
         "--population-mode",
         choices=("technical_two_parent", "copied_hgs_defaults"),
         default="copied_hgs_defaults",
@@ -2992,23 +2117,6 @@ def main() -> int:
         help=(
             "enable the independent OX-style customer-order crossover; "
             "default keeps the existing duty crossover path byte-for-byte"
-        ),
-    )
-    parser.add_argument(
-        "--truth-guided-route-boundary",
-        action="store_true",
-        help=(
-            "replace proxy-only chained route education with a bounded "
-            "one-step shortlist and complete-Duty truth selection"
-        ),
-    )
-    parser.add_argument(
-        "--route-truth-candidate-limit",
-        type=int,
-        default=None,
-        help=(
-            "maximum proxy-ranked route candidates per truth decision; "
-            "required only with --truth-guided-route-boundary"
         ),
     )
     parser.add_argument(
@@ -3156,24 +2264,10 @@ def main() -> int:
         raise ValueError("technical stagnation patience must be positive")
     if args.education_depth_limit is not None and args.education_depth_limit < 1:
         raise ValueError("education depth limit must be positive")
-    if args.penalty_solutions_between_updates < 1:
-        raise ValueError("penalty update window must be positive")
     if args.max_runtime_seconds <= 0.0:
         raise ValueError("maximum runtime must be positive")
     if not math.isfinite(args.carbon_price) or args.carbon_price < 0.0:
         raise ValueError("carbon price must be finite and non-negative")
-    if args.truth_guided_route_boundary:
-        if (
-            args.route_truth_candidate_limit is None
-            or args.route_truth_candidate_limit < 1
-        ):
-            raise ValueError(
-                "truth-guided route boundary requires a positive candidate limit"
-            )
-    elif args.route_truth_candidate_limit is not None:
-        raise ValueError(
-            "route truth candidate limit requires the truth-guided route boundary"
-        )
     if args.prescreen_audit_sample < 0:
         raise ValueError("prescreen audit sample cannot be negative")
     if args.charging_diagnosis_capture_limit < 0:
@@ -3239,9 +2333,6 @@ def main() -> int:
         crossover_mode=args.crossover_mode,
         population_mode=args.population_mode,
         objective_mode=args.objective_mode,
-        penalty_solutions_between_updates=(
-            args.penalty_solutions_between_updates
-        ),
         education_depth_limit=args.education_depth_limit,
     )
     effective_population = _effective_population_metadata(
@@ -3281,9 +2372,6 @@ def main() -> int:
             "requested_iterations": args.iterations,
             "requested_max_runtime_seconds": args.max_runtime_seconds,
             "requested_stagnation_patience": args.stagnation_patience,
-            "requested_penalty_solutions_between_updates": (
-                args.penalty_solutions_between_updates
-            ),
             "requested_population_mode": args.population_mode,
             "effective_population": effective_population,
             "requested_crossover_mode": args.crossover_mode,
@@ -3436,11 +2524,6 @@ def main() -> int:
     if not mechanism_enabled["multi_trip"]:
         initial = _single_trip_initial(initial)
     metro_initial_clock_closure = None
-    if args.instance_id.endswith("-V3-TWO-SHIFT-METRO"):
-        initial, metro_initial_clock_closure = _close_metro_initial_clock(
-            initial,
-            context,
-        )
     mechanism_reference = initial
     evaluator = DutyFullEvaluator(context)
     policy = _policy(
@@ -3478,11 +2561,6 @@ def main() -> int:
         route_engine_options["multi_trip_enabled"] = False
     if not mechanism_enabled["type_exchange"]:
         route_engine_options["type_exchange_enabled"] = False
-    if args.truth_guided_route_boundary:
-        route_engine_options.update(
-            truth_guided_route_boundary_enabled=True,
-            truth_candidate_limit=args.route_truth_candidate_limit,
-        )
     route_engine = IndependentKernelDutyRouteProposalEngine(
         evaluator.context,
         initial,
@@ -3503,10 +2581,6 @@ def main() -> int:
         "requested": {
             "rebuilt_volume_capacity_enabled": depotsearch_c1_requested,
             "rebuilt_shift_neighbours_only": depotsearch_c1_requested,
-            "truth_guided_route_boundary_enabled": bool(
-                args.truth_guided_route_boundary
-            ),
-            "truth_candidate_limit": args.route_truth_candidate_limit,
         },
         "effective": {
             "rebuilt_volume_capacity_enabled": bool(
@@ -3515,10 +2589,6 @@ def main() -> int:
             "rebuilt_shift_neighbours_only": bool(
                 route_engine.rebuilt_shift_neighbours_only
             ),
-            "truth_guided_route_boundary_enabled": bool(
-                route_engine.truth_guided_route_boundary_enabled
-            ),
-            "truth_candidate_limit": route_engine.truth_candidate_limit,
         },
         "route_engine_source_id": route_engine.source_id,
         "route_engine_identity_sha256": route_engine.identity_sha256,
@@ -3571,21 +2641,17 @@ def main() -> int:
             initial_evaluation,
             reverse_record,
             attempts,
-            selected,
             initial_evaluations,
         ) = _prepare_population(
             initial,
             evaluator,
             policy,
-            parameters,
-            random_seed=args.seed,
-            require_distinct_selection=False,
             mechanism_enabled=(
                 mechanism_enabled if mechanism_off else None
             ),
         )
         initialization_summary = {
-            "requested_size": 2,
+            "requested_size": 4,
             "actual_size": len(candidates),
             "attempts_exhausted": False,
         }
@@ -3667,41 +2733,27 @@ def main() -> int:
                 output / "native_initialization_diagnostics.json",
                 native_initialization_diagnostics,
             )
-        if built.actual_size < 1:
+        if legacy_enterprise_init and built.actual_size == 1:
+            candidates = built.candidates * 4
+            initial_evaluations = built.evaluations * 4
+        elif built.actual_size < 4:
             raise RuntimeError(
-                "HALT_B_NATIVE_MATERIALIZATION: all native "
-                f"{args.enterprise_init_constructor} solutions were rejected "
+                "HALT_B_NATIVE_MATERIALIZATION: fewer than four native "
+                f"{args.enterprise_init_constructor} solutions were retained "
                 "before population entry"
             )
-        candidates = built.candidates
-        initial_evaluations = built.evaluations
+        else:
+            candidates = built.candidates
+            initial_evaluations = built.evaluations
         initial_evaluation = built.evaluations[0]
         reverse_record = {
             "status": "NOT_RUN_COPIED_HGS_POPULATION",
             "error": None,
         }
         attempts = [asdict(item) for item in built.attempts]
-        precheck_penalties = AdaptivePenaltyManager(parameters.penalties)
-        precheck_population = DutyPopulation(
-            parameters.population,
-            precheck_penalties,
-        )
-        for candidate, evaluation in zip(
-            candidates,
-            initial_evaluations,
-            strict=True,
-        ):
-            precheck_population.add(candidate, evaluation)
-        left, right = precheck_population.select(random.Random(args.seed))
-        selected = {
-            "left_fingerprint": left.individual.fingerprint,
-            "right_fingerprint": right.individual.fingerprint,
-            "distinct": left.individual.fingerprint
-            != right.individual.fingerprint,
-        }
         initialization_summary = {
             "requested_size": built.requested_size,
-            "actual_size": built.actual_size,
+            "actual_size": len(candidates),
             "attempts_exhausted": built.attempts_exhausted,
             "reference_candidate_included": (
                 enterprise_slice is None or legacy_enterprise_init
@@ -3799,7 +2851,6 @@ def main() -> int:
         "fairness_feasible",
         "violation_counts_json",
         "violation_magnitudes_json",
-        "penalty_coefficients_json",
         "outer_repair_calls",
         "outer_refinement_calls",
     )
@@ -3860,9 +2911,6 @@ def main() -> int:
                     ),
                     "violation_magnitudes_json": json.dumps(
                         dict(state.violation_magnitudes), sort_keys=True
-                    ),
-                    "penalty_coefficients_json": json.dumps(
-                        dict(state.penalty_coefficients), sort_keys=True
                     ),
                     "outer_repair_calls": state.outer_repair_calls,
                     "outer_refinement_calls": state.outer_refinement_calls,
@@ -3999,12 +3047,12 @@ def main() -> int:
         item.type for item in result.best_evaluation.violations
     )
     terminal_violation_magnitudes: Counter[str] = Counter()
-    for item, magnitude in zip(
-        result.best_evaluation.violations,
+    for magnitude, axis in zip(
         result.best_evaluation.violation_magnitudes,
+        result.best_evaluation.violation_axes,
         strict=True,
     ):
-        terminal_violation_magnitudes[item.type] += float(magnitude)
+        terminal_violation_magnitudes[axis] += float(magnitude)
     with convergence_diagnostics_path.open(
         "a", encoding="utf-8", newline=""
     ) as handle:
@@ -4042,14 +3090,6 @@ def main() -> int:
                     dict(sorted(terminal_violation_magnitudes.items())),
                     sort_keys=True,
                 ),
-                "penalty_coefficients_json": json.dumps(
-                    dict(
-                        sorted(
-                            result.accounting.penalty_manager.penalties.items()
-                        )
-                    ),
-                    sort_keys=True,
-                ),
                 "outer_repair_calls": int(
                     result.accounting.repair_calls
                 ),
@@ -4067,15 +3107,9 @@ def main() -> int:
         raise RuntimeError(
             "independent Problem-HGS runtime imported frozen PyVRP"
         )
-    trajectory = [asdict(row) for row in result.trajectory]
-    crossover_rows = [row for row in trajectory if row["phase"] == "crossover"]
-    crossover_changed = bool(stream_summary["crossover_changed"]) or any(
-        row["after_fingerprint"] is not None
-        and row["before_fingerprint"] != row["after_fingerprint"]
-        for row in crossover_rows
+    crossover_changed = bool(stream_summary["crossover_changed"]) or bool(
+        result.accounting.crossover_actions
     )
-    if trajectory_mode == "off":
-        crossover_changed = bool(result.accounting.crossover_actions)
     customer_nodes = {
         node.node_id: node
         for node in bundle.instance.nodes
@@ -4097,48 +3131,6 @@ def main() -> int:
         }
     served_demand = sum(float(customer_nodes[item].demand) for item in served)
     total_demand = sum(float(node.demand) for node in customer_nodes.values())
-    truth_boundary_statistics = route_engine.truth_boundary_statistics
-    truth_boundary_statistics.update(
-        {
-            "exact_evaluations": int(
-                result.accounting.truth_shortlist_exact_evaluations
-            ),
-            "truth_batches_evaluated": int(
-                result.accounting.truth_shortlist_batches
-            ),
-            "truth_accepted": int(
-                result.accounting.truth_shortlist_accepted
-            ),
-            "truth_reselections": int(result.accounting.truth_reselections),
-            "truth_reselection_reasons": dict(
-                sorted(result.accounting.truth_reselection_reasons.items())
-            ),
-            "truth_winner_proxy_ranks": {
-                str(rank): int(count)
-                for rank, count in sorted(
-                    result.accounting.truth_winner_proxy_ranks.items()
-                )
-            },
-            "channel_proposed": int(
-                result.accounting.proposed_actions.get(
-                    "route_kernel_truth",
-                    0,
-                )
-            ),
-            "channel_evaluated": int(
-                result.accounting.evaluated_actions.get(
-                    "route_kernel_truth",
-                    0,
-                )
-            ),
-            "channel_accepted": int(
-                result.accounting.accepted_actions.get(
-                    "route_kernel_truth",
-                    0,
-                )
-            ),
-        }
-    )
     charging_actions = tuple(
         result.best_evaluation.prepared_solution.charging_actions
     )
@@ -4529,7 +3521,6 @@ def main() -> int:
             },
         },
         "route_engine_wiring": route_engine_wiring,
-        "truth_guided_route_boundary": truth_boundary_statistics,
         "ev_observation": ev_observation,
         "mechanism_off": sorted(mechanism_off),
         "mechanism_enabled": {
@@ -4707,7 +3698,6 @@ def main() -> int:
                 )
             )
         ),
-        "parent_selection_precheck": selected,
         "protected_hashes_before": protected_before,
         "protected_hashes_after": protected_after,
         "failure_conditions": [
@@ -4721,7 +3711,6 @@ def main() -> int:
                     else "initial or final solution incomplete or infeasible"
                 )
             ),
-            "parents not structurally distinct",
             "truth-sentinel mismatch or internal error",
             "abnormal termination",
             "missing customers or demand",
@@ -4921,7 +3910,7 @@ def main() -> int:
 
 本轮判定：`{verdict}`。这是一轮探索版接线和内部一致性检查，不是算法对比实验，也没有替用户确定正式算例、收敛迭代数或论文结论。
 
-真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；{full_evaluation_result}。本轮候选方式为 `{args.proposal_mode}`，具名配置为 `{args.proposal_config}`。完整真值哨兵开关为 `{result.effective_execution.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹模式为 `{trajectory_mode}`，内存保留为 `False`。交叉算子收到两个不同父代，并产生了不同于右父代的候选：{crossover_changed}。
+真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；{full_evaluation_result}。本轮候选方式为 `{args.proposal_mode}`，具名配置为 `{args.proposal_config}`。完整真值哨兵开关为 `{result.effective_execution.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹模式为 `{trajectory_mode}`，内存保留为 `False`。交叉后代相对于交叉前父代是否发生 Duty 内容变化：{crossover_changed}。
 
 初始成本为 {initial_evaluation.total_cost:.12f}，本轮保存解成本为 {result.best_evaluation.total_cost:.12f}。这个差值只用于排查运行过程，不能据此宣称 Problem-HGS 更优，因为本轮只有一个种子、一个循环，也没有同预算强基线。
 

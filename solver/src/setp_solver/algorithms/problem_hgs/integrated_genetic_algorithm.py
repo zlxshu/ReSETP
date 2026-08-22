@@ -27,8 +27,6 @@ EvaluationT = TypeVar("EvaluationT")
 
 @dataclass(frozen=True)
 class IntegratedProblemAdapter(Generic[SolutionT, EvaluationT]):
-    """Callbacks that connect one HGS loop to a complete problem contract."""
-
     evaluate: Callable[
         [SolutionT],
         EvaluatedSolution[SolutionT, EvaluationT] | None,
@@ -40,8 +38,9 @@ class IntegratedProblemAdapter(Generic[SolutionT, EvaluationT]):
     is_feasible: Callable[[EvaluationT], bool]
     objective: Callable[[EvaluationT], float]
     penalised_cost: Callable[[EvaluationT], float]
-    register: Callable[[EvaluationT], None]
+    register: Callable[[EvaluationT], None] | None
     fingerprint: Callable[[SolutionT], str]
+    minimum_initial_population_size: int = 1
     breed: Callable[
         [
             tuple[
@@ -64,7 +63,6 @@ class IntegratedProblemAdapter(Generic[SolutionT, EvaluationT]):
 @dataclass(frozen=True)
 class IntegratedRunAccounting:
     iterations: int
-    evaluated: int
     rejected: int
     repaired: int
     finalised: int
@@ -79,8 +77,6 @@ class IntegratedRunResult(Generic[SolutionT, EvaluationT]):
 
 
 class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
-    """Copied HGS loop whose population uses the adapter's complete truth."""
-
     def __init__(
         self,
         data,
@@ -112,13 +108,10 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
 
     @property
     def best_so_far(self):
-        """Expose the exact incumbent to read-only run diagnostics."""
-
         return self._best_so_far
 
     def run(self, stop) -> IntegratedRunResult[SolutionT, EvaluationT]:
         started = perf_counter()
-        evaluated = 0
         rejected = 0
         repaired = 0
         finalised = 0
@@ -132,11 +125,8 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
                 continue
             initial.append(candidate)
             self._pop.add(candidate)
-            evaluated += 1
-        if not initial:
-            raise ValueError(
-                "complete evaluator rejected every initial solution"
-            )
+        if len(initial) < self._adapter.minimum_initial_population_size:
+            raise ValueError("complete evaluator retained too few initial solutions")
         best = self._best()
         self._best_so_far = best
 
@@ -172,14 +162,12 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
             if candidate is None:
                 rejected += 1
                 continue
-            evaluated += 1
             refined_candidates = self._adapter.refine(candidate)
             if not refined_candidates:
                 raise ValueError("problem refiner returned no candidates")
-            evaluated += len(refined_candidates) - 1
             for refined in refined_candidates:
                 self._pop.add(refined)
-                self._adapter.register(refined.evaluation)
+                self._register(refined.evaluation)
                 if self._better(refined, best):
                     best = refined
                     self._best_so_far = best
@@ -201,18 +189,16 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
                 if repaired_candidate is None:
                     rejected += 1
                     continue
-                evaluated += 1
                 repaired += 1
                 repaired_candidates = self._adapter.refine(
                     repaired_candidate
                 )
                 if not repaired_candidates:
                     raise ValueError("problem refiner returned no candidates")
-                evaluated += len(repaired_candidates) - 1
                 for refined in repaired_candidates:
                     if self._adapter.is_feasible(refined.evaluation):
                         self._pop.add(refined)
-                        self._adapter.register(refined.evaluation)
+                        self._register(refined.evaluation)
                     if self._better(refined, best):
                         best = refined
                         self._best_so_far = best
@@ -220,10 +206,9 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
         if self._adapter.finalise is not None:
             final_candidate = self._adapter.finalise(best)
             if final_candidate is not None:
-                evaluated += 1
                 finalised += 1
                 self._pop.add(final_candidate)
-                self._adapter.register(final_candidate.evaluation)
+                self._register(final_candidate.evaluation)
                 if self._better(final_candidate, best):
                     best = final_candidate
                     self._best_so_far = best
@@ -233,7 +218,6 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
             best,
             IntegratedRunAccounting(
                 iterations=state.iterations,
-                evaluated=evaluated,
                 rejected=rejected,
                 repaired=repaired,
                 finalised=finalised,
@@ -247,6 +231,10 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
         if candidate is None:
             raise AssertionError("integrated population is empty")
         return candidate
+
+    def _register(self, evaluation: EvaluationT) -> None:
+        if self._adapter.register is not None:
+            self._adapter.register(evaluation)
 
     def _best_value(
         self,

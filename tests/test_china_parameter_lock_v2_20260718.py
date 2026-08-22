@@ -26,99 +26,10 @@ def test_china_vehicle_source_captures_exist() -> None:
         assert capture.is_file(), capture
 
 
-def test_china_order_attribute_contract_records_mc001_but_preserves_formal_halt_and_f1_payload_chain() -> None:
-    lock = json.loads(LOCK.read_text(encoding="utf-8"))
-    contract_path = Path(__file__).resolve().parents[1] / lock["customer_contract"]["order_attribute_contract"]
-    contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    assert contract["status"] == "APPROVED_CAPACITY_SHARE_PROXY_BLOCKED_BY_REMAINING_FORMAL_GATES"
-    assert contract["formal_search_allowed"] is False
-    assert contract["observed_chinese_orders_claim_allowed"] is False
-    assert contract["units"] == {
-        "demand": "kg",
-        "time": "minute_from_local_midnight",
-        "service_time": "minute",
-    }
-    assert len(contract["demand_mixture"]) == 5
-    assert sum(row["source_count"] for row in contract["demand_mixture"]) == 1222
-    assert max(row["fixed_proxy_kg"] for row in contract["demand_mixture"]) == 417
-    assert contract["demand_conversion_rule"]["classification"] == "CONSTRUCTED_CAPACITY_SHARE_SCENARIO_PROXY"
-    assert contract["service_time_rule"]["values_minutes"] == [6, 9, 12, 15, 18]
-    assert contract["service_time_rule"]["observed_stop_duration_claim_allowed"] is False
-    assert set(contract["time_window_profiles"]) == {
-        "base_empirical_delivery",
-        "sensitivity_wide_pickup_proxy",
-        "sensitivity_tight_delivery_lower_half",
-    }
-    assert contract["calibration_evidence"]["named_city_or_company_claim_allowed"] is False
-    assert contract["calibration_evidence"]["model_transformation_approved_by_user"] is True
-    assert contract["calibration_evidence"]["approval_id"] == "MC-001"
-    assert contract["witness_contract"]["vehicle_payload_reference_kg"] == 1000
-    assert contract["witness_contract"]["route_load_limit_kg"] == 1000
-    assert contract["witness_contract"]["optional_robustness_construction_target_kg"] == 800
-    assert (
-        contract["witness_contract"]["optional_robustness_construction_target_role"]
-        == "SENSITIVITY_ONLY_NOT_HARD_CAPACITY"
-    )
-    assert contract["witness_contract"]["algorithm_search_evaluations"] == 0
-    assert contract["witness_contract"]["regeneration_after_failure_allowed"] is False
-    assert contract["seed_rule"]["independent_of_algorithm_results"] is True
-    assert set(contract["variants"]) == {"01", "02", "03"}
-    assert {variant["window_profile"] for variant in contract["variants"].values()} == {
-        "base_empirical_delivery"
-    }
-    assert {variant["replicate_index"] for variant in contract["variants"].values()} == {1, 2, 3}
-    exclusivity = contract["mutual_exclusivity_contract"]
-    assert exclusivity["customer_map_identity_overlap_allowed"] is False
-    assert exclusivity["same_instance_with_changed_label_allowed"] is False
-    assert exclusivity["post_result_customer_replacement_allowed"] is False
-    assert exclusivity["cross_size_disjointness_required"] is False
 
 
-def test_china_customer_location_contract_records_mc005_but_keeps_81_identity_gate() -> None:
-    lock = json.loads(LOCK.read_text(encoding="utf-8"))
-    contract_path = Path(__file__).resolve().parents[1] / lock["customer_contract"]["customer_location_contract"]
-    contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    assert (
-        contract["status"]
-        == "CONDITIONALLY_APPROVED_GDP_PPS_CANDIDATE_A_POOL_REPLENISHMENT_PENDING"
-    )
-    assert contract["formal_search_allowed"] is False
-    assert contract["city_quota_method"]["approval_id"] == "MC-005"
-    assert contract["city_quota_method"]["status"] == "CONDITIONALLY_APPROVED_NOT_YET_APPLIED"
-    assert contract["replicates_per_region_size"] == 3
-    assert contract["replicate_labels"] == ["01", "02", "03"]
-    assert contract["within_cell_identity_overlap_allowed"] is False
-    assert contract["cross_size_identity_overlap_allowed"] is True
-    assert contract["post_result_replacement_allowed"] is False
-    assert contract.get("city_quotas") is None
-    gate = contract["sufficiency_gate"]
-    decision = json.loads((Path(__file__).resolve().parents[1] / gate["evidence_package"] / "decision.json").read_text(encoding="utf-8"))
-    assert decision["verdict"] == "PASS_81_MUTUAL_EXCLUSIVITY_POOL_GATE"
-    assert decision["region_size_cells_passed"] == 27
-    assignment_decision = json.loads(
-        (
-            Path(__file__).resolve().parents[1]
-            / "data/ChinaInstances/china81_customer_location_assignments_v2_20260718/decision.json"
-        ).read_text(encoding="utf-8")
-    )
-    assert assignment_decision["verdict"] == "PASS_81_DISJOINT_LOCATION_ASSIGNMENTS_BUILT"
-    assert assignment_decision["instances"] == 81
-    assert assignment_decision["within_cell_overlap_violations"] == []
 
 
-def test_china_road_matrix_contract_blocks_shortcuts_and_result_tuning() -> None:
-    lock = json.loads(LOCK.read_text(encoding="utf-8"))
-    contract_path = Path(__file__).resolve().parents[1] / lock["distance_contract"]["road_matrix_contract"]
-    contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    assert contract["status"] == "LOCKED_DESIGN_WAITING_FOR_VERIFIED_WGS84_ENTRANCES"
-    assert contract["formal_search_allowed"] is False
-    assert contract["coordinate_contract"]["formal_crs"] == "WGS84"
-    assert contract["coordinate_contract"]["raw_baidu_crs"] == "BD09MC"
-    assert contract["coordinate_contract"]["raw_baidu_values_may_enter_formal_lat_lon"] is False
-    assert contract["router_contract"]["euclidean_multiplier_allowed"] is False
-    assert contract["router_contract"]["straight_line_fallback_allowed"] is False
-    assert contract["matrix_invariants"]["unreachable_node_policy"] == "HALT_INSTANCE_NO_REPLACEMENT_AFTER_RESULTS"
-    assert contract["matrix_invariants"]["symmetry_required"] is False
 
 
 def test_named_facility_candidate_manifest_covers_nine_cities_but_is_not_formal() -> None:

@@ -44,6 +44,14 @@ CARBON_N_SLOTS = 18
 # v2026-06-11: make NESO gCO2/kWh -> kgCO2e/kWh conversion explicit.
 GCO2_PER_KGCO2 = 1000.0
 _CARBON_PROFILE_SORT_CACHE: dict[int, tuple[list[dict[str, Any]], list[dict[str, Any]], list[float]]] = {}
+# v2026-08-21: the time profile is static configuration, so its city grouping
+# and its per-node price-field shape are derived once instead of on every one
+# of the ~900k charging settlements in a single search cycle.
+_CITY_ROWS_CACHE: dict[int, tuple[Any, dict[str, list[dict[str, Any]]]]] = {}
+_NODE_PRICE_SHAPE_CACHE: dict[
+    tuple[int, int, str],
+    tuple[Any, Any, list[dict[str, Any]], bool, bool],
+] = {}
 
 
 @dataclass(frozen=True)
@@ -117,12 +125,17 @@ def time_profile_rows_for_node(
     if isinstance(time_profile, IndexedTimeProfile):
         city_rows = time_profile.city_rows
     else:
-        city_rows: dict[str, list[dict[str, Any]]] = {}
-        for row in time_profile:
-            city_value = row.get("city")
-            if city_value not in {None, ""}:
-                normalized_city = str(city_value).strip().lower()
-                city_rows.setdefault(normalized_city, []).append(row)
+        cached_rows = _CITY_ROWS_CACHE.get(id(time_profile))
+        if cached_rows is not None and cached_rows[0] is time_profile:
+            city_rows = cached_rows[1]
+        else:
+            city_rows = {}
+            for row in time_profile:
+                city_value = row.get("city")
+                if city_value not in {None, ""}:
+                    normalized_city = str(city_value).strip().lower()
+                    city_rows.setdefault(normalized_city, []).append(row)
+            _CITY_ROWS_CACHE[id(time_profile)] = (time_profile, city_rows)
     if not city_rows:
         return time_profile
     try:
@@ -152,7 +165,7 @@ def evaluate(
     *,
     carbon_quota_kg: float = 0.0,
 ) -> dict[str, float]:
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     route_energy = [_evaluate_route(route, instance, node_lookup, prices) for route in solution.routes]
 
     distance_total = sum(item.distance_m for item in route_energy)
@@ -384,7 +397,7 @@ def route_node_schedule(
     if not route.node_sequence:
         return []
 
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     charging_by_node = _charging_actions_for_route(route.vehicle_id, charging_actions or [])
     first = node_lookup[route.node_sequence[0]]
     first_arrive = float(first.ready_time)
@@ -521,7 +534,7 @@ def charging_curve_for_action(
         action.end_energy_kwh,
         action.charging_curve_id,
     )
-    nodes = {node.node_id: node for node in instance.nodes}
+    nodes = instance.node_lookup
     station = nodes.get(action.station_id)
     if station is None or station.node_type not in {"d", "f"}:
         if all(value is None for value in metadata):
@@ -791,7 +804,7 @@ def route_departure_second(
 
     if not route.node_sequence:
         return 0.0
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     first = node_lookup[route.node_sequence[0]]
     departure = float(first.ready_time) + float(first.service_time)
     successor_id = None
@@ -1173,23 +1186,48 @@ def charging_action_electricity_cost(
 ) -> float:
     """Settle one charge against city-specific time-of-use prices."""
 
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     node = node_lookup.get(action.station_id)
-    node_profile = time_profile_rows_for_node(
-        instance,
-        action.station_id,
-        time_profile,
-    )
-    has_time_varying_price = any(
-        "depot_energy_cny_per_kwh" in row
-        or "public_total_cny_per_kwh" in row
-        for row in node_profile
-    )
-    has_complete_time_varying_price = bool(node_profile) and all(
-        "depot_energy_cny_per_kwh" in row
-        and "public_total_cny_per_kwh" in row
-        for row in node_profile
-    )
+    shape_key = (id(instance), id(time_profile), action.station_id)
+    cached_shape = _NODE_PRICE_SHAPE_CACHE.get(shape_key)
+    if cached_shape is not None and not (
+        cached_shape[0] is instance and cached_shape[1] is time_profile
+    ):
+        # id() can be reused after garbage collection; re-check identity so a
+        # second instance in the same process cannot read the first one's
+        # price shape.
+        cached_shape = None
+    if cached_shape is None:
+        node_profile = time_profile_rows_for_node(
+            instance,
+            action.station_id,
+            time_profile,
+        )
+        has_time_varying_price = any(
+            "depot_energy_cny_per_kwh" in row
+            or "public_total_cny_per_kwh" in row
+            for row in node_profile
+        )
+        has_complete_time_varying_price = bool(node_profile) and all(
+            "depot_energy_cny_per_kwh" in row
+            and "public_total_cny_per_kwh" in row
+            for row in node_profile
+        )
+        _NODE_PRICE_SHAPE_CACHE[shape_key] = (
+            instance,
+            time_profile,
+            node_profile,
+            has_time_varying_price,
+            has_complete_time_varying_price,
+        )
+    else:
+        (
+            _cached_instance,
+            _cached_profile,
+            node_profile,
+            has_time_varying_price,
+            has_complete_time_varying_price,
+        ) = cached_shape
     if has_time_varying_price and not has_complete_time_varying_price:
         raise ValueError(
             "time-varying charging profile has partial price fields"

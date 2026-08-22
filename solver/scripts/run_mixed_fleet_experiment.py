@@ -682,14 +682,11 @@ def _prepare_population(
             _initial_evaluation,
             _reverse,
             _attempts,
-            _selected,
             evaluations,
         ) = _prepare_reference_population(
             initial,
             evaluator,
             policy,
-            parameters,
-            require_distinct_selection=False,
         )
         built = _PreparedPopulation(
             candidates=tuple(candidates),
@@ -720,8 +717,8 @@ def _prepare_population(
             evaluations=tuple(population.evaluations),
             full_evaluation_count=evaluator.full_calls - full_calls_before,
         )
-    if not built.candidates:
-        raise RuntimeError("initial population construction returned no candidate")
+    if len(built.candidates) < 4:
+        raise RuntimeError("initial population construction returned fewer than four candidates")
     return built, perf_counter() - started
 
 

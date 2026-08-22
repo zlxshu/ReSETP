@@ -123,7 +123,7 @@ def build_dynamic_warm_start_population(
     evaluations = [initial_evaluation]
     # Dynamic warm-start repair is a problem-specific candidate generator,
     # not the HGS survivor store. Keep exploring distinct repairs here; the
-    # downstream DutyPopulation applies the copied HGS duplicate semantics.
+    # downstream ExternalPopulation applies the copied HGS duplicate semantics.
     seen = {initial.fingerprint}
     attempts: list[DynamicWarmStartAttempt] = []
 

@@ -235,7 +235,6 @@ def main() -> int:
             initial,
             preparation_evaluator,
             policy,
-            require_distinct_selection=False,
         )
         captured: list[ScheduleCaptureRecord] = []
         with schedule_capture_sink(captured.append):
@@ -504,4 +503,3 @@ L1 共捕获 {total_cases} 个 raw candidate。A0 排程存活 {a0_alive}、死�
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

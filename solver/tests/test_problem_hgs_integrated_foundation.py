@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import setp_solver.algorithms.problem_hgs.charging as charging_module
 import setp_solver.algorithms.problem_hgs.integrated_private as integrated_module
+import pytest
 from setp_solver.algorithms.problem_hgs.charging import (
     ChargingRepairPolicy,
     _coordinate_timing_variants,
@@ -23,11 +24,14 @@ from setp_solver.algorithms.problem_hgs.model import (
 from setp_solver.algorithms.problem_hgs.integrated_private import (
     build_integrated_private_hgs,
 )
+from setp_solver.algorithms.problem_hgs.integrated_genetic_algorithm import (
+    IntegratedGeneticAlgorithm,
+    IntegratedProblemAdapter,
+)
 from setp_solver.algorithms.problem_hgs.operators import (
     RelocateMove,
     generate_problem_moves,
 )
-from setp_solver.algorithms.problem_hgs.population import PenaltyParameters
 from setp_solver.algorithms.problem_hgs.proposals import (
     SequentialProposalEngine,
 )
@@ -74,6 +78,7 @@ class _FullEvaluation:
     total_cost: float
     violations: tuple = ()
     violation_magnitudes: tuple[float, ...] = ()
+    violation_axes: tuple[str, ...] = ()
 
     @property
     def feasible(self) -> bool:
@@ -135,6 +140,8 @@ def _population() -> ExternalPopulation[_Solution, _Evaluation]:
         lambda left, right: float(left.name != right.name),
         is_feasible=lambda evaluation: evaluation.feasible,
         penalised_cost=lambda evaluation: evaluation.full_cost,
+        refresh_penalties=lambda _evaluations: None,
+        minimum_penalty_population_size=1,
         fingerprint=lambda solution: solution.name,
         params=PopulationParams(
             min_pop_size=2,
@@ -177,6 +184,73 @@ def test_complete_feasibility_controls_subpopulation_and_selection() -> None:
     assert {first.solution.name, second.solution.name}.issubset(
         {"cheap-but-invalid", "valid"}
     )
+
+
+def test_population_refreshes_penalties_after_add_purge_and_restart() -> None:
+    references: list[tuple[float, ...]] = []
+    population = ExternalPopulation(
+        lambda left, right: float(left.name != right.name),
+        is_feasible=lambda evaluation: evaluation.feasible,
+        penalised_cost=lambda evaluation: evaluation.full_cost,
+        refresh_penalties=lambda evaluations: references.append(
+            tuple(evaluation.full_cost for evaluation in evaluations)
+        ),
+        minimum_penalty_population_size=4,
+        fingerprint=lambda solution: solution.name,
+        params=PopulationParams(
+            min_pop_size=4,
+            generation_size=1,
+            num_elite=1,
+            num_close=1,
+            lb_diversity=0.1,
+            ub_diversity=1.0,
+        ),
+    )
+    for index in range(8):
+        population.add(
+            EvaluatedSolution(
+                _Solution(str(index)),
+                _Evaluation(index, index >= 4 or index % 2 == 0),
+            )
+        )
+
+    assert [len(reference) for reference in references] == [4, 5, 6, 7, 8, 7, 6]
+    assert set(references[0]) == {0, 1, 2, 3}
+
+    population.clear()
+    refreshes_before_restart = len(references)
+    for index in range(3):
+        population.add(
+            EvaluatedSolution(_Solution(str(index)), _Evaluation(index, True))
+        )
+    assert len(references) == refreshes_before_restart
+    population.add(EvaluatedSolution(_Solution("3"), _Evaluation(3, True)))
+    assert len(references[-1]) == 4
+
+
+def test_integrated_loop_rejects_fewer_than_four_retained_initials() -> None:
+    adapter = IntegratedProblemAdapter(
+        evaluate=lambda solution: (
+            EvaluatedSolution(solution, _Evaluation(1.0, True))
+            if solution.name == "kept"
+            else None
+        ),
+        refine=lambda candidate: (candidate,),
+        is_feasible=lambda evaluation: evaluation.feasible,
+        objective=lambda evaluation: evaluation.full_cost,
+        penalised_cost=lambda evaluation: evaluation.full_cost,
+        register=None,
+        fingerprint=lambda solution: solution.name,
+        minimum_initial_population_size=4,
+    )
+    algorithm = IntegratedGeneticAlgorithm(
+        object(), object(), _Rng((0,)), _population(), object(), None,
+        tuple(_Solution(name) for name in ("kept", "a", "b", "c")),
+        adapter,
+    )
+
+    with pytest.raises(ValueError, match="retained too few"):
+        algorithm.run(MaxIterations(1))
 
 
 def test_accepted_action_effects_are_attributed_to_one_serial_channel() -> None:
@@ -390,7 +464,7 @@ def test_private_common_loop_keeps_complete_duty_as_population_gene() -> None:
         source="complete-duty-test",
     )
     bundle = build_integrated_private_hgs(
-        (individual,),
+        (individual,) * 4,
         evaluator=_FullEvaluator(),
         charging_policy=ChargingRepairPolicy(
             strategy="integrated",
@@ -402,16 +476,6 @@ def test_private_common_loop_keeps_complete_duty_as_population_gene() -> None:
             carbon_profiles_by_day_offset=None,
         ),
         route_engine=_RouteProposalEngine(),
-        penalty_parameters=PenaltyParameters(
-            initial_penalty_per_unit=100.0,
-            solutions_between_updates=50,
-            penalty_increase=1.34,
-            penalty_decrease=0.32,
-            target_feasible=0.43,
-            feasibility_tolerance=0.05,
-            minimum_penalty=0.1,
-            maximum_penalty=100_000.0,
-        ),
         stagnation_patience=10,
         include_mechanism_refinement=False,
     )
@@ -638,7 +702,7 @@ def test_private_refinement_admits_only_the_final_educated_duty(
         lambda *args, **kwargs: (improved, improved_evaluation, ()),
     )
     bundle = build_integrated_private_hgs(
-        (initial,),
+        (initial,) * 4,
         evaluator=_FullEvaluator(),
         charging_policy=ChargingRepairPolicy(
             strategy="integrated",
@@ -650,16 +714,6 @@ def test_private_refinement_admits_only_the_final_educated_duty(
             carbon_profiles_by_day_offset=None,
         ),
         route_engine=_RouteProposalEngine(),
-        penalty_parameters=PenaltyParameters(
-            initial_penalty_per_unit=100.0,
-            solutions_between_updates=50,
-            penalty_increase=1.34,
-            penalty_decrease=0.32,
-            target_feasible=0.43,
-            feasibility_tolerance=0.05,
-            minimum_penalty=0.1,
-            maximum_penalty=100_000.0,
-        ),
         stagnation_patience=10,
         include_mechanism_refinement=False,
     )
@@ -698,7 +752,7 @@ def test_private_mechanisms_run_once_on_the_final_feasible_incumbent(
         educate,
     )
     bundle = build_integrated_private_hgs(
-        (individual,),
+        (individual,) * 4,
         evaluator=_FullEvaluator(),
         charging_policy=ChargingRepairPolicy(
             strategy="integrated",
@@ -710,16 +764,6 @@ def test_private_mechanisms_run_once_on_the_final_feasible_incumbent(
             carbon_profiles_by_day_offset=None,
         ),
         route_engine=_RouteProposalEngine(),
-        penalty_parameters=PenaltyParameters(
-            initial_penalty_per_unit=100.0,
-            solutions_between_updates=50,
-            penalty_increase=1.34,
-            penalty_decrease=0.32,
-            target_feasible=0.43,
-            feasibility_tolerance=0.05,
-            minimum_penalty=0.1,
-            maximum_penalty=100_000.0,
-        ),
         stagnation_patience=10,
     )
     evaluated = bundle.algorithm._adapter.evaluate(individual)
@@ -739,7 +783,7 @@ def test_private_common_loop_rejects_incomplete_customer_service() -> None:
         source="complete-duty-test",
     )
     bundle = build_integrated_private_hgs(
-        (complete,),
+        (complete,) * 4,
         evaluator=_FullEvaluator(),
         charging_policy=ChargingRepairPolicy(
             strategy="integrated",
@@ -751,16 +795,6 @@ def test_private_common_loop_rejects_incomplete_customer_service() -> None:
             carbon_profiles_by_day_offset=None,
         ),
         route_engine=_RouteProposalEngine(),
-        penalty_parameters=PenaltyParameters(
-            initial_penalty_per_unit=100.0,
-            solutions_between_updates=50,
-            penalty_increase=1.34,
-            penalty_decrease=0.32,
-            target_feasible=0.43,
-            feasibility_tolerance=0.05,
-            minimum_penalty=0.1,
-            maximum_penalty=100_000.0,
-        ),
         stagnation_patience=10,
         include_mechanism_refinement=False,
     )

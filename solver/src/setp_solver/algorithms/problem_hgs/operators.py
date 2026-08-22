@@ -348,8 +348,6 @@ class DutySkeletonMove:
     channel: str
     replacements: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
     dynamic_future_only: bool = False
-    proxy_rank: int | None = None
-    proxy_delta: int | None = None
 
     @property
     def changed_duty_ids(self) -> frozenset[str]:
