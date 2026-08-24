@@ -1,21 +1,8 @@
 % ============================================================================
-% 【已退役正文／RETIRED MANUSCRIPT】
-% 本文件属于由英国算例／ALNS 旧稿迁移、继而采用 China81 与 MV-HGS-SP 的旧 V2 时代完整正文。
-% 退役原因：项目现已采用现行 GCI-DMM-VRP 模型与一条串行改进链；
-% 本文件的旧算法身份、模型口径、比较对象和实验结果均不再代表当前项目。
-% 现行正文：docs/paper_gci_dmm_vrp_20260804/paper_main_foundation_v2_20260812.md
-% 任何人不得引用、迁移或改写本文件中的实验数字作为当前论文证据。
-% 本文件仅为历史追溯保留；除本声明外，原正文及其数字未作改动。
+% 正式待投稿修订稿
+% 当前文件是论文正文的唯一 TeX 入口；实验结果仅可由正式实验产物回填。
+% 算法名称、流程和组件说明以最终确定的实现为准。
 % ============================================================================
-
-% ================================================================
-% ReSETP 论文 V2 (2026-07-20 全面重写版)
-% 结构模板: 逐段对齐陈雨蝶 2025 (系统工程理论与实践)
-% 基座文献: 邱莹莹 2024 硕士学位论文 (混合车队+动态需求)
-% 实验宇宙: China81 (京津冀/珠三角/成渝, 人民币, 48时段分时电价与碳强度)
-% 算法: HGS-FRVCP (成熟混合遗传搜索底座 + frvcpy 固定路线充电求解 + 机制动作提名)
-% 数学来源: %% MATH_REF: <来源论文>
-% ================================================================
 
 \documentclass{setp-new}
 \usepackage{fontspec}
@@ -76,7 +63,7 @@
 \usepackage{needspace}
 \usepackage{url}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,backgrounds,fit,positioning,shapes.geometric}
+\usetikzlibrary{arrows.meta,backgrounds,calc,fit,positioning,shapes.geometric}
 
 % --- 表格样式 (保留原稿) ---
 \newcommand{\setpsymtabsetup}{\fontsize{9pt}{10.5pt}\selectfont\renewcommand{\arraystretch}{0.95}\setlength{\tabcolsep}{2.0pt}\setlength{\aboverulesep}{0.4pt}\setlength{\belowrulesep}{0.4pt}\hbadness=10000}
@@ -144,44 +131,43 @@
 \Category{U492.3}{A}
 
 % --- 中文信息 ---
-\TitleMark{周雷习书等: 时变碳强度下多车场动态协同路径建模与算法}
-\Title{时变碳强度下多车场动态协同路径建模与算法}
+\TitleMark{周雷习书等: 时变电网碳强度下动态混合车队路径优化模型与算法}
+\Title{时变电网碳强度下动态混合车队路径优化模型与算法}
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
 
-% --- 中文摘要 (陈雨蝶模板: 背景→挑战→模型→算法→实验维度→价值) ---
 \Abstract{%
-配送车队电动化并不自动带来减排: 电动车的排放转移至充电环节,
-而分时电价与电网碳强度在时间上并不同向, 仅按电费最省安排充电反而会推高充电排放.
-针对这一问题, 构建时变电网碳强度下多家企业协作的动态混合车队多趟路径优化模型,
-以可行配送趟—实体车排班两层结构刻画多趟衔接、趟间按需补电、非线性充电、
-成员结算参与和滚动状态继承, 并将运营成本与碳成本纳入同一核算口径.
-求解上直接采用成熟混合遗传搜索作为搜索底座,
-在其上构造统一完整评价、实体车多趟补全、碳感知充电排程与动态状态继承等问题特化组件.
-数值实验沿混合车队、真实补能、时变碳强度、多车场协同、收益公平与动态运行的顺序逐层展开,
-逐项检验各现实因素是否改变最优配送组织与路径选择.
-结果显示, 打开车场归属边界的协同重组使降本与减碳同向,
-而充电时刻与车型指派两层的降本与减碳方向相反, 需由碳价对齐, 且两层的对齐水平并不相同;
-相关结论可为配送企业安排补能与车型、为政策制定者设定碳价区间提供量化依据.
+电网碳强度随时段变化, 使电动车补能时机与配送路径相互耦合.
+针对过渡期配送情景中燃油车与电动车并存、多车场协同和订单动态到达的决策问题,
+构建时变电网碳强度下动态混合车队路径优化模型.
+模型以可行实体车排班模式为基本单元, 通过集合划分主问题衔接车型选择、实体车多趟、
+非线性充电、联合配送和滚动状态继承, 并分别以运营成本和完整排放为优化目标;
+合作成本在联合路线优化完成后分摊.
+求解采用基于成熟搜索内核的问题特化框架, 该框架负责候选生成、排班模式补全、双目标评价和动态状态继承.
+正式实验将从算法可信性、车型内生选择、充电模型、时变碳强度、协同分摊和动态响应等方面检验模型与方法.
+% 正式实验结果完成后在此回填与正文一致的核心发现。
 }
 
-\Keywords{车辆路径问题; 多车场协同配送; 混合车队; 时变电网碳强度; 动态需求; 非线性充电; 混合遗传搜索}
+\Keywords{车辆路径问题; 多车场协同配送; 混合车队; 时变电网碳强度; 动态需求; 合作成本分摊}
 
 % --- 英文信息 ---
-\ETitle{Multi-depot collaborative routing model and algorithm under time-varying carbon intensity}
+\ETitle{Optimization model and algorithm for dynamic mixed-fleet vehicle routing under time-varying grid carbon intensity}
 \EAuthor{ZHOU Leixishu, GAN Hongcheng, QIU Yingying}{Business School, University of Shanghai for Science and Technology, Shanghai 200093, China}
 \EAbstract{%
-Regional and intercity delivery is complicated by independent depot operations, mixed fleets, charging periods misaligned with grid carbon intensity, and dynamic orders.
-This study formulates a collaborative multi-depot mixed-fleet routing model with dynamic demand and time-varying charging emissions.
-A two-layer structure links feasible delivery trips to physical-vehicle schedules.
-It represents multi-trip connections, inter-trip charging, settlement-based participation, and rolling-state inheritance while accounting for operating and carbon costs.
-A mature hybrid genetic search is adopted as the search kernel, on which a Hybrid Genetic Search with a Fixed-Route Vehicle Charging Problem solver (HGS-FRVCP) is built.
-Its problem-specific components comprise full-solution evaluation, physical-vehicle multi-trip completion, carbon-aware charging scheduling, and dynamic state inheritance.
-Numerical experiments proceed in the order of mixed fleet, realistic recharging, time-varying carbon intensity, multi-depot collaboration, surplus fairness, and dynamic operation.
-Each factor is examined for whether it alters the optimal delivery organization and routing rather than only the reported cost and emissions.
-The results quantify trade-offs relevant to depot collaboration, charging-time selection, and carbon-policy design.
+Time-varying grid carbon intensity couples the charging timing of electric vehicles with delivery routing decisions.
+This study considers a transitional delivery setting in which conventional and electric vehicles coexist,
+multiple depots collaborate, and customer requests arrive dynamically.
+It formulates a dynamic mixed-fleet vehicle routing model under time-varying grid carbon intensity.
+Feasible physical-vehicle schedule patterns link vehicle-type selection, multi-trip operation,
+nonlinear charging, collaborative delivery, and rolling-state inheritance through a set-partitioning master problem.
+Operating cost and complete operational emissions are treated as separate objectives,
+while collaborative cost allocation is performed after joint route optimization.
+A problem-specific solution framework built on a mature search kernel is used for candidate generation,
+schedule-pattern completion, bi-objective evaluation, and rolling-state inheritance.
+Formal experiments will examine algorithmic credibility, endogenous fleet composition, charging models,
+time-varying carbon intensity, collaborative cost allocation, and dynamic response.
 }
-\EKeywords{vehicle routing problem; collaborative multi-depot delivery; mixed fleet;
-time-varying grid carbon intensity; dynamic demand; nonlinear charging; hybrid genetic search}
+\EKeywords{vehicle routing problem; multi-depot collaborative delivery; mixed fleet;
+time-varying grid carbon intensity; dynamic demand; collaborative cost allocation}
 
 \begin{document}
 \maketitle
@@ -193,124 +179,73 @@ time-varying grid carbon intensity; dynamic demand; nonlinear charging; hybrid g
 
 \section{引言}
 
-%% --- 段1: 政策宣言 ---
-2020年, 中国领导人在第七十五届联合国大会上承诺"2030年碳达峰,2060年碳中和", 简称"双碳目标".
-国际能源署数据显示, 2023年我国碳排放总量约126亿吨, 交通运输占比约10\%.
-交通运输减排因而成为实现双碳目标的重要环节.
-《2030年前碳达峰行动方案》进一步提出推动运输装备低碳转型和配送集约化\cite{ref:55},
-将协同降碳和集约配送上升为国家行动目标.
+《2030年前碳达峰行动方案》提出推动运输工具装备低碳转型, 并通过集中配送、共同配送等方式提高货物组织效率\cite{ref:55}.
+在本文关注的过渡期配送情景中, 企业同时使用燃油车和电动车, 不同车型的固定成本、载重、续驶能力和补能方式共同影响客户指派与路径安排.
+当多个车场由不同企业运营时, 客户责任边界又会限制车辆和任务的联合配置;
+订单在执行过程中到达, 则要求后续方案继承车辆位置、剩余电量和已完成任务.
+因此, 车型选择、实体车多趟、充电安排、多车场协同与动态重规划并非彼此独立的决策.
 
-%% --- 段2: 行业痛点+学者研究 ---
-长期以来, 城市与城际配送的主力车型是燃油车.
-传统配送路径优化主要解决客户归属、车辆调度与路线排序,
-目标是在按时完成配送的前提下尽量减少行驶距离与运营成本.
-在减碳约束下, 这一目标结构不再充分: 车辆若始终燃油驱动,
-仅在既有燃油车路径上继续压缩距离, 可获得的减排空间有限.
-配送系统因此转向电动化.
-但受购置成本、补能条件与车辆残值的限制, 车队不可能一次性完成替换,
-燃油车与电动车将在相当长时期内共存, 企业实际面对的是混合车队.
-由此产生第一个决策问题: 两类车型的续航、能耗与成本结构均不同,
-何种配送任务应交由电动车、何种应保留给燃油车,
-以及车型构成改变之后, 原有的最优路径是否仍然最优.
-这些车场又往往分属不同的配送企业, 各企业拥有各自的车场、车队与客户责任,
-降本减排空间既来自企业内部的车型选择与补能安排, 也来自企业之间的协作配送.
-现有研究主要从充电调度、路径选择和车辆配置三个方面降低运营成本与排放.
-在分时充电减排方面, Li等\cite{ref:52}基于上海3777辆电动车11个月的运行数据,
-在不改变出行计划的条件下量化有序充电的减排潜力.
-Hu等\cite{ref:53}将动态电价、节点碳流和碳交易用于电动车群充电调度.
-Zhang等\cite{ref:54}联合优化行驶路径与充电站选择, 以缩短出行时间和平衡充电站负荷为目标.
-Cheng等\cite{ref:50}在车辆可用时间、站端容量和电池约束下直接优化充电碳排.
+混合车队路径研究已经从车型配置、能耗核算和充电策略等角度处理上述部分关系.
+Goeke和Schneider\cite{ref:27}建立油电混合车队路径模型, 将载重等因素纳入车辆能耗;
+李得成等\cite{ref:6}采用分支定价方法联合决定车型配置与路径;
+陈婉茹等\cite{ref:23}研究碳交易机制下多中心混合车队的路径与速度优化.
+对于电动车补能, Keskin和\c{C}atay\cite{ref:45}研究部分充电策略,
+Diefenbach等\cite{ref:46}以及Wang等\cite{ref:80}进一步考虑非线性充电函数,
+Kullman等\cite{ref:73}则给出固定路线车辆充电问题的开源求解工具.
+这些研究说明, 充电时长和充入电量需要与路线可行性共同核算.
 
-%% --- 段3: VRP理论视角过渡 ---
-电动车一旦真正投入运行, 后续问题依次显现:
-真实补能过程并非恒功率, 荷电状态越高充入越慢, 补能时长会反过来决定一条路线能否按时完成;
-补能过程刻画真实之后, 又须回答用电本身是否低碳——同样一度电在不同时段充入, 对应的电网碳排并不相同;
-而何时可充又取决于何时发车、服务哪些客户、何时返场与在何处补能.
-再往外, 限制效率的可能已不是车辆与补能, 而是车场之间人为划定的客户归属边界;
-边界一旦打开, 系统总收益的改善又未必被每个参与方分享.
-上述问题可统一表述为车辆路径问题(Vehicle Routing Problem, VRP)的扩展形式:
-混合车队VRP、多车场VRP和动态VRP分别刻画车型差异、跨场资源配置与订单变化,
-三者的耦合构成区域—城际配送的主要决策结构.
+充电的排放还取决于供电侧时段属性.
+Li等\cite{ref:52}在既定出行计划下评估有序充电的减排作用;
+Hu等\cite{ref:53}将动态电价、节点碳流和碳交易用于电动车群充电调度;
+Zhang等\cite{ref:54}联合优化行驶路径与充电站选择;
+Cheng等\cite{ref:50}在车辆可用时间、站端容量和电池约束下优化充电碳排.
+上述研究表明, 充电时刻既受车辆可用窗口约束, 又连接电费与电网排放信号.
+对于配送车辆, 这些窗口不是固定给定的: 发车时刻、客户顺序、返场时刻和下一趟任务都会改变可用于补能的时间.
 
-%% --- 段4: 子领域1 —— 混合车队低碳路径 ---
-在混合车队低碳路径方面, Goeke和Schneider\cite{ref:27}建立了油电混合车队路径模型,
-利用包含速度、坡度和载重的实际能耗函数替代线性距离能耗假设,
-并设计自适应大邻域搜索算法求解.
-李得成等\cite{ref:6}基于分支定价算法进一步研究车型配置与路径的联合决策.
-陈婉茹等\cite{ref:23}将碳交易引入多中心混合车队的路径与速度决策.
-Keskin和\c{C}atay\cite{ref:45}通过部分充电策略扩大电动车路径的可行决策空间.
-Diefenbach等\cite{ref:46}表明非线性充电曲线会进一步改变充电与车辆排程.
-Kullman等\cite{ref:73}将固定路线充电子问题封装为可嵌入更大路径搜索的开源精确求解工具frvcpy.
-这些研究为车辆能耗和碳成本核算提供了基础,
-但大多同时改变路线、车辆和充电安排,
-难以单独判断减排是来自配送结构变化, 还是来自既定排班内的充电时刻调整.
+多车场协同研究关注客户与车辆资源跨场重组后的效率及成员关系.
+Wang等\cite{ref:7}研究共享充电设施的多车场电动车协同路径, 并在路径优化后采用Shapley值分配合作收益;
+Wang等\cite{ref:25}讨论时变路网中的多车场协同与资源共享;
+Fern\'{a}ndez等\cite{ref:49}将共享客户作为协同路径的主要决策.
+另一类研究把公平性纳入路线优化或事后结算:
+Soriano等\cite{ref:8}在多车场路径模型中直接设置利润公平目标,
+Shi等\cite{ref:9}联合讨论协同运输计划与利润分配,
+Agussurja等\cite{ref:10}研究稳定且公平的利润分配及最小补贴.
+两类做法的决策顺序不同: 前者以公平条件改变路线选择, 后者在联合方案确定后分配合作产生的成本或收益.
 
-%% --- 段5: 子领域2 —— 多车场协同 ---
-在多车场协同方面, Wang等\cite{ref:7}考察了多车场电动车共享充电设施的路径协同.
-Wang等\cite{ref:25}进一步在时变路网下研究多车场协同与资源共享.
-Fern\'{a}ndez等\cite{ref:49}直接将共享客户作为协同路径的核心决策.
-系统总收益增加并不表示每个参与方都获益.
-Wang等\cite{ref:7}在协同路径优化后采用Shapley值分配合作收益,
-Soriano等\cite{ref:8}则在多车场路径中直接考虑运营利润公平.
-Shi等\cite{ref:9}进一步联合讨论协同运输计划与利润分配,
-Agussurja等\cite{ref:10}研究了维持稳定且公平分配所需的最小补贴.
-客户原责任与地理服务边界的关系还会影响合作空间:
-责任划分越接近地理边界, 独立经营可能越有效,
-留给跨场重组的增量空间反而越小.
+动态车辆路径研究则处理执行中新增信息对后续计划的影响.
+Psaraftis\cite{ref:14}较早系统讨论动态信息下的路径决策;
+李阳等\cite{ref:18}采用周期性重优化处理动态需求;
+Gendreau等\cite{ref:22}研究实时路径与调度;
+邱莹莹\cite{ref:71}采用定时与定量触发处理混合车队动态配送;
+姜广田等\cite{ref:51}研究绿色物流配送中的多车型动态车辆路径.
+Zhen等\cite{ref:44}研究带时间窗和释放日期的多车场多趟车辆路径问题,
+其模型同时决定多车场车辆的配送趟次.
+在本文的滚动重规划中, 除更新待服务客户外, 还需锁定已执行路径并继承车辆状态与累计成本、排放记录, 以保证相邻决策阶段在物理和记账上连续.
 
-%% --- 段6: 子领域3 —— 动态车辆路径 ---
-在动态车辆路径方面, Psaraftis\cite{ref:14}较早系统讨论了动态信息下的路径决策.
-李阳等\cite{ref:18}利用周期性重优化处理动态需求.
-Gendreau等\cite{ref:22}采用并行禁忌搜索进行实时路径与调度.
-邱莹莹\cite{ref:71}在低碳背景下研究考虑动态需求的混合车队配送路径,
-采用定时与定量双触发的批处理策略处理新增、取消和改量订单.
-在多车场多趟场景中, Zhen等\cite{ref:44}将配送趟生成和实体车衔接分别处理.
-姜广田等\cite{ref:51}在绿色物流配送下研究多车型动态车辆路径优化.
-但是, 多车场混合车队的滚动重规划不能只更新客户集合,
-还必须继承车辆状态、已执行任务及已发生的成本和排放.
-若缺少这些状态, 重优化方案可能撤回已执行路径、重复使用实体车或重复结算历史排放.
+陈雨蝶等\cite{ref:48}将多中心、时变路网和多类配送约束纳入同一冷链物流模型,
+说明综合机制模型需要同时处理现实约束与求解复杂度.
+进一步比较表\ref{tab:literature-comparison}所列研究, 仍存在三个需要衔接的接口.
+第一, Shi等\cite{ref:93}同时考虑混合车队、分散协作和分时电价, 但其排放目标核算燃油车行驶排放;
+充电时刻仅改变电费, 电网碳强度的时段差异没有进入充电排放决策.
+第二, 既定出行计划下的充电调度研究\cite{ref:52,ref:53,ref:50}不能反映配送路径对可充电窗口的反向影响,
+而路线与充电同时变化时, 又难以识别固定排班内仅由充电择时产生的差异.
+第三, 混合车队、多车场多趟和动态研究分别给出了局部模型,
+但要在同一方案中避免重复使用实体车、撤回已执行任务或重复核算历史排放, 还需要统一的实体车排班模式和滚动状态接口.
 
-%% --- 段7: 综合+研究不足 ---
-相关研究还将碳交易机制、时变路网和动态调度纳入车辆路径模型.
-陈雨蝶等\cite{ref:48}在双碳背景下将多中心、时变路网和多类配送约束纳入同一冷链物流模型,
-表明综合机制建模可以拓展问题的现实边界, 同时也会提高求解复杂度.
-1) 混合车队与协同配送研究多把电动车视为零排放或按固定排放因子折算,
-电力供给的时段差异没有进入决策.
-例如Shi等\cite{ref:93}在混合车队、协同配送与分时电价的联合模型中,
-碳排放目标只对燃油车行驶弧求和, 并据此得出全部改用电动车即可使碳排放降为零的结论;
-在该设定下充电时刻只改变电费, 不改变排放.
-然而分时电价与电网碳强度在时间上并不同步:
-本文所用中国代表电网日数据显示, 谷段八小时的平均碳强度为0.618\,kgCO$_2$e/kWh,
-高于平段的0.334与峰段的0.367, 二者相关系数为$-0.563$;
-仅按电费最省安排充电, 反而会把充电推向全天碳强度最高的时段.
-充电时刻因而不应只作为成本变量, 而应作为进入路径决策的减排杠杆.
-2) 有序充电研究多假定出行计划不变,
-对配送时间窗、实体车多趟和动态事件共同形成的可移动充电窗口讨论不足;
-配送路径研究又常将路线与充电联合改变, 两类作用不易分离.
-3) 协同研究分别关注系统成本、运营利润或事后收益分配,
-联盟总收益、成员参与和子联盟稳定性仍需在同一价值函数下衔接.
-4) 降本与减碳分属配送企业与政策制定者两类主体的关切,
-二者在充电时刻、车型指派与配送结构上并不同向;
-既有研究多以单一目标或加权目标处理, 对何种碳价水平才能使二者对齐缺少可操作结论.
-
-%% --- 段8: 本文工作+创新点 ---
-针对上述缺口, 本文以降本与减碳为双重目标, 面向配送企业与政策制定者两类主体,
-建立时变电网碳强度下多家企业协作的动态混合车队多趟路径优化模型,
-并在成熟混合遗传搜索之上设计面向该问题的特化求解组件对其求解.
-论文主要创新点如下:
-1) 同时考虑多车场协同、混合车队、实体车多趟、分时充电排放、成员结算参与和动态订单等诸多因素,
-建立可行配送趟—实体车排班两层模型,
-用趟间按需补电和滚动状态继承衔接静态计划与动态执行,
-调整相应参数后, 该模型可退化为单车场、单趟或纯燃油车队等经典VRP形式.
-2) 将48时段电网碳强度和分时电价引入路径、车型、充电站与充电时刻的联合决策,
-并以固定配送排班下的充电择时作为补充检验,
-分别量化联合优化的排放--成本权衡和既定排班内充电时刻的边际减排作用.
-3) 在成熟混合遗传搜索之上设计面向该问题的特化求解组件,
-包括完整方案评价、实体车多趟补全、碳感知充电排程和动态状态继承;
-候选方案的可行性与成本均按完整模型核算, 不以简化路线代价近似替代.
-4) 围绕时变电网碳强度、混合车队和动态需求组织数值实验,
-并以多车场协同配送、成员收益分配、实体车多趟和非线性充电作为支撑结构,
-分别考察充电时刻、车型指派和动态发车三个决策层对运营成本与碳排放的影响.
+针对上述问题, 本文建立时变电网碳强度下动态混合车队路径优化模型.
+本文的主要工作如下:
+1) 以完整的实体车日排班模式为基本单元, 将车型指派、多趟衔接、非线性充电、跨场服务和动态状态继承接入集合划分主问题.
+每辆车从所属车场出发并在完成当日任务后返回该车场; 跨场协同指车辆服务其他企业负责的客户, 不以未核算的车场间调位替代协同.
+2) 将运营成本和完整作业期排放设为两个分离目标.
+其中燃油车核算行驶直接排放, 电动车核算充电侧电网排放;
+排放边界不包括车辆制造、基础设施建设和报废环节.
+模型同时接入分时电价与时变电网碳强度,
+并把恒功率与文献支持的非线性充电函数设为两个正式充电模型变体;
+分段形式只用于检验非线性函数的数值近似误差.
+3) 在联合路径优化后, 以同一联盟成本函数进行合作成本分摊, 分开评价系统效率、成员参与和子联盟稳定性.
+求解方面建立与实体车模式和动态状态相匹配的算法框架;
+其具体名称、特化组件和算法贡献将在实现及消融实验完成后据实确定.
+数值实验分别检验算法可信性、车型内生选择、充电模型、时变电网碳强度、两车场与四车场协同分摊以及动态响应, 不预设作用方向和效应大小.
 
 为进一步明确本文与相关研究的要素边界, 比较结果见表\ref{tab:literature-comparison}.
 
@@ -322,13 +257,14 @@ Gendreau等\cite{ref:22}采用并行禁忌搜索进行实时路径与调度.
 \setptabsetup
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
-文献 & 多车场 & 混合车队 & 实体车多趟 & 动态事件 & 分时充电排放 & 成员收益条件\\
+文献 & 多车场 & 混合车队 & 实体车多趟 & 动态事件 & 时变充电排放 & 路线优化后分摊\\
 \midrule
 Goeke和Schneider\cite{ref:27} & --- & $\checkmark$ & --- & --- & --- & ---\\
 Zhen等\cite{ref:44} & $\checkmark$ & --- & $\checkmark$ & --- & --- & ---\\
 陈婉茹等\cite{ref:23} & $\checkmark$ & $\checkmark$ & --- & --- & --- & ---\\
-Wang等\cite{ref:7} & $\checkmark$ & --- & --- & --- & --- & ---\\
-Soriano等\cite{ref:8} & $\checkmark$ & --- & --- & --- & --- & $\checkmark$\\
+Wang等\cite{ref:7} & $\checkmark$ & --- & --- & --- & --- & $\checkmark$\\
+Soriano等\cite{ref:8} & $\checkmark$ & --- & --- & --- & --- & ---\\
+Shi等\cite{ref:93} & $\checkmark$ & $\checkmark$ & --- & --- & --- & ---\\
 邱莹莹\cite{ref:71} & --- & $\checkmark$ & --- & $\checkmark$ & --- & ---\\
 姜广田等\cite{ref:51} & --- & --- & --- & $\checkmark$ & --- & ---\\
 Li等\cite{ref:52} & --- & --- & --- & --- & $\checkmark$ & ---\\
@@ -343,946 +279,873 @@ Li等\cite{ref:52} & --- & --- & --- & --- & $\checkmark$ & ---\\
 
 \section{模型建立}
 
-\subsection{问题描述}
+\subsection{问题描述与基本假设}
 
-本文研究多家配送企业协作配送时的混合车队路径、充电和成员结算问题,
-并在动态订单到达后滚动更新尚未执行的任务.
-各企业独立拥有车场、车队和客户责任, 协作意味着允许跨企业调用车辆并重新分工,
-因而所得方案能否被各方接受, 须在结算层单独判定.
+考虑由企业集合$\mathcal H$构成的协同配送系统, 每家企业拥有一个车场及若干实体车辆.
+实体车队由燃油车和电动车组成, 同一辆车可在一个运营日内连续执行多趟任务.
+每趟均从该车所属车场出发并返回该车场;
+跨场协同是指车辆服务其他企业负责的客户, 不包含车场间调位行驶.
+电动车可在所属车场或公共充电站补能, 充电时长由荷电状态-功率函数决定,
+充电电费与充电侧排放分别由充电发生时段的分时电价和电网碳强度决定.
+动态事件触发后, 已执行的路径、已锁定动作和历史成本、排放不得撤回,
+系统只对尚未执行的任务滚动重规划.
 
-本文模型具体表述为:
-多家配送企业各自拥有一个车场及其车队, 并各自负责一部分客户;
-协作配送允许各企业共享客户和车辆资源, 联合为全部客户提供服务;
-车队由燃油车(CV)和电动车(EV)混合组成, 每辆车只属于一个企业的车场, 但允许服务其他企业的客户;
-车辆可在一个运营日内连续执行多趟任务,
-电动车途中可访问共享充电站, 也可在首趟出发前和相邻趟之间在车场按需补电;
-实体车队规模有限且每辆车按日计一次启用成本, 因而一辆车通常需承担多趟任务,
-其日间返场装货的间隔正是车场补能的可用窗口, 补能机会由此与配送排班直接绑定;
-电网碳强度和电价均按48个半小时时段给定,
-充电发生的时段不同, 充电电费和间接碳排放也随之不同;
-订单新增、取消或改量后, 系统只调整尚未执行的任务, 已完成或已发车的路径前缀不可撤回.
-模型的优化目标是在满足载重、时间窗、电量和站点容量等运行约束的前提下,
-以运营成本和碳结算成本之和最小化确定车辆路径、车型选择和充电安排;
-合作成员的参与性在方案生成后的结算层判定.
+本文分别最小化运营成本和作业期排放, 不在主模型中预先把两者加权为一个目标.
+在本文规定的作业期边界内, 燃油车核算行驶燃油的直接排放,
+电动车核算完成当日配送所充电量对应的电网排放;
+车辆制造、基础设施建设和报废等生命周期环节不在该边界内.
+联合路径确定后, 再以联盟成本函数分摊合作成本, 分摊结果不反向改变路线.
 
-模型假设条件如下:
-1) 在每个规划时刻, 已到达订单的客户、车场、车辆信息已知, 新订单在运营过程中动态出现.
-2) 每个客户由一辆车服务一次, 需求不可拆分.
-3) 车辆在配送全程不超过所属车型的最大载重.
-4) 车辆行驶速度设为常值, 能耗按综合模式排放模型(CMEM)系能耗函数\cite{ref:27,ref:36}计算.
-5) 客户具有硬时间窗, 车辆可提前到达后等待, 但不得迟于时间窗上界.
-6) 充电功率为电池荷电状态的分段常函数(恒功率为其退化情形),
-每次充电为一个连续区间, 允许部分充电, 时段电量由充电曲线和电网时段的重叠确定.
-7) 时段电网碳强度和分时电价为外生参数, 企业为价格与碳强度的接受者.
-8) 客户责任按编号顺序均分给各配送企业, 该归属为公开披露的构造情景, 分法参照饶卫振等\cite{ref:91};
-运营成本先按实际执行车辆所属企业归集;
-协作路线优化完成后, 再依据各子联盟的独立经营成本分配协作收益.
-核仁给出唯一且联盟稳定的结算结果, Shapley值作为成员贡献的比较基准.
-模型符号说明如表\ref{tab:symbols}所示.
+模型采用以下假设:
+1) 每个决策时刻已到达订单、车辆状态、路网行驶时间、电价和电网碳强度已知;
+2) 每个有效客户由一辆车服务一次, 需求不可拆分;
+3) 客户采用硬时间窗, 车辆可等待但不得迟于时间窗上界开始服务;
+4) 车辆行驶采用恒速、平地、无加速度的道路负载近似;
+5) 电价和电网碳强度统一映射到同一半小时时段网格, 小时时序输入映射到相邻两个半小时时段;
+6) 正式充电对照只包括恒功率模型和文献支持的非线性SOC功率模型,
+分段线性形式仅用于检验非线性充电函数的数值近似误差;
+7) 同一充电位置的同时在充车辆数不得超过可用充电位数量.
+
+主要符号如表\ref{tab:symbols}所示. 企业、车场和实体车分别用$h$、$d$和$k$作索引,
+说明性上标采用正体.
 
 \begin{table}[H]
 \centering
-\caption{符号说明}
+\caption{主要符号}
 \label{tab:symbols}
 \setpsymtabsetup
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cJcJ@{}}
 \toprule
 符号 & 说明 & 符号 & 说明\\
 \midrule
-$D$ & 车场集合 & $c_D$ & 空气阻力系数\\
-$N$ & 客户集合 $N=\{1,2,\dots,n\}$, 其中$n$是客户数目 & $c_R$ & 滚动阻力系数\\
-$S$ & 共享充电站集合 & $\rho^a$ & 空气密度(kg/m$^3$)\\
-$T$ & 电网时段集合 $T=\{1,2,\dots,48\}$ & $g_0$ & 重力加速度(m/s$^2$)\\
-$K$ & 实体车辆集合 & $\alpha_k^e$ & 车辆$k$的电耗修正系数\\
-$K_d$ & 车场$d$的车辆集合 & $\beta_{0k}^g,\beta_{1k}^g$ & 车辆$k$的油耗系数\\
-$V_r$ & 趟$r$的节点集合 & $B$ & 电池容量(kWh)\\
-$V_r^c$ & 趟$r$的客户子集 $V_r^c=V_r\cap N$ & $B^{\min}$ & 电池最低允许电量(kWh)\\
-$\Omega_k$ & 车辆$k$的可行排班模式集合 & $\lambda^g$ & 燃油排放因子(kgCO$_2$e/L)\\
-$\mathcal R_{kp}$ & 模式$p$的配送趟集合 & $\pi_s$ & 站点$s$的额定充电功率(kW)\\
-$\mathcal Q_{kp}$ & 模式$p$的充电会话集合 & $C_s$ & 站点$s$的充电桩数\\
-$d_r^+,d_r^-$ & 趟$r$的起讫车场副本 & $b_l,\kappa_l$ & 充电曲线第$l$段SOC断点与相对功率\\
-$[\underline T_t,\overline T_t]$ & 时段$t$的起止时刻(s) & $\widehat\gamma_t,\gamma_t$ & 时段$t$的预测与结算碳强度(kgCO$_2$e/kWh)\\
-$q_i$ & 客户$i$的需求量(kg) & $p^{\mathrm{car}}$ & 单位碳价格(元/kg)\\
-$Q_k$ & 车辆$k$的最大载重(kg) & $CE$ & 碳配额(kg)\\
-$[\underline t_i,\overline t_i]$ & 客户$i$的时间窗 & $c^{\mathrm{fix}}$ & 每趟派遣固定成本(元/趟)\\
-$\sigma_i$ & 客户$i$的服务时长(s) & $c_k^{\mathrm{km}}$ & 车辆$k$的单位里程成本(元/km)\\
-$d_{ij}$ & 节点$i$与节点$j$之间的距离(m) & $p^f$ & 单位燃油价格(元/L)\\
-$t_{ij}$ & 弧$(i,j)$的行驶时间(s) & $p_{s,t}^{e}$ & 站点$s$在时段$t$的电价(元/kWh)\\
-$v$ & 车辆行驶速度(m/s) & $c^{\mathrm{occ}}$ & 公共站单位占用时间成本(元/min)\\
-$m_k$ & 车辆$k$的整备质量(kg) & $c^{\mathrm{tr}}$ & 单位跨场协调成本(元/客户)\\
-$A_k^f$ & 车辆$k$的迎风面积(m$^2$) & $\rho$ & 单位货量收入(元/kg)\\
-$d(k)$ & 车辆$k$所属车场 & $v(A)$ & 企业联盟$A$的可转移收益(元)\\
-$d_i^0$ & 客户$i$的原责任车场 & $\Pi_d^0$ & 车场$d$独立经营的基准收益(元)\\
-$C(A),R(A)$ & 联盟$A$的配送成本与收入(元)
-& $\phi_d$ & 车场$d$的Shapley收益分配(元)\\
-$x_d^{\nu}$ & 车场$d$的核仁收益分配(元)
-& $e(A,x)$ & 联盟$A$对分配$x$的不满意额(元)\\
-$n_{kp}$ & 模式$p$的配送趟数 & $\overline W$ & 动态触发的累计需求上限(kg)\\
-$D_{kp}$ & 模式$p$的总里程(km) & $T^{\mathrm{int}}$ & 动态触发的时间间隔(s)\\
-$F_{kp}$ & 模式$p$的总油耗(L) & $M$ & 足够大的正数\\
-$H_{kp}^{S},\widehat E_{kp},E_{kp}$ & 模式$p$的公共站占用时长(min)、预测与结算碳排放(kgCO$_2$e) & $L_{ir}$ & 离开节点$i$时的载重(kg)\\
-$O_{skpt}$ & 模式$p$在站$s$、时段$t$的在充会话数 & $T_{ir}$ & 节点$i$的服务开始时刻(s)\\
-$A_{ikp}$ & 0-1变量, 如果模式$p$服务客户$i$, 则为1, 否则为0 & $\varepsilon_{ir}$ & 到达节点$i$时的电量(kWh)\\
-$x_{ijr}$ & 0-1变量, 如果趟$r$使用弧$(i,j)$, 则为1, 否则为0 & $Y_{ir}$ & 节点$i$处的补电量(kWh)\\
-$a_{ir}$ & 0-1变量, 如果趟$r$服务客户$i$, 则为1, 否则为0 & $a_q^{\mathrm{ch}},\Delta_q$ & 会话$q$的开始时刻与时长(s)\\
-$z_{kp}$ & 0-1变量, 如果车辆$k$选择模式$p$, 则为1, 否则为0 & $E_q^{\mathrm{ch}},y_{qt}$ & 会话$q$的补电量与其在时段$t$的补电量(kWh)\\
+$\mathcal H$ & 配送企业集合 & $D$ & 车场集合\\
+$N$ & 客户集合 & $S$ & 公共充电站集合\\
+$T$ & 半小时时段集合 & $K$ & 实体车辆集合\\
+$K^{\mathrm g},K^{\mathrm e}$ & 燃油车、电动车子集 & $K_h$ & 企业$h$所属车辆集合\\
+$d(k),h(k)$ & 车辆$k$所属车场、企业 & $h(i)$ & 客户$i$的责任企业\\
+$\Omega_k$ & 车辆$k$的非空可行日排班模式集合 & $\mathcal R_{kp}$ & 模式$p$所含配送趟集合\\
+$\mathcal Q_{kp}$ & 模式$p$所含充电会话集合 & $s(q)$ & 会话$q$所在充电位置\\
+$w_i$ & 客户$i$的需求量(kg) & $Q_k$ & 车辆$k$的载重上限(kg)\\
+$[\underline t_i,\overline t_i]$ & 客户$i$的服务时间窗(s) & $\sigma_i$ & 客户$i$的服务时长(s)\\
+$d_{ij},t_{ij}$ & 弧$(i,j)$的距离(m)和行驶时间(s) & $v$ & 恒定行驶速度(m/s)\\
+$m_k,A_k^{\mathrm f}$ & 车辆整备质量(kg)和迎风面积(m$^2$) & $B_k,B_k^{\min}$ & 电池容量和最低允许电量(kWh)\\
+$c_D,c_R$ & 空气阻力系数和滚动阻力系数 & $\rho^{\mathrm a},g_0$ & 空气密度(kg/m$^3$)和重力加速度(m/s$^2$)\\
+$\alpha_k^{\mathrm e}$ & 电耗能量换算乘子 & $\beta_{0k}^{\mathrm g},\beta_{1k}^{\mathrm g}$ & 油耗系数(L/s和L/J)\\
+$\lambda^{\mathrm g}$ & 燃油直接排放因子(kgCO$_2$e/L) & $\widehat g_{sk}(\ell)$ & 位置$s$为车辆$k$充电时的充电函数\\
+$[\underline T_t,\overline T_t]$ & 时段$t$的起止时刻(s) & $\gamma_t$ & 时段$t$的电网碳强度(kgCO$_2$e/kWh)\\
+$p_{st}^{\mathrm e}$ & 位置$s$、时段$t$的电价(元/kWh) & $C_s$ & 位置$s$的可用充电位数\\
+$c_k^{\mathrm{fix}}$ & 车辆$k$的日固定成本(元/辆$\cdot$日) & $c_k^{\mathrm{km}}$ & 车辆$k$的非能源里程成本(元/km)\\
+$p^{\mathrm f}$ & 燃油价格(元/L) & $c^{\mathrm{occ}}$ & 公共站占用成本(元/min)\\
+$c^{\mathrm{tr}}$ & 构造情景中的跨场协调成本(元/客户) & $p^{\mathrm{car}}$ & 情景分析采用的碳价(元/kgCO$_2$e)\\
+$A_{ikp}$ & 模式$p$是否服务客户$i$ & $z_{kp}$ & 是否为车辆$k$选择模式$p$\\
+$D_{kp},F_{kp}$ & 模式$p$的总里程(km)和总油耗(L) & $E_{kp}^{\mathrm{op}}$ & 模式$p$的作业期排放(kgCO$_2$e)\\
+$H_{kp}^{S},X_{kp}$ & 公共站占用时长(min)和跨场服务客户数 & $O_{skpt}$ & 模式$p$在位置$s$、时段$t$是否占用充电位\\
+$x_{ijr},a_{ir}$ & 趟$r$是否使用弧$(i,j)$、访问节点$i$ & $L_{ir},T_{ir}$ & 离开节点$i$时的载重(kg)、作业开始时刻(s)\\
+$\varepsilon_{ir},Y_{ir}$ & 到达节点$i$时的电量、节点$i$补电量(kWh) & $q_q,o_q$ & 会话$q$的到达、离开电量(kWh)\\
+$a_q^{\mathrm{ch}},b_q^{\mathrm{ch}},\Delta_q$ & 会话$q$的开始、结束时刻和时长(s) & $C_q^{\mathrm e},G_q^{\mathrm e}$ & 会话$q$的电费(元)和充电侧排放(kgCO$_2$e)\\
+$u_{qt},\Delta T$ & 会话$q$在时段$t$的平均功率(kW)、时段宽度(h) & $M$ & 足够大的正数\\
 \bottomrule
 \end{tabular*}
 \end{table}
 
-\subsection{车辆能耗模型}
+\subsection{车辆能耗}
 
-为了准确刻画载重和车型对能耗的影响,
-本文参照混合车队路径优化研究\cite{ref:27}采用CMEM系能耗函数\cite{ref:36,ref:47},
-车辆在弧$(i,j)$上以给定速度$v$匀速行驶,
-牵引功率由空气阻力、滚动阻力和载重共同决定:
+本文采用Goeke和Schneider\cite{ref:27}的混合车队能耗表达,
+并按照本文的恒速、平地、无加速度假设作相应简化.
+对车辆$k$在趟$r$中选中的弧$(i,j)$, 离开节点$i$时的载重为$L_{ir}$,
+牵引功率为
+% FORMULA_SOURCE: Goeke and Schneider (2015), published p.84, Eq. (1).
+% ADAPTATION: zero road grade, zero acceleration, constant speed; symbols indexed by physical vehicle and trip.
 \begin{equation}
-P_{ij}=\frac12c_D\rho^a A_k^f v^3+(m_k+u_{ij})g_0c_R v.
+P_{ijrk}=\frac{1}{2}c_D\rho^{\mathrm a}A_k^{\mathrm f}v^3
++ (m_k+L_{ir})g_0c_Rv .
 \label{eq:power}
 \end{equation}
-其中$u_{ij}$为弧段载重(kg), 由载重变量$L_{ir}$按弧确定.
-式(\ref{eq:power})中$P_{ij}$的单位为W. 为使电量与电池状态变量的单位一致,
-电动车弧段电耗按$1\ \mathrm{kWh}=3.6\times10^{6}\ \mathrm{J}$折算为kWh;
-燃油车弧段油耗由排放系数直接给出体积单位L. 二者分别为
+式(\ref{eq:power})的单位为W, 且$t_{ij}=d_{ij}/v$.
+按照同一文献的电耗式和油耗式, 电动车的弧段电耗与燃油车的弧段油耗分别为
+% FORMULA_SOURCE: Goeke and Schneider (2015), published p.84, Eqs. (2)-(3).
+% ADAPTATION: positive traction-power branch; seconds/W converted to kWh; FR(P) written in the affine form used in pollution-routing studies.
 \begin{align}
-e_{ij}&=\frac{\alpha_k^e}{3.6\times10^{6}}P_{ij}\frac{d_{ij}}{v}, \label{eq:electricity}\\
-f_{ij}&=(\beta_{0k}^g+\beta_{1k}^gP_{ij})\frac{d_{ij}}{v}. \label{eq:fuel}
+e_{ijrk}&=\frac{\alpha_k^{\mathrm e}P_{ijrk}t_{ij}}{3.6\times10^6},
+\qquad k\in K^{\mathrm e}, \label{eq:electricity}\\
+f_{ijrk}&=(\beta_{0k}^{\mathrm g}+\beta_{1k}^{\mathrm g}P_{ijrk})t_{ij},
+\qquad k\in K^{\mathrm g}. \label{eq:fuel}
 \end{align}
-其中$\alpha_k^e$为无量纲的电驱动系统效率系数.
-在常值速度下, 式(\ref{eq:electricity})退化为关于载重线性的按里程电耗式:
-\begin{equation}
-e_{ij}=(g_v+\omega^E u_{ij})d_{ij},\quad
-g_v=\frac{\alpha_k^e}{3.6\times10^{6}}\Bigl(\frac12c_D\rho^a A_k^f v^2+m_k g_0 c_R\Bigr),\quad
-\omega^E=\frac{\alpha_k^e g_0 c_R}{3.6\times10^{6}}.
-\label{eq:linear_energy}
-\end{equation}
-其中$d_{ij}$以m计, $g_v$与$\omega^E$分别为kWh/m和kWh/(kg$\cdot$m),
-因而$e_{ij}$与$\varepsilon_{ir}$、$Y_{ir}$、$B$同为kWh, 式(\ref{eq:batt_prop})的电量传播在量纲上闭合.
-该线性形式使电量传播约束保持线性, 燃油油耗同理退化.
+其中$\alpha_k^{\mathrm e}$为无量纲的能量换算乘子, 不是小于1的效率参数;
+$\beta_{0k}^{\mathrm g}$和$\beta_{1k}^{\mathrm g}$是Demir等\cite{ref:36}
+所用CMEM燃油率各参数的仿射归并, 其中已包含从W到相应功率单位的换算;
+二者的单位分别为L/s和L/J.
+因此, $e_{ijrk}$以kWh计, $f_{ijrk}$以L计, 与后续电量和排放公式量纲一致.
 
-\subsection{充电与分时碳排放模型}
+\subsection{充电与时变电网排放}
 
-传统电动车路径研究常将充电近似为恒功率满充,
-这与现实中动力电池高荷电状态下功率下降、车辆按需部分补电的运行方式不符.
-鉴于此, 本文参照部分充电与非线性充电研究\cite{ref:45,ref:46},
-将站点$s$的充电功率表示为电池荷电状态(SOC)的分段常函数.
-设$L$个SOC分段$[b_{l-1},b_l)$对应相对功率$\kappa_l(b_0=0,b_L=1,\kappa_1\ge\cdots\ge\kappa_L>0)$,
-实际充电功率为$\pi_s\kappa_l$~kW.
-充电会话$q$由进入电量$\varepsilon_q^{\mathrm{in}}$充至离开电量$\varepsilon_q^{\mathrm{out}}$,
-补电量$E_q^{\mathrm{ch}}=\varepsilon_q^{\mathrm{out}}-\varepsilon_q^{\mathrm{in}}$,
-充电时长为
+Montoya等\cite{ref:94}用$\widehat g_i(\ell)$表示电池从空电状态充电
+$\ell$个时间单位后的电量, 并用其逆函数计算部分充电时长.
+本文将其充电站索引扩展为位置$s$与实体车辆$k$的组合.
+对会话$q\in\mathcal Q_{kp}$, 到达和离开电量分别为$q_q$与$o_q$,
+$0\le q_q\le o_q\le B_k$, 补电量为$E_q^{\mathrm{ch}}=o_q-q_q$.
+充电时长沿用其原式:
+% FORMULA_SOURCE: Montoya et al. (2017), Section 2.2, unnumbered inverse-function relation.
+% ADAPTATION: station index i replaced by location-vehicle pair (s(q),k); time unit fixed to seconds.
 \begin{equation}
-\Delta_q=\frac{3600 B}{\pi_{s(q)}}\sum_{l=1}^{L}
-\frac{(\min\{\varepsilon_q^{\mathrm{out}}/B,b_l\}
--\max\{\varepsilon_q^{\mathrm{in}}/B,b_{l-1}\})_+}{\kappa_l}.
+\Delta_q=
+\widehat g_{s(q)k}^{-1}(o_q)
+-\widehat g_{s(q)k}^{-1}(q_q).
 \label{eq:charge_duration}
 \end{equation}
-会话须整段落在其可行窗口$[\underline a_q,\overline a_q]$内:
-\begin{equation}
-\underline a_q\le a_q^{\mathrm{ch}},\quad a_q^{\mathrm{ch}}+\Delta_q\le\overline a_q.
-\label{eq:charge_window}
-\end{equation}
-会话与电网时段$t$的重叠时长为
-\begin{equation}
-g_{qt}=[\min\{a_q^{\mathrm{ch}}+\Delta_q,\overline T_t\}-\max\{a_q^{\mathrm{ch}},\underline T_t\}]_+ .
-\label{eq:charge_overlap}
-\end{equation}
-各时段补能量$y_{qt}$由时段内充电曲线积分确定, 满足$\sum_{t\in T}y_{qt}=E_q^{\mathrm{ch}}$;
-恒功率($L=1,\kappa_1=1$)退化为$y_{qt}=\pi_{s(q)}g_{qt}/3600$.
+恒功率模型是$\widehat g_{s(q)k}(\ell)=\overline P_{s(q)k}\ell/3600$
+的特例; 非线性模型采用有文献或设备数据依据的充电曲线.
+分段线性形式仅用于计算式(\ref{eq:charge_duration})的逆函数并检验近似误差,
+不构成第三个独立的充电模型.
 
-充电间接排放按补电量所在时段的电网碳强度核算.
-决策时使用预测碳强度$\widehat\gamma_t$, 执行后按结算碳强度$\gamma_t$复算,
-模式$p$的预测碳排放与结算碳排放分别为
+Froger等\cite{ref:12}以充电开始时刻加充电时长定义结束时刻.
+因此本文令$b_q^{\mathrm{ch}}=a_q^{\mathrm{ch}}+\Delta_q$,
+仅将完整落入可用窗口且同一实体车各会话互不重叠的安排纳入$\Omega_k$.
+设$u_{qt}$为完整模式依据上述充电函数得到的时段平均充电功率,
+未充电时取0, $\Delta T$为以h计的时段宽度.
+参照Shi等\cite{ref:93}的时变电价充电成本和Cheng等\cite{ref:50}
+的碳感知充电目标, 会话电费和充电侧排放为
+% FORMULA_SOURCE: Cheng et al. (2022), p.3, Eq. (2a), and Shi et al. (2025), Section 3.2.2, unnumbered charging-cost integral.
+% ADAPTATION: vehicle charging-power variable indexed by session; the same time-indexed energy product is multiplied by electricity price in the first expression and grid-carbon intensity in the second.
+\begin{align}
+C_q^{\mathrm e}
+&=\sum_{t\in T}p_{s(q)t}^{\mathrm e}u_{qt}\Delta T,
+\label{eq:charge_cost}\\
+G_q^{\mathrm e}
+&=\sum_{t\in T}\gamma_tu_{qt}\Delta T.
+\label{eq:charge_carbon}
+\end{align}
+$u_{qt}$按会话与时段的实际重叠计算,
+因而跨时段会话不会被全部计入其开始或结束时段.
+
+模式$p$的作业期排放按车型分别核算:
+% FORMULA_SOURCE: Shi et al. (2025), Eq. (4), and Cheng et al. (2022), Eq. (2a).
+% ADAPTATION: ICE term uses Goeke fuel consumption and a direct-emission factor; EV term sums the session-level grid-emission integrals above.
 \begin{equation}
-\begin{aligned}
-\widehat E_{kp}&=\lambda^g\sum_{r\in\mathcal R_{kp}}\sum_{(i,j)\in r}f_{ij}
-+\sum_{q\in\mathcal Q_{kp}}\sum_{t\in T}\widehat\gamma_t y_{qt},\\
-E_{kp}&=\lambda^g\sum_{r\in\mathcal R_{kp}}\sum_{(i,j)\in r}f_{ij}
-+\sum_{q\in\mathcal Q_{kp}}\sum_{t\in T}\gamma_t y_{qt}.
-\end{aligned}
+E_{kp}^{\mathrm{op}}=
+\begin{cases}
+\displaystyle
+\lambda^{\mathrm g}\sum_{r\in\mathcal R_{kp}}
+\sum_{\substack{i,j\in V_r\\i\ne j}}f_{ijrk}x_{ijr},
+& k\in K^{\mathrm g},\\[8pt]
+\displaystyle
+\sum_{q\in\mathcal Q_{kp}}G_q^{\mathrm e},
+& k\in K^{\mathrm e}.
+\end{cases}
 \label{eq:carbon}
 \end{equation}
-第一项是燃油车直接排放, 第二项是电动车充电侧间接排放.
+第一项是燃油车行驶的直接排放, 第二项是电动车充电侧的电网排放.
+电动车的零行驶直接排放仅适用于上述作业期核算边界,
+不意味着其全生命周期排放为零.
 
-\subsection{目标函数}
+\subsection{可行实体车排班模式}
 
-\subsubsection{碳排放成本\texorpdfstring{$F_1$}{F1}}
-碳排放成本由燃油车行驶的直接排放和电动车充电的间接排放构成.
-燃油油耗由公式(\ref{eq:power})和(\ref{eq:fuel})求得,
-规划阶段的充电间接排放按充电发生时段的预测碳强度逐时段核算,
-模式$p$的预测碳排放$\widehat E_{kp}$如公式(\ref{eq:carbon})所示.
-在碳交易机制中, 政府指定碳配额,
-企业碳排放量超过配额$CE$时需要购买更多的碳排放权,
-相反也可以通过出售碳排放权赚取利润, 此时碳排放成本的计算如公式(\ref{eq:F1})所示.
+模式$p\in\Omega_k$完整给定车辆$k$的一日配送趟、节点顺序、服务时刻、
+载重、电量和充电会话. 记$d_{kr}^{+}$和$d_{kr}^{-}$为车辆$k$所属车场
+$d(k)$在趟$r$中的起点和终点副本, $V_r$为该趟使用的节点副本集合.
+公共充电站重复访问时使用不同节点副本.
+对$k\in K$、$p\in\Omega_k$和$r\in\mathcal R_{kp}$, 路径流按
+Hiermann等\cite{ref:95}及Zhen等\cite{ref:44}的表达满足
+% FORMULA_SOURCE: Hiermann et al. (2016), published p.997, Eqs. (2.2)-(2.4); Zhen et al. (2020), published pp.4-5, Eqs. (2)-(4).
+% ADAPTATION: route indexed by a physical vehicle and trip; depot represented by separate start/end copies.
 \begin{equation}
-F_1=p^{\mathrm{car}}\Bigl(\sum_{k\in K}\sum_{p\in\Omega_k}\widehat E_{kp}z_{kp}-CE\Bigr).
-\label{eq:F1}
-\end{equation}
-
-\subsubsection{固定成本\texorpdfstring{$F_2$}{F2}}
-固定成本主要包括车辆折旧费、维修费、保险费和驾驶员工资等, 与派遣的配送趟数成正比.
-\begin{equation}
-F_2=c^{\mathrm{fix}}\sum_{k\in K}\sum_{p\in\Omega_k}n_{kp}z_{kp}.
-\label{eq:F2}
-\end{equation}
-
-\subsubsection{里程成本\texorpdfstring{$F_3$}{F3}}
-里程成本与行驶距离成正比, 反映轮胎磨损、保养等非能源行驶费用.
-\begin{equation}
-F_3=\sum_{k\in K}\sum_{p\in\Omega_k}c_k^{\mathrm{km}}D_{kp}z_{kp}.
-\label{eq:F3}
-\end{equation}
-
-\subsubsection{油耗成本\texorpdfstring{$F_4$}{F4}}
-油耗成本与燃油车运输时产生的油耗成正比, 油耗量由能耗模型逐弧累计.
-\begin{equation}
-F_4=p^f\sum_{k\in K}\sum_{p\in\Omega_k}F_{kp}z_{kp}.
-\label{eq:F4}
-\end{equation}
-
-\subsubsection{充电成本\texorpdfstring{$F_5$}{F5}}
-充电成本包括车场充电电费、公共站充电电费和公共站占用成本.
-车场执行分时目录电价, 公共站电价为含服务费的分时总价, 公共站另计占用时间费.
-充电发生的时段不同, 电费也随之不同, 因此充电成本按会话在各时段的补电量逐时段结算.
-\begin{equation}
-F_5=\sum_{k\in K}\sum_{p\in\Omega_k}\Bigl(\sum_{q\in\mathcal Q_{kp}}\sum_{t\in T}p_{s(q),t}^{e}y_{qt}
-+c^{\mathrm{occ}}H_{kp}^{S}\Bigr)z_{kp}.
-\label{eq:F5}
-\end{equation}
-其中$s(q)$为会话$q$所在的车场或充电站.
-
-\subsubsection{跨场成本\texorpdfstring{$F_6$}{F6}}
-车辆服务非所属车场的客户时计入跨场协调成本,
-反映跨场协同产生的信息交换和管理开销.
-\begin{equation}
-F_6=c^{\mathrm{tr}}\sum_{k\in K}\sum_{p\in\Omega_k}\sum_{i\in N}A_{ikp}\mathbf 1_{d(k)\neq d_i^0}\,z_{kp}.
-\label{eq:F6}
-\end{equation}
-
-上述公式中, $n_{kp}$, $D_{kp}$, $F_{kp}$, $H_{kp}^{S}$, $\widehat E_{kp}$
-分别为模式$p$的配送趟数、总里程(km)、总油耗(L)、公共站占用时间(min)和预测碳排放(kgCO$_2$e),
-由模式$p$所含配送趟和充电会话按公式(\ref{eq:power})--(\ref{eq:carbon})逐项累计得到.
-$E_{kp}$为同一模式执行后按结算碳强度复算的碳排放.
-
-\subsection{模型建立}
-
-模型分两层建立. 第一层为配送趟约束, 对趟$r$, $d_r^+,d_r^-$为起讫车场副本; 第二层为模式选择约束, $M$为足够大的正数.
-\begin{equation}
-\min F=F_1+F_2+F_3+F_4+F_5+F_6. \label{eq:obj}
-\end{equation}
-\begin{equation}
-\sum_{j\in V_r}x_{d_r^+jr}=1,\ \sum_{j\in V_r}x_{jd_r^-r}=1,\ \sum_{i\in V_r}x_{id_r^+r}=0,\ \sum_{i\in V_r}x_{d_r^-ir}=0.
+\begin{aligned}
+&\sum_{j\in V_r\setminus\{d_{kr}^{+}\}}x_{d_{kr}^{+}jr}=1,\qquad
+\sum_{i\in V_r\setminus\{d_{kr}^{-}\}}x_{id_{kr}^{-}r}=1,\\
+&\sum_{i\in V_r\setminus\{d_{kr}^{+}\}}x_{id_{kr}^{+}r}=0,\qquad
+\sum_{j\in V_r\setminus\{d_{kr}^{-}\}}x_{d_{kr}^{-}jr}=0 .
+\end{aligned}
 \label{eq:trip_flow}
 \end{equation}
+% FORMULA_SOURCE: Hiermann et al. (2016), published p.997, Eq. (2.4).
+% ADAPTATION: node-use indicator made explicit for a physical-vehicle trip.
 \begin{equation}
-\sum_{j\in V_r}x_{ijr}=\sum_{j\in V_r}x_{jir}=a_{ir},\quad i\in V_r^c.
+\sum_{j\in V_r\setminus\{i\}}x_{ijr}
+=\sum_{j\in V_r\setminus\{i\}}x_{jir}=a_{ir},
+\qquad i\in V_r\setminus\{d_{kr}^{+},d_{kr}^{-}\}.
 \label{eq:flow_cons}
 \end{equation}
-\begin{equation}
-L_{d_r^+r}=\sum_{i\in V_r^c}q_i a_{ir},\quad 0\le L_{ir}\le Q_k,\quad i\in V_r.
-\label{eq:load_bounds}
-\end{equation}
-\begin{equation}
-L_{jr}\le L_{ir}-q_j+M(1-x_{ijr}),\quad i,j\in V_r.
-\label{eq:load_prop}
-\end{equation}
-\begin{equation}
-\underline t_i a_{ir}\le T_{ir}\le\overline t_i+M(1-a_{ir}),\quad i\in V_r^c.
-\label{eq:tw}
-\end{equation}
-\begin{equation}
-T_{jr}\ge T_{ir}+\sigma_i+t_{ij}-M(1-x_{ijr}),\quad i,j\in V_r.
-\label{eq:time_prop}
-\end{equation}
-\begin{equation}
-B^{\min}\le\varepsilon_{ir}\le B,\quad
-\varepsilon_{jr}\le\varepsilon_{ir}+Y_{ir}-e_{ij}+M(1-x_{ijr}),\quad i,j\in V_r.
+对非客户节点定义$w_i=0$、$\sigma_i=0$.
+载重和时间资源沿用上述文献的容量与时序传播结构:
+% FORMULA_SOURCE: Zhen et al. (2020), published p.5, Eqs. (7)-(8); Hiermann et al. (2016), published pp.997-998, Eqs. (2.5)-(2.9).
+% ADAPTATION: remaining-load convention; charging duration added to service time at a charging node.
+\begin{align}
+&L_{d_{kr}^{+}r}=\sum_{i\in N\cap V_r}w_i a_{ir},
+\qquad 0\le L_{ir}\le Q_k, \label{eq:load_bounds}\\
+&L_{jr}\le L_{ir}-w_j+M(1-x_{ijr}), \label{eq:load_prop}\\
+&\underline t_i a_{ir}\le T_{ir}\le
+\overline t_i+M(1-a_{ir}),\qquad i\in N\cap V_r, \label{eq:tw}\\
+&T_{jr}\ge T_{ir}+\sigma_i+\delta_{ir}+t_{ij}
+-M(1-x_{ijr}). \label{eq:time_prop}
+\end{align}
+其中$\delta_{ir}$为车辆在节点$i$处发生的充电时长之和;
+未充电时$\delta_{ir}=0$.
+模式属性按客户访问顺序记录实际剩余载重;
+式(\ref{eq:time_prop})取不等式方向是为了允许车辆提前到达后等待.
+
+对$k\in K^{\mathrm e}$, $\varepsilon_{ir}$表示到达节点$i$时的电量,
+$Y_{ir}$表示在该节点各充电会话补入的总电量.
+Montoya等\cite{ref:94}的到达---离开电量关系和双侧弧段电量传播式,
+经符号适配后为
+% FORMULA_SOURCE: Montoya et al. (2017), Eqs. (5)-(10).
+% ADAPTATION: arrival energy plus partial recharge at node i replaces their separate customer/station departure variables; minimum reserve Bmin is retained.
+\begin{align}
+&B_k^{\min}\le\varepsilon_{ir}\le
+\varepsilon_{ir}+Y_{ir}\le B_k,
+\label{eq:batt_bounds}\\
+&e_{ijrk}x_{ijr}-B_k(1-x_{ijr})
+\le \varepsilon_{ir}+Y_{ir}-\varepsilon_{jr}\notag\\
+&\hspace{7em}\le
+e_{ijrk}x_{ijr}+B_k(1-x_{ijr}).
 \label{eq:batt_prop}
-\end{equation}
+\end{align}
+$Y_{ir}$按节点上的实际会话补电量$E_q^{\mathrm{ch}}$累计,
+客户节点取0; 这一记账关系不另列为新公式.
+首趟初始电量由给定状态$\varepsilon_k^0$和首趟前会话共同确定.
+若$r'$紧接$r$, Zhen等\cite{ref:44}的相邻趟衔接式在不另设
+未经标定的车场周转时间时化为
+% FORMULA_SOURCE: Zhen et al. (2020), published p.5, Eq. (11).
+% ADAPTATION: depot-handling time set to zero; physical vehicle and trip-copy indices substituted.
 \begin{equation}
-Y_{ir}=0,\quad i\in V_r^c.
-\label{eq:no_customer_charge}
-\end{equation}
-\begin{equation}
-T_{d_{r'}^+r'}\ge T_{d_r^-r},\quad
-\varepsilon_{d_{r'}^+r'}=\varepsilon_{d_r^-r}+\sum_{q\in\mathcal Q_{kp}^{rr'}}E_q^{\mathrm{ch}},\quad r\to r'\ \text{相邻}.
+T_{d_{kr'}^{+}r'}\ge T_{d_{kr}^{-}r}.
 \label{eq:trip_linkage}
 \end{equation}
-\begin{equation}
-\sum_{k\in K}\sum_{p\in\Omega_k}A_{ikp}z_{kp}=1,\quad i\in N,\quad
-\sum_{p\in\Omega_k}z_{kp}\le1,\quad k\in K.
-\label{eq:coverage}
-\end{equation}
-\begin{equation}
-\sum_{k\in K}\sum_{p\in\Omega_k}O_{skpt}z_{kp}\le C_s,\quad s\in S\cup D,\;t\in T.
-\label{eq:station_cap}
-\end{equation}
-规划阶段的车场收益采用预测碳排放$\widehat E_{kp}$; 执行后的排放报告采用$E_{kp}$.
-\begin{equation}
-\Pi_d^{\mathrm{stage}}=\sum_{k\in K_d}\sum_{p\in\Omega_k}
-\Bigl(\rho\sum_{i\in N}q_iA_{ikp}
--c^{\mathrm{fix}}n_{kp}-c_k^{\mathrm{km}}D_{kp}-p^fF_{kp}-G_{kp}^{e}
--c^{\mathrm{tr}}n_{kp}^{\mathrm{tr}}-p^{\mathrm{car}}\widehat E_{kp}\Bigr)z_{kp}.
-\label{eq:stage_profit}
-\end{equation}
-\begin{equation}
-z_{kp}\in\{0,1\},\quad k\in K,\;p\in\Omega_k.
-\label{eq:binary}
-\end{equation}
+两趟之间如安排车场充电, 其起止时刻必须位于前趟结束和后趟开始之间,
+电量仍按式(\ref{eq:batt_prop})连续传播.
 
-公式(\ref{eq:obj})表示运营成本与碳结算成本之和最小化.
-公式(\ref{eq:trip_flow})和(\ref{eq:flow_cons})定义趟的起讫车场与客户流守恒;
-公式(\ref{eq:load_bounds})和(\ref{eq:load_prop})保证载重不超容量且随服务递减;
-公式(\ref{eq:tw})和(\ref{eq:time_prop})保证服务时刻满足硬时间窗并沿弧递推;
-公式(\ref{eq:batt_prop})保证电量在允许范围且逐弧传播, 公式(\ref{eq:no_customer_charge})规定客户点不可充电.
-公式(\ref{eq:trip_linkage})保证同一实体车相邻趟的时间衔接与跨趟电量连续, 即趟间按需补电,
-其中$\mathcal Q_{kp}^{rr'}$为安排在两趟之间的车场充电会话集合;
-充电会话窗口由车辆实际停留区间界定, 站内为到离时刻, 趟间为$[T_{d_r^-r},T_{d_{r'}^+r'}]$,
-首趟前为运营开始时刻到首趟发车时刻, 所有会话服从公式(\ref{eq:charge_duration})--(\ref{eq:charge_overlap})且互不重叠.
-记$\Omega_k$为满足公式(\ref{eq:trip_flow})--(\ref{eq:trip_linkage})的车辆$k$全部可行排班模式的集合,
-模式$p\in\Omega_k$完整给定其配送趟、节点时刻、车型和充电会话, 第二层在$\Omega_k$上进行模式选择.
-公式(\ref{eq:coverage})保证每个客户由恰好一个模式覆盖且每车至多执行一个模式;
-公式(\ref{eq:station_cap})参照容量受限充电站研究\cite{ref:12,ref:13},
-保证任意时段站点并发充电数不超过桩数, $O_{skpt}$由会话开始时刻和时长预先计算.
-公式(\ref{eq:stage_profit})按实际执行车辆的所属车场计算转移前运营收益,
-其中$G_{kp}^{e}$为模式$p$的充电总成本(即公式(\ref{eq:F5})的模式项),
-$n_{kp}^{\mathrm{tr}}=\sum_{i\in N}A_{ikp}\mathbf 1_{d(k)\neq d_i^0}$为跨场服务客户数.
-基准收益$\Pi_d^0$由同一算法在同等评价预算下,
-按车场$d$仅服务自身责任客户、禁用跨场服务的独立经营情形求得.
-$\bar\Pi_d^\tau$为截至上次重规划的累计收益, 静态情形取0, 其滚动累计规则见2.6节.
+$A_{ikp}$是模式是否覆盖客户$i$的二元参数;
+$D_{kp}$、$F_{kp}$、$H_{kp}^{S}$和$X_{kp}$分别记录该模式的总里程、
+总油耗、公共站占用时长和跨场服务客户数.
+$O_{skpt}$表示模式在时段$t$是否占用位置$s$的充电位.
+这些量均可从完整模式直接计算, 不另设聚合公式.
+$\Omega_k$仅包含满足路径、载重、时间窗、SOC、充电函数、充电窗口、
+同车会话不重叠和多趟衔接的非空完整模式.
+该集合由算法隐式搜索, 无需事先枚举全部模式.
 
-令$D$为参与协作的配送企业集合, 每家企业拥有一个车场及其车队, 并对一部分客户负有配送责任.
-对任意非空联盟$A\subseteq D$, 限定只有联盟成员的车场、车辆和责任客户参与配送,
-由同一算法求得联盟成本$C(A)$与收入$R(A)$, 并定义可转移收益
+\subsection{运营成本、排放目标与集合划分主问题}
+
+对非空模式$p\in\Omega_k$, 运营成本为
+% FORMULA_SOURCE: Hiermann et al. (2016), Eq. (2.1), for fixed plus route cost; Shi et al. (2025), Section 3.2.2, for time-varying charging cost; Chen et al. (2023), Eq. (5), for additive operating/carbon cost structure.
+% ADAPTATION: route cost expanded into distance, fuel, charging, public-station occupancy, and disclosed cross-depot coordination terms.
 \begin{equation}
-v(A)=R(A)-C(A),\qquad v(\varnothing)=0.
-\label{eq:coalition_profit}
+\begin{aligned}
+C_{kp}^{\mathrm{op}}={}&c_k^{\mathrm{fix}}
++c_k^{\mathrm{km}}D_{kp}
++p^{\mathrm f}F_{kp}\\
+&+\sum_{q\in\mathcal Q_{kp}}C_q^{\mathrm e}
++c^{\mathrm{occ}}H_{kp}^{S}
++c^{\mathrm{tr}}X_{kp}.
+\end{aligned}
+\label{eq:pattern_cost}
 \end{equation}
-$|D|$家企业共有$2^{|D|}-1$个非空联盟. 车场$d$的Shapley收益分配为
+其中燃油车取充电项为0, 电动车取$F_{kp}=0$;
+$H_{kp}^{S}$只累计公共充电站占用时间, 不把车场充电计为公共站占用.
+$c^{\mathrm{tr}}$用于公开披露的构造协调摩擦情景, 不作现实标定值解释.
+由于每辆实体车至多选择一个日排班模式,
+$c_k^{\mathrm{fix}}$只在车辆被启用时计一次, 与该模式含有多少趟无关.
+
+Hiermann等\cite{ref:95}的集合划分模型以可行路线为列;
+本文仅把列扩展为实体车辆的一日完整模式. 主问题为
+% FORMULA_SOURCE: Hiermann et al. (2016), published p.998, Eqs. (2.14)-(2.17).
+% ADAPTATION: route-type columns disaggregated into physical-vehicle daily-pattern columns; an unused physical vehicle needs no empty column.
+\begin{align}
+&\sum_{k\in K}\sum_{p\in\Omega_k}A_{ikp}z_{kp}=1,
+\qquad i\in N, \label{eq:coverage}\\
+&\sum_{p\in\Omega_k}z_{kp}\le1,\qquad k\in K, \label{eq:one_pattern}\\
+% FORMULA_SOURCE: Yahiaoui et al. (2025), published pp.1312-1313, Eqs. (2)-(7), especially time-slot resource Eqs. (4)-(5).
+% ADAPTATION: loading/unloading site and route columns replaced by charging location and physical-vehicle daily-pattern columns.
+&\sum_{k\in K}\sum_{p\in\Omega_k}O_{skpt}z_{kp}\le C_s,
+\qquad s\in S\cup D,\ t\in T, \label{eq:station_cap}\\
+&z_{kp}\in\{0,1\},\qquad k\in K,\ p\in\Omega_k. \label{eq:binary}
+\end{align}
+Yahiaoui等\cite{ref:96}在集合划分主问题中用路线的时段占用参数
+限制同一位置的并发作业数; 式(\ref{eq:station_cap})仅将作业改为充电会话.
+半小时时段化可能把同一时段内实际不重叠的会话一并计数, 因而采用保守口径;
+模式内仍按连续时间检查会话窗口和不重叠关系\cite{ref:12,ref:13}.
+
+Shi等\cite{ref:93}把混合车队的经济目标与碳排放目标分开.
+按本文统一采用最小化口径, 主模型的两个目标为
+% FORMULA_SOURCE: Shi et al. (2025), Eqs. (3)-(4).
+% ADAPTATION: profit maximization replaced by the equivalent operating-cost minimization used by this paper; both objectives evaluated on physical-vehicle daily-pattern columns.
 \begin{equation}
-\phi_d=\sum_{A\subseteq D\setminus\{d\}}
-\frac{|A|!(|D|-|A|-1)!}{|D|!}
-\bigl[v(A\cup\{d\})-v(A)\bigr].
+\min\bigl(F^{\mathrm{op}},E^{\mathrm{op}}\bigr)
+=\min\left(
+\sum_{k\in K}\sum_{p\in\Omega_k}C_{kp}^{\mathrm{op}}z_{kp},\
+\sum_{k\in K}\sum_{p\in\Omega_k}E_{kp}^{\mathrm{op}}z_{kp}
+\right).
+\label{eq:obj}
+\end{equation}
+式(\ref{eq:obj})不预设成本与排放之间的货币换算.
+陈婉茹等\cite{ref:23}把碳价与排放量相乘后并入经济目标.
+需要在碳价情景下选取一个代表方案时, 本文沿用该结构:
+% FORMULA_SOURCE: Chen et al. (2023), Eq. (5).
+% ADAPTATION: their carbon-trading price term applied to this paper's operating-period emission measure.
+\begin{equation}
+\min\;F^{\mathrm{op}}+p^{\mathrm{car}}E^{\mathrm{op}},
+\label{eq:carbon_price_scalar}
+\end{equation}
+但式(\ref{eq:carbon_price_scalar})只是给定偏好下的情景标量化,
+不替代式(\ref{eq:obj})的主模型身份.
+
+\subsection{联合优化后的合作成本分摊}
+
+路线优化和合作成本分摊依次进行.
+为使不同联盟的成本可比, 先声明统一的目标选择规则$\mathcal P$,
+并对所有联盟使用相同的服务要求、参数口径和求解预算.
+对任意非空企业联盟$A\subseteq\mathcal H$,
+仅开放联盟成员的车场与车辆, 服务其责任客户,
+按规则$\mathcal P$得到运营成本$C(A)$, 并令$C(\varnothing)=0$.
+分摊结果不进入$C(A)$的路径求解过程.
+
+Wang等\cite{ref:7}用Shapley边际贡献结构分配合作利润.
+本文只把特征函数由利润改为成本, 企业$h$的Shapley成本份额为
+% FORMULA_SOURCE: Wang et al. (2023), published p.15, Eq. (46).
+% ADAPTATION: profit characteristic function replaced by coalition cost; subsets re-indexed to exclude member h.
+\begin{equation}
+\phi_h=
+\sum_{A\subseteq\mathcal H\setminus\{h\}}
+\frac{|A|!(|\mathcal H|-|A|-1)!}{|\mathcal H|!}
+\bigl[C(A\cup\{h\})-C(A)\bigr].
 \label{eq:shapley}
 \end{equation}
-若分配$x$满足
+按饶卫振等\cite{ref:92}的成本核原式, 成本分配$x$位于核内, 当且仅当
+% FORMULA_SOURCE: Rao et al. (2019), published p.1524, Section 5.1, definition of the cost core.
+% ADAPTATION: coalition/member symbols changed; x(A) expanded as a sum.
 \begin{equation}
-\sum_{d\in D}x_d=v(D),\qquad
-\sum_{d\in A}x_d\ge v(A),\quad \varnothing\ne A\subset D,
+\sum_{h\in\mathcal H}x_h=C(\mathcal H),\qquad
+\sum_{h\in A}x_h\le C(A),
+\quad \varnothing\ne A\subset\mathcal H .
 \label{eq:core}
 \end{equation}
-则没有任何单家或子联盟能通过退出四家合作获得更高收益, 该分配位于核内.
-记联盟不满意额为$e(A,x)=v(A)-\sum_{d\in A}x_d$;
-核仁按降序对全部$e(A,x)$作字典序最小化, 得到唯一分配$x^{\nu}$.
-本文采用核仁作为结算结果, 同时报出Shapley值以比较贡献分配与联盟稳定性的差异.
-第二层为集合划分结构, 模式集$\Omega_k$随客户规模指数增长,
-本模型是标准VRP的推广, 属于NP-难问题, 第3节给出其启发式求解算法.
-
-\subsection{动态需求处理}
-
-参照动态需求批处理研究\cite{ref:18,ref:71},
-本文同时考虑定时和定量两种批事件触发策略.
-设第$m-1$次重规划发生于时刻$\tau_{m-1}$,
-其后新到事件的累计需求变动量为$W(\tau_{m-1},u)$,
-则第$m$次重规划时刻为
+第一式要求大联盟成本全部分摊, 第二式保证任一子联盟承担的成本
+不高于其独立组织配送的成本.
+同一文献定义联盟满意额为
+% FORMULA_SOURCE: Rao et al. (2019), published p.1524, Section 5.1, definition e(S,x)=c(S)-x(S).
+% ADAPTATION: coalition/member symbols changed; x(A) expanded as a sum.
 \begin{equation}
-\tau_m=\min\bigl\{\min\{u:W(\tau_{m-1},u)\ge\overline W\},\;\tau_{m-1}+T^{\mathrm{int}}\bigr\},
+e(A,x)=C(A)-\sum_{h\in A}x_h.
+\label{eq:cost_excess}
+\end{equation}
+将全部$e(A,x)$按非降序排列后, 核仁是使该满意额向量按字典序最大的
+唯一成本分配\cite{ref:92}.
+若成本核非空, 核仁位于核内, 此时才能据式(\ref{eq:core})说明没有子联盟
+因承担更低独立成本而退出; 核是否非空须由相应联盟成本数据检验.
+两车场和四车场实验均按上述成本博弈口径分别报告,
+不将两方结论外推为四方结论.
+
+\subsection{动态需求与状态继承}
+
+邱莹莹\cite{ref:71}给出了需求量阈值与时间间隔共同触发重规划的判定式.
+以$W(\tau_{m-1},u)$表示从上次重规划后到时刻$u$累计、尚未处理的有效需求量,
+$\overline W$为数量阈值, $T^{\mathrm{int}}$为时间间隔, $t_n$为运营时域终点.
+按其原式作符号适配, 数量阈值首次到达时刻和第$m$次重规划时刻分别为
+% FORMULA_SOURCE: Qiu (2024), thesis p.24, Eqs. (3-3) and (3-2).
+% ADAPTATION: u(t), q(u(t-1),u_q), q, T renamed as tau_m, W(tau_{m-1},u), Wbar, Tint.
+\begin{align}
+\tau_{\overline W}
+&=\min\left\{u\mid
+W(\tau_{m-1},u)\ge\overline W,\quad
+u>\tau_{m-1}\right\},
+\label{eq:quantity_trigger}\\
+\tau_m&=\min\left\{
+\tau_{\overline W},\
+\tau_{m-1}+T^{\mathrm{int}},\
+t_n
+\right\}.
 \label{eq:trigger}
-\end{equation}
-即累计需求变动达到上限$\overline W$或距上次重规划达到间隔$T^{\mathrm{int}}$时, 即触发滚动重规划.
-在重规划时刻$\tau$, 有效客户集合按新增、取消和已完成服务更新:
-\begin{equation}
-N^\tau=(N^{\tau-1}\setminus N_{\mathrm{ser}}^\tau\setminus N_{\mathrm{can}}^\tau)\cup N_{\mathrm{new}}^\tau.
-\label{eq:customer_update}
-\end{equation}
-每辆实体车$k$继承当前位置$o_k^\tau$、最早可用时刻$t_k^\tau$、
-剩余载重$\ell_k^\tau$和剩余电量$\varepsilon_k^\tau$,
-已经完成、已经发车和正在执行的路径前缀不可撤回,
-已完成部分的成本、排放和收益按阶段累计:
-\begin{equation}
-\bar Z^\tau=\bar Z^{\tau-1}+Z^{\tau-1},\quad
-\bar E^\tau=\bar E^{\tau-1}+\Delta E^{\tau-1},\quad
-\bar\Pi_d^\tau=\bar\Pi_d^{\tau-1}+\Pi_d^{\mathrm{stage},\tau-1}.
-\label{eq:accumulation}
-\end{equation}
-状态继承保证滚动重规划不撤回已执行路径、不重复使用实体车、不重复结算历史排放.
+\end{align}
+$W$的统计对象和口径由动态实验协议统一规定.
 
-% ================================================================
-% SECTION 3: 算法设计 (按陈雨蝶: 流程图总述段+叙述式步骤+示意图)
-% ================================================================
-
+李阳等\cite{ref:18}在滚动优化中保留已服务部分,
+将等待车辆的当前位置作为下一阶段的虚拟车场, 并继承剩余载重.
+本文据此冻结已执行路径和已经开始的动作, 从实体车的实际位置、可重新决策时刻、
+剩余载重与剩余电量继续规划; 新增、取消和改量只作用于尚未执行的订单部分.
+已经发生的运营成本与排放只记账一次, 剩余计划仍按式(\ref{eq:obj})评价.
+上述客户更新、状态继承和历史记账均在实现中直接执行,
+不另列形式化的集合更新式或状态恒等式.
 \section{算法设计}
 
-\subsection{算法流程图}
+求解框架需读取静态或动态状态, 生成候选方案, 将候选补全为实体车日排班与充电计划,
+按模型定义的成本和排放双目标评价, 并输出可独立复核的完整方案.
+算法仍在探索阶段, 搜索内核、算子组合和特化组件尚未确定;
+本节只固定求解接口与评价口径, 不把候选架构写成既成算法贡献.
 
-%% MATH_REF: Vidal 2012/2014 (HGS); Rochat & Taillard 1995 (路线池); Wouda 2024 (PyVRP)
-上述模型同时包含跨场服务、车型选择、实体车多趟、分时充电排放、成员结算参与和动态订单,
-其可行解需同时满足路径层与实体车排班层的耦合约束.
-在该结构下, 仅凭路线邻域无法判定一个候选方案是否可行:
-可行与否取决于该方案被补全为实体车排班并完成补能之后的结果.
-因此本文不另行设计搜索内核, 而是直接采用成熟的混合遗传搜索
-(Hybrid Genetic Search, HGS)\cite{ref:76,ref:77}作为搜索底座,
-并在其上构造面向本问题的特化求解组件:
-统一完整评价、实体车多趟补全、碳感知充电排程与动态状态继承.
-算法记为HGS-FRVCP（融合固定路线充电求解的混合遗传搜索）, 主流程如图\ref{fig:algorithm-flow}所示.
-算法按代循环推进: 每代由交叉产生子代, 子代依次经过串行改进链的三步问题特化改进,
-再由完整评价器裁决能否入群, 如图\ref{fig:route-pool}所示.
-图\ref{fig:algorithm-flow}给出总流程, 与下文步骤1--6逐项对应.
-算法全过程坚持同一核算口径: 候选方案能否被接受、能否进入种群、能否存活,
-均由同一完整评价器给出的完整成本与完整可行性决定,
-不以简化路线代价近似替代完整方案代价.
-能源消耗、补能安排、趟间时间与电量衔接、分时电价和时变碳强度进入同一本账;
-候选补全失败时保留失败原因, 不以初始解顶替.
-第4节报告其求解结果。
+混合遗传搜索与统一多属性车辆路径框架\cite{ref:76,ref:77}
+及其开源实现\cite{ref:64}可作为候选搜索基础.
+最终稿须逐项区分直接复用的成熟部分与面向本文问题新增的部分,
+并由同预算消融实验检验新增部分的作用.
+
+\subsection{求解接口}
+
+\textbf{接口1: 状态与输入.}
+静态阶段读取订单、车场、实体车队、时段电价和电网碳强度;
+动态阶段还读取实体车的实际位置、可重新决策时刻、剩余载重与剩余电量,
+以及不可撤回的路径和充电动作.
+
+\textbf{接口2: 候选表示与排班补全.}
+搜索对象须能恢复为式(\ref{eq:trip_flow})--(\ref{eq:trip_linkage})定义的实体车日排班模式,
+并给出每趟、每次充电和相邻趟之间的时间与电量衔接.
+具体候选编码、搜索内核和邻域组合待最终实现确定后据实写入.
+
+\textbf{接口3: 双目标评价与验解.}
+每个完整候选均按式(\ref{eq:obj})计算运营成本与作业期排放,
+并检查客户覆盖、载重、时间窗、SOC、充电窗口和站点容量.
+评价器与独立验解器的实现来源、版本及两者差异须在正式实验中披露.
+
+\textbf{接口4: 动态继承与输出.}
+事件触发后只重排未执行任务, 已发生的成本和排放不再重复计入.
+输出至少包括实体车、趟次、客户序列、服务时刻、SOC轨迹、充电会话、
+两项目标值、完成客户数和完成需求量.
+
+\subsection{算法总流程}
 
 \begin{figure}[H]
   \centering
-  \includegraphics{generated_figures/figure_1_algorithm_flow.pdf}
-  \caption{本文算法流程图}
+  \fbox{\parbox{0.78\textwidth}{\centering
+  \vspace{1.5em}
+  {\color{black!65}\footnotesize
+  [待填：算法实现确定后绘制]\par
+  输入状态 $\rightarrow$ 候选搜索 $\rightarrow$ 排班与充电补全
+  $\rightarrow$ 双目标评价与验解 $\rightarrow$ 输出}
+  \vspace{1.5em}}}
+  \caption{求解框架总流程}
   \label{fig:algorithm-flow}
 \end{figure}
 
-\subsection{算法步骤}
-
-\textbf{步骤1：读取状态并构造可行起点.} 静态阶段读取订单、车场、有限实体车队与分时电价、逐时电网碳强度序列；动态阶段读取式\eqref{eq:customer_update}--\eqref{eq:accumulation}定义的剩余客户与车辆状态。初始个体先由完整模型检查，缺客户或未通过完整评价的候选不进入种群。
-
-\textbf{步骤2：执行混合遗传搜索主循环.} 算法维护可行与不可行两个子种群，按锦标赛选择父代并执行交叉。罚系数依可行解比例自适应调整。停止条件与评价预算由本项目在同一算例、同一机器上的实测收敛记录标定，不直接照搬其他算法的迭代数。
-
-\textbf{步骤3：分阶段提名与最优改进局部搜索.} 交叉子代进入局部搜索，其候选动作由提名器按阶段顺序供给，如图\ref{fig:route-pool}所示：先给出路线邻域动作，包括客户重定位、客户交换、路段反转、路段重定位与尾段交换；再给出机制动作，包括整车车型交换、充电时刻调整与整趟交换。两个阶段的动作按顺序拼接并去重，汇入同一条提名流。局部搜索每轮扫描该提名流的全部候选，按完整评价结果选出其中最优的一个动作并应用，重复至本轮不再产生改善。提名阶段的先后只决定候选出现的次序，取舍一律由完整评价器裁决，不以代理分数替代完整方案代价；每代只将一个最终子代送入种群。
-
-\begin{figure}[H]
-  \centering
-  \includegraphics{generated_figures/figure_2_serial_chain.pdf}
-  \caption{分阶段提名与最优改进局部搜索}
-  \label{fig:route-pool}
-\end{figure}
-
-\textbf{步骤4：完成实体车排班与补能.} 将配送趟指派给具体实体车，按时间顺序衔接多趟任务，并在首趟出发前与相邻趟之间补齐电量。补能过程按分段充电功率函数计算时长，充电电费与充电排放分别按该时段的分时电价与电网碳强度结算。违反时间窗、载重、电量、公共站容量或实体车上限的候选保留失败原因，不以初始解顶替。
-
-\textbf{步骤5：完整评价、入群与生存选择.} 候选方案的完整成本与完整可行性由同一评价器给出；入群按完整可行性分池，生存选择与父代选择使用同一本账。全局最好解必须完整可行，且仅在严格改善时更新。
-
-\textbf{步骤6：独立验解与动态调用.} 进入种群的候选重新执行一次独立检查，避免评价与搜索共用同一实现带来的系统性偏差。动态事件触发后，冻结已经执行的路径前缀，继承各实体车的位置、最早可用时刻、剩余载重与剩余电量，并把已完成部分的成本与排放按阶段累计，随后仅对剩余任务返回步骤2重新求解。
-
+算法名称、流程细节和特化组件以最终实现及表\ref{tab:algorithm-ablation}的正式消融结果为准.
 
 \section{数值实验}
 
-\subsection{算例与参数}
+\subsection{算例、参数与证据口径}
 
-代表实例为京津冀50客户、2车场、97个公共站节点的构造算例，客户责任按编号等分为两家企业各25个。动态事件流包含10个新增客户事件，接单窗为08:00--10:00，共5个触发批；分时电价和碳强度的信息分辨率为1小时。
+代表性构造地理情景包含50个既有客户、2个车场和97个候选公共充电位置.
+这些数量为算例构造设定, 不代表对现实总体的抽样.
+电价与电网碳强度统一映射到48个半小时时段;
+若原始序列为逐小时数据, 同一小时值映射到相邻两个半小时时段.
+动态事件类型、到达时刻和触发批次须在正式动态实验方案确定后写入,
+本稿不沿用探索性小试的设置.
 
-车辆成本、容量与柴油价格取自本文算例的车辆参数与当地价格表；电动车非能源里程成本中的电池折旧部分按电池价格与寿命里程折算，寿命里程参照Goeke与Schneider\cite{ref:27}，电动车相对燃油车每辆每日50元的固定成本溢价参照陈婉茹等\cite{ref:23}；车场单车额定充电功率参照中国地方新能源汽车充（换）电设施专项规划；分时电价与逐时电网碳强度取自北京2025年2月12日的当地工商业代理购电价格表与省级逐小时碳强度投影数据集，信息分辨率为1小时。关键参数如表\ref{tab:parameters}所示。
+表\ref{tab:parameters}只列模型输入, 不把输入参数当作实验发现.
+构造参数和外部数据分别注明性质;
+缺少可核原始出处的数值保留待核标记, 不以相似文献代替出处.
 
 \begin{table}[htbp]
   \centering
-  \caption{关键车辆、充电、电价与碳强度参数及来源}
+  \caption{关键算例输入、单位与依据}
   \label{tab:parameters}
   \scriptsize
-  \begin{tabular}{lrl}
+  \begin{tabularx}{\textwidth}{>{\RaggedRight\arraybackslash}p{0.25\textwidth}
+    >{\centering\arraybackslash}p{0.20\textwidth}
+    >{\centering\arraybackslash}p{0.15\textwidth}X}
     \toprule
-    参数 & 数值 & 单位\\
+    参数 & 数值 & 单位 & 性质与依据\\
     \midrule
-    燃油车日固定成本 & 170.00 & 元/(辆·日)\\
-    电动车日固定成本 & 220.00 & 元/(辆·日)\\
-    燃油车非能源里程成本 & 0.7800 & 元/km\\
-    电动车非能源里程成本 & 0.9145 & 元/km\\
-    车辆容积容量 & 7.2 & m$^3$\\
-    柴油价格 & 7.48 & 元/L\\
-    车场单车额定充电功率 & 60.0 & kW\\
-    车场分时电价（谷/平/峰） & 0.5633／0.8364／1.1486 & 元/kWh\\
-    公共站服务费 & 0.4 & 元/kWh\\
-    公共站分时总电价（谷/平/峰） & 0.9633／1.2364／1.5486 & 元/kWh\\
-    逐时电网碳强度（24 个小时值） & 0.1541～0.6439 & kgCO$_2$e/kWh\\
-    单位碳价 & 0.07502 & 元/kgCO$_2$e\\
+    燃油车日固定成本 & 170.00 & 元/(辆$\cdot$日) & 构造算例输入; 精确取值源待核\\
+    电动车日固定成本 & 220.00 & 元/(辆$\cdot$日) & 构造算例输入; 车型成本结构参照\cite{ref:23,ref:27}\\
+    燃油车非能源里程成本 & 0.7800 & 元/km & 构造算例输入; 精确取值源待核\\
+    电动车非能源里程成本 & 0.9145 & 元/km & 构造算例输入; 电池寿命里程口径参照\cite{ref:27}\\
+    车型载重上限$Q_k$ & \TBD{正式车辆参数表} & kg & 必须与模型的质量载重口径一致\\
+    柴油价格 & 7.48 & 元/L & 外部价格输入; 精确日期和原始出处待核\\
+    车场额定充电功率 & 60.0 & kW/车 & 构造设备输入; 设备或规划出处待核\\
+    车场分时电价(谷/平/峰) & 0.5633/0.8364/1.1486 & 元/kWh & 分时电价情景\cite{ref:83,ref:88}\\
+    公共站服务费 & 0.4 & 元/kWh & 充电价格情景\cite{ref:88}\\
+    公共站分时总价(谷/平/峰) & 0.9633/1.2364/1.5486 & 元/kWh & 电度电价与服务费之和\\
+    逐时电网碳强度范围 & 0.1541--0.6439 & kgCO$_2$e/kWh & 时序数据集\cite{ref:82}\\
+    碳价情景基点 & 0.07502 & 元/kgCO$_2$e & 市场行情输入\cite{ref:87}\\
+    跨场协调成本$c^{\mathrm{tr}}$ & \TBD{正式情景值} & 元/客户 & 构造协调摩擦参数, 不作现实标定\\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
 \end{table}
 
-\subsection{公开算例上的求解结果}
+正式比较均须使用同批输入、同一评价器和可比计算预算,
+同时报告完成客户数与完成需求量.
+随机算法还须报告种子、独立运行次数、停止条件、运行环境及失败运行;
+这些项目由正式实验产物回填, 不从预实验记录推断.
 
-公开实验采用28个多车场带时间窗标准算例检验基础路径搜索能力，对照对象为文献中在同一算例集上报告结果的三种方法。各算法均以相同墙钟预算独立运行10次，表\ref{tab:public28}报告每题的最好值与均值，并以公开最好解为基准计算相对差距。28题均完成全部客户并通过原始精度路线复核。
+\subsection{公开算例求解质量}
+
+公开算例用于检验基础路径搜索质量和计算代价.
+对照算法、原论文报告值、预算换算依据及最优已知值须逐题回到原始论文核对;
+本文的Best、Mean和运行时间只由正式重复运行产生.
 
 \begin{table}[htbp]
   \centering
-  \caption{公开算例上不同算法的求解结果}
+  \caption{公开算例求解质量与计算代价}
   \label{tab:public28}
   \scriptsize
   \resizebox{\textwidth}{!}{%
-  \begin{tabular}{lrrrrrrrrr}
+  \begin{tabular}{lrrrrrr}
     \toprule
-    & & \multicolumn{2}{c}{VCGP\cite{ref:74}} & \multicolumn{2}{c}{MDFIHA\cite{ref:75}} & \multicolumn{2}{c}{MDFIHA-ETGA\cite{ref:75}} & \multicolumn{2}{c}{本文算法}\\
-    \cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
-    算例 & BKS & Best & Avg & Best & Avg & Best & Avg & Best & Avg\\
+    算例 & 文献参考值 & 本文Best & 本文Mean & 相对差距 & 运行时间 & 完整可行运行数\\
     \midrule
-    PR11A & 6708.602 & 6776.605 & 6799.646 & 6770.045 & 6793.063 & \textbf{6755.371} & 6778.339 & 6776.761 & 6796.414\\
-    PR11B & 4771.894 & 4871.793 & 4888.357 & 4878.933 & 4895.522 & \textbf{4812.759} & 4829.123 & 4820.376 & 4834.355\\
-    PR12A & 8168.677 & 8290.490 & 8318.678 & 8373.357 & 8401.827 & 8308.402 & 8336.651 & \textbf{8251.671} & 8275.601\\
-    PR12B & 5980.499 & \textbf{6017.254} & 6037.712 & 6051.288 & 6071.862 & 6076.778 & 6097.439 & 6041.261 & 6058.781\\
-    PR13A & 9624.626 & 9779.693 & 9812.944 & 9678.919 & 9711.827 & \textbf{9678.893} & 9711.801 & 9722.412 & 9750.607\\
-    PR13B & 7220.380 & 7438.772 & 7464.064 & 7323.973 & 7348.874 & \textbf{7242.145} & 7266.768 & 7293.739 & 7314.891\\
-    PR14A & 11167.289 & 11436.379 & 11475.262 & 11361.140 & 11399.768 & 11285.011 & 11323.380 & \textbf{11280.749} & 11313.463\\
-    PR14B & 8736.947 & 8818.722 & 8848.705 & \textbf{8798.266} & 8828.180 & 8844.052 & 8874.121 & 8825.714 & 8851.309\\
-    PR15A & 13096.486 & 13245.241 & 13290.275 & \textbf{13151.356} & 13196.071 & 13166.938 & 13211.705 & 13229.546 & 13267.912\\
-    PR15B & 10416.665 & 10640.003 & 10676.179 & 10599.566 & 10635.605 & \textbf{10473.445} & 10509.055 & 10522.498 & 10553.013\\
-    PR16A & 14486.543 & 14714.583 & 14764.612 & 14855.590 & 14906.099 & 14708.862 & 14758.872 & \textbf{14633.726} & 14676.164\\
-    PR16B & 11644.345 & \textbf{11681.290} & 11721.007 & 11830.832 & 11871.057 & 11858.954 & 11899.275 & 11762.652 & 11796.764\\
-    PR17A & 6252.701 & 6309.557 & 6331.010 & \textbf{6306.409} & 6327.851 & 6313.042 & 6334.506 & 6316.228 & 6334.545\\
-    PR17B & 4748.677 & 4871.393 & 4887.955 & 4824.408 & 4840.811 & \textbf{4772.027} & 4788.252 & 4796.924 & 4810.835\\
-    PR18A & 8281.715 & 8496.505 & 8525.394 & 8449.153 & 8477.880 & 8371.174 & 8399.636 & \textbf{8365.857} & 8390.118\\
-    PR18B & 6447.246 & 6531.747 & 6553.954 & \textbf{6505.291} & 6527.409 & 6530.634 & 6552.839 & 6512.750 & 6531.637\\
-    PR19A & 10722.570 & 10866.504 & 10903.450 & \textbf{10744.685} & 10781.217 & 10776.726 & 10813.367 & 10831.511 & 10862.922\\
-    PR19B & 8116.723 & 8314.483 & 8342.752 & 8209.330 & 8237.242 & \textbf{8133.073} & 8160.725 & 8199.189 & 8222.967\\
-    PR20A & 12081.447 & 12329.162 & 12371.081 & 12350.554 & 12392.546 & 12217.307 & 12258.845 & \textbf{12204.194} & 12239.586\\
-    PR20B & 10221.070 & \textbf{10266.821} & 10301.728 & 10391.381 & 10426.711 & 10402.187 & 10437.555 & 10324.916 & 10354.858\\
-    PR21A & 6188.548 & \textbf{6212.925} & 6234.049 & 6246.613 & 6267.852 & 6261.625 & 6282.915 & 6251.424 & 6269.553\\
-    PR21B & 4844.227 & 4938.834 & 4955.626 & 4925.518 & 4942.264 & \textbf{4876.486} & 4893.066 & 4893.444 & 4907.635\\
-    PR22A & 8040.189 & 8231.587 & 8259.574 & 8234.595 & 8262.593 & 8137.099 & 8164.765 & \textbf{8121.877} & 8145.430\\
-    PR22B & 6451.205 & 6535.955 & 6558.177 & 6544.138 & 6566.388 & 6551.660 & 6573.935 & \textbf{6516.749} & 6535.648\\
-    PR23A & 10036.349 & 10164.338 & 10198.897 & \textbf{10058.497} & 10092.695 & 10111.097 & 10145.475 & 10138.318 & 10167.719\\
-    PR23B & 8395.457 & 8613.853 & 8643.140 & 8458.506 & 8487.265 & \textbf{8407.924} & 8436.511 & 8480.755 & 8505.349\\
-    PR24A & 12027.230 & 12349.612 & 12391.601 & 12249.270 & 12290.917 & \textbf{12112.977} & 12154.161 & 12149.427 & 12184.660\\
-    PR24B & 10795.830 & 10906.100 & 10943.181 & 10957.985 & 10995.242 & 10957.926 & 10995.183 & \textbf{10905.516} & 10937.142\\
-    \midrule
-    Average & 8774.076 & 8916.079 & 8946.393 & 8897.486 & 8927.737 & 8862.306 & 8892.438 & 8863.221 & 8888.924\\
-    Nbks & 28 & 4 & --- & 6 & --- & 10 & --- & 8 & ---\\
+    PR11A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR11B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR12A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR12B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR13A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR13B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR14A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR14B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR15A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR15B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR16A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR16B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR17A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR17B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR18A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR18B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR19A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR19B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR20A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR20B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR21A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR21B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR22A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR22B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR23A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR23B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR24A & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
+    PR24B & \multicolumn{6}{c}{\TBD{原论文逐题核对并由正式运行回填}}\\
     \bottomrule
-  \end{tabular}
-  }
+  \end{tabular}}
 \end{table}
 
-\subsection{代表实例最终解}
-
-表\ref{tab:final-solution}把一辆实体车的一日多趟拆成多行，车辆号与车辆固定成本只在该车第一趟出现，以便直接读出固定成本按车计一次而非按趟重复计取；逐车日里程同样只在首行列出。
+\subsection{代表实例执行方案}
 
 \begin{table}[htbp]
   \centering
-  \caption{代表实例最终配送方案}
+  \caption{代表实例的实体车多趟执行方案}
   \label{tab:final-solution}
   \scriptsize
   \resizebox{\textwidth}{!}{%
-  \begin{tabular}{llllllrr}
+  \begin{tabular}{llllllll}
     \toprule
-    实体车 & 所属车场 & 车型 & 趟次 & 客户序列 & 发车/返回时刻 & 本车日里程（km） & 车辆固定成本（元）\\
+    实体车 & 所属车场 & 车型 & 趟次 & 客户序列 & 发车/返回时刻 & 日里程 & 日固定成本\\
     \midrule
-    CV\_A\_1 & 车场A & 燃油车 & 1 & C035--C022 & 08:00--10:14 & 151.083 & 170.000\\
-              &       &        & 2 & C014--C028--C006--C026 & 10:52--13:36 & & \\
-    CV\_A\_2 & 车场A & 燃油车 & 1 & C031--C017 & 08:00--09:38 & 83.613 & 170.000\\
-    CV\_B\_1 & 车场B & 燃油车 & 1 & C024--C023--C019--C029 & 08:00--09:22 & 56.999 & 170.000\\
-    CV\_B\_2 & 车场B & 燃油车 & 1 & C025--C015--C040--C013 & 08:00--10:35 & 151.064 & 170.000\\
-              &       &        & 2 & C034--C047--C049 & 11:10--12:48 & & \\
-              &       &        & 3 & C048--C020--C037 & 13:24--14:57 & & \\
-    CV\_B\_3 & 车场B & 燃油车 & 1 & C033--C043--C038 & 08:00--10:41 & 162.811 & 170.000\\
-              &       &        & 2 & C036--C030--C041 & 11:15--12:52 & & \\
-              &       &        & 3 & C009--C007 & 13:28--14:46 & & \\
-    CV\_B\_4 & 车场B & 燃油车 & 1 & C002--C012 & 08:00--09:31 & 93.774 & 170.000\\
-              &       &        & 2 & C008--C050--C046--C021 & 10:05--12:18 & & \\
-    CV\_B\_5 & 车场B & 燃油车 & 1 & C001--C027--C016 & 08:00--09:47 & 119.043 & 170.000\\
-              &       &        & 2 & C005--C045--C018--C039 & 10:22--12:40 & & \\
-    CV\_B\_6 & 车场B & 燃油车 & 1 & C010--C044--C011 & 08:00--09:52 & 117.142 & 170.000\\
-              &       &        & 2 & C042--C004--C032--C003 & 10:28--12:44 & & \\
+    \multicolumn{8}{c}{\TBD{由正式最优或代表解的原始执行方案逐车逐趟回填}}\\
     \bottomrule
-  \end{tabular}
-  }
+  \end{tabular}}
 \end{table}
 
-（1）该保存解完成50/50个客户和13264/13264~kg需求，使用8辆实体车执行16趟，总里程935.530~km。车辆固定成本1360.000元按8辆实体车各计一次，不按16趟重复计取。
+表\ref{tab:final-solution}回填时, 同一实体车的固定成本只在该车首次出现时列示一次.
+表后同时报告完成客户数、完成需求量、两项目标值、车型构成、趟数、里程、
+充电量及物理违规检查结果.
 
-（2）单目标总账为3033.206元，其中固定成本1360.000元、里程成本729.713元、燃油成本919.139元、电费0.000元、碳价折算成本24.354元。
-
-（3）燃油消耗为122.879~L，燃油车直接排放324.636~kgCO$_2$e；该解没有派遣电动车，因此电能消耗和电动车充电排放均为0。
-
-\subsection{本文算法收敛过程}
-
-图\ref{fig:convergence}给出代表实例上三条消融臂的收敛过程, 横轴为实际运行时间.
-分析可知：1) 完整算法的目标值在240秒内由3961.42元降至3033.21元, 降幅23.4\%, 其后364秒不再改善, 据此把单次求解的评价预算标定为600秒, 后续各节实验均按该预算执行.
-2) 去掉充电排程后, 收敛曲线在3121.47元处停住, 相对完整算法高2.91\%, 说明补能时刻的决策确实参与了目标改善, 而非仅影响事后核算.
-3) 只保留路线邻域动作时, 曲线在3208.94元处停住, 相对完整算法高5.79\%, 且下降过程明显更早变平.
-4) 三条曲线的形态一致, 均在前四分之一预算内完成大部分改善, 说明预算标定不因组件增减而失效.
-以上数据证明了问题特化组件的有效性, 也说明该组件的作用发生在搜索过程之中.
+\subsection{收敛过程与算法消融}
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics{generated_figures/figure_2_algorithm_convergence.pdf}
-  \caption{不同算法迭代图}
+  \fbox{\parbox{0.78\textwidth}{\centering
+  \vspace{1.5em}\TBD{由同预算正式运行绘制各算法臂的收敛曲线}\vspace{1.5em}}}
+  \caption{各算法臂的正式收敛过程}
   \label{fig:convergence}
 \end{figure}
 
-\subsection{混合车队车型指派层}
+\begin{table}[htbp]
+  \centering
+  \caption{算法组件消融结果}
+  \label{tab:algorithm-ablation}
+  \scriptsize
+  \begin{tabular}{lccccccc}
+    \toprule
+    算法臂 & 相对基础臂增加内容 & Best & Mean & 双目标比较 & 运行时间 & 完成代数 & 完整可行运行数\\
+    \midrule
+    \multicolumn{8}{c}{\TBD{算法确定后按逐步增加组件的同预算方案回填}}\\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-受购置成本与补能条件限制, 车队无法一次性完成电动化替换,
-燃油车与电动车在相当长时期内共存.
-企业由此面对的第一个决策问题是: 两类车型的续航、能耗与成本结构不同,
-何种配送任务应交由电动车、何种应保留给燃油车,
-以及车型构成改变之后, 原有的最优路径是否仍然最优.
-本节在同一实例上给定不同的车型可用名额, 比较实际派遣构成、路径结构与成本排放.
+停止条件和正式预算只依据最终算法、正式算例和基准机上的收敛记录确定,
+不由预实验曲线或其他算法的迭代数代替.
 
-车型层设置18CV/2EV、13CV/7EV、7CV/13EV和2CV/18EV四个可用名额档，四档均完成50/50个客户与13264.0/13264.0~kg需求。前两档中燃油车名额宽裕，算法在现行碳价下未派遣任何电动车；后两档燃油车名额收紧，电动车被迫进入车队。
+\subsection{混合车队车型内生选择}
+
+本实验改变可用车队条件, 但由模型内生决定实际派遣车型、实体车和趟次.
+正式结果按情景逐行报告, 不以可用电动车比例代替实际派遣比例.
 
 \begin{table}[htbp]
   \centering
-  \caption{混合车队可用名额与实际派遣对比}
+  \caption{车队可用条件与实际车型指派}
   \label{tab:fleet-levels}
   \scriptsize
-  \resizebox{\textwidth}{!}{%
-  \begin{tabular}{lrrrr}
+  \begin{tabular}{lcccccc}
     \toprule
-    指标（单位） & 18CV/2EV & 13CV/7EV & 7CV/13EV & 2CV/18EV\\
+    情景 & 可用燃油车/电动车 & 实际派遣构成 & 运营成本 & 作业期排放 & 完成客户数 & 完成需求量\\
     \midrule
-    单目标总账（元） & \textbf{3339.410} & 3372.864 & 3802.861 & 4290.337\\
-    车辆固定成本（元） & \textbf{1530.000} & 1700.000 & 2290.000 & 2980.000\\
-    非能源里程成本（元） & 790.240 & \textbf{730.169} & 806.214 & 894.238\\
-    燃油成本（元） & 992.863 & \textbf{918.361} & 579.402 & 165.041\\
-    电费（元） & \textbf{0.000} & \textbf{0.000} & 108.885 & 240.096\\
-    碳价折算成本（元） & 26.308 & \textbf{24.334} & 18.360 & 11.042\\
-    可用燃油车/电动车（辆） & 18/2 & 13/7 & 7/13 & 2/18\\
-    实际派遣燃油车/电动车（辆） & 9/0 & 10/0 & 7/5 & 2/12\\
-    配送趟次（趟） & 17 & \textbf{16} & 18 & 20\\
-    总里程（km） & 1013.128 & \textbf{936.115} & 968.412 & 1002.573\\
-    燃油车直接排放（kgCO$_2$e） & 350.675 & \textbf{324.361} & 204.436 & 58.223\\
-    电动车充电排放（kgCO$_2$e） & \textbf{0.000} & \textbf{0.000} & 40.361 & 88.973\\
+    \multicolumn{7}{c}{\TBD{按正式车队情景逐行回填; 不沿用预实验方案或预实验数值}}\\
     \bottomrule
   \end{tabular}
-  }
 \end{table}
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics{generated_figures/figure_4_mixed_fleet.pdf}
-  \caption{不同碳价下混合车队的车型构成}
-  \label{fig:fleet-carbon-price}
-\end{figure}
+\subsection{充电模型与非线性近似}
 
-分析可知：1) 燃油车名额宽裕时, 算法不会主动选用电动车. 18CV/2EV和13CV/7EV两档的实际派遣构成分别为9/0和10/0, 电动车名额闲置.
-2) 名额收紧后电动车被迫进入车队, 总成本随之上升. 7CV/13EV档派遣7辆燃油车和5辆电动车, 总账为3802.861元; 2CV/18EV档派遣2辆燃油车和12辆电动车, 总账为4290.337元, 相对13CV/7EV档分别增加12.75\%和27.20\%.
-3) 成本上升主要来自车辆固定成本. 四档的固定成本依次为1530.000、1700.000、2290.000和2980.000元; 电动车补能占用运行时间, 单车可承担的趟次减少, 因而需要启用更多车辆.
-4) 与成本相反, 排放随电动车比例上升而持续下降. 四档的运营总排放依次为350.675、324.361、244.797和147.196~kgCO$_2$e, 最低档相对最高档下降58.03\%.
-综上所述, 在现行碳价下提高电动车比例是一项花钱买减排的选择, 企业不会自发实施. 政府若希望车队结构真正转变, 应把碳价提高到使电动车不再吃亏的水平, 或对补能设施投资给予直接补贴, 以缩短电动车的占用时间; 对于企业, 在碳价未到位之前, 车型决策应以名额约束下的成本最优为准, 而非以电动化比例为目标.
-
-\subsection{非线性充电对照}
-
-电动车一旦真正投入运行, 补能过程立即成为路径可行性的组成部分.
-真实补能并非恒功率: 荷电状态越高, 单位时间充入的电量越少.
-若按恒功率刻画补能, 补能时长会被系统性低估,
-一条路线能否在时间窗内完成、下一趟能否按时发车都可能被判断错误.
-本节以线性恒功率为影子对照, 检验真实充电曲线是否改变车型配置与路径安排.
-
-非线性充电按S/R分组：S表示在该充电函数假设下求得的账面结果，R表示把同一方案按参考非线性充电函数逐会话回算后的真实结果。三种假设依次为恒功率、分段SOC功率与非线性SOC功率；后者的S与R同源，故只报R列。
+正式充电模型变体只有恒功率与可信非线性SOC功率函数两种.
+每个变体先按自身假设求解, 再把所得方案统一按非线性函数回算,
+以区分优化假设造成的方案差异和回算可行性差异.
 
 \begin{table}[htbp]
   \centering
-  \caption{不同充电功率函数的账面求解与非线性回算对比}
+  \caption{两种充电模型的求解与统一回算}
   \label{tab:nonlinear-charging}
   \scriptsize
-  \resizebox{\textwidth}{!}{%
-  \begin{tabular}{lrrrrr}
+  \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llcccccc@{}}
     \toprule
-    & \multicolumn{2}{c}{恒功率} & \multicolumn{2}{c}{分段SOC功率} & 非线性SOC功率\\
-    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-6}
-    指标（单位） & S & R & S & R & R\\
+    \makecell{求解充电\\模型} & \makecell{统一回算\\模型} &
+    运营成本 & \makecell{作业期\\排放} & \makecell{回算\\可行性} &
+    \makecell{完成\\客户数} & \makecell{完成\\需求量} & \makecell{充电\\时长}\\
     \midrule
-    单目标总账（元） & 3698.412 & 3821.657 & 3742.085 & \textbf{3746.318} & 3746.318\\
-    车辆固定成本（元） & 1850.000 & 2070.000 & 1850.000 & 1850.000 & 1850.000\\
-    非能源里程成本（元） & 948.372 & 948.372 & 951.864 & 951.864 & 951.864\\
-    燃油成本（元） & 792.418 & 792.418 & 795.336 & 795.336 & 795.336\\
-    电费（元） & 84.766 & (不适用) & 121.945 & 124.826 & 124.826\\
-    碳价折算成本（元） & 22.856 & 10.867 & 22.940 & 24.292 & 24.292\\
-    可行运行数（次） & 10/10 & 6/10 & 10/10 & 10/10 & 10/10\\
-    充电会话数（次） & 12 & 12 & 13 & 13 & 13\\
-    充电量（kWh） & 176.482 & 176.482 & 181.394 & 181.394 & 181.394\\
-    充电时长（min） & 214.6 & 297.3 & 268.9 & 271.4 & 271.4\\
-    会话最高SOC（\%） & 82.4 & 82.4 & 88.6 & 88.6 & 88.6\\
-    充电排放（kgCO$_2$e） & 32.418 & 32.418 & 38.226 & 39.514 & 39.514\\
-    完成客户数（个） & 50/50 & 30/50 & 50/50 & 50/50 & 50/50\\
-    完成需求量（kg） & 13264.0/13264.0 & 7958.4/13264.0 & 13264.0/13264.0 & 13264.0/13264.0 & 13264.0/13264.0\\
+    恒功率 & 非线性SOC功率 & \TBD{结果} & \TBD{结果} & \TBD{结果} &
+      \TBD{结果} & \TBD{结果} & \TBD{结果}\\
+    非线性SOC功率 & 非线性SOC功率 & \TBD{结果} & \TBD{结果} & \TBD{结果} &
+      \TBD{结果} & \TBD{结果} & \TBD{结果}\\
     \bottomrule
-  \end{tabular}
-  }
+  \end{tabular*}
 \end{table}
 
-分析可知：1) 恒功率假设会系统性低估补能时长. 同一方案在恒功率下的账面充电时长为214.6~min, 按非线性函数回算后升至297.3~min, 增加38.54\%.
-2) 低估补能时长会把不可行方案误判为可行. 恒功率假设下的10次运行在账面上全部可行, 回算后仅6次可行, 完成客户数由50降至30.
-3) 分段SOC功率假设与真实函数的差距很小. 其S列与R列的总账分别为3742.085元和3746.318元, 相差0.11\%, 可行运行数与完成需求量均未发生变化.
-4) 差距的根源在于会话是否越过功率拐点. 三种假设下的会话最高SOC分别为82.4\%、88.6\%和88.6\%, 越过85\%拐点后单位时间补入电量明显下降.
-综上所述, 补能过程的刻画精度直接决定路径方案的可行性判断, 而非仅影响成本核算的小数位. 对于企业, 排班时应按真实充电曲线预留补能时间, 不宜按恒功率估算; 政府在规划公共充电设施时, 也应把高荷电状态下的功率衰减计入服务能力评估.
-
-\subsection{时变碳强度下的充电时刻层}
-
-补能过程刻画真实之后, 更深一层的问题随之显现:
-电动车并非只要用电就天然低碳.
-同样充入一度电, 在不同时段对应的电网碳排放并不相同,
-因此不能只回答充入多少, 还须回答何时充入.
-而何时可充又取决于何时发车、服务哪些客户、何时返场以及在何处补能——
-补能窗口本身是配送排班的产物, 而非外生给定.
-本节考察车辆是否值得为进入低碳时段而改变自身的运行安排.
-
-固定平均碳强度、时变有空即充、时变电费最省与时变碳感知四个对照臂使用同一实例、同一服务要求与同一配送排班，四臂均完成50/50个客户和13264.0/13264.0~kg需求。由于排班固定，五项成本中的车辆固定成本、非能源里程成本与燃油成本在四臂之间保持不变，合计2884.766元；臂间差异只出现在电费与碳价折算成本两项，因而可以把充电时刻的作用从路线变化中干净地分离出来。
+分段线性充电曲线只承担式(\ref{eq:charge_duration})的数值求逆和近似误差检验,
+其精度单独验证, 不列为第三个优化变体.
 
 \begin{table}[htbp]
   \centering
-  \caption{时变电网碳强度与充电选择规则对比}
-  \label{tab:carbon-charging}
-  \scriptsize
-  \resizebox{\textwidth}{!}{%
-  \begin{tabular}{lrrrrr}
+  \caption{非线性充电函数的分段线性近似误差}
+  \label{tab:nonlinear-approximation}
+  \small
+  \begin{tabular}{lccc}
     \toprule
-    指标（单位） & 固定平均碳强度 & 时变有空即充 & 时变电费最省 & 时变碳感知 & 碳感知相对固定基准\\
+    近似设置 & 最大充电时长误差 & 最大分时电量误差 & 可行性判定一致性\\
     \midrule
-    单目标总账（元） & \textbf{3032.527} & 3032.970 & 3029.824 & 3055.063 & +0.743\%\\
-    车辆固定成本（元） & 1780.000 & 1780.000 & 1780.000 & 1780.000 & 0\\
-    非能源里程成本（元） & 811.907 & 811.907 & 811.907 & 811.907 & 0\\
-    燃油成本（元） & 285.302 & 285.302 & 285.302 & 285.302 & 0\\
-    电费（元） & 141.525 & 141.525 & \textbf{138.204} & 168.049 & +18.742\%\\
-    碳价折算成本（元，碳价0.075） & 6.236 & 6.679 & 6.854 & \textbf{2.247} & $-63.961\%$\\
-    充电侧总账（元） & \textbf{147.761} & 148.203 & 145.058 & 170.297 & +15.252\%\\
-    充电量（kWh） & 189.279 & 189.279 & 189.279 & 189.279 & 0\\
-    可移动充电量（kWh） & 0.000 & 0.000 & 0.000 & \textbf{174.732} & ---\\
-    充电排放（kgCO$_2$e） & 83.150 & 89.048 & 91.387 & \textbf{29.967} & $-63.961\%$\\
-    配送作业阶段总排放（kgCO$_2$e） & 183.917 & 189.816 & 192.155 & \textbf{130.734} & $-28.917\%$\\
-    完成需求量/总需求量（kg） & 13264.0/13264.0 & 13264.0/13264.0 & 13264.0/13264.0 & 13264.0/13264.0 & 0\\
+    \multicolumn{4}{c}{\TBD{由同一组充电会话的非线性函数精确值与分段线性近似值配对回填}}\\
     \bottomrule
   \end{tabular}
-  }
 \end{table}
 
-表\ref{tab:carbon-charging}按充电账、全系统排放账和全系统钱账三个尺度递进呈现。固定平均因子0.4393~kgCO$_2$e/kWh会抹平时刻差异；时变碳感知把174.732~kWh移入更清洁窗口，使充电排放减少59.082~kgCO$_2$e，但在0.075元/kg碳价下电费增加26.525元，完整目标净增22.094元。
+\subsection{时变电网碳强度与充电决策}
+
+主实验在每个策略下重新优化路径、车型、实体车排班和充电时刻,
+用于评价时变电网碳强度进入联合决策后的整体差异.
+固定排班只用于图\ref{fig:carbon-charging}说明哪些充电动作在物理上可移动,
+不作为主效应证据.
+
+\begin{table}[htbp]
+  \centering
+  \caption{时变电网碳强度策略的全量重优化结果}
+  \label{tab:carbon-charging}
+  \scriptsize
+  \begin{tabular}{lccc}
+    \toprule
+    指标 & 时变碳关闭的基准策略 & 分时电价导向策略 & 时变碳强度导向策略\\
+    \midrule
+    路径、车型和充电是否重新优化 & 是 & 是 & 是\\
+    运营成本 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    作业期排放 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    实际派遣燃油车/电动车 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    总充电量 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    完成客户数 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    完成需求量 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{generated_figures/figure_3_carbon_tariff_charging.pdf}
-  \caption{电网碳强度、分时电价与充电时刻}
+  \begin{tikzpicture}[x=0.88cm,y=0.72cm,font=\small]
+    \draw[->] (0,0) -- (10.7,0) node[right]{时间};
+    \foreach \x/\lab in {0/开始,3/返场,6/再发车,9/结束}
+      \draw (\x,0.10)--(\x,-0.10) node[below=2pt]{\lab};
+    \draw[fill=black!15] (0,0.55) rectangle (3,1.15);
+    \node at (1.5,0.85){配送趟1};
+    \draw[fill=green!18] (3,0.55) rectangle (6,1.15);
+    \node at (4.5,0.85){合法充电窗口};
+    \draw[fill=black!15] (6,0.55) rectangle (9,1.15);
+    \node at (7.5,0.85){配送趟2};
+    \draw[thick,blue!70] (0,2.15) .. controls (2,2.65) and (3.5,1.65) .. (5,1.85)
+      .. controls (6.5,2.05) and (8,2.75) .. (10,2.25);
+    \node[blue!70,left] at (0,2.15){$\gamma_t$};
+    \draw[dashed] (3,1.25)--(3,2.8);
+    \draw[dashed] (6,1.25)--(6,2.8);
+    \node[align=center] at (4.5,3.15){只可在车辆停留窗口内\\选择充电时刻与电量};
+  \end{tikzpicture}
+  \caption{配送排班产生的合法充电窗口示意图(非实验结果)}
   \label{fig:carbon-charging}
 \end{figure}
 
-图\ref{fig:carbon-charging}(a)显示，电价谷段与电网碳强度低谷并不重合：谷段八小时的碳强度处于全天最高区间，最高值0.644~kgCO$_2$e/kWh出现在凌晨谷段之内，而全天最低值0.154出现在电价平段的午间。两个信号在时间上方向相反，仅按电费最省安排充电，会把充电推向碳强度最高的时段。图\ref{fig:carbon-charging}(b)进一步表明，这一错位在本文的配送排班下确实可被利用：两种规则充入的总电量相同，均为189.3~kWh，但有空即充把其中103.9~kWh置于凌晨谷段，碳感知择时则把143.6~kWh移至午间低碳时段。可移动性来自实体车多趟排班——车辆日间返场装货的间隔恰好落在碳强度低谷区间，因而已登记的10次充电中有9次改期成功，92.3\%的电量得以移动，仅14.5~kWh因窗口不可用而保留原位。该窗口并非外生给定，改变路线与趟次划分即会改变可用的补能时段。
+\subsection{碳价情景}
 
-\subsection{碳价情景扫描}
-
-上一节表明, 改变充电时刻可以降低充电环节排放, 但同时抬高电费支出.
-在现行碳价水平下, 企业按自身账目并不会主动作出这一改变;
-这并非企业不重视减排, 而是该项改变在其成本核算中不成立.
-若要使企业的经济决策与减排目标一致, 碳价须提高到何种水平, 是政策制定者必须回答的问题.
-本节按阶梯逐点抬高单位碳价, 定位二者对齐的临界区间.
-
-表\ref{tab:carbon-price}独立承载政策情景。每个碳价点对应碳感知规则与有空即充规则的配对完整目标差；正值表示碳感知更贵，负值表示碳感知更省。两策略的完成客户数和完成需求量沿用充电时刻层的同批服务要求，具体需求字段仍为13264.0/13264.0~kg。
+碳价只用于式(\ref{eq:carbon_price_scalar})的偏好情景,
+不改变式(\ref{eq:obj})的双目标身份.
+正式结果只据配对实验判断成本--排放选择随碳价变化的方向与条件,
+不据本文算例给出政府应采用的具体价格数值.
 
 \begin{table}[htbp]
   \centering
-  \caption{单位碳价情景扫描结果}
+  \caption{碳价情景下的配对结果}
   \label{tab:carbon-price}
   \small
-  \begin{tabular}{rr}
+  \begin{tabular}{lcccc}
     \toprule
-    单位碳价（元/kgCO$_2$e） & 碳感知相对有空即充的完整目标变化（元）\\
+    碳价情景 & 被选策略 & 运营成本 & 作业期排放 & 相对基准趋势\\
     \midrule
-    0.075 & +22.094\\
-    0.20 & +14.708\\
-    0.60 & $-8.924$\\
-    1.10 & $-38.465$\\
-    1.50 & $-62.098$\\
-    2.10 & $-97.547$\\
+    \multicolumn{5}{c}{\TBD{按预先确定的碳价情景逐点回填, 不外推政策剂量}}\\
     \bottomrule
   \end{tabular}
 \end{table}
 
-分析可知：1) 现行碳价下碳感知择时并不划算. 单位碳价为0.075元/kg时, 碳感知相对有空即充的完整目标增加22.094元, 企业按自身账目会维持原有充电安排.
-2) 完整目标差随碳价单调下降, 且在0.449元/kg处由正转负. 0.20元/kg时仍多花14.708元, 0.60元/kg时已少花8.924元, 两个格点把翻转点夹在中间.
-3) 翻转点约为现行碳价的六倍. 这一倍数说明当前价格信号与减排目标之间存在明显缺口, 而非企业缺乏减排意愿.
-4) 碳价越过翻转点后, 减排收益增长很快. 1.50元/kg和2.10元/kg时碳感知分别少花62.098元和97.547元, 说明该杠杆在高价区间仍未饱和.
-综上所述, 充电时刻是一项无需追加投资即可动用的减排杠杆, 但其启用与否完全由碳价决定. 政府应把单位碳价提高到0.449元/kg以上, 或以等效的分时碳费引导充电时段; 对于企业, 在价格信号到位之前, 应先完成补能时刻的可调空间测算, 以便政策变动时能够立即响应.
+\subsection{多车场联合配送}
 
-\subsection{多车场配送协同}
-
-至此各项优化仍在单个企业的客户责任边界之内进行.
-现实中常见的情形是: 一个车场任务饱和而另一个车场相对空闲;
-某客户在地理上明显更靠近另一企业的车场, 却因既有归属只能由本场服务.
-这说明进一步限制效率的可能已不是车辆与补能能力, 而是人为划定的归属边界.
-本节打开该边界, 允许跨企业重新分配客户与任务, 考察由此能否得到更优的配送路径.
-
-协同效率对照两家企业各自重新优化后的单干成本之和与开放跨企业分工后的联合优化成本。两臂均完成50/50个客户和13264/13264~kg需求，使用8辆实体车执行16趟，物理违规为零。已登记结果中，两家单干成本之和为3922.079元，联合成本为3033.206元；
+协同效率通过比较各企业独立经营成本之和与开放跨企业客户服务后的
+联合优化结果来衡量.
+所有对照须使用同一服务要求和评价预算;
+跨场仅指服务其他企业客户, 不加入未核算的车场间调位.
 
 \begin{table}[htbp]
   \centering
-  \caption{多车场配送协同模式对比}
+  \caption{独立经营与联合配送对照}
   \label{tab:synergy}
   \scriptsize
-  \begin{tabular}{lrrr}
+  \begin{tabular}{lccc}
     \toprule
-    指标（单位） & 两家单干之和 & 联合协同 & 联合相对单干\\
+    指标 & 各企业独立经营之和 & 联合配送 & 联合相对独立\\
     \midrule
-    单目标总账（元） & 3922.079 & \textbf{3033.206} & $-22.663\%$\\
-    车辆固定成本（元） & 1660.000 & 1360.000 & $-18.072\%$\\
-    非能源里程成本（元） & 1517.484 & 729.713 & $-51.913\%$\\
-    燃油成本（元） & 386.942 & 919.139 & +137.539\%\\
-    电费（元） & 333.197 & \textbf{0.000} & $-100.000\%$\\
-    碳价折算成本（元） & 24.456 & \textbf{24.354} & $-0.417\%$\\
-    启用燃油车/电动车（辆） & 2/6 & 8/0 & 构成变化\\
-    启用实体车数（辆） & \textbf{8} & \textbf{8} & 0\\
-    配送趟次（趟） & \textbf{16} & \textbf{16} & 0\\
-    总里程（km） & 1717.715 & \textbf{935.530} & $-45.536\%$\\
-    燃油车直接排放（kgCO$_2$e） & \textbf{136.666} & 324.636 & +137.540\%\\
-    电动车充电排放（kgCO$_2$e） & 189.328 & \textbf{0.000} & $-100.000\%$\\
-    配送作业阶段总排放（kgCO$_2$e） & 325.994 & \textbf{324.636} & $-0.417\%$\\
+    运营成本 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    作业期排放 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    实体车数/趟数 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    总里程 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    跨场服务客户数 & 0 & \TBD{正式结果} & \TBD{正式结果}\\
+    完成客户数 & \TBD{正式结果} & \TBD{正式结果} & 0\\
+    完成需求量 & \TBD{正式结果} & \TBD{正式结果} & 0\\
     \bottomrule
   \end{tabular}
 \end{table}
-
-分析可知：1) 打开车场归属边界能带来明显的成本改善. 两家企业各自独立经营的成本之和为3922.079元, 联合优化后降至3033.206元, 下降22.663\%.
-2) 改善主要来自行驶里程的压缩. 总里程由1717.714~km降至935.530~km, 下降45.53\%, 而实际启用车辆数保持8辆不变, 说明收益来自客户责任的重新分工, 而非车辆规模的削减.
-3) 客户天然不按车场就近分布, 是协同空间存在的前提. 图\ref{fig:collaboration-fairness-routes}(a)中两家企业各自服务本方客户, 路线明显交叠; (b)中跨企业重新分工后, 交叠随之消失.
-4) 成本下降并不自动带来等比例的排放下降. 该方案的运营总排放为324.636~kgCO$_2$e, 相对独立经营仅下降0.42\%, 原因是联合方案把更多任务交给了燃油车.
-综上所述, 协同配送是一项不依赖外部补贴即可实现的降本措施, 但它本身不等于减排. 政府在鼓励企业协作的同时, 仍需以碳价约束车型选择, 否则协作红利会被车型倒退抵消; 对于企业, 跨企业分工应优先在里程重叠明显的区域推行.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics{generated_figures/concept_collaboration_fairness_notitle.pdf}
-  \caption{独立配送与联合配送最终路径图（示意）}
-  \label{fig:collaboration-fairness-routes}
+  \begin{tikzpicture}[node distance=1.2cm and 1.5cm,font=\small,
+    depot/.style={draw,rounded corners,minimum width=1.8cm,minimum height=0.8cm,fill=black!8},
+    group/.style={draw,dashed,rounded corners,minimum width=2.2cm,minimum height=0.9cm},
+    box/.style={draw,rounded corners,align=center,minimum width=2.7cm,minimum height=0.9cm}]
+    \node[depot] (a) {企业/车场A};
+    \node[group,below=of a] (ca) {A的责任客户};
+    \node[depot,right=5.2cm of a] (b) {企业/车场B};
+    \node[group,below=of b] (cb) {B的责任客户};
+    \node[box,below=2.0cm of $(ca)!0.5!(cb)$] (joint) {联合路径优化\\允许跨企业服务};
+    \node[box,below=of joint] (cost) {形成联盟成本$C(A)$};
+    \node[box,below=of cost] (alloc) {路线固定后\\分摊合作成本};
+    \draw[->] (a)--(ca);
+    \draw[->] (b)--(cb);
+    \draw[->] (ca)--(joint);
+    \draw[->] (cb)--(joint);
+    \draw[->] (joint)--(cost);
+    \draw[->] (cost)--(alloc);
+  \end{tikzpicture}
+  \caption{联合配送与事后成本分摊关系示意图(非路线结果)}
+  \label{fig:collaboration-allocation-schematic}
 \end{figure}
 
-图\ref{fig:collaboration-fairness-routes}以示意方式对照独立配送、联合配送和转归解；具体协同数字见表\ref{tab:synergy}。
+图\ref{fig:collaboration-allocation-schematic}只说明决策顺序;
+路线、跨场客户、成本构成和分摊数值分别由表
+\ref{tab:synergy}--\ref{tab:allocation-four-depot}承载.
 
-\subsection{协同收益公平分配}
-
-协同一旦真正带来收益, 新的矛盾随即出现:
-系统整体改善并不意味着每个参与方都改善.
-总成本下降的同时, 个别车场可能承担更多任务而自身利益受损;
-此类方案即使在数学上最优, 现实中也不会有企业愿意持续合作.
-本节在保证各参与方均可接受的前提下考察路径与收益应如何重新安排,
-以及为此需要牺牲多少系统效率.
-
-公平分配与协同效率分开：它固定同一联合方案，不重新优化路线，只改变3033.206元联合总成本在两家企业之间的承担额。现有两方数据下，Shapley与核仁给出相同数字；最终采用哪一个方法名仍为核仁。
+\subsection{两车场与四车场合作成本分摊}
 
 \begin{table}[htbp]
   \centering
-  \caption{协同收益公平分配结果}
-  \label{tab:allocation}
+  \caption{两车场协同成本分摊}
+  \label{tab:allocation-two-depot}
   \small
-  \begin{tabular}{llrr}
+  \begin{tabular}{llccc}
     \toprule
-    分摊方法 & 指标 & 车场A & 车场B\\
+    分摊方法 & 指标 & 企业A & 企业B & 联盟合计\\
     \midrule
-    \multirow{4}{*}{核仁} & 单干成本（元） & 2068.897 & 1853.181\\
-      & 分摊成本（元） & \textbf{1624.461} & \textbf{1408.745}\\
-      & 节约量（元） & 444.436 & 444.436\\
-      & 节约百分比（\%） & 21.482 & 23.982\\
+    \multirow{4}{*}{\TBD{正式方法}} & 独立经营成本 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+      & 分摊成本 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+      & 节约量 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+      & 核条件/不满意额 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
     \bottomrule
   \end{tabular}
 \end{table}
 
-分析可知：1) 核仁分配使两家企业同时获益. 车场A的承担额由单干的2068.897元降至1624.461元, 车场B由1853.181元降至1408.745元, 各节约444.436元.
-2) 两家的节约比例并不相同. 车场A和车场B的节约百分比分别为21.482\%和23.982\%, 规模较小的一方获得的相对改善更大.
-3) 分配结果满足参与约束. 两家的承担额均不高于各自独立经营成本, 因而不存在退出联盟的动机.
-4) 分配不改变路线, 只改变成本承担. 图\ref{fig:collaboration-fairness-routes}(b)与(c)的路线结构一致, 说明公平性由结算规则保证, 不以牺牲系统效率为代价.
-综上所述, 协同收益的分配规则决定合作能否持续, 而合适的规则并不需要以效率损失为代价. 对于企业, 联盟成立前应先约定分配方法并公开各方的独立经营基准; 政府在推动区域配送资源整合时, 也应把分配规则的可核验性纳入引导条件.
+\begin{table}[htbp]
+  \centering
+  \caption{四车场协同成本分摊}
+  \label{tab:allocation-four-depot}
+  \scriptsize
+  \begin{tabular}{llccccc}
+    \toprule
+    分摊方法 & 指标 & 企业A & 企业B & 企业C & 企业D & 联盟合计\\
+    \midrule
+    \multirow{4}{*}{\TBD{正式方法}} & 独立经营成本 &
+      \TBD{结果} & \TBD{结果} & \TBD{结果} & \TBD{结果} & \TBD{结果}\\
+      & 分摊成本 & \TBD{结果} & \TBD{结果} & \TBD{结果} & \TBD{结果} & \TBD{结果}\\
+      & 节约量 & \TBD{结果} & \TBD{结果} & \TBD{结果} & \TBD{结果} & \TBD{结果}\\
+      & 核条件/不满意额 & \TBD{结果} & \TBD{结果} & \TBD{结果} & \TBD{结果} & \TBD{结果}\\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-\subsection{动态需求响应层}
+两车场结果只说明双方联盟, 四车场稳定性须由全部必要子联盟成本单独检验.
+在四车场正式实验包形成前, 表\ref{tab:allocation-four-depot}不得用两车场效应或构造数字代填.
 
-前述各节共有一个前提: 一日的订单在车辆出发之前已全部已知.
-现实运行中并非如此——车辆已经发出, 新订单仍在陆续到达,
-既有订单也可能被取消或修改需求量与时间要求.
-此时已经走过的路径不能重来, 车辆的位置、载重、荷电状态,
-以及已经发生的成本与排放同样不能清零.
-本节把前述静态方案放入真实运行环境, 考察动态需求出现之后剩余路径应如何重新组织.
+\subsection{动态需求响应}
 
-动态实验设置三个对照臂：完全信息静态臂在出车前即已知全日60个订单，不受触发规则约束，仅作为理论下界参照；机械在线臂与碳感知在线臂均只在触发时刻掌握已到达订单，区别在于后者在补能时刻选择上考虑时段碳强度。三臂均完成60/60个客户与15840.0/15840.0~kg需求。
+动态实验保留三个对照策略:
+完全信息静态参照、机械在线插入和第三个在线策略.
+完全信息静态只作为参照, 不预称为理论下界;
+第三策略的正式名称和决策范围须按最终实验方案确定,
+不得把“滚动全局重优化”与“碳感知在线”视为同一策略.
 
 \begin{table}[htbp]
   \centering
-  \caption{动态需求响应方式对比}
+  \caption{动态需求响应三策略对照}
   \label{tab:dynamic}
   \scriptsize
-  \resizebox{\textwidth}{!}{%
-  \begin{tabular}{lrrrr}
+  \begin{tabular}{lcccc}
     \toprule
-    指标（单位） & 完全信息静态 & 机械在线 & 碳感知在线 & 碳感知相对机械在线\\
+    指标 & 完全信息静态参照 & 机械在线插入 & \TBD{第三在线策略} & 第三策略相对机械在线\\
     \midrule
-    单目标总账（元） & \textbf{3438.816} & 3743.372 & 3735.204 & $-0.218\%$\\
-    车辆固定成本（元） & \textbf{1680.000} & 1850.000 & 1850.000 & 0.000\%\\
-    非能源里程成本（元） & \textbf{886.691} & 954.752 & 947.936 & $-0.714\%$\\
-    燃油成本（元） & \textbf{734.536} & 797.779 & 792.080 & $-0.714\%$\\
-    电费（元） & 116.348 & \textbf{114.741} & 122.324 & $+6.609\%$\\
-    碳价折算成本（元） & \textbf{21.241} & 26.100 & 22.864 & $-12.398\%$\\
-    响应订单数（个） & 60 & 60 & 60 & 0\\
-    拒绝/外包订单数（个） & 0/0 & 0/0 & 0/0 & 0/0\\
-    实际车辆数（辆） & \textbf{9} & 10 & 10 & 0\\
-    重规划次数（次） & 0 & 5 & 5 & 0\\
-    总里程（km） & \textbf{1079.636} & 1163.482 & 1155.206 & $-0.711\%$\\
-    燃油车直接排放（kgCO$_2$e） & \textbf{259.182} & 281.497 & 279.486 & $-0.714\%$\\
-    电动车充电排放（kgCO$_2$e） & 23.954 & \textbf{66.425} & 25.183 & $-62.088\%$\\
-    完成客户数（个） & 60/60 & 60/60 & 60/60 & 0\\
-    完成需求量（kg） & 15840.0/15840.0 & 15840.0/15840.0 & 15840.0/15840.0 & 0\\
+    运营成本 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    作业期排放 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    实际车辆数/趟数 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    重规划次数 & 0 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    拒绝/外包订单数 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
+    完成客户数 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果} & 0\\
+    完成需求量 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果} & 0\\
+    运行时间/评价预算 & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果} & \TBD{正式结果}\\
     \bottomrule
   \end{tabular}
-  }
 \end{table}
 
-分析可知：1) 动态到达使成本明显高于上帝视角. 完全信息静态臂的总账为3438.816元, 两个在线臂分别为3743.372元和3735.204元, 高出约8.6\%, 差距来自订单未知时不得不采用的保守排班.
-2) 碳感知在线臂在总成本上与机械在线臂基本持平. 二者相差0.218\%, 说明考虑碳强度并未显著牺牲运营效率.
-3) 碳感知的代价集中在电费, 收益集中在排放. 电费增加6.609\%, 而碳价折算成本下降12.398\%, 电动车充电排放由66.425~kgCO$_2$e降至25.183~kgCO$_2$e, 下降62.088\%.
-4) 两个在线臂均完成全部60个订单, 未发生拒单或外包, 重规划次数同为5次, 说明触发规则的响应能力不构成瓶颈.
-综上所述, 前述各节的结论在真实运行环境中依然成立: 补能时刻的减排空间不因订单动态到达而消失, 且获取该空间几乎不增加总成本. 对于企业, 滚动重规划时应把补能时刻一并纳入决策, 而不是沿用出车前的固定补能计划; 政府在评估配送行业减排潜力时, 也不宜以静态规划结果作为上限.
+\subsection{结果讨论}
 
-\subsection{数值实验分析讨论}
-
-分析上述各节结果, 可以按对两类主体的可操作性把本文的机制归为两组.
-
-第一组是成本与排放同向的机制. 打开车场之间的客户归属边界后, 联合配送相对两家企业各自独立经营,
-总成本由3922.079元降至3033.206元, 下降22.663\%, 总行驶里程下降45.5\%;
-该项改善不要求企业追加车辆资产, 也不依赖外部价格信号,
-其主要障碍是收益如何在参与方之间分配, 属于合作治理问题而非技术问题.
-第二组是成本与排放反向的机制. 在既定配送排班下把充电时刻移向低碳时段,
-可移动电量174.732~kWh, 充电环节排放下降59.082~kgCO$_2$e, 但电费增加26.525元;
-在现行单位碳价0.075元/kgCO$_2$e下, 该项改变使企业的完整目标上升22.094元.
-提高电动车派遣比例同样属于此组, 且因涉及车辆日固定成本, 其门槛0.296元/kgCO$_2$e.
-
-由此可得两条针对性的启示. 对配送企业, 应优先实施第一组机制:
-跨企业的客户责任重组与实体车多趟利用不增加资本开支, 且降本与减碳同向;
-对第二组机制, 在现行价格信号下不宜期待企业自发实施, 其未实施并非管理疏失, 而是核算结果.
-对政策制定者, 财政资源不必投向第一组, 而应投向第二组, 且需区分层次:
-配对算式给出的充电时移盈亏平衡碳价为0.449元/kgCO$_2$e, 约为现行水平的六倍;
-车型指派层的对齐碳价与之不同, 具体区间见表\ref{tab:carbon-price}与图\ref{fig:fleet-carbon-price}.
-低于上述水平时, 提高碳价只增加企业负担而不改变其决策; 相关层次的减排潜力将持续闲置.
-
-需要说明的是, 本文的时段电价与电网碳强度取自单一代表电网日,
-客户责任归属为公开披露的构造情景, 结论的量级依赖于该情景;
-但"价格信号与碳信号在时间上不同向, 因而充电时刻须作为独立决策进入路径优化"这一结构性结论,
-不依赖于具体数值. 调整相应参数后, 本文模型可退化为单车场、单趟或纯燃油车队等经典VRP形式,
-相应结论亦随之退化为已有研究的特例.
+正式讨论按三条证据链组织:
+一是算法相对公开基准及消融臂的求解质量与代价;
+二是车型、充电模型和时变电网碳强度如何改变成本--排放选择;
+三是两车场、四车场与动态场景中服务完整性、系统效率和成员稳定性是否同时成立.
+只有表\ref{tab:public28}--\ref{tab:dynamic}的正式结果回填后,
+才据数据写入效应方向、大小和适用条件.
+政策含义仅作趋势与条件层面的判断,
+不从单一构造情景给出具体数值处方.
 
 \section{结语}
 
-本文研究时变电网碳强度下多家配送企业协作的动态混合车队路径优化问题,
-考虑多车场协同、混合车队、实体车多趟、分时充电排放、成员结算参与和动态订单等因素,
-建立可行配送趟—实体车排班两层模型,
-并在成熟混合遗传搜索之上设计面向该问题的特化求解组件对其进行求解.
-通过公开标准算例和中国自有算例检验算法的求解表现,
-并沿混合车队、真实补能、时变碳强度、多车场协同、收益公平与动态运行的顺序组织数值实验,
-逐层考察每一项现实因素是否改变原有的最优配送组织与路径选择.
-结果表明: 跨企业重组客户责任使总成本下降22.663\%, 降本与减碳同向, 企业具备自发实施的动机;
-而充电时刻与车型指派两层的降本与减碳方向相反,
-在现行碳价下企业的最优选择是维持既有安排, 充电时移的盈亏平衡碳价为0.449元/kgCO$_2$e;
-把静态方案放入动态运行环境后, 上述结论依然成立.
+本文研究时变电网碳强度下动态混合车队路径优化问题.
+模型以完整实体车日排班模式为基本单元,
+在集合划分主问题中统一衔接多车场协同、车型指派、实体车多趟、
+非线性充电和动态状态继承, 并将运营成本与作业期排放作为两个独立目标.
+合作成本在联合路线确定后按同一联盟成本函数分摊,
+从而将系统效率、成员参与激励和子联盟稳定性分别检验.
 
-后续研究可进一步考察不同经营周期下的联盟收益分配,
-并通过正式机制实验检验非线性充电曲线、动态订单处理节奏、充电排队和随机行驶时间的作用.
+求解算法的具体构成、特化组件及其贡献以最终实现和同预算消融实验为准.
+正式实验将依次补齐公开算例、代表解、车型内生选择、两种充电模型、
+时变电网碳强度、碳价情景、两车场与四车场协同分摊及动态三策略对照.
+摘要、讨论和结语中的结果性结论只由这些正式产物回填.
 
 % ================================================================
 % 参考文献
 % ================================================================
-
 \begin{thebibliography}{99}
 
 \bibitem{ref:55} 国务院. 关于印发2030年前碳达峰行动方案的通知[EB/OL]. (2021-10-26)[2026-07-23].
 \url{https://app.www.gov.cn/govdata/gov/202110/26/477466/article.html}.
-
-\bibitem{ref:52} Li Z, Chen Z, Li H, Guan C, Zhong M. On the value of orderly electric vehicle charging in carbon emission reduction[J]. Transportation Research Part D: Transport and Environment, 2024, 135: 104383.
-
-\bibitem{ref:53} Hu H, Qian B, Xiao Y, Tang J, Ou J, Lin X, He P, Zhang F. Low-carbon scheduling strategy for electric vehicles considering carbon emission flow and dynamic electricity prices[J]. Frontiers in Energy Research, 2024, 12: 1519963.
-
-\bibitem{ref:54} Zhang J, Jing W, Lu Z, Wu H, Wen X. Collaborative strategy for electric vehicle charging scheduling and route planning[J]. IET Smart Grid, 2024, 7(5): 628--642.
-
-\bibitem{ref:50} Cheng K W, Bian Y, Shi Y, Chen Y. Carbon-aware EV charging[C]//2022 IEEE International Conference on Communications, Control, and Computing Technologies for Smart Grids. Singapore: IEEE, 2022: 186--192.
-
-\bibitem{ref:90} Miyabe R, Fujimoto Y, Hayashi Y. Low-carbon routing and charging planning for electric freight trucks utilizing local surplus solar power[J]. Journal of Energy Storage, 2025, 132: 117626.
 
 \bibitem{ref:27} Goeke D, Schneider M. Routing a mixed fleet of electric and conventional vehicles[J]. European Journal of Operational Research, 2015, 245(1): 81--99.
 
@@ -1296,7 +1159,17 @@ Chen W R, Xu G M, Zhang D Z, et al. Multi-depot mixed fleet routing and speed op
 
 \bibitem{ref:46} Diefenbach H, Emde S, Glock C H. Multi-depot electric vehicle scheduling in in-plant production logistics considering non-linear charging models[J]. European Journal of Operational Research, 2023, 306(2): 828--848.
 
+\bibitem{ref:80} Wang W, Adulyasak Y, Cordeau J F, He G. The heterogeneous-fleet electric vehicle routing problem with nonlinear charging functions[J]. Transportation Research Part C: Emerging Technologies, 2025, 170: 104932.
+
 \bibitem{ref:73} Kullman N D, Froger A, Mendoza J E, Goodson J C. frvcpy: An open-source solver for the fixed route vehicle charging problem[J]. INFORMS Journal on Computing, 2021, 33(4): 1277--1283.
+
+\bibitem{ref:52} Li Z, Chen Z, Li H, Guan C, Zhong M. On the value of orderly electric vehicle charging in carbon emission reduction[J]. Transportation Research Part D: Transport and Environment, 2024, 135: 104383.
+
+\bibitem{ref:53} Hu H, Qian B, Xiao Y, Tang J, Ou J, Lin X, He P, Zhang F. Low-carbon scheduling strategy for electric vehicles considering carbon emission flow and dynamic electricity prices[J]. Frontiers in Energy Research, 2024, 12: 1519963.
+
+\bibitem{ref:54} Zhang J, Jing W, Lu Z, Wu H, Wen X. Collaborative strategy for electric vehicle charging scheduling and route planning[J]. IET Smart Grid, 2024, 7(5): 628--642.
+
+\bibitem{ref:50} Cheng K W, Bian Y, Shi Y, Chen Y. Carbon-aware EV charging[C]//2022 IEEE International Conference on Communications, Control, and Computing Technologies for Smart Grids. Singapore: IEEE, 2022: 186--192.
 
 \bibitem{ref:7} Wang Y, Zhou J, Sun Y, Fan J, Wang Z, Wang H. Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations[J]. Expert Systems with Applications, 2023, 219: 119654.
 
@@ -1305,12 +1178,6 @@ Chen W R, Xu G M, Zhang D Z, et al. Multi-depot mixed fleet routing and speed op
 \bibitem{ref:49} Fern\'{a}ndez E, Roca-Riu M, Speranza M G. The shared customer collaboration vehicle routing problem[J]. European Journal of Operational Research, 2018, 265(3): 1078--1093.
 
 \bibitem{ref:8} Soriano A, Gansterer M, Hartl R F. The multi-depot vehicle routing problem with profit fairness[J]. International Journal of Production Economics, 2023, 255: 108669.
-
-\bibitem{ref:91} 饶卫振, 苗晓河, 朱庆华, 姜力文. 考虑企业服务质量差异的协作配送问题及成本分摊方法研究[J]. 系统工程理论与实践, 2022, 42(10): 2721--2739.
-
-\bibitem{ref:93} Shi Y, Lin Y, Lim M K, Tseng M L. The bi-objective mixed-fleet vehicle routing problem under decentralized collaboration and time-of-use prices[J]. Expert Systems with Applications, 2025, 273: 126875.
-
-\bibitem{ref:92} 饶卫振, 张云东, 刘从虎, 于灏, 侯艳辉. 一种求解协作配送成本分摊问题核仁解的近似迭代算法[J]. 系统工程理论与实践, 2019, 39(6): 1517--1534.
 
 \bibitem{ref:9} Shi Y, Lin N, Han Q, Zhang T, Shen W. A method for transportation planning and profit sharing in collaborative multi-carrier vehicle routing[J]. Mathematics, 2020, 8(10): 1788.
 
@@ -1326,54 +1193,46 @@ Li Y, Fan H M, Zhang X N. A periodic optimization model and solution for capacit
 \bibitem{ref:71} 邱莹莹. 低碳背景下考虑动态需求的混合车队物流配送路径问题研究[D]. 上海: 上海理工大学, 2024.\newline
 Qiu Y Y. Research on the vehicle routing problem of mixed-fleet considering dynamic demand under the background of low carbon[D]. Shanghai: University of Shanghai for Science and Technology, 2024.
 
-\bibitem{ref:44} Zhen L, Ma C, Wang K, Xiao L, Zhang W. Multi-depot multi-trip vehicle routing problem with time windows and release dates[J]. Transportation Research Part E: Logistics and Transportation Review, 2020, 135: 101866.
-
 \bibitem{ref:51} 姜广田, 纪皎月, 董佳伟. 绿色物流配送下的多车型动态车辆路径优化[J]. 系统工程理论与实践, 2024, 44(7): 2362--2380.\newline
 Jiang G T, Ji J Y, Dong J W. Multi-vehicle dynamic vehicle routing optimization in green logistics distribution[J]. Systems Engineering --- Theory \& Practice, 2024, 44(7): 2362--2380.
+
+\bibitem{ref:44} Zhen L, Ma C, Wang K, Xiao L, Zhang W. Multi-depot multi-trip vehicle routing problem with time windows and release dates[J]. Transportation Research Part E: Logistics and Transportation Review, 2020, 135: 101866.
 
 \bibitem{ref:48} 陈雨蝶, 干宏程, 程亮, 等. 双碳背景下复杂冷链物流模型及求解算法[J/OL]. 系统工程理论与实践. DOI: 10.12011/SETP2024-2027.\newline
 Chen Y D, Gan H C, Cheng L, et al. Complex cold chain logistics model and its optimization algorithm under the background of double carbon[J/OL]. Systems Engineering --- Theory \& Practice. DOI: 10.12011/SETP2024-2027.
 
+\bibitem{ref:93} Shi W, Wang N, Zhou L, He Z. The bi-objective mixed-fleet vehicle routing problem under decentralized collaboration and time-of-use prices[J]. Expert Systems with Applications, 2025, 273: 126875.
+
 \bibitem{ref:36} Demir E, Bektas T, Laporte G. An adaptive large neighborhood search heuristic for the pollution-routing problem[J]. European Journal of Operational Research, 2012, 223(2): 346--359.
 
-\bibitem{ref:47} Bektas T, Laporte G. The pollution-routing problem[J]. Transportation Research Part B: Methodological, 2011, 45(8): 1232--1250.
+\bibitem{ref:94} Montoya A, Gu\'eret C, Mendoza J E, Villegas J G. The electric vehicle routing problem with nonlinear charging function[J]. Transportation Research Part B: Methodological, 2017, 103: 87--110.
 
 \bibitem{ref:12} Froger A, Jabali O, Mendoza J E, Laporte G. The electric vehicle routing problem with capacitated charging stations[J]. Transportation Science, 2022, 56(2): 460--482.
 
+\bibitem{ref:95} Hiermann G, Puchinger J, Ropke S, Hartl R F. The Electric Fleet Size and Mix Vehicle Routing Problem with Time Windows and Recharging Stations[J]. European Journal of Operational Research, 2016, 252(3): 995--1018.
+
+\bibitem{ref:96} Yahiaoui A E, R\"onnqvist M, Audy J F. A mathheuristic approach for the vehicle routing problem with queuing considerations[J]. Annals of Operations Research, 2025, 350(3): 1307--1330.
+
 \bibitem{ref:13} 胡路, 乐诗彤, 朱娟秀. 考虑多充电桩排队和时间窗的电动货车路径规划[J]. 西南交通大学学报, 2025, 60(2): 299--307.\newline
 Hu L, Le S T, Zhu J X. Electric truck route planning considering multiple charging pile queues and time windows[J]. Journal of Southwest Jiaotong University, 2025, 60(2): 299--307.
+
+\bibitem{ref:92} 饶卫振, 张云东, 刘从虎, 于灏, 侯艳辉. 一种求解协作配送成本分摊问题核仁解的近似迭代算法[J]. 系统工程理论与实践, 2019, 39(6): 1517--1534.
 
 \bibitem{ref:76} Vidal T, Crainic T G, Gendreau M, Lahrichi N, Rei W. A hybrid genetic algorithm for multidepot and periodic vehicle routing problems[J]. Operations Research, 2012, 60(3): 611--624.
 
 \bibitem{ref:77} Vidal T, Crainic T G, Gendreau M, Prins C. A unified solution framework for multi-attribute vehicle routing problems[J]. European Journal of Operational Research, 2014, 234(3): 658--673.
 
-%% 已撤（正文不再引用路线池重组） \bibitem{ref:79} Rochat Y, Taillard \'E D. Probabilistic diversification and intensification in local search for vehicle routing[J]. Journal of Heuristics, 1995, 1(1): 147--167.
-
-\bibitem{ref:80} Wang W, Adulyasak Y, Cordeau J F, He G. The heterogeneous-fleet electric vehicle routing problem with nonlinear charging functions[J]. Transportation Research Part C: Emerging Technologies, 2025, 170: 104932.
-
 \bibitem{ref:64} Wouda N A, Lan L, Kool W. PyVRP: A high-performance VRP solver package[J]. INFORMS Journal on Computing, 2024, 36(4): 943--955.
-
-\bibitem{ref:78} Vidal T, Crainic T G, Gendreau M, Prins C. Implicit depot assignments and rotations in vehicle routing heuristics[J]. European Journal of Operational Research, 2014, 237(1): 15--28.
-
-\bibitem{ref:81} Huangfu Q, Hall J A J. Parallelizing the dual revised simplex method[J]. Mathematical Programming Computation, 2018, 10(1): 119--142.
-
-\bibitem{ref:84} OpenStreetMap contributors. OpenStreetMap[DB/OL]. [2026-07-18]. \url{https://www.openstreetmap.org}.
-
-\bibitem{ref:85} Luxen D, Vetter C. Real-time routing with OpenStreetMap data[C]//Proceedings of the 19th ACM SIGSPATIAL International Conference on Advances in Geographic Information Systems. New York: ACM, 2011: 513--516.
-
-\bibitem{ref:87} 全国碳市场信息网. 全国碳排放权交易市场每日综合价格行情[DB/OL]. [2026-07-17]. \url{https://www.cets.org.cn/}.
-
-\bibitem{ref:88} 广东省发展改革委. 关于我省新能源汽车用电价格有关问题的通知(粤发改价格〔2018〕313号)[EB/OL]. (2018-07-02)[2026-07-23].
-\url{https://drc.gd.gov.cn/ywtz/content/post_833857.html}.
 
 \bibitem{ref:83} 国家发展改革委. 关于第三监管周期省级电网输配电价及有关事项的通知(发改价格〔2023〕526号)[EB/OL]. (2023-05-15)[2026-07-23].
 \url{https://www.ndrc.gov.cn/xxgk/zcfb/tz/202305/t20230515_1355747.html}.
 
+\bibitem{ref:88} 广东省发展改革委. 关于我省新能源汽车用电价格有关问题的通知(粤发改价格〔2018〕313号)[EB/OL]. (2018-07-02)[2026-07-23].
+\url{https://drc.gd.gov.cn/ywtz/content/post_833857.html}.
+
 \bibitem{ref:82} Li Y, Zhang S, Li W, Liu Y, Qin Y, Wei H, Kang C, Zhang N, Du E. High temporal and spatial resolution projected electricity carbon emission factors of China from 2025--2060[J]. Scientific Data, 2026, 13: 926. Dataset DOI: 10.6084/m9.figshare.28953545.
 
-\bibitem{ref:74} Vidal T, Crainic T G, Gendreau M, Prins C. A hybrid genetic algorithm with adaptive diversity management for a large class of vehicle routing problems with time-windows[J]. Computers \& Operations Research, 2013, 40(1): 475--489.
-
-\bibitem{ref:75} Lei Z, Hao J K. A GPU-accelerated hybrid method for a class of multi-depot vehicle routing problems[EB/OL]. arXiv:2605.05208, 2026.
+\bibitem{ref:87} 全国碳市场信息网. 全国碳排放权交易市场每日综合价格行情[DB/OL]. [2026-07-17]. \url{https://www.cets.org.cn/}.
 
 \end{thebibliography}
 
