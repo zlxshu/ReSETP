@@ -1,10 +1,4 @@
-# declared_identity=PROJECT_DOMAIN
-# provenance_status=UNKNOWN
-# first_seen_commit=15ea9919006a53909745caa8f669f1c68aee0641
-# git_commit_author=Leixishu Zhou (not evidence of content authorship)
-# original_author=UNKNOWN
-# pre_move_sha256=539d83f64ffbfd92fe3ebf5f91a23d53beffb7c5b75fe53f45227e395654620e
-"""Copied HGS population semantics with external complete evaluation."""
+"""Project-domain adaptation of PyVRP 0.12.2 population semantics."""
 
 from __future__ import annotations
 
@@ -55,7 +49,6 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
         self._params = params if params is not None else PopulationParams()
         self._feasible: list[_Item[SolutionT, EvaluationT]] = []
         self._infeasible: list[_Item[SolutionT, EvaluationT]] = []
-        self._penalties_dirty = True
 
     def __iter__(self) -> Iterator[EvaluatedSolution[SolutionT, EvaluationT]]:
         for item in (*self._feasible, *self._infeasible):
@@ -67,7 +60,6 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
     def clear(self) -> None:
         self._feasible.clear()
         self._infeasible.clear()
-        self._penalties_dirty = True
 
     def add(
         self,
@@ -95,7 +87,6 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             )
             item.proximity.insert(item_position, (distance, id(other)))
         subpopulation.append(item)
-        self._penalties_dirty = True
         self._refresh_penalties()
         retained = True
         if len(subpopulation) > self._params.max_pop_size:
@@ -173,10 +164,8 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             if subpopulation[duplicate].candidate is inserted:
                 retained = False
             self._remove(subpopulation, duplicate)
-            self._penalties_dirty = True
 
         while len(subpopulation) > self._params.min_pop_size:
-            self._refresh_penalties()
             self._update_fitness(subpopulation)
             worst = max(
                 range(len(subpopulation)),
@@ -185,16 +174,12 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             if subpopulation[worst].candidate is inserted:
                 retained = False
             self._remove(subpopulation, worst)
-            self._penalties_dirty = True
         return retained
 
     def _refresh_penalties(self) -> None:
-        if not self._penalties_dirty:
-            return
         evaluations = tuple(candidate.evaluation for candidate in self)
         if len(evaluations) >= self._minimum_penalty_population_size:
             self._refresh_penalties_callback(evaluations)
-            self._penalties_dirty = False
 
     def _duplicate_index(
         self,

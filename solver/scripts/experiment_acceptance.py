@@ -1,8 +1,8 @@
-"""Shared fail-closed acceptance and five-file package helpers.
+"""Shared fail-closed acceptance and result-package helpers.
 
 Carriers keep ownership of their scientific fields and comparison semantics.
 This module only records whether their already-computed checks all passed,
-then makes the package status, decision verdict, hashes, and exit code agree.
+then makes the package status, decision verdict, and exit code agree.
 """
 
 from __future__ import annotations
@@ -16,11 +16,10 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 
-FIVE_FILE_PACKAGE = (
+PACKAGE_FILES = (
     "metadata.json",
     "raw_runs.csv",
     "decision.json",
-    "artifact_hashes.json",
     "report.md",
 )
 
@@ -133,8 +132,8 @@ def finalize_five_file_package(
     report_text: str,
     complete_status: str = "COMPLETE",
     failed_status: str = "FAILED",
-) -> dict[str, str]:
-    """Write and verify the canonical five files after raw rows are durable."""
+) -> None:
+    """Write and verify the result package after raw rows are durable."""
 
     raw_runs = output / "raw_runs.csv"
     if not raw_runs.is_file() or raw_runs.stat().st_size == 0:
@@ -161,24 +160,13 @@ def finalize_five_file_package(
     _write_json(output / "decision.json", decision_payload)
     _atomic_text(output / "report.md", report_text)
 
-    hashes = {
-        str(path.relative_to(output)): file_sha256(path)
-        for path in sorted(output.rglob("*"))
-        if path.is_file()
-        and path.name != "artifact_hashes.json"
-        and path.name != "DONE"
-        and not path.name.startswith("._")
-    }
-    _write_json(output / "artifact_hashes.json", hashes)
-
     missing = [
         name
-        for name in FIVE_FILE_PACKAGE
+        for name in PACKAGE_FILES
         if not (output / name).is_file() or (output / name).stat().st_size == 0
     ]
     if missing:
-        raise RuntimeError(f"incomplete five-file package {output}: {missing}")
-    return hashes
+        raise RuntimeError(f"incomplete result package {output}: {missing}")
 
 
 def validate_five_file_package(
@@ -187,40 +175,17 @@ def validate_five_file_package(
     expected_success_verdict: str | None = None,
     require_accepted: bool = True,
 ) -> dict[str, Any]:
-    """Recompute package hashes and, by default, reject failed verdicts."""
+    """Validate required files and, by default, reject failed verdicts."""
 
     missing = [
         name
-        for name in FIVE_FILE_PACKAGE
+        for name in PACKAGE_FILES
         if not (output / name).is_file() or (output / name).stat().st_size == 0
     ]
     if missing:
-        raise RuntimeError(f"incomplete five-file package {output}: {missing}")
+        raise RuntimeError(f"incomplete result package {output}: {missing}")
     metadata = json.loads((output / "metadata.json").read_text("utf-8"))
     decision = json.loads((output / "decision.json").read_text("utf-8"))
-    recorded_hashes = json.loads(
-        (output / "artifact_hashes.json").read_text("utf-8")
-    )
-    actual_hashes = {
-        str(path.relative_to(output)): file_sha256(path)
-        for path in sorted(output.rglob("*"))
-        if path.is_file()
-        and path.name != "artifact_hashes.json"
-        and path.name != "DONE"
-        and not path.name.startswith("._")
-    }
-    if recorded_hashes != actual_hashes:
-        missing_keys = sorted(set(actual_hashes) - set(recorded_hashes))
-        extra_keys = sorted(set(recorded_hashes) - set(actual_hashes))
-        changed_keys = sorted(
-            key
-            for key in set(recorded_hashes) & set(actual_hashes)
-            if recorded_hashes[key] != actual_hashes[key]
-        )
-        raise RuntimeError(
-            "artifact hash map mismatch: "
-            f"missing={missing_keys}, extra={extra_keys}, changed={changed_keys}"
-        )
     if require_accepted:
         if metadata.get("acceptance_passed") is not True:
             raise RuntimeError(f"package metadata is not accepted: {output}")
@@ -237,5 +202,4 @@ def validate_five_file_package(
     return {
         "metadata": metadata,
         "decision": decision,
-        "artifact_hashes": recorded_hashes,
     }

@@ -139,12 +139,6 @@ class SearchAccounting:
     crossover_calls: int = 0
     crossover_actions: Counter[str] = field(default_factory=Counter)
     crossover_work_units: Counter[str] = field(default_factory=Counter)
-    route_layer_proposed: int = 0
-    route_layer_decoded: int = 0
-    route_layer_entered_evaluation: int = 0
-    route_layer_accepted: int = 0
-    route_layer_decode_wall_seconds: float = 0.0
-    route_layer_gap_counts: Counter[str] = field(default_factory=Counter)
     repair_calls: int = 0
     outer_refinement_calls: int = 0
     education_rounds: int = 0
@@ -371,25 +365,6 @@ class SearchAccounting:
         self.crossover_actions[str(action)] += 1
         self.crossover_work_units[str(action)] += work
 
-    def record_route_layer_decode(self, outcome: Any) -> None:
-        """Record raw Split decoding separately from full evaluation."""
-
-        self.route_layer_proposed += 1
-        self.route_layer_decode_wall_seconds += float(
-            getattr(outcome, "wall_seconds", 0.0)
-        )
-        if getattr(outcome, "candidate", None) is not None:
-            self.route_layer_decoded += 1
-        for gap in getattr(outcome, "gaps", ()):
-            kind = getattr(gap, "kind", "UNKNOWN")
-            self.route_layer_gap_counts[str(getattr(kind, "value", kind))] += 1
-
-    def record_route_layer_evaluation(self) -> None:
-        self.route_layer_entered_evaluation += 1
-
-    def record_route_layer_acceptance(self) -> None:
-        self.route_layer_accepted += 1
-
     def _record_work(self, accounting: Mapping[str, int]) -> None:
         self.full_evaluations += int(accounting.get("full_evaluations", 0))
         self.incremental_evaluations += int(
@@ -452,18 +427,6 @@ class SearchAccounting:
             "crossover_actions": dict(sorted(self.crossover_actions.items())),
             "crossover_work_units": dict(
                 sorted(self.crossover_work_units.items())
-            ),
-            "route_layer_proposed": int(self.route_layer_proposed),
-            "route_layer_decoded": int(self.route_layer_decoded),
-            "route_layer_entered_evaluation": int(
-                self.route_layer_entered_evaluation
-            ),
-            "route_layer_accepted": int(self.route_layer_accepted),
-            "route_layer_decode_wall_seconds": float(
-                self.route_layer_decode_wall_seconds
-            ),
-            "route_layer_gap_counts": dict(
-                sorted(self.route_layer_gap_counts.items())
             ),
             "repair_calls": int(self.repair_calls),
             "outer_refinement_calls": int(self.outer_refinement_calls),

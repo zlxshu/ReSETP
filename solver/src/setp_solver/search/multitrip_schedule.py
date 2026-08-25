@@ -2151,27 +2151,52 @@ def _certificate_from_prepared_solution(
     inherited = _price(prices, "initial_ev_battery_kwh")
     charging_curve = _curve_for_prices(prices, instance)
     require_explicit = charging_curve.curve_id != L100_CONTROL.curve_id
-    timings = {
-        route.vehicle_id: route_timing(
-            route,
-            instance,
-            prices,
-            charging_actions=list(solution.charging_actions),
-            minimum_departure_second=(
-                None
-                if minimum_departure_second_by_route is None
-                else minimum_departure_second_by_route.get(route.vehicle_id)
-            ),
-        )
-        for route in solution.routes
-    }
-    routes = {route.vehicle_id: route for route in solution.routes}
     actions: dict[str, list[ChargingAction]] = {}
     for action in solution.charging_actions:
         actions.setdefault(action.vehicle_id, []).append(action)
     by_vehicle: dict[str, list[Route]] = {}
     for route in solution.routes:
         by_vehicle.setdefault(physical_vehicle_id(route.vehicle_id), []).append(route)
+    timings: dict[str, TripTiming] = {}
+    for chain_routes in by_vehicle.values():
+        previous_return: float | None = None
+        for route in sorted(
+            chain_routes,
+            key=lambda item: int(item.vehicle_id.rsplit("#T", 1)[1]),
+        ):
+            departure_floor = (
+                None
+                if minimum_departure_second_by_route is None
+                else minimum_departure_second_by_route.get(route.vehicle_id)
+            )
+            same_day_charge_ends = [
+                float(action.charge_start_second)
+                + float(action.occupancy_minutes) * 60.0
+                for action in actions.get(route.vehicle_id, ())
+                if action.station_id == route.home_depot_id
+                and int(action.charge_day_offset) == 0
+            ]
+            origin = instance.node_lookup[route.home_depot_id]
+            floors = [
+                value
+                for value in (
+                    float(origin.ready_time) + float(origin.service_time),
+                    departure_floor,
+                    previous_return,
+                    *same_day_charge_ends,
+                )
+                if value is not None
+            ]
+            timing = route_timing(
+                route,
+                instance,
+                prices,
+                charging_actions=list(solution.charging_actions),
+                forced_departure_second=max(floors),
+            )
+            timings[route.vehicle_id] = timing
+            previous_return = timing.return_second
+    routes = {route.vehicle_id: route for route in solution.routes}
     scheduled: list[ScheduledTrip] = []
     counts = {"cv": 0, "ev": 0}
     first_trip_charge_day_offsets: set[int] = set()

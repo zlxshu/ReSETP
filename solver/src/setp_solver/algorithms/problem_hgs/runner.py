@@ -22,7 +22,7 @@ import hashlib
 import json
 from collections import Counter
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from time import perf_counter
 
 from setp_solver.check import PROFIT_FAIRNESS
@@ -39,11 +39,7 @@ from .integrated_private import build_integrated_private_hgs
 from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
 from .model import DutyIndividual
 from .population import (
-    EvaluatedDutyCandidate,
     PopulationParameters,
-)
-from .proposals import (
-    DutyProposalEngine,
 )
 
 
@@ -55,7 +51,6 @@ class ProblemHGSSearchParameters:
     random_seed: int
     population: PopulationParameters
     stagnation_patience: int = 500
-    crossover_mode: str = "fast_only"
     include_whole_duty_type_exchange: bool = True
     objective_mode: str = SINGLE_OBJECTIVE
     education_depth_limit: int | None = None
@@ -63,8 +58,6 @@ class ProblemHGSSearchParameters:
     def __post_init__(self) -> None:
         if self.stagnation_patience < 1:
             raise ValueError("stagnation patience must be positive")
-        if self.crossover_mode not in {"fast_only", "hybrid"}:
-            raise ValueError("crossover mode must be fast_only or hybrid")
         if self.education_depth_limit is not None and self.education_depth_limit < 1:
             raise ValueError("education depth limit must be positive")
         if self.objective_mode != SINGLE_OBJECTIVE:
@@ -180,7 +173,6 @@ class ProblemHGSRunProvenance:
     route_stage_runtime_sha256: str
     mechanism_stage_source_id: str | None
     mechanism_stage_runtime_sha256: str | None
-    route_layer_crossover_enabled: bool = False
     education_depth_limit: int | None = None
 
 
@@ -245,7 +237,6 @@ def run_integrated_problem_hgs(
     route_engine: IndependentKernelDutyRouteProposalEngine,
     trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
     retain_trajectory: bool = True,
-    proposal_engine: DutyProposalEngine | None = None,
     initial_evaluations: tuple[FullEvaluation, ...] | None = None,
     initialization_full_evaluation_count: int | None = None,
     initialization_wall_seconds: float = 0.0,
@@ -255,7 +246,6 @@ def run_integrated_problem_hgs(
     cross_depot_enabled: bool = True,
     multi_trip_enabled: bool = True,
     type_exchange_enabled: bool = True,
-    route_layer_crossover_enabled: bool = False,
     include_mechanism_refinement: bool = True,
     include_charging_candidates: bool = True,
     expected_search_configuration_sha256: str | None = None,
@@ -408,7 +398,6 @@ def run_integrated_problem_hgs(
         include_charging_candidates=include_charging_candidates,
         stop_requested=lambda: stop(current_state()),
         population_parameters=parameters.population,
-        proposal_engine=proposal_engine,
         initial_evaluations=initial_evaluations,
         trajectory_sink=(trajectory.emit_many if trajectory_enabled else None),
         arm=arm,
@@ -431,7 +420,6 @@ def run_integrated_problem_hgs(
         cross_depot_enabled=cross_depot_enabled,
         multi_trip_enabled=multi_trip_enabled,
         type_exchange_enabled=type_exchange_enabled,
-        route_layer_crossover_enabled=route_layer_crossover_enabled,
         education_depth_limit=parameters.education_depth_limit,
     )
     accounting = bundle.accounting.mechanism
@@ -503,9 +491,6 @@ def run_integrated_problem_hgs(
         mechanism_stage_runtime_sha256=(
             effective_execution.mechanism_stage_runtime_sha256
         ),
-        route_layer_crossover_enabled=(
-            effective_execution.route_layer_crossover_enabled
-        ),
         education_depth_limit=effective_execution.education_depth_limit,
     )
     _record_integrated_population_admissions(
@@ -537,17 +522,8 @@ def run_integrated_problem_hgs(
     accounting.charging_repair_cache_misses = int(
         bundle.charging_repair_cache.misses
     )
-    best = EvaluatedDutyCandidate(
-        result.best.solution,
-        result.best.evaluation.full,
-    )
-    status = (
-        CandidateStatus.NO_FEASIBLE_SOLUTION.value
-        if not best.evaluation.feasible
-        else "STOPPED_BY_CALLER"
-    )
     return _finish_result(
-        best,
+        result.best.solution,
         evaluator,
         result.accounting.iterations,
         accounting,
@@ -555,7 +531,7 @@ def run_integrated_problem_hgs(
         started,
         provenance,
         effective_execution,
-        status=status,
+        status="STOPPED_BY_CALLER",
         objective_mode=parameters.objective_mode,
         charging_prescreen_accounting=(
             None
@@ -613,7 +589,7 @@ def search_configuration_sha256(
 
 
 def _finish_result(
-    best,
+    best: DutyIndividual,
     evaluator: DutyFullEvaluator,
     iterations: int,
     accounting: SearchAccounting,
@@ -627,19 +603,22 @@ def _finish_result(
     objective_mode: str = SINGLE_OBJECTIVE,
     charging_prescreen_accounting: dict[str, object] | None = None,
 ) -> ProblemHGSRunResult:
-    final_evaluation = evaluator.evaluate(best.individual)
+    final_evaluation = evaluator.evaluate(best)
     accounting.full_evaluations += 1
-    best = EvaluatedDutyCandidate(best.individual, final_evaluation)
     accounting.run_wall_seconds = perf_counter() - started
     return ProblemHGSRunResult(
-        best=best.individual,
-        best_evaluation=best.evaluation,
+        best=best,
+        best_evaluation=final_evaluation,
         iterations=iterations,
         accounting=accounting,
         trajectory=tuple(trajectory),
         provenance=provenance,
         effective_execution=effective_execution,
-        termination_status=status,
+        termination_status=(
+            CandidateStatus.NO_FEASIBLE_SOLUTION.value
+            if not final_evaluation.feasible
+            else status
+        ),
         termination_error_type=(None if error is None else type(error).__name__),
         termination_error=None if error is None else str(error),
         objective_mode=objective_mode,

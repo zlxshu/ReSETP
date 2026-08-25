@@ -152,9 +152,10 @@ class SelfAdaptivePenalty:
 
     def cost(self, evaluation: FullEvaluation) -> float:
         objective = float(evaluation.total_cost)
-        infeasibility = self._infeasibility(constraint_vector(evaluation))
-        if infeasibility <= 0.0:
+        vector = constraint_vector(evaluation)
+        if not any(vector):
             return objective
+        infeasibility = self._infeasibility(vector)
         scaled = infeasibility
         if self.i_hat_up != self.i_hat_down:
             scaled = (infeasibility - self.i_hat_down) / (self.i_hat_up - self.i_hat_down)

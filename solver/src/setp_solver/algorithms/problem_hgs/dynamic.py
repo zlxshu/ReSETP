@@ -680,9 +680,19 @@ def _merge_execution_history(
     }
     prior = state.prior_committed_solution or Solution()
     routes = {route.vehicle_id: route for route in prior.routes}
+    sealed_in_progress_route_ids = {
+        str(asset.in_progress_route_id)
+        for asset in state.asset_states.values()
+        if getattr(asset, "in_progress_route_id", None) is not None
+        and getattr(asset, "continuation_route_id", None) is None
+        and not tuple(getattr(asset, "editable_suffix", ()))
+    }
     current_committed = {
         route_id: source_routes[route_id]
-        for route_id in state.cut.completed_route_ids
+        for route_id in {
+            *state.cut.completed_route_ids,
+            *sealed_in_progress_route_ids,
+        }
     }
     for route_id, route in current_committed.items():
         previous = routes.get(route_id)

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, replace
 from time import perf_counter
 
@@ -34,6 +35,7 @@ NOT_INSERTED_TIME_INFEASIBLE = "NOT_INSERTED_TIME_INFEASIBLE"
 NOT_INSERTED_CAPACITY = "NOT_INSERTED_CAPACITY"
 NOT_INSERTED_ENERGY = "NOT_INSERTED_ENERGY"
 NOT_INSERTED_CANDIDATE_EXHAUSTED = "NOT_INSERTED_CANDIDATE_EXHAUSTED"
+NOT_INSERTED_SEARCH_EXHAUSTED = "NOT_INSERTED_SEARCH_EXHAUSTED"
 INSERTION_DISABLED = "INSERTION_DISABLED"
 
 
@@ -168,6 +170,7 @@ class DynamicInsertionOperator:
         newly_revealed_customer_ids: tuple[str, ...],
         standby_scenario: PublicStandbyScenario | None = None,
         current_evaluation: FullEvaluation | None = None,
+        stop_requested: Callable[[], bool] | None = None,
     ) -> DynamicInsertionResult:
         """Return the no-op exactly when disabled, otherwise one sealed result."""
 
@@ -199,6 +202,7 @@ class DynamicInsertionOperator:
             newly_revealed_customer_ids=newly_revealed_customer_ids,
             stream_role="dynamic_revealed_insertion",
             current_evaluation=current_evaluation,
+            stop_requested=stop_requested,
         )
         standby = None
         if standby_scenario is not None and actual.status == INSERTED_AND_FULL_EVALUATION_FEASIBLE:
@@ -210,6 +214,7 @@ class DynamicInsertionOperator:
                 charging_policy=charging_policy,
                 newly_revealed_customer_ids=scenario_new,
                 stream_role="p34_public_standby_scenario",
+                stop_requested=stop_requested,
             )
             assert scenario.evaluation is not None
             idle_ev_ids = {
@@ -258,6 +263,7 @@ class DynamicInsertionOperator:
         newly_revealed_customer_ids: tuple[str, ...],
         stream_role: str,
         current_evaluation: FullEvaluation | None = None,
+        stop_requested: Callable[[], bool] | None = None,
     ) -> tuple[DynamicInsertionResult, DynamicInsertionAccounting]:
         started = perf_counter()
         state = evaluator.context.dynamic_state
@@ -320,6 +326,8 @@ class DynamicInsertionOperator:
             scope: str,
             changed_duty_count: int,
         ) -> tuple[DutyIndividual, FullEvaluation, int] | None:
+            if stop_requested is not None and stop_requested():
+                return None
             still_unserved = set(pending).intersection(
                 candidate.unserved_customers
             )
@@ -366,7 +374,11 @@ class DynamicInsertionOperator:
             return candidate, evaluation, changed_duty_count
 
         def failure_result() -> tuple[DynamicInsertionResult, DynamicInsertionAccounting]:
-            status = _insertion_failure_status(diagnostics)
+            status = (
+                NOT_INSERTED_SEARCH_EXHAUSTED
+                if stop_requested is not None and stop_requested()
+                else _insertion_failure_status(diagnostics)
+            )
             reason = _insertion_failure_summary(status, diagnostics)
             after_sha = _committed_sha256(
                 evaluator,
@@ -408,6 +420,9 @@ class DynamicInsertionOperator:
                 ),
                 accounting,
             )
+
+        if stop_requested is not None and stop_requested():
+            return failure_result()
 
         def materialize(
             native_solution,
@@ -476,6 +491,8 @@ class DynamicInsertionOperator:
                 initial_future,
                 pending,
             ):
+                if stop_requested is not None and stop_requested():
+                    break
                 accepted = evaluate_candidate(
                     candidate,
                     candidate_id=candidate_id,
@@ -493,7 +510,11 @@ class DynamicInsertionOperator:
         # retained only when the complete ruler accepts it; the insertion-only
         # witness remains the fail-safe candidate.  The direct fallback has no
         # native solution to reoptimise, so it skips this optional step.
-        if native_accepted is not None and engine is not None:
+        if (
+            native_accepted is not None
+            and engine is not None
+            and not (stop_requested is not None and stop_requested())
+        ):
             improved = engine.local_search(
                 inserted,
                 engine.penalty_manager.booster_cost_evaluator(),
@@ -520,12 +541,14 @@ class DynamicInsertionOperator:
                 changed_duties = reoptimized_changed
 
         try:
-            candidate, evaluation, charging_evaluated = _refine_charging_once(
-                candidate,
-                evaluation,
-                evaluator=evaluator,
-                charging_policy=charging_policy,
-            )
+            if not (stop_requested is not None and stop_requested()):
+                candidate, evaluation, charging_evaluated = _refine_charging_once(
+                    candidate,
+                    evaluation,
+                    evaluator=evaluator,
+                    charging_policy=charging_policy,
+                    stop_requested=stop_requested,
+                )
         except (TypeError, ValueError) as error:
             # The insertion witness is already complete and feasible.  A
             # refinement failure is recorded, but it must not turn into a
@@ -739,6 +762,10 @@ def _insertion_failure_summary(
     status: str,
     diagnostics: list[DynamicInsertionAttempt],
 ) -> str:
+    if status == NOT_INSERTED_SEARCH_EXHAUSTED:
+        return (
+            f"{status}; stopped after {len(diagnostics)} complete candidates"
+        )
     status_counts: dict[str, int] = {}
     for item in diagnostics:
         status_counts[item.status] = status_counts.get(item.status, 0) + 1
@@ -759,6 +786,7 @@ def _refine_charging_once(
     *,
     evaluator: DutyFullEvaluator,
     charging_policy: ChargingRepairPolicy,
+    stop_requested: Callable[[], bool] | None = None,
 ) -> tuple[DutyIndividual, FullEvaluation, int]:
     """Compare no-change with every P34 route/time/amount/site candidate once."""
 
@@ -767,6 +795,7 @@ def _refine_charging_once(
         charging_policy,
         include_charging_candidates=True,
         include_non_charging_candidates=False,
+        stop_requested=stop_requested,
     )
     best = incumbent
     best_evaluation = incumbent_evaluation
@@ -777,6 +806,8 @@ def _refine_charging_once(
         evaluator.context.bundle.instance,
         include_whole_duty_type_exchange=False,
     ):
+        if stop_requested is not None and stop_requested():
+            break
         outcome = evaluate_move(
             incumbent,
             move,

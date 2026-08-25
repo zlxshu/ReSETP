@@ -13,7 +13,6 @@ import hashlib
 import json
 from dataclasses import replace
 from decimal import ROUND_HALF_UP, Decimal
-from itertools import groupby
 
 from setp_hgs_kernel import Model, __version__ as kernel_version
 from setp_hgs_kernel import Route as IndependentKernelRoute
@@ -376,7 +375,11 @@ class IndependentKernelDutyRouteProposalEngine:
             raise ValueError(
                 "same-shift neighbours require rebuilt route constraints"
             )
-        shifts = contract.customer_shift_by_id
+        shifts = {
+            customer_id: shift_id
+            for customer_id, shift_id in contract.customer_shift_by_id.items()
+            if customer_id in self._location_by_node_id
+        }
         neighbours = compute_neighbours(
             self._data,
             replace(params, num_neighbours=self._data.num_clients - 1),
@@ -488,7 +491,13 @@ class IndependentKernelDutyRouteProposalEngine:
             self._data,
             self._rng,
         )
-        replacements = self._decode_changes(individual, random_solution)
+        self._initialization_prepopulation_local_search_calls += 1
+        educated_solution = self._local_search(
+            random_solution,
+            self._cost_evaluator,
+        )
+        self._record_depot_split_statistics()
+        replacements = self._decode_changes(individual, educated_solution)
         if not self._mechanism_locks_preserved(individual, replacements):
             return None
         if not replacements:
@@ -537,7 +546,13 @@ class IndependentKernelDutyRouteProposalEngine:
             self._data,
             [route for route in repaired_routes if route.visits()],
         )
-        replacements = self._decode_changes(individual, repaired_solution)
+        self._initialization_prepopulation_local_search_calls += 1
+        educated_solution = self._local_search(
+            repaired_solution,
+            self._cost_evaluator,
+        )
+        self._record_depot_split_statistics()
+        replacements = self._decode_changes(individual, educated_solution)
         if not self._mechanism_locks_preserved(individual, replacements):
             return None
         if not replacements:
@@ -612,39 +627,6 @@ class IndependentKernelDutyRouteProposalEngine:
                     return False
         return True
 
-    def _split_replacement_trips_by_shift(
-        self,
-        chain: tuple[tuple[str, ...], ...],
-    ) -> tuple[tuple[str, ...], ...]:
-        """Split each native trip at a customer-shift boundary.
-
-        The native kernel does not know the rebuilt AM/PM trip contract.  Keep
-        its customer order, but materialize every contiguous shift block as a
-        separate trip before the Duty layer schedules and evaluates it.
-        """
-
-        contract = self._context.rebuilt_route_constraints
-        if contract is None:
-            return chain
-        shifts_by_customer = contract.customer_shift_by_id
-        normalized: list[tuple[str, ...]] = []
-        for trip in chain:
-            try:
-                normalized.extend(
-                    tuple(customers)
-                    for _shift, customers in groupby(
-                        trip,
-                        key=shifts_by_customer.__getitem__,
-                    )
-                )
-            except KeyError as exc:
-                raise ValueError(
-                    "candidate route references a customer outside the "
-                    "rebuilt shift contract: "
-                    f"{exc.args[0]}"
-                ) from exc
-        return tuple(normalized)
-
     def _project(self, individual: DutyIndividual) -> IndependentKernelSolution:
         routes: list[IndependentKernelRoute] = []
         for duty in individual.duties:
@@ -692,7 +674,7 @@ class IndependentKernelDutyRouteProposalEngine:
                 for trip in route.trips()
                 if trip.visits()
             )
-            output[duty_id] = self._split_replacement_trips_by_shift(raw_chain)
+            output[duty_id] = raw_chain
         current = {
             duty.physical_vehicle_id: tuple(
                 tuple(trip.customer_ids) for trip in duty.trips
@@ -800,6 +782,7 @@ def _build_unique_asset_problem(
     location_object = {}
     location_by_node_id: dict[str, int] = {}
     node_id_by_location: dict[int, str] = {}
+    shift_contract = context.rebuilt_route_constraints
     for location, node in enumerate((*depots, *customers)):
         if node.node_type.lower() == "d":
             location_object[node.node_id] = model.add_depot(
@@ -810,6 +793,12 @@ def _build_unique_asset_problem(
                 name=node.node_id,
             )
         else:
+            release_time = 0
+            if shift_contract is not None:
+                shift_id = str(shift_contract.customer_shift_by_id[node.node_id])
+                release_time = round(
+                    shift_contract.shift_window_second_by_id[shift_id][0]
+                )
             delivery = round(float(node.demand) * load_scale)
             if volume_by_customer is not None or locked_depots or locked_vehicle_types:
                 delivery = [delivery]
@@ -835,6 +824,7 @@ def _build_unique_asset_problem(
                 service_duration=round(node.service_time),
                 tw_early=round(node.ready_time),
                 tw_late=round(node.due_time),
+                release_time=release_time,
                 name=node.node_id,
             )
         location_by_node_id[node.node_id] = location

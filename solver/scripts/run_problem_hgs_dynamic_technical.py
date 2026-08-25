@@ -41,11 +41,6 @@ from setp_solver.algorithms.problem_hgs.initialization import (
     build_initial_population,
 )
 from setp_solver.algorithms.problem_hgs.model import DutyIndividual
-from setp_solver.algorithms.problem_hgs.proposals import (
-    LegacyCompleteProposalEngine,
-    MechanismProposalEngine,
-    SequentialProposalEngine,
-)
 from setp_solver.algorithms.problem_hgs.kernel_proposals import (
     IndependentKernelDutyRouteProposalEngine,
 )
@@ -209,16 +204,6 @@ def main() -> int:
     parser.add_argument("--max-runtime-seconds", type=float, default=180.0)
     parser.add_argument("--stagnation-patience", type=int, default=500)
     parser.add_argument(
-        "--proposal-mode",
-        choices=(
-            "system",
-            "route_only",
-            "mechanism_only",
-            "legacy",
-        ),
-        default="system",
-    )
-    parser.add_argument(
         "--source-best-solution",
         type=Path,
         default=Path(
@@ -257,7 +242,6 @@ def main() -> int:
             "requested_iterations": int(args.iterations),
             "requested_max_runtime_seconds": float(args.max_runtime_seconds),
             "requested_stagnation_patience": int(args.stagnation_patience),
-            "requested_proposal_mode": args.proposal_mode,
         },
     )
 
@@ -363,15 +347,6 @@ def main() -> int:
     initialization_full_evaluations = (
         evaluator.full_calls - initialization_full_calls_before
     )
-    mechanism_engine = MechanismProposalEngine(evaluator.context, policy)
-    if args.proposal_mode == "legacy":
-        proposal_engine = LegacyCompleteProposalEngine()
-    elif args.proposal_mode == "route_only":
-        proposal_engine = SequentialProposalEngine((route_engine,))
-    elif args.proposal_mode == "mechanism_only":
-        proposal_engine = SequentialProposalEngine((mechanism_engine,))
-    else:
-        proposal_engine = None
     identity = FrozenPopulationIdentity(
         source_id="technical-dynamic-future-copied-hgs-population",
         value_sha256=population_sha256(candidates),
@@ -388,7 +363,6 @@ def main() -> int:
         ),
         arm="dynamic-future-system-wiring-trial",
         route_engine=route_engine,
-        proposal_engine=proposal_engine,
         initial_evaluations=initial_evaluations,
         initialization_full_evaluation_count=initialization_full_evaluations,
         initialization_wall_seconds=initialization_wall_seconds,
@@ -467,7 +441,6 @@ def main() -> int:
         "source_recomputed_cost": static_evaluation.total_cost,
         "instance_id": args.instance_id,
         "instance_formally_selected": False,
-        "proposal_mode": args.proposal_mode,
         "trigger_second": float(args.trigger_second),
         "iterations": int(args.iterations),
         "stop_semantics": (

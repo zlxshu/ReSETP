@@ -3,23 +3,15 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, replace
+from dataclasses import dataclass, replace
 from types import SimpleNamespace
 
 import pytest
-from setp_hgs_kernel._setp_hgs_kernel import PopulationParams
 
 from setp_solver.algorithms.problem_hgs.charging import ChargingRepairPolicy
 from setp_solver.algorithms.problem_hgs.execution_identity import (
     EffectiveExecutionBundle,
     build_effective_execution_bundle,
-    proposal_stage_configuration,
-)
-from setp_solver.algorithms.problem_hgs.integrated_genetic_algorithm import (
-    IntegratedGeneticAlgorithm,
-)
-from setp_solver.algorithms.problem_hgs.integrated_private import (
-    build_integrated_private_hgs,
 )
 from setp_solver.algorithms.problem_hgs.kernel_proposals import (
     IndependentKernelDutyRouteProposalEngine,
@@ -108,7 +100,6 @@ def _effective(
         "cross_depot_enabled": True,
         "multi_trip_enabled": True,
         "type_exchange_enabled": True,
-        "route_layer_crossover_enabled": False,
         "education_depth_limit": None,
     }
     switches.update(switch_changes)
@@ -154,7 +145,7 @@ def _parameters(**changes) -> ProblemHGSSearchParameters:
     return ProblemHGSSearchParameters(**values)
 
 
-def _run(case, *, proposal_engine=None, expected=None, **switches):
+def _run(case, *, expected=None, **switches):
     initial = case["initial"]
     candidates = (initial,) * 4
     evaluations = tuple(case["evaluator"].evaluate(initial) for _ in candidates)
@@ -169,7 +160,6 @@ def _run(case, *, proposal_engine=None, expected=None, **switches):
         stop=lambda _state: True,
         arm="execution-identity-test",
         route_engine=_real_route(case),
-        proposal_engine=proposal_engine,
         initial_evaluations=evaluations,
         initialization_full_evaluation_count=4,
         retain_trajectory=False,
@@ -197,7 +187,6 @@ def _run(case, *, proposal_engine=None, expected=None, **switches):
         ("cross_depot_enabled", False),
         ("multi_trip_enabled", False),
         ("type_exchange_enabled", False),
-        ("route_layer_crossover_enabled", True),
         ("education_depth_limit", 1),
     ),
 )
@@ -210,14 +199,12 @@ def test_requested_dead_fields_do_not_change_effective_hash() -> None:
     left = _parameters()
     right = replace(
         left,
-        crossover_mode="hybrid",
         population=replace(left.population, tournament_size=9),
     )
     left_execution = _effective(population=left.population)
     right_execution = _effective(population=right.population)
     payload = json.dumps(left_execution.algorithm_configuration_payload())
 
-    assert "crossover_mode" not in payload
     assert "tournament_size" not in payload
     assert search_configuration_sha256(left_execution) == (
         search_configuration_sha256(right_execution)

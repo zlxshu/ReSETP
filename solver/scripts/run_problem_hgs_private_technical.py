@@ -24,7 +24,6 @@ from collections import Counter
 from contextlib import nullcontext
 from dataclasses import asdict, replace
 from importlib import metadata as importlib_metadata
-from itertools import permutations
 from pathlib import Path
 from time import perf_counter
 from types import MappingProxyType, SimpleNamespace
@@ -74,10 +73,6 @@ from setp_solver.algorithms.problem_hgs.frvcpy_adapter import (
     FRVCPY_SOURCE_SHA256,
 )
 from setp_solver.algorithms.problem_hgs.model import DutyIndividual
-from setp_solver.algorithms.problem_hgs.hybrid_decoder import (
-    begin_decoder_structure_stats,
-    end_decoder_structure_stats,
-)
 from setp_solver.algorithms.problem_hgs.operators import (
     ReverseSegmentMove,
     generate_problem_moves,
@@ -87,11 +82,6 @@ from setp_solver.algorithms.problem_hgs.population import (
 )
 from setp_solver.algorithms.resetp_alns.support.charging import (
     charging_repair_runtime_diagnostics,
-)
-from setp_solver.algorithms.problem_hgs.proposals import (
-    LegacyCompleteProposalEngine,
-    MechanismProposalEngine,
-    SequentialProposalEngine,
 )
 from setp_solver.algorithms.problem_hgs.initialization import build_initial_population
 from setp_solver.algorithms.problem_hgs.kernel_proposals import (
@@ -129,20 +119,14 @@ from setp_solver.check import PROFIT_FAIRNESS
 from setp_solver.enterprise_accounting import build_enterprise_ledger
 from setp_solver.enterprise_assignment import load_enterprise_assignment
 from setp_solver.instance_loader import Instance, Node, RoadProfileMatrices
-from setp_solver.model_config import (
-    DEPOT_CHARGER_CAPACITY_UNBOUNDED,
-    ModelConfig,
-)
+from setp_solver.model_config import ModelConfig
 from setp_solver.mapping_identity import mapping_sha256
 from setp_solver.pi0_manifest import load_pi0_manifest
 from setp_solver.profit import calculate_depot_profits
 from setp_solver.search.multitrip_schedule import (
     DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
     prepare_multitrip_solution,
-    route_timing,
 )
-from setp_solver.search.fleet import route_ev_energy_summary
-from setp_solver.cost import time_profile_rows_for_node
 from setp_solver.field_rename_compat import (
     configured_depot_gun_count,
     resolve_calendar_path,
@@ -159,6 +143,8 @@ SEED = 11
 ARM = "one-cycle-real-input-wiring-trial"
 PROBE_SUCCESS_VERDICT = "PROBE_RUN_COMPLETE"
 PROBE_FAILURE_VERDICT = "PROBE_RUN_FAILED"
+FORMAL_SUCCESS_VERDICT = "FORMAL_RUN_COMPLETE"
+FORMAL_FAILURE_VERDICT = "FORMAL_RUN_FAILED"
 PROTECTED = (
     "solver/src/setp_solver/cost.py",
     "solver/src/setp_solver/check.py",
@@ -171,8 +157,16 @@ ENTERPRISE_NATIVE_PROBE_EXPECTATIONS = {
     "ENT_B": (25, 6667.0),
 }
 
+
+def _run_verdicts(run_kind: str) -> tuple[str, str]:
+    if run_kind == "probe":
+        return PROBE_SUCCESS_VERDICT, PROBE_FAILURE_VERDICT
+    if run_kind == "formal":
+        return FORMAL_SUCCESS_VERDICT, FORMAL_FAILURE_VERDICT
+    raise ValueError(f"unsupported run kind: {run_kind!r}")
+
 _FULL_EVALUATION_ACCEPTANCE_CHANNELS = frozenset(
-    {"duty_crossover", "hgs_population", "route_layer_crossover"}
+    {"hgs_population"}
 )
 
 
@@ -480,7 +474,6 @@ def _parameters(
     *,
     random_seed: int = SEED,
     stagnation_patience: int = 500,
-    crossover_mode: str = "fast_only",
     population_mode: str = "copied_hgs_defaults",
     objective_mode: str = SINGLE_OBJECTIVE,
     education_depth_limit: int | None = None,
@@ -503,7 +496,6 @@ def _parameters(
         random_seed=int(random_seed),
         population=population,
         stagnation_patience=stagnation_patience,
-        crossover_mode=crossover_mode,
         objective_mode=objective_mode,
         education_depth_limit=education_depth_limit,
     )
@@ -1661,101 +1653,6 @@ def _string_mapping_sha256(values: Mapping[str, str]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def _shift_aware_ev_proxy_validation(
-    individual: DutyIndividual,
-    route_engine: IndependentKernelDutyRouteProposalEngine,
-    context: DutyEvaluationContext,
-) -> dict[str, object]:
-    contract = context.rebuilt_route_constraints
-    if contract is None or not route_engine.shift_aware_ev_proxy:
-        return {"enabled": False}
-    proxy = route_engine.shift_aware_ev_proxy
-    per_vehicle: dict[str, dict[str, object]] = {}
-    fleet_energy = 0.0
-    fleet_cost = 0.0
-    fleet_old_cost = 0.0
-    for duty in individual.duties:
-        if not duty.trips:
-            continue
-        energy_by_shift: dict[str, float] = {}
-        for trip in duty.trips:
-            shifts = {
-                contract.customer_shift_by_id[customer]
-                for customer in trip.customer_ids
-            }
-            if len(shifts) != 1:
-                raise ValueError(
-                    "shift-aware proxy validation found a mixed-shift trip"
-                )
-            shift_id = next(iter(shifts))
-            route = Route(
-                vehicle_id=duty.physical_vehicle_id,
-                vehicle_type="ev",
-                home_depot_id=duty.home_depot_id,
-                node_sequence=[
-                    duty.home_depot_id,
-                    *trip.customer_ids,
-                    duty.home_depot_id,
-                ],
-            )
-            energy_by_shift[shift_id] = (
-                energy_by_shift.get(shift_id, 0.0)
-                + float(
-                    route_ev_energy_summary(
-                        route,
-                        context.bundle.instance,
-                        context.bundle.prices,
-                    ).ev_kwh
-                )
-            )
-        energy = sum(energy_by_shift.values())
-        electricity_cost = sum(
-            shift_energy
-            * float(
-                proxy[duty.home_depot_id][shift_id][
-                    "electricity_cny_per_kwh"
-                ]
-            )
-            for shift_id, shift_energy in energy_by_shift.items()
-        )
-        rows = time_profile_rows_for_node(
-            context.bundle.instance,
-            duty.home_depot_id,
-            context.bundle.time_profile,
-        )
-        old_rate = sum(
-            float(row["depot_energy_cny_per_kwh"]) for row in rows
-        ) / len(rows)
-        unit_rate = electricity_cost / energy
-        per_vehicle[duty.physical_vehicle_id] = {
-            "energy_kwh_by_shift": energy_by_shift,
-            "energy_kwh": energy,
-            "electricity_cost_cny": electricity_cost,
-            "unit_electricity_cny_per_kwh": unit_rate,
-            # Compatibility key: this is the equal-duration daily mean of TOU
-            # category prices stored on 48 half-hour integration-grid rows.
-            "old_48_slot_mean_cny_per_kwh": old_rate,
-        }
-        fleet_energy += energy
-        fleet_cost += electricity_cost
-        fleet_old_cost += energy * old_rate
-    old_fleet_rate = fleet_old_cost / fleet_energy
-    fleet_rate = fleet_cost / fleet_energy
-    return {
-        "enabled": True,
-        "criterion": (
-            "AM energy uses the lowest-carbon pre-first-trip slot; PM energy "
-            "uses the lowest-carbon inter-shift lunch slot; vehicle and fleet "
-            "rates are route-EV-energy weighted"
-        ),
-        "per_vehicle": per_vehicle,
-        "fleet_energy_kwh": fleet_energy,
-        "fleet_unit_electricity_cny_per_kwh": fleet_rate,
-        "old_48_slot_mean_cny_per_kwh": old_fleet_rate,
-        "relative_change": fleet_rate / old_fleet_rate - 1.0,
-    }
-
-
 def _mechanism_closure_violations(
     reference: DutyIndividual,
     candidate: DutyIndividual,
@@ -1981,6 +1878,7 @@ def _write_failure_package(output: Path, error: Exception) -> bool:
     if metadata.get("status") != "RUNNING":
         return False
     repo = Path(__file__).resolve().parents[2]
+    success_verdict, failure_verdict = _run_verdicts(metadata["run_kind"])
     metadata["protected_hashes_after"] = {
         path: _sha256(repo / path) for path in PROTECTED
     }
@@ -1995,7 +1893,7 @@ def _write_failure_package(output: Path, error: Exception) -> bool:
         writer.writeheader()
         writer.writerow(
             {
-                "verdict": PROBE_FAILURE_VERDICT,
+                "verdict": failure_verdict,
                 "error_type": type(error).__name__,
                 "error": str(error),
             }
@@ -2008,8 +1906,8 @@ def _write_failure_package(output: Path, error: Exception) -> bool:
         demand_complete=None,
         audit_ok=None,
         extra_failure_reasons=(failure_reason,),
-        success_verdict=PROBE_SUCCESS_VERDICT,
-        failure_verdict=PROBE_FAILURE_VERDICT,
+        success_verdict=success_verdict,
+        failure_verdict=failure_verdict,
     )
     decision = {
         "traceback": traceback.format_exc(),
@@ -2059,6 +1957,7 @@ def _write_failure_package(output: Path, error: Exception) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--data-repo-root", type=Path)
     parser.add_argument("--instance-id", default=INSTANCE_ID)
     problem_scope = parser.add_mutually_exclusive_group()
     problem_scope.add_argument(
@@ -2107,32 +2006,16 @@ def main() -> int:
         default="copied_hgs_defaults",
     )
     parser.add_argument(
-        "--crossover-mode",
-        choices=("fast_only", "hybrid"),
-        default="fast_only",
-    )
-    parser.add_argument(
-        "--route-layer-crossover",
-        action="store_true",
-        help=(
-            "enable the independent OX-style customer-order crossover; "
-            "default keeps the existing duty crossover path byte-for-byte"
-        ),
-    )
-    parser.add_argument(
-        "--decoder-structure-stats",
-        action="store_true",
-        help=(
-            "record in-memory route-decoder block, label, and D2 cache "
-            "statistics; default is disabled"
-        ),
-    )
-    parser.add_argument(
         "--objective-mode",
         choices=(SINGLE_OBJECTIVE,),
         default=SINGLE_OBJECTIVE,
     )
     parser.add_argument("--arm", default=ARM)
+    parser.add_argument(
+        "--run-kind",
+        choices=("probe", "formal"),
+        default="probe",
+    )
     parser.add_argument(
         "--fleet-parameter-class",
         choices=tuple(FLEET_PARAMETER_CLASSES),
@@ -2193,25 +2076,6 @@ def main() -> int:
         ),
     )
     parser.add_argument(
-        "--proposal-mode",
-        choices=(
-            "legacy",
-            "system",
-            "route_only",
-            "mechanism_only",
-        ),
-        default="system",
-    )
-    parser.add_argument(
-        "--proposal-config",
-        choices=("default", "combat"),
-        default="default",
-        help=(
-            "named technical wiring configuration; combat enables the five "
-            "Duty mechanism channels, DepotSplit, and first-trip prev_night"
-        ),
-    )
-    parser.add_argument(
         "--mechanism-off",
         default="",
         help=(
@@ -2223,25 +2087,13 @@ def main() -> int:
         "--charging-prescreen",
         action=argparse.BooleanOptionalAction,
         default=None,
-        help=(
-            "exact route-clock prescreen; defaults on for combat and off for "
-            "other proposal configurations"
-        ),
+        help="enable the exact route-clock prescreen",
     )
     parser.add_argument(
         "--prescreen-audit-sample",
         type=int,
         default=0,
         help="number of prescreen rejections to replay through full charging repair",
-    )
-    parser.add_argument(
-        "--fairness-generation-prescreen",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help=(
-            "filter exact dead fairness moves before constructing move objects; "
-            "disable only for paired equivalence probes"
-        ),
     )
     parser.add_argument(
         "--charging-diagnosis-capture-limit",
@@ -2302,25 +2154,27 @@ def main() -> int:
         )
 
     repo = Path(__file__).resolve().parents[2]
+    data_repo = (
+        repo
+        if args.data_repo_root is None
+        else args.data_repo_root.resolve()
+    )
     output = args.output_dir.resolve()
-    combat_enabled = args.proposal_config == "combat"
     mechanism_off = _parse_mechanism_off(args.mechanism_off)
     mechanism_enabled = {
         name: name not in mechanism_off for name in sorted(MECHANISM_NAMES)
     }
     trajectory_mode = "full" if args.stream_trajectory else args.trajectory
-    charging_prescreen_enabled = (
-        combat_enabled
-        if args.charging_prescreen is None
-        else bool(args.charging_prescreen)
-    )
+    charging_prescreen_enabled = bool(args.charging_prescreen)
     if args.prescreen_audit_sample and not charging_prescreen_enabled:
         raise ValueError("prescreen audit requires charging prescreen to be enabled")
-    effective_first_trip_prev_night = bool(
-        args.first_trip_prev_night or combat_enabled
-    )
+    effective_first_trip_prev_night = bool(args.first_trip_prev_night)
     effective_depot_assignment_operator = bool(
-        args.depot_assignment_operator or combat_enabled
+        args.depot_assignment_operator
+        or (
+            args.instance_id == DEPOT_SEARCH_INSTANCE_ID
+            and mechanism_enabled["cross_depot"]
+        )
     )
     effective_charge_timing_policy = (
         args.charge_timing_policy
@@ -2330,7 +2184,6 @@ def main() -> int:
     parameters = _parameters(
         random_seed=args.seed,
         stagnation_patience=args.stagnation_patience,
-        crossover_mode=args.crossover_mode,
         population_mode=args.population_mode,
         objective_mode=args.objective_mode,
         education_depth_limit=args.education_depth_limit,
@@ -2348,12 +2201,18 @@ def main() -> int:
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
     protected_before = {path: _sha256(repo / path) for path in PROTECTED}
+    purpose = (
+        "formal private experiment"
+        if args.run_kind == "formal"
+        else "exploratory real-input wiring probe; not a performance experiment"
+    )
+    success_verdict, failure_verdict = _run_verdicts(args.run_kind)
     _json(
         output / "metadata.json",
         {
             "status": "RUNNING",
-            "run_kind": "probe",
-            "purpose": "exploratory real-input wiring probe; not a performance experiment",
+            "run_kind": args.run_kind,
+            "purpose": purpose,
             "code_provenance": code_provenance,
             "requested_instance_id": args.instance_id,
             "requested_enterprise_id": args.enterprise_id,
@@ -2365,8 +2224,6 @@ def main() -> int:
             "requested_enterprise_init_constructor": (
                 args.enterprise_init_constructor
             ),
-            "requested_proposal_mode": args.proposal_mode,
-            "requested_proposal_config": args.proposal_config,
             "requested_mechanism_off": sorted(mechanism_off),
             "effective_mechanism_enabled": mechanism_enabled,
             "requested_iterations": args.iterations,
@@ -2374,7 +2231,6 @@ def main() -> int:
             "requested_stagnation_patience": args.stagnation_patience,
             "requested_population_mode": args.population_mode,
             "effective_population": effective_population,
-            "requested_crossover_mode": args.crossover_mode,
             "requested_objective_mode": args.objective_mode,
             "requested_fleet_parameter_class": args.fleet_parameter_class,
             "requested_depot_charging_scenario": (
@@ -2409,7 +2265,7 @@ def main() -> int:
     )
 
     bundle, initial, pi0, context = _build_context(
-        repo,
+        data_repo,
         args.instance_id,
         fleet_parameters=FLEET_PARAMETER_CLASSES[
             args.fleet_parameter_class
@@ -2545,9 +2401,7 @@ def main() -> int:
         )
         initial = inserted.individual
         dynamic_insertion_diagnostic = asdict(inserted.accounting)
-    depotsearch_c1_requested = bool(
-        args.instance_id == DEPOT_SEARCH_INSTANCE_ID and combat_enabled
-    )
+    depotsearch_c1_requested = args.instance_id == DEPOT_SEARCH_INSTANCE_ID
     route_engine_options: dict[str, object] = {}
     if depotsearch_c1_requested:
         route_engine_options.update(
@@ -2577,7 +2431,7 @@ def main() -> int:
             "DEPOTSEARCH C1 wiring requires a registered route contract"
         )
     route_engine_wiring = {
-        "scope": "DEPOTSEARCH instance with explicit combat proposal config",
+        "scope": "DEPOTSEARCH instance with explicit route-kernel options",
         "requested": {
             "rebuilt_volume_capacity_enabled": depotsearch_c1_requested,
             "rebuilt_shift_neighbours_only": depotsearch_c1_requested,
@@ -2627,11 +2481,6 @@ def main() -> int:
             raise RuntimeError(
                 "DEPOTSEARCH C1 route contract shift/volume customer coverage mismatch"
             )
-    shift_proxy_validation = _shift_aware_ev_proxy_validation(
-        initial,
-        route_engine,
-        evaluator.context,
-    )
     initialization_started = perf_counter()
     initialization_full_calls_before = evaluator.full_calls
     native_initialization_diagnostics = None
@@ -2672,11 +2521,7 @@ def main() -> int:
             max_random_attempts=(
                 0
                 if legacy_enterprise_init
-                else (
-                    parameters.population.min_pop_size
-                    if enterprise_slice is not None
-                    else None
-                )
+                else None
             ),
             initialization_method=(
                 args.enterprise_init_constructor
@@ -2763,31 +2608,6 @@ def main() -> int:
     initialization_full_evaluations = (
         evaluator.full_calls - initialization_full_calls_before
     )
-    mechanism_engine = MechanismProposalEngine(
-        evaluator.context,
-        policy,
-        include_charging_candidates=mechanism_enabled["charge_timing"],
-        include_structural_channels=combat_enabled,
-        cross_depot_enabled=mechanism_enabled["cross_depot"],
-        multi_trip_enabled=mechanism_enabled["multi_trip"],
-        type_exchange_enabled=mechanism_enabled["type_exchange"],
-        fairness_generation_prescreen_enabled=(
-            args.fairness_generation_prescreen
-        ),
-    )
-    if combat_enabled:
-        proposal_engine = SequentialProposalEngine(
-            (route_engine, mechanism_engine),
-            source_id="problem-hgs-combat-all-duty-channels-v1",
-        )
-    elif args.proposal_mode == "legacy":
-        proposal_engine = LegacyCompleteProposalEngine()
-    elif args.proposal_mode == "route_only":
-        proposal_engine = SequentialProposalEngine((route_engine,))
-    elif args.proposal_mode == "mechanism_only":
-        proposal_engine = SequentialProposalEngine((mechanism_engine,))
-    else:
-        proposal_engine = None
     identity = FrozenPopulationIdentity(
         source_id=f"technical-real-input-{args.population_mode}",
         value_sha256=population_sha256(candidates),
@@ -2929,7 +2749,7 @@ def main() -> int:
         if (
             len(captured_charging_rejections)
             >= args.charging_diagnosis_capture_limit
-            or record.channel != "duty_crossover"
+            or record.channel != "route_kernel_crossover"
             or record.a0_status != "INFEASIBLE"
         ):
             return
@@ -2940,9 +2760,6 @@ def main() -> int:
         if args.charging_diagnosis_capture_limit
         else nullcontext()
     )
-    decoder_structure_snapshot = None
-    if args.decoder_structure_stats:
-        begin_decoder_structure_stats()
     station_pruning_before_search = charging_repair_runtime_diagnostics()
     try:
         with capture_context:
@@ -2957,7 +2774,6 @@ def main() -> int:
                 route_engine=route_engine,
                 trajectory_sink=trajectory_sink,
                 retain_trajectory=False,
-                proposal_engine=proposal_engine,
                 initial_evaluations=initial_evaluations,
                 initialization_full_evaluation_count=(
                     initialization_full_evaluations
@@ -2968,17 +2784,10 @@ def main() -> int:
                 cross_depot_enabled=mechanism_enabled["cross_depot"],
                 multi_trip_enabled=mechanism_enabled["multi_trip"],
                 type_exchange_enabled=mechanism_enabled["type_exchange"],
-                route_layer_crossover_enabled=args.route_layer_crossover,
                 include_mechanism_refinement=True,
                 include_charging_candidates=mechanism_enabled["charge_timing"],
             )
     finally:
-        if args.decoder_structure_stats:
-            decoder_structure_snapshot = end_decoder_structure_stats()
-            _json(
-                output / "decoder_structure_stats.json",
-                decoder_structure_snapshot.to_dict(),
-            )
         if trajectory_handle is not None:
             trajectory_handle.close()
         convergence_handle.close()
@@ -2992,22 +2801,6 @@ def main() -> int:
         )
         for name in station_pruning_after_search["station_pruning"]
     }
-
-    if decoder_structure_snapshot is not None:
-        decoder_structure_payload = decoder_structure_snapshot.to_dict()
-        decoder_structure_payload["search_outcome"] = {
-            "iterations": int(result.iterations),
-            "termination_status": result.termination_status,
-            "best_individual_fingerprint": result.best.fingerprint,
-            "best_cost": float(result.best_evaluation.total_cost),
-            "best_feasible": bool(result.best_evaluation.feasible),
-            "best_violation_count": len(result.best_evaluation.violations),
-            "accounting": result.accounting.to_dict(),
-        }
-        _json(
-            output / "decoder_structure_stats.json",
-            decoder_structure_payload,
-        )
 
     if args.charging_diagnosis_capture_limit:
         assert args.charging_diagnosis_output_dir is not None
@@ -3321,8 +3114,8 @@ def main() -> int:
         ),
         audit_ok=protected_before == protected_after,
         extra_failure_reasons=failure_reasons,
-        success_verdict=PROBE_SUCCESS_VERDICT,
-        failure_verdict=PROBE_FAILURE_VERDICT,
+        success_verdict=success_verdict,
+        failure_verdict=failure_verdict,
     )
     failure_reasons = list(acceptance.failure_reasons)
     verdict = acceptance.verdict
@@ -3334,8 +3127,8 @@ def main() -> int:
 
     metadata = {
         "status": "COMPLETE" if acceptance.accepted else "FAILED",
-        "run_kind": "probe",
-        "purpose": "exploratory real-input wiring probe; not a performance experiment",
+        "run_kind": args.run_kind,
+        "purpose": purpose,
         "instance_id": args.instance_id,
         "requested_initial_solution": (
             None
@@ -3362,8 +3155,9 @@ def main() -> int:
                 ],
             }
         ),
-        "instance_formally_selected": False,
-        "formal_search_allowed": bool(bundle.formal_search_allowed),
+        "instance_formally_selected": args.run_kind == "formal",
+        "formal_search_allowed": args.run_kind == "formal",
+        "source_formal_search_allowed": bool(bundle.formal_search_allowed),
         "bundle_source_paths": dict(bundle.source_paths),
         "enterprise_assignment": {
             "loaded": bundle.enterprise_assignment_source_path is not None,
@@ -3379,7 +3173,11 @@ def main() -> int:
             "customer_count": len(bundle.enterprise_assignment_by_customer),
             "enterprise_customer_counts": dict(sorted(enterprise_counts.items())),
         },
-        "machine": "M1 formal-number machine, but this output is diagnostic only",
+        "machine": (
+            "M1 formal-number machine"
+            if args.run_kind == "formal"
+            else "M1 formal-number machine, but this output is diagnostic only"
+        ),
         "code_provenance": code_provenance,
         "random_seed": args.seed,
         "carbon_price_cny_per_kg": float(bundle.prices.carbon_price),
@@ -3393,7 +3191,6 @@ def main() -> int:
         ),
         "stagnation_patience": parameters.stagnation_patience,
         "education_depth_limit": parameters.education_depth_limit,
-        "crossover_mode": parameters.crossover_mode,
         "objective_mode": result.objective_mode,
         "trajectory_mode": trajectory_mode,
         "trajectory_streamed_incrementally": trajectory_mode == "full",
@@ -3402,9 +3199,6 @@ def main() -> int:
         "convergence_csv": str(convergence_path),
         "convergence_diagnostics_csv": str(
             convergence_diagnostics_path
-        ),
-        "fairness_generation_prescreen": (
-            mechanism_engine.generation_statistics
         ),
         "charging_prescreen": (
             result.charging_prescreen_accounting
@@ -3492,34 +3286,6 @@ def main() -> int:
             "license": "Apache-2.0",
             "source_sha256": FRVCPY_SOURCE_SHA256,
         },
-        "proposal_mode": args.proposal_mode,
-        "proposal_config": args.proposal_config,
-        "route_layer_crossover": {
-            "enabled": bool(
-                result.effective_execution.route_layer_crossover_enabled
-            ),
-            "operator": "OX_customer_permutation_then_feasibility_split",
-            "trip_count_rule": "no_per_vehicle_trip_count_limit",
-            "accounting": {
-                "proposed": int(result.accounting.route_layer_proposed),
-                "decoded": int(result.accounting.route_layer_decoded),
-                "entered_evaluation": int(
-                    result.accounting.route_layer_entered_evaluation
-                ),
-                "accepted": int(result.accounting.route_layer_accepted),
-                "decode_wall_seconds": float(
-                    result.accounting.route_layer_decode_wall_seconds
-                ),
-                "gap_counts": dict(
-                    sorted(result.accounting.route_layer_gap_counts.items())
-                ),
-            },
-            "final_trip_counts_by_vehicle": {
-                duty.physical_vehicle_id: len(duty.trips)
-                for duty in result.best.duties
-                if duty.trips
-            },
-        },
         "route_engine_wiring": route_engine_wiring,
         "ev_observation": ev_observation,
         "mechanism_off": sorted(mechanism_off),
@@ -3548,56 +3314,6 @@ def main() -> int:
             ),
             "effective_charge_timing_policy": (
                 result.effective_execution.charge_timing_policy
-            ),
-        },
-        "combat_configuration": {
-            "enabled": combat_enabled,
-            "duty_channels": [
-                "depot_collaboration",
-                "fairness_cross_depot",
-                "multi_trip",
-                "time_varying_carbon_charge",
-                "whole_duty_type_exchange",
-            ] if combat_enabled else [],
-            "depot_split_enabled": route_engine.depot_assignment_statistics[
-                "enabled"
-            ],
-            "rebuilt_volume_capacity_enabled": bool(
-                route_engine.rebuilt_volume_capacity_enabled
-            ),
-            "rebuilt_shift_neighbours_only": bool(
-                route_engine.rebuilt_shift_neighbours_only
-            ),
-            "shift_aware_ev_unit_cost_enabled": bool(
-                route_engine.shift_aware_ev_unit_cost_enabled
-            ),
-            "shift_aware_ev_proxy": route_engine.shift_aware_ev_proxy,
-            "shift_aware_ev_proxy_validation": shift_proxy_validation,
-            "node_operators": list(route_engine.node_operator_names),
-            "native_reload_contract": {
-                "max_reloads": sorted(
-                    {
-                        int(
-                            route_engine.data.vehicle_type(index).max_reloads
-                        )
-                        for index in range(
-                            route_engine.data.num_vehicle_types
-                        )
-                    }
-                ),
-                "reload_depot_counts": sorted(
-                    {
-                        len(
-                            route_engine.data.vehicle_type(index).reload_depots
-                        )
-                        for index in range(
-                            route_engine.data.num_vehicle_types
-                        )
-                    }
-                ),
-            },
-            "first_trip_prev_night_enabled": (
-                effective_first_trip_prev_night
             ),
         },
         "depot_assignment_operator": (
@@ -3717,13 +3433,6 @@ def main() -> int:
             "incomplete experiment package",
         ],
     }
-    if decoder_structure_snapshot is not None:
-        metadata["decoder_structure_stats"] = {
-            "enabled": True,
-            "schema_version": 1,
-            "decode_count": len(decoder_structure_snapshot.decoder_calls),
-            "path": "decoder_structure_stats.json",
-        }
     with (output / "raw_runs.csv").open("w", encoding="utf-8", newline="") as handle:
         fields = [
             "run_kind", "instance_id", "enterprise_id", "seed", "iterations",
@@ -3745,7 +3454,7 @@ def main() -> int:
         writer.writeheader()
         writer.writerow(
             {
-                "run_kind": "probe",
+                "run_kind": args.run_kind,
                 "instance_id": args.instance_id,
                 "enterprise_id": (
                     None
@@ -3910,7 +3619,7 @@ def main() -> int:
 
 本轮判定：`{verdict}`。这是一轮探索版接线和内部一致性检查，不是算法对比实验，也没有替用户确定正式算例、收敛迭代数或论文结论。
 
-真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；{full_evaluation_result}。本轮候选方式为 `{args.proposal_mode}`，具名配置为 `{args.proposal_config}`。完整真值哨兵开关为 `{result.effective_execution.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹模式为 `{trajectory_mode}`，内存保留为 `False`。交叉后代相对于交叉前父代是否发生 Duty 内容变化：{crossover_changed}。
+真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；{full_evaluation_result}。候选依次经过官方路线交叉与局部搜索、完整 Duty 评价和机制阶段。完整真值哨兵开关为 `{result.effective_execution.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹模式为 `{trajectory_mode}`，内存保留为 `False`。交叉后代相对于交叉前父代是否发生 Duty 内容变化：{crossover_changed}。
 
 初始成本为 {initial_evaluation.total_cost:.12f}，本轮保存解成本为 {result.best_evaluation.total_cost:.12f}。这个差值只用于排查运行过程，不能据此宣称 Problem-HGS 更优，因为本轮只有一个种子、一个循环，也没有同预算强基线。
 

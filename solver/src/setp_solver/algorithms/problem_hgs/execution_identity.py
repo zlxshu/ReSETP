@@ -28,7 +28,7 @@ POPULATION_FIELDS = tuple(
     "min_pop_size generation_size num_elite num_close lb_diversity ub_diversity".split()
 )
 LIVE_SWITCH_FIELDS = tuple(
-    "include_mechanism_refinement include_whole_duty_type_exchange include_charging_candidates incremental_full_truth_sentinel_enabled shift_aware_departure_enabled schedule_cross_repair_fallback schedule_all_changed_move_evaluation fleet_activation_enabled objective_mode charging_prescreen_enabled charging_prescreen_audit_limit cross_depot_enabled multi_trip_enabled type_exchange_enabled route_layer_crossover_enabled education_depth_limit".split()
+    "include_mechanism_refinement include_whole_duty_type_exchange include_charging_candidates incremental_full_truth_sentinel_enabled shift_aware_departure_enabled schedule_cross_repair_fallback schedule_all_changed_move_evaluation fleet_activation_enabled objective_mode charging_prescreen_enabled charging_prescreen_audit_limit cross_depot_enabled multi_trip_enabled type_exchange_enabled education_depth_limit".split()
 )
 
 
@@ -152,7 +152,6 @@ class EffectiveExecutionBundle:
     cross_depot_enabled: bool
     multi_trip_enabled: bool
     type_exchange_enabled: bool
-    route_layer_crossover_enabled: bool
     education_depth_limit: int | None
 
     def algorithm_configuration_payload(self) -> dict[str, object]:

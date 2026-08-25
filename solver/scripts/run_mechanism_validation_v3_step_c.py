@@ -11,11 +11,9 @@ daily distance with the three pre-registered CV/EV break-even distances.
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
 import statistics
-import subprocess
-from dataclasses import asdict, replace
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
@@ -45,21 +43,6 @@ THRESHOLDS_KM = (
     ("flat", 86.8),
     ("peak", 125.5),
 )
-PROTECTED = (
-    "solver/src/setp_solver/cost.py",
-    "solver/src/setp_solver/check.py",
-    "solver/src/setp_solver/search/evaluation.py",
-)
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def _read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8-sig") as handle:
         return list(csv.DictReader(handle))
@@ -100,17 +83,6 @@ def _clock(minute: float) -> str:
 def _percent_change(value: float, baseline: float) -> float:
     return 100.0 * (float(value) - float(baseline)) / float(baseline)
 
-
-def _git_commit(repo_root: Path) -> str:
-    return subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=repo_root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-
-
 def _route_as_ev(row: Mapping[str, str]) -> Route:
     return Route(
         vehicle_id=str(row["route_vehicle_id"]).replace("CV_", "EV_", 1),
@@ -139,7 +111,6 @@ def _group_by_vehicle(
 def _render_report(
     charge_rows: Sequence[Mapping[str, Any]],
     threshold_rows: Sequence[Mapping[str, Any]],
-    protected_hashes: Mapping[str, str],
 ) -> str:
     vehicles = sorted({str(row["physical_vehicle_id"]) for row in charge_rows})
     return_by_vehicle = {
@@ -282,14 +253,9 @@ def _render_report(
             "- `raw_runs.csv`：本步全部逐车充电与车型阈值原始行。",
             "- `charge_strategy_by_vehicle.csv`：四策略逐车明细。",
             "- `vehicle_threshold_by_vehicle.csv`：三个临界时段逐车判定。",
-            "- `metadata.json`、`decision.json`、`artifact_hashes.json`：运行身份、当前状态与产物哈希。",
-            "",
-            "## 受保护文件哈希",
-            "",
+            "- `metadata.json`、`decision.json`：运行身份与当前状态。",
         ]
     )
-    for path, digest in protected_hashes.items():
-        lines.append(f"- `{path}`：`{digest}`")
     return "\n".join(lines) + "\n"
 
 
@@ -511,24 +477,17 @@ def main() -> None:
         raw_rows.append({"record_type": "step_c_vehicle_threshold", **row})
     _write_csv(report_root / "raw_runs.csv", raw_rows, raw_fields)
 
-    protected_hashes = {
-        path: _sha256(repo_root / path)
-        for path in PROTECTED
-    }
     metadata = {
         "schema": "resetp.mechanism-validation-v3.step-c.v1",
         "status": "STEP_C_DONE",
         "run_kind": "fixed_witness_recalculation_no_search",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "git_commit": _git_commit(repo_root),
         "instance_id": INSTANCE_ID,
         "input": str(input_path.relative_to(repo_root)),
-        "input_sha256": _sha256(input_path),
         "carbon_price_cny_per_kg": CARBON_PRICE_CNY_PER_KG,
         "charge_policies": list(POLICIES),
         "critical_daily_km": {key: value for key, value in THRESHOLDS_KM},
         "search_evaluations": 0,
-        "protected_file_hashes": protected_hashes,
     }
     _write_json(report_root / "metadata.json", metadata)
     _write_json(
@@ -541,15 +500,9 @@ def main() -> None:
         },
     )
     (report_root / "report.md").write_text(
-        _render_report(charge_rows, threshold_rows, protected_hashes),
+        _render_report(charge_rows, threshold_rows),
         encoding="utf-8",
     )
-    artifact_hashes = {
-        path.name: _sha256(path)
-        for path in sorted(report_root.iterdir())
-        if path.is_file() and path.name != "artifact_hashes.json"
-    }
-    _write_json(report_root / "artifact_hashes.json", artifact_hashes)
 
 
 if __name__ == "__main__":

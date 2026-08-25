@@ -296,17 +296,17 @@ class _DynamicPrefixAccountingTotals:
     cv_emissions_by_depot: tuple[tuple[str, float], ...] = ()
 
 
-def _remove_certified_dynamic_battery_duplicates(
+def _remove_certified_dynamic_check_duplicates(
     violations: list[Violation],
     certified_future_route_ids: set[str],
 ) -> list[Violation]:
-    """Keep static findings except duplicate battery checks on certified routes."""
+    """Keep findings not already closed by the exact dynamic certificate."""
 
     return [
         violation
         for violation in violations
         if not (
-            violation.type == BATTERY
+            violation.type in {BATTERY, CHARGING_START}
             and violation.vehicle_id in certified_future_route_ids
         )
     ]
@@ -410,7 +410,10 @@ def _validate_dynamic_state_customers(
             *(state.prior_committed_solution or Solution()).routes,
             *(
                 route
-                for route in state.source_solution.routes
+                for route in (
+                    state.source_full_execution_solution
+                    or state.source_solution
+                ).routes
                 if route.vehicle_id in committed_route_ids
             ),
         )
@@ -436,7 +439,10 @@ def _asset_full_executed_prefix(
     asset: Any,
 ) -> tuple[str, ...]:
     prefix = tuple(getattr(asset, "executed_prefix", ()))
-    route_id = getattr(asset, "continuation_route_id", None)
+    route_id = (
+        getattr(asset, "continuation_route_id", None)
+        or getattr(asset, "in_progress_route_id", None)
+    )
     if not prefix:
         return prefix
     if route_id is None:
@@ -746,13 +752,13 @@ class DutyFullEvaluator:
             # static initial battery.  A rolling continuation instead starts
             # at the inherited asset battery already closed by
             # validate_dynamic_multitrip_certificate().  Retain every other
-            # static violation and every historical-route battery violation;
-            # only the certified future-route duplicate battery verdict is
-            # removed.
+            # static violation and every historical-route finding; only the
+            # certified future-route duplicate battery/charging-clock verdicts
+            # are removed.
             certified_future_route_ids = {
                 trip.route_id for trip in certificate.trips
             }
-            violations = _remove_certified_dynamic_battery_duplicates(
+            violations = _remove_certified_dynamic_check_duplicates(
                 violations,
                 certified_future_route_ids.union(
                     self.context.dynamic_state.certified_dynamic_route_ids
@@ -767,12 +773,15 @@ class DutyFullEvaluator:
                     "dynamic evaluation is missing its inherited-state check"
                 )
             violations.extend(
-                check_solution(
-                    dynamic_future_solution,
-                    dynamic_future_check_instance,
-                    bundle.prices,
-                    fairness_enabled=False,
-                    dynamic_context=dynamic_future_check_context,
+                _remove_certified_dynamic_check_duplicates(
+                    check_solution(
+                        dynamic_future_solution,
+                        dynamic_future_check_instance,
+                        bundle.prices,
+                        fairness_enabled=False,
+                        dynamic_context=dynamic_future_check_context,
+                    ),
+                    certified_future_route_ids,
                 )
             )
         violations.extend(
@@ -1048,7 +1057,19 @@ def _dynamic_prefix_accounting_by_route_id(
 
     routes = {route.vehicle_id: route for route in solution.routes}
     nodes = {node.node_id: node for node in bundle.instance.nodes}
-    corrections = dict(state.prior_prefix_accounting_by_route_id)
+    corrections = {
+        route_id: correction
+        for route_id, correction in state.prior_prefix_accounting_by_route_id.items()
+        if any(
+            abs(float(value)) > _EQUIVALENCE_ABS_TOL
+            for value in (
+                correction.fuel_liters,
+                correction.fuel_cost,
+                correction.cv_emissions_kg,
+                correction.ev_drive_kwh,
+            )
+        )
+    }
     for route_id, correction in corrections.items():
         route = routes.get(route_id)
         if route is None or route.home_depot_id != correction.home_depot_id:
