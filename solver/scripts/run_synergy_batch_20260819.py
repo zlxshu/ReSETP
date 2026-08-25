@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Detached, idempotent two-worker driver for the 2026-08-19 synergy batch.
+"""Detached, idempotent serial driver for the 2026-08-19 synergy batch.
 
 Role: PROJECT_DOMAIN orchestration script.  It owns scheduling and driver logs;
 the existing technical runner owns experiment configuration and result content.
@@ -9,15 +9,12 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import json
 import os
 import shutil
 import subprocess
-import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -82,15 +79,15 @@ def command(unit: Unit, *, runtime_seconds: int = 600) -> list[str]:
         "--instance-id", "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd",
     ]
     if unit.enterprise_id is not None:
-        argv += ["--enterprise-id", unit.enterprise_id, "--enterprise-init-constructor", "legacy_three"]
+        argv += ["--enterprise-id", unit.enterprise_id]
     argv += [
         "--seed", str(unit.seed), "--carbon-price", "0.07502",
         "--iterations", "1000000000", "--max-runtime-seconds", str(runtime_seconds),
         "--stagnation-patience", "500",
         "--fleet-parameter-class", "endogenous", "--population-mode", "copied_hgs_defaults",
-        "--proposal-mode", "system", "--proposal-config", "combat", "--trajectory", "off",
-        "--education-depth-limit", "1", "--charge-timing-policy", "cost_plus_carbon",
-        "--route-layer-crossover", "--depot-assignment-operator", "--frvcpy-charging",
+        "--trajectory", "off", "--charge-timing-policy", "cost_plus_carbon",
+        "--frvcpy-charging",
+        "--run-kind", "formal",
         "--arm", (f"synergy_formal_standalone_{unit.enterprise_id}" if unit.enterprise_id else "synergy_formal_joint"),
         "--stderr-capture-state", "combined_stdout_stderr_in_unit_log",
     ]
@@ -126,13 +123,6 @@ def write_failure_package(unit: Unit, reason: str, exit_code: int) -> None:
     report = unit.output / "report.md"
     if not report.exists():
         report.write_text(f"# Failed unit\n\n- Unit: `{unit.name}`\n- Exit code: `{exit_code}`\n- Reason: {reason}\n")
-    hashes = {}
-    for path in sorted(unit.output.iterdir()):
-        if path.is_file() and path.name != "artifact_hashes.json":
-            hashes[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
-    (unit.output / "artifact_hashes.json").write_text(json.dumps(hashes, indent=2) + "\n")
-
-
 def validate_joint(unit: Unit, *, require_accepted: bool = True) -> str | None:
     if unit.enterprise_id is not None or (require_accepted and not accepted(unit.output)):
         return None
@@ -202,12 +192,8 @@ def main() -> int:
     if args.probe:
         return run_probe()
     missing = [unit for unit in units() if not accepted(unit.output)]
-    log(f"batch event=START missing={len(missing)} workers=2")
-    results = []
-    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="synergy") as pool:
-        futures = [pool.submit(run_unit, unit) for unit in missing]
-        for future in as_completed(futures):
-            results.append(future.result())
+    log(f"batch event=START missing={len(missing)} workers=1")
+    results = [run_unit(unit) for unit in missing]
     success = sum(ok for _, ok, _, _, _ in results)
     failed = len(results) - success
     skipped_after_halt = sum(code == -2 for _, _, code, _, _ in results)

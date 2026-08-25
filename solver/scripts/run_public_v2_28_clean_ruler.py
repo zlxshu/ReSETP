@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import importlib.metadata
 import importlib.util
 import json
@@ -76,7 +75,6 @@ REQUIRED_RUN_FILES = (
     "metadata.json",
     "audit.json",
     "decision.json",
-    "artifact_hashes.json",
     "report.md",
 )
 PROBE_SUCCESS_VERDICT = "PROBE_RUN_COMPLETE"
@@ -87,14 +85,6 @@ FORMAL_AUDIT_FAILURE_VERDICT = "FORMAL_RUN_FAILED_AUDIT"
 
 def _timestamp() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _atomic_text(path: Path, text: str) -> None:
@@ -152,19 +142,6 @@ def _safe_command(*args: str) -> str | None:
         return None
 
 
-def _git(*args: str) -> str | None:
-    try:
-        return subprocess.run(
-            ("/usr/bin/git", *args),
-            cwd=REPO,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        return None
-
-
 def _machine_identity() -> dict[str, Any]:
     memory_bytes: int | None = None
     try:
@@ -187,77 +164,31 @@ def _machine_identity() -> dict[str, Any]:
     }
 
 
-def _hash_files(paths: list[Path]) -> dict[str, str]:
-    identities: dict[str, str] = {}
-    for path in sorted(set(path.resolve() for path in paths)):
-        if not path.is_file() or path.name.startswith("._"):
-            continue
-        try:
-            label = str(path.relative_to(REPO))
-        except ValueError:
-            label = str(path)
-        identities[label] = _sha256(path)
-    return identities
-
-
-def _common_source_identity(instance_path: Path) -> dict[str, Any]:
-    return {
-        "git_head": _git("rev-parse", "HEAD"),
-        "git_status_porcelain": _git("status", "--porcelain"),
-        "runner_sha256": _sha256(Path(__file__).resolve()),
-        "instance_sha256": _sha256(instance_path),
-    }
-
-
-def _independent_source_identity(instance_path: Path) -> dict[str, Any]:
+def _independent_source_identity() -> dict[str, Any]:
     import setp_hgs_kernel
 
-    problem_sources = list(
-        (REPO / "solver/src/setp_solver/algorithms/problem_hgs").glob("*.py")
-    )
-    copied_sources = list(
-        (REPO / "third_party/setp_hgs_kernel/setp_hgs_kernel").rglob("*.py")
-    )
-    copied_metadata = [
-        REPO / "third_party/setp_hgs_kernel/UPSTREAM_COMMIT",
-        REPO / "third_party/setp_hgs_kernel/LICENSE.md",
-        REPO / "third_party/setp_hgs_kernel/meson.build",
-        REPO / "third_party/setp_hgs_kernel/pyproject.toml",
-    ]
     installed_root = Path(setp_hgs_kernel.__file__).resolve().parent
-    compiled = list(installed_root.rglob("*.so"))
     return {
-        **_common_source_identity(instance_path),
         "implementation": "independent Problem-HGS current serial chain",
         "setp_hgs_kernel_version": importlib.metadata.version(
             "setp-hgs-kernel"
         ),
         "setp_hgs_kernel_package": str(installed_root),
         "pyvrp_importable": importlib.util.find_spec("pyvrp") is not None,
-        "source_sha256": _hash_files(
-            [*problem_sources, *copied_sources, *copied_metadata, *compiled]
-        ),
     }
 
 
-def _frozen_source_identity(instance_path: Path) -> dict[str, Any]:
+def _frozen_source_identity() -> dict[str, Any]:
     import pyvrp
 
     package_root = Path(pyvrp.__file__).resolve().parent
-    package_files = [
-        path
-        for path in package_root.rglob("*")
-        if path.is_file() and path.suffix in {".py", ".so"}
-    ]
     return {
-        **_common_source_identity(instance_path),
         "implementation": "unmodified frozen PyVRP 0.12.2 HGS",
         "pyvrp_version": importlib.metadata.version("pyvrp"),
         "pyvrp_package": str(package_root),
         "setp_hgs_kernel_importable": (
             importlib.util.find_spec("setp_hgs_kernel") is not None
         ),
-        "source_sha256": _hash_files(package_files),
     }
 
 
@@ -805,20 +736,6 @@ def _write_trace(path: Path, stop: _TracingStop) -> None:
     _write_csv(path, rows)
 
 
-def _write_artifact_hashes(output: Path) -> None:
-    files = [
-        path
-        for path in output.iterdir()
-        if path.is_file()
-        and path.name != "artifact_hashes.json"
-        and not path.name.startswith("._")
-    ]
-    _json(
-        output / "artifact_hashes.json",
-        {path.name: _sha256(path) for path in sorted(files)},
-    )
-
-
 def _run_verdicts(run_kind: str) -> tuple[str, str]:
     if run_kind == "probe":
         return PROBE_SUCCESS_VERDICT, PROBE_AUDIT_FAILURE_VERDICT
@@ -924,7 +841,7 @@ def _worker_main(args: argparse.Namespace) -> int:
                 args.max_runtime_seconds,
                 args.no_improvement,
             )
-            source_identity = _independent_source_identity(instance_path)
+            source_identity = _independent_source_identity()
         else:
             solved = _solve_frozen(
                 instance_path,
@@ -932,7 +849,7 @@ def _worker_main(args: argparse.Namespace) -> int:
                 args.max_runtime_seconds,
                 args.no_improvement,
             )
-            source_identity = _frozen_source_identity(instance_path)
+            source_identity = _frozen_source_identity()
 
         (
             data,
@@ -1280,39 +1197,12 @@ def _batch_report(rows: list[dict[str, Any]]) -> str:
     lines.extend(
         [
             "",
-            "每次运行的完整路线、逐代轨迹、环境与代码指纹、原始精度逐路线审计，"
+            "每次运行的完整路线、逐代轨迹、环境与原始精度逐路线审计，"
             "保存在对应运行目录。完成需求量见顶层 raw_runs.csv。",
             "",
         ]
     )
     return "\n".join(lines)
-
-
-def _batch_artifact_hashes(output: Path, seed: int) -> None:
-    files = [
-        output / "batch_metadata.json",
-        output / "raw_runs.csv",
-        output / "decision.json",
-        output / "report.md",
-        output / "progress.log",
-        output / "launch_report.md",
-    ]
-    for instance in INSTANCES:
-        for arm in ARMS:
-            package = _run_dir(output, instance, arm, seed)
-            files.extend(
-                package / name
-                for name in (
-                    "metadata.json",
-                    "raw_runs.csv",
-                    "best_solution.json",
-                    "audit.json",
-                    "decision.json",
-                    "artifact_hashes.json",
-                    "report.md",
-                )
-            )
-    _json(output / "artifact_hashes.json", _hash_files(files))
 
 
 def _probe_main(args: argparse.Namespace) -> int:
@@ -1380,9 +1270,6 @@ def _batch_main(args: argparse.Namespace) -> int:
         "strictly_serial": True,
         "machine": _machine_identity(),
         "controller_python": sys.executable,
-        "runner_sha256": _sha256(Path(__file__).resolve()),
-        "git_head": _git("rev-parse", "HEAD"),
-        "git_status_porcelain": _git("status", "--porcelain"),
     }
     _json(output / "batch_metadata.json", batch_metadata)
 

@@ -76,6 +76,11 @@ class ArmDefinition:
     label: str
     treatment: TreatmentSwitches
     include_propulsion_proxy: bool = False
+    include_mechanism_refinement: bool = False
+    include_charging_candidates: bool = False
+    cross_depot_enabled: bool = False
+    multi_trip_enabled: bool = False
+    type_exchange_enabled: bool = False
 
     @property
     def participating_components(self) -> tuple[str, ...]:
@@ -92,6 +97,16 @@ class ArmDefinition:
             components.append("dss_all_changed_duty_move_evaluation")
         if self.treatment.fleet_activation_enabled:
             components.append("registered_empty_duty_activation_clearing")
+        if self.include_mechanism_refinement:
+            components.extend(
+                (
+                    "cross_depot",
+                    "multi_trip",
+                    "whole_duty_type_exchange",
+                )
+            )
+        if self.include_charging_candidates:
+            components.append("time_varying_charge_timing")
         return tuple(components)
 
 
@@ -100,7 +115,26 @@ ARM_DEFINITIONS: Mapping[str, ArmDefinition] = {
         "A0",
         "只看路线基线（独立路线内核＋确定性补全）",
         TreatmentSwitches(),
-        include_propulsion_proxy=False,
+        multi_trip_enabled=True,
+    ),
+    "A1": ArmDefinition(
+        "A1",
+        "路线与结构机制（关闭充电择时）",
+        TreatmentSwitches(),
+        include_mechanism_refinement=True,
+        cross_depot_enabled=True,
+        multi_trip_enabled=True,
+        type_exchange_enabled=True,
+    ),
+    "A2": ArmDefinition(
+        "A2",
+        "完整串行算法",
+        TreatmentSwitches(),
+        include_mechanism_refinement=True,
+        include_charging_candidates=True,
+        cross_depot_enabled=True,
+        multi_trip_enabled=True,
+        type_exchange_enabled=True,
     ),
 }
 
@@ -272,7 +306,6 @@ def _prepare_shared_population(
     parameters = _parameters(
         random_seed=seed,
         population_mode=population_mode,
-        crossover_mode="fast_only",
     )
     full_calls_before = evaluator.full_calls
     if population_mode == "technical_two_parent":
@@ -365,14 +398,11 @@ def _run_one_arm(
     initialization_wall_seconds: float,
     expected_identity: PairIdentity,
     population_mode: str,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     from run_problem_hgs_private_technical import _parameters, _policy
     from setp_solver.algorithms.problem_hgs.evaluation import DutyFullEvaluator
     from setp_solver.algorithms.problem_hgs.kernel_proposals import (
         IndependentKernelDutyRouteProposalEngine,
-    )
-    from setp_solver.algorithms.problem_hgs.proposals import (
-        SequentialProposalEngine,
     )
     from setp_solver.algorithms.problem_hgs.runner import (
         FrozenPopulationIdentity,
@@ -388,7 +418,6 @@ def _run_one_arm(
     parameters = _parameters(
         random_seed=seed,
         population_mode=population_mode,
-        crossover_mode="fast_only",
     )
     route_engine = IndependentKernelDutyRouteProposalEngine(
         context,
@@ -396,10 +425,9 @@ def _run_one_arm(
         random_seed=seed,
         stream_role="main_route",
         include_propulsion_proxy=definition.include_propulsion_proxy,
-    )
-    proposal_engine = SequentialProposalEngine(
-        (route_engine,),
-        source_id="private-ablation-route-only-v1",
+        cross_depot_enabled=definition.cross_depot_enabled,
+        multi_trip_enabled=definition.multi_trip_enabled,
+        type_exchange_enabled=definition.type_exchange_enabled,
     )
     budgeted_initialization_wall_seconds = (
         float(initialization_wall_seconds)
@@ -422,6 +450,7 @@ def _run_one_arm(
     )
     validate_pairing((expected_identity, runtime_identity))
     clock = _BestClock(float(wall_clock_budget_seconds))
+    trajectory_rows: list[dict[str, Any]] = []
     result = run_integrated_problem_hgs(
         built.candidates,
         evaluator=evaluator,
@@ -431,13 +460,23 @@ def _run_one_arm(
         stop=clock.stop,
         arm=arm,
         route_engine=route_engine,
-        proposal_engine=proposal_engine,
-        trajectory_sink=lambda _rows: None,
+        include_mechanism_refinement=definition.include_mechanism_refinement,
+        include_charging_candidates=definition.include_charging_candidates,
+        cross_depot_enabled=definition.cross_depot_enabled,
+        multi_trip_enabled=definition.multi_trip_enabled,
+        type_exchange_enabled=definition.type_exchange_enabled,
+        trajectory_sink=lambda batch: trajectory_rows.extend(
+            asdict(item) for item in batch
+        ),
         retain_trajectory=False,
         initial_evaluations=built.evaluations,
         initialization_full_evaluation_count=built.full_evaluation_count,
         initialization_wall_seconds=budgeted_initialization_wall_seconds,
-        treatment=runtime_treatment_for_arm(arm, PrivateAblationTreatment),
+        treatment=(
+            runtime_treatment_for_arm(arm, PrivateAblationTreatment)
+            if arm == "A0"
+            else None
+        ),
     )
     accounting = result.accounting.to_dict()
     total_wall = float(accounting["total_algorithm_wall_seconds"])
@@ -514,7 +553,7 @@ def _run_one_arm(
     row.update(_service_fields(result, bundle))
     for key, value in sorted(result.best_evaluation.breakdown.items()):
         row[f"breakdown__{key}"] = value
-    return row
+    return row, trajectory_rows
 
 
 def _failure_row(identity: PairIdentity, error: Exception) -> dict[str, Any]:
@@ -699,6 +738,7 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
 def write_result_package(
     output: Path,
     rows: Sequence[Mapping[str, Any]],
+    trajectory_rows: Sequence[Mapping[str, Any]],
     metadata: Mapping[str, Any],
     acceptance: RunAcceptance,
 ) -> None:
@@ -710,6 +750,18 @@ def write_result_package(
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+    if trajectory_rows:
+        trajectory_fields = sorted(
+            set().union(*(row.keys() for row in trajectory_rows))
+        )
+        with (output / "convergence.csv").open(
+            "w", encoding="utf-8", newline=""
+        ) as handle:
+            writer = csv.DictWriter(
+                handle, fieldnames=trajectory_fields, lineterminator="\n"
+            )
+            writer.writeheader()
+            writer.writerows(trajectory_rows)
     decision = {
         "planned_run_count": len(rows),
         "accepted_run_count": sum(row_is_accepted(row) for row in rows),
@@ -771,6 +823,12 @@ def _dry_run_payload(args, repo: Path) -> dict[str, Any]:
                 "include_propulsion_proxy": (
                     ARM_DEFINITIONS[arm].include_propulsion_proxy
                 ),
+                "include_mechanism_refinement": (
+                    ARM_DEFINITIONS[arm].include_mechanism_refinement
+                ),
+                "include_charging_candidates": (
+                    ARM_DEFINITIONS[arm].include_charging_candidates
+                ),
             }
             for arm in args.arms
         },
@@ -785,6 +843,7 @@ def _dry_run_payload(args, repo: Path) -> dict[str, Any]:
 def _parse_args(argv: Sequence[str] | None = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--data-repo-root", type=Path)
     parser.add_argument("--instance-id", required=True)
     parser.add_argument("--seeds", type=int, nargs="+", required=True)
     parser.add_argument("--wall-clock-seconds", type=float, required=True)
@@ -818,6 +877,11 @@ def _parse_args(argv: Sequence[str] | None = None):
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
     repo = Path(__file__).resolve().parents[2]
+    data_repo = (
+        repo
+        if args.data_repo_root is None
+        else args.data_repo_root.resolve()
+    )
     if args.dry_run:
         print(
             json.dumps(
@@ -854,11 +918,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     }[args.fleet_parameters]
 
     bundle, initial, _pi0, context = _build_context(
-        repo,
+        data_repo,
         args.instance_id,
         fleet_parameters=fleet_parameters,
     )
     rows: list[dict[str, Any]] = []
+    trajectory_rows: list[dict[str, Any]] = []
     pair_groups = []
     for seed in args.seeds:
         built, initialization_wall_seconds = _prepare_shared_population(
@@ -884,7 +949,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         by_arm = {identity.arm: identity for identity in identities}
         for arm in args.arms:
             try:
-                row = _run_one_arm(
+                row, arm_trajectory = _run_one_arm(
                     arm=arm,
                     seed=seed,
                     wall_clock_budget_seconds=args.wall_clock_seconds,
@@ -895,6 +960,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                     initialization_wall_seconds=initialization_wall_seconds,
                     expected_identity=by_arm[arm],
                     population_mode=args.population_mode,
+                )
+                trajectory_rows.extend(
+                    {"seed": seed, "arm": arm, **item}
+                    for item in arm_trajectory
                 )
             except Exception as error:  # Preserve one arm's exact failure.
                 row = _failure_row(by_arm[arm], error)
@@ -961,7 +1030,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         success_verdict="PRIVATE_ABLATION_BATCH_COMPLETE",
         failure_verdict="PRIVATE_ABLATION_BATCH_FAILED",
     )
-    write_result_package(output, rows, metadata, overall)
+    write_result_package(output, rows, trajectory_rows, metadata, overall)
     return package_exit_code(overall)
 
 

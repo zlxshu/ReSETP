@@ -10,6 +10,8 @@ from setp_hgs_kernel.solve import SolveParams
 from setp_hgs_kernel._setp_hgs_kernel import (
     PopulationParams as KernelPopulationParams,
 )
+from setp_hgs_kernel.crossover import ordered_crossover
+from setp_hgs_kernel.crossover import selective_route_exchange
 
 from .external_population import EvaluatedSolution, ExternalPopulation
 from .integrated_genetic_algorithm import (
@@ -33,7 +35,6 @@ from .contracts import (
     SearchAccounting,
     TrajectoryRow,
 )
-from .crossover import trip_assignment_exchange
 from .education import _trajectory_row, educate_best_improvement
 from .evaluation import (
     DutyFullEvaluator,
@@ -45,26 +46,15 @@ from .execution_identity import (
     build_effective_execution_bundle,
 )
 from .fleet_registry import assert_fleet_activation_allowed
-from .hybrid_decoder import (
-    HybridDecodeGap,
-    HybridDecodeStatus,
-    HybridDecoderSpec,
-    HybridGapKind,
-    customer_home_depot_hints,
-    customer_physical_slot_hints,
-    decode_customer_order,
-    route_layer_order_from_parents,
-)
 from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
-from .model import DutyIndividual
+from .model import DutyIndividual, assert_locks_preserved
+from .operators import DutySkeletonMove
 from .population import (
     PopulationParameters,
     SelfAdaptivePenalty,
     broken_pairs_distance,
 )
-from .schedule_capture import emit_schedule_capture
 from .schedule_oracle import (
-    OracleStatus,
     ScheduleCoordinator,
     ScheduleOracleContext,
 )
@@ -119,22 +109,6 @@ class IntegratedPrivateHGSBundle:
     complete_penalty_manager: SelfAdaptivePenalty
     effective_execution: EffectiveExecutionBundle
 
-class _DutyRngAdapter:
-    """Expose the copied kernel RNG through the tiny API Duty crossover needs."""
-
-    def __init__(self, kernel_rng) -> None:
-        self._kernel_rng = kernel_rng
-
-    def randint(self, high: int) -> int:
-        return int(self._kernel_rng.randint(int(high)))
-
-    def randrange(self, stop: int) -> int:
-        return self.randint(stop)
-
-    def rand(self) -> float:
-        return float(self._kernel_rng.rand())
-
-
 def build_integrated_private_hgs(
     initial_candidates: tuple[DutyIndividual, ...],
     *,
@@ -147,7 +121,6 @@ def build_integrated_private_hgs(
     include_charging_candidates: bool = True,
     stop_requested: Callable[[], bool] | None = None,
     population_parameters: PopulationParameters | None = None,
-    proposal_engine: DutyProposalEngine | None = None,
     initial_evaluations: tuple[FullEvaluation, ...] | None = None,
     trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
     arm: str = "integrated_private_hgs",
@@ -160,7 +133,6 @@ def build_integrated_private_hgs(
     cross_depot_enabled: bool = True,
     multi_trip_enabled: bool = True,
     type_exchange_enabled: bool = True,
-    route_layer_crossover_enabled: bool = False,
     education_depth_limit: int | None = None,
 ) -> IntegratedPrivateHGSBundle:
     """Build the shared HGS loop over complete private-problem candidates."""
@@ -207,30 +179,28 @@ def build_integrated_private_hgs(
     copied_parameters = SolveParams()
     complete_penalties = SelfAdaptivePenalty()
     accounting = PrivateIntegratedAccounting()
-    if proposal_engine is None:
-        mechanism_engine = MechanismProposalEngine(
-            evaluator.context,
-            charging_policy,
-            include_charging_candidates=include_charging_candidates,
-            cross_depot_enabled=cross_depot_enabled,
-            multi_trip_enabled=multi_trip_enabled,
-            type_exchange_enabled=type_exchange_enabled,
+    mechanism_engine = MechanismProposalEngine(
+        evaluator.context,
+        charging_policy,
+        include_charging_candidates=include_charging_candidates,
+        include_structural_channels=True,
+        cross_depot_enabled=cross_depot_enabled,
+        multi_trip_enabled=multi_trip_enabled,
+        type_exchange_enabled=type_exchange_enabled,
+        stop_requested=stop_requested,
+    )
+    route_stage_engine: DutyProposalEngine = SequentialProposalEngine(
+        providers=(route_engine,),
+        source_id=f"{DEFAULT_SERIAL_PROPOSAL_SOURCE_ID}:route",
+    )
+    mechanism_stage_engine: DutyProposalEngine | None = (
+        SequentialProposalEngine(
+            providers=(mechanism_engine,),
+            source_id=f"{DEFAULT_SERIAL_PROPOSAL_SOURCE_ID}:mechanism",
         )
-        route_stage_engine: DutyProposalEngine = SequentialProposalEngine(
-            providers=(route_engine,),
-            source_id=f"{DEFAULT_SERIAL_PROPOSAL_SOURCE_ID}:route",
-        )
-        mechanism_stage_engine: DutyProposalEngine | None = (
-            SequentialProposalEngine(
-                providers=(mechanism_engine,),
-                source_id=f"{DEFAULT_SERIAL_PROPOSAL_SOURCE_ID}:mechanism",
-            )
-            if include_mechanism_refinement
-            else None
-        )
-    else:
-        route_stage_engine = proposal_engine
-        mechanism_stage_engine = None
+        if include_mechanism_refinement
+        else None
+    )
     kernel_population_parameters = (
         copied_parameters.population
         if population_parameters is None
@@ -276,9 +246,6 @@ def build_integrated_private_hgs(
             "cross_depot_enabled": bool(cross_depot_enabled),
             "multi_trip_enabled": bool(multi_trip_enabled),
             "type_exchange_enabled": bool(type_exchange_enabled),
-            "route_layer_crossover_enabled": bool(
-                route_layer_crossover_enabled
-            ),
             "education_depth_limit": education_depth_limit,
         },
     )
@@ -314,66 +281,7 @@ def build_integrated_private_hgs(
             PrivateIntegratedEvaluation,
         ],
     ] = {}
-    rng = _DutyRngAdapter(effective_execution.route_engine.rng)
-    customer_coordinates = {
-        node.node_id: (float(node.x), float(node.y))
-        for node in evaluator.context.bundle.instance.nodes
-        if node.node_type.lower() == "c"
-    }
-    customer_home_depot_by_id = (
-        None
-        if effective_execution.cross_depot_enabled
-        else {
-            customer: duty.home_depot_id
-            for duty in template.duties
-            for trip in duty.trips
-            for customer in trip.customer_ids
-        }
-    )
-    customer_vehicle_type_by_id = (
-        None
-        if effective_execution.type_exchange_enabled
-        else {
-            customer: duty.vehicle_type
-            for duty in template.duties
-            for trip in duty.trips
-            for customer in trip.customer_ids
-        }
-    )
-    route_layer_spec = None
-    if effective_execution.route_layer_crossover_enabled:
-        route_contract = getattr(
-            evaluator.context,
-            "rebuilt_route_constraints",
-            None,
-        )
-        route_layer_spec = HybridDecoderSpec(
-            bundle=evaluator.context.bundle,
-            instance=evaluator.context.bundle.instance,
-            prices=evaluator.context.bundle.prices,
-            fleet_caps_by_depot=evaluator.context.bundle.fleet_caps_by_depot,
-            customer_home_depot_by_id=evaluator.context.bundle.customer_home_depot,
-            customer_shift_by_id=(
-                {}
-                if route_contract is None
-                else route_contract.customer_shift_by_id
-            ),
-            customer_volume_m3_by_id=(
-                {}
-                if route_contract is None
-                else route_contract.customer_volume_m3_by_id
-            ),
-            shift_window_second_by_id=(
-                {}
-                if route_contract is None
-                else route_contract.shift_window_second_by_id
-            ),
-            vehicle_volume_capacity_m3=(
-                float("inf")
-                if route_contract is None
-                else float(route_contract.vehicle_volume_capacity_m3)
-            ),
-        )
+    rng = effective_execution.route_engine.rng
     initial_evaluation_by_fingerprint = dict(
         ()
         if initial_evaluations is None
@@ -431,58 +339,6 @@ def build_integrated_private_hgs(
             PrivateIntegratedEvaluation(individual, full),
         )
 
-    def coordinate_candidate(
-        reference: DutyIndividual,
-        raw_candidate: DutyIndividual,
-        changed_duty_ids: frozenset[str],
-        *,
-        channel: str,
-    ) -> EvaluatedSolution[
-        DutyIndividual,
-        PrivateIntegratedEvaluation,
-    ] | None:
-        if schedule_coordinator is None:
-            return None
-        try:
-            assert_fleet_activation_allowed(
-                reference,
-                raw_candidate,
-                enabled=effective_execution.fleet_activation_enabled,
-            )
-        except ValueError:
-            return None
-        coordinated = schedule_coordinator.coordinate(
-            reference,
-            raw_candidate,
-            changed_duty_ids=changed_duty_ids,
-        )
-        accounting.mechanism.record_schedule_coordinator_result(
-            coordinated,
-            changed_duty_count=len(changed_duty_ids),
-        )
-        if coordinated.status != OracleStatus.FEASIBLE:
-            accounting.mechanism.schedule_rejected_candidates_by_channel_and_status[
-                f"{channel}:{coordinated.status.value}"
-            ] += 1
-            return None
-        evaluated = tuple(
-            item
-            for scheduled in coordinated.frontier
-            if (item := evaluate(scheduled)) is not None
-        )
-        if not evaluated:
-            accounting.mechanism.schedule_rejected_candidates_by_channel_and_status[
-                f"{channel}:FULL_EVALUATION_REJECTED"
-            ] += 1
-            return None
-        return min(
-            evaluated,
-            key=lambda item: (
-                float(complete_penalties.cost(item.evaluation.full)),
-                item.solution.fingerprint,
-            ),
-        )
-
     def repair_search_candidate(
         reference: DutyIndividual,
         raw_candidate: DutyIndividual,
@@ -529,301 +385,48 @@ def build_integrated_private_hgs(
         accounting.crossover_calls += 1
         accounting.mechanism.crossover_calls += 1
         first, second = parents
-
-        if effective_execution.route_layer_crossover_enabled:
-            route_action_id = f"route-layer-ox-{accounting.crossover_calls}"
-
-            def record_route_layer_outcome(
-                outcome: CandidateOutcome,
-                *,
-                accepted: bool = False,
-            ) -> None:
-                accounting.mechanism.record_outcome(outcome)
-                if trajectory_sink is not None:
-                    emit(
-                        _trajectory_row(
-                            iteration=accounting.crossover_calls,
-                            phase="crossover",
-                            arm=arm,
-                            before=first.solution,
-                            before_evaluation=first.evaluation.full,
-                            outcome=outcome,
-                            accepted=accepted,
-                        )
-                    )
-
-            try:
-                assert route_layer_spec is not None
-                customer_order_child, type_hints = route_layer_order_from_parents(
-                    first.solution,
-                    second.solution,
-                    rng,
-                )
-                depot_hints = customer_home_depot_hints(first.solution)
-                physical_slot_hints = customer_physical_slot_hints(first.solution)
-                child_spec = replace(
-                    route_layer_spec,
-                    customer_home_depot_by_id=depot_hints,
-                )
-                decoded = decode_customer_order(
-                    customer_order_child,
-                    spec=child_spec,
-                    vehicle_type_hints=type_hints,
-                    physical_slot_hints=physical_slot_hints,
-                    source="hybrid_route_layer_split",
-                )
-                accounting.mechanism.record_route_layer_decode(decoded)
-            except (TypeError, ValueError) as error:
-                accounting.rejected_candidates += 1
-                accounting.rejection_reasons[
-                    f"{type(error).__name__}: {error}"
-                ] += 1
-                record_route_layer_outcome(
-                    CandidateOutcome(
-                        action_id=route_action_id,
-                        channel="route_layer_crossover",
-                        status=CandidateStatus.REJECTED_INTERFACE,
-                        changed_duty_ids=frozenset(),
-                        error_type=type(error).__name__,
-                        error=str(error),
-                    )
-                )
-                accounting.crossover_noops += 1
-                return first
-
-            structural_gaps = tuple(
-                gap
-                for gap in decoded.gaps
-                if gap.kind
-                in {HybridGapKind.FLEET_SLOT, HybridGapKind.INTERFACE}
+        engine = effective_execution.route_engine
+        cost_evaluator = engine.penalty_manager.cost_evaluator()
+        native_parents = (
+            engine.project(first.solution),
+            engine.project(second.solution),
+        )
+        if engine.data.num_vehicles > 1:
+            operator_name = "SREX"
+            native_child = selective_route_exchange(
+                native_parents,
+                engine.data,
+                cost_evaluator,
+                engine.rng,
             )
-            if decoded.candidate is None or structural_gaps:
-                gap_text = "; ".join(
-                    f"{getattr(gap.kind, 'value', gap.kind)}: {gap.detail}"
-                    for gap in decoded.gaps
-                )
-                gap_kind = (
-                    structural_gaps[0].kind
-                    if structural_gaps
-                    else HybridGapKind.INTERFACE
-                )
-                status = (
-                    CandidateStatus.REJECTED_REGISTRY
-                    if gap_kind == HybridGapKind.FLEET_SLOT
-                    else CandidateStatus.REJECTED_INTERFACE
-                )
-                accounting.rejected_candidates += 1
-                accounting.rejection_reasons[
-                    f"route-layer decode: {gap_text or decoded.status.value}"
-                ] += 1
-                record_route_layer_outcome(
-                    CandidateOutcome(
-                        action_id=route_action_id,
-                        channel="route_layer_crossover",
-                        status=status,
-                        changed_duty_ids=decoded.changed_duty_ids,
-                        candidate=decoded.candidate,
-                        error_type="HybridDecodeGap",
-                        error=gap_text or decoded.status.value,
-                        wall_seconds=decoded.wall_seconds,
-                    )
-                )
-                accounting.crossover_noops += 1
-                return first
+        else:
+            operator_name = "OX"
+            native_child = ordered_crossover(
+                native_parents,
+                engine.data,
+                cost_evaluator,
+                engine.rng,
+            )
+        native_child = engine.local_search(native_child, cost_evaluator)
+        if (
+            not native_child.is_feasible()
+            and engine.rng.rand() < effective_execution.repair_probability
+        ):
+            native_child = engine.local_search(
+                native_child,
+                engine.penalty_manager.booster_cost_evaluator(),
+            )
+        replacements = engine.decode_replacements(
+            first.solution,
+            native_child,
+        )
+        accounting.mechanism.record_crossover(operator_name, 1)
+        action_id = (
+            f"pyvrp-{operator_name.lower()}-{accounting.crossover_calls}"
+        )
+        channel = "route_kernel_crossover"
 
-            raw_candidate = decoded.candidate
-            assert raw_candidate is not None
-            changed_duty_ids = frozenset(
-                duty.physical_vehicle_id
-                for duty in (*first.solution.duties, *raw_candidate.duties)
-                if duty.trips or duty.locked_charging_trip_indices
-            )
-            try:
-                assert_candidate_routes_single_shift(
-                    raw_candidate,
-                    getattr(
-                        evaluator.context,
-                        "rebuilt_route_constraints",
-                        None,
-                    ),
-                )
-                assert_fleet_activation_allowed(
-                    first.solution,
-                    raw_candidate,
-                    enabled=effective_execution.fleet_activation_enabled,
-                )
-                charging_outcome = repair_search_candidate(
-                    first.solution,
-                    raw_candidate,
-                    changed_duty_ids,
-                )
-            except (TypeError, ValueError) as error:
-                message = str(error).lower()
-                status = (
-                    CandidateStatus.REJECTED_CHARGING
-                    if any(
-                        token in message
-                        for token in ("charg", "battery", "energy", "soc")
-                    )
-                    else CandidateStatus.REJECTED_INTERFACE
-                )
-                accounting.rejected_candidates += 1
-                accounting.rejection_reasons[
-                    f"{type(error).__name__}: {error}"
-                ] += 1
-                record_route_layer_outcome(
-                    CandidateOutcome(
-                        action_id=route_action_id,
-                        channel="route_layer_crossover",
-                        status=status,
-                        changed_duty_ids=changed_duty_ids,
-                        candidate=raw_candidate,
-                        error_type=type(error).__name__,
-                        error=str(error),
-                        charging_rejection_reason=(
-                            charging_rejection_reason(error)
-                            if status == CandidateStatus.REJECTED_CHARGING
-                            else None
-                        ),
-                        wall_seconds=decoded.wall_seconds,
-                    )
-                )
-                accounting.crossover_noops += 1
-                return first
-
-            if charging_outcome.candidate is None:
-                error = charging_outcome.error or ValueError(
-                    charging_outcome.reason_code
-                    or charging_outcome.status.value
-                )
-                status = (
-                    CandidateStatus.REJECTED_INTERFACE
-                    if charging_outcome.status
-                    == ChargingCandidateStatus.REJECTED_INTERFACE
-                    else CandidateStatus.REJECTED_CHARGING
-                )
-                accounting.rejected_candidates += 1
-                accounting.rejection_reasons[
-                    f"{type(error).__name__}: {error}"
-                ] += 1
-                record_route_layer_outcome(
-                    CandidateOutcome(
-                        action_id=route_action_id,
-                        channel="route_layer_crossover",
-                        status=status,
-                        changed_duty_ids=changed_duty_ids,
-                        error_type=type(error).__name__,
-                        error=str(error),
-                        charging_rejection_reason=(
-                            charging_outcome.reason_code
-                        ),
-                        wall_seconds=decoded.wall_seconds,
-                        charging_candidate_status=(
-                            charging_outcome.status
-                        ),
-                    )
-                )
-                accounting.crossover_noops += 1
-                return first
-            completed = charging_outcome.candidate
-
-            evaluated = evaluate(completed)
-            if evaluated is None:
-                accounting.rejected_candidates += 1
-                accounting.rejection_reasons[
-                    "route-layer full evaluation rejected candidate"
-                ] += 1
-                record_route_layer_outcome(
-                    CandidateOutcome(
-                        action_id=route_action_id,
-                        channel="route_layer_crossover",
-                        status=CandidateStatus.REJECTED_INTERFACE,
-                        changed_duty_ids=changed_duty_ids,
-                        candidate=completed,
-                        error_type="FULL_EVALUATION_REJECTED",
-                        error="route-layer candidate did not reach a complete evaluation",
-                        wall_seconds=decoded.wall_seconds,
-                    )
-                )
-                accounting.crossover_noops += 1
-                return first
-
-            accounting.mechanism.record_route_layer_evaluation()
-            if evaluated.solution.duties != first.solution.duties:
-                accounting.mechanism.record_crossover("ROUTE_LAYER_OX", 1)
-            constructed = CandidateOutcome(
-                action_id=route_action_id,
-                channel="route_layer_crossover",
-                status=CandidateStatus.EVALUATED,
-                changed_duty_ids=changed_duty_ids,
-                candidate=evaluated.solution,
-                evaluation=evaluated.evaluation.full,
-                wall_seconds=decoded.wall_seconds,
-            )
-            before_penalized = float(
-                complete_penalties.cost(first.evaluation.full)
-            )
-            after_penalized = float(
-                complete_penalties.cost(evaluated.evaluation.full)
-            )
-            accepted = bool(
-                evaluated.evaluation.full.feasible
-                and after_penalized < before_penalized - 1.0e-9
-            )
-            if accepted:
-                accounting.mechanism.record_route_layer_acceptance()
-                accounting.mechanism.record_acceptance(
-                    "route_layer_crossover"
-                )
-                accounting.mechanism.record_accepted_effect(
-                    "route_layer_crossover",
-                    first.solution,
-                    first.evaluation.full,
-                    evaluated.solution,
-                    evaluated.evaluation.full,
-                )
-            record_route_layer_outcome(constructed, accepted=accepted)
-            return evaluated
-
-        def reject(
-            error: Exception,
-            *,
-            forced_status: CandidateStatus | None = None,
-            charging_outcome: ChargingRepairOutcome | None = None,
-        ) -> None:
-            message = str(error).lower()
-            status = forced_status or (
-                CandidateStatus.REJECTED_CHARGING
-                if any(
-                    token in message
-                    for token in ("charg", "battery", "energy", "soc")
-                )
-                else CandidateStatus.REJECTED_LOCK
-                if "lock" in message
-                else CandidateStatus.REJECTED_REGISTRY
-                if "fleet" in message or "registry" in message
-                else CandidateStatus.REJECTED_INTERFACE
-            )
-            outcome = CandidateOutcome(
-                action_id="trip-assignment",
-                channel="duty_crossover",
-                status=status,
-                changed_duty_ids=frozenset(),
-                error_type=type(error).__name__,
-                error=str(error),
-                charging_rejection_reason=(
-                    charging_outcome.reason_code
-                    if charging_outcome is not None
-                    else charging_rejection_reason(error)
-                    if status == CandidateStatus.REJECTED_CHARGING
-                    else None
-                ),
-                charging_candidate_status=(
-                    None
-                    if charging_outcome is None
-                    else charging_outcome.status
-                ),
-            )
+        def record(outcome: CandidateOutcome) -> None:
             accounting.mechanism.record_outcome(outcome)
             if trajectory_sink is not None:
                 emit(
@@ -838,228 +441,169 @@ def build_integrated_private_hgs(
                     )
                 )
 
-        try:
-            crossed = trip_assignment_exchange(
-                (first.solution, second.solution),
-                rng,
-                customer_coordinates,
-                customer_home_depot_by_id=customer_home_depot_by_id,
-                customer_vehicle_type_by_id=customer_vehicle_type_by_id,
-                multi_trip_enabled=effective_execution.multi_trip_enabled,
-            )
-        except ValueError as error:
-            if str(error) != "trip assignment found no compatible movable trip":
-                accounting.rejected_candidates += 1
-                accounting.rejection_reasons[
-                    f"{type(error).__name__}: {error}"
-                ] += 1
-                reject(error)
-                return None
-            # A one-parent or lock-saturated population can still be educated.
-            # Keeping the exact evaluated parent avoids inventing a route proxy.
+        if not replacements:
             accounting.crossover_noops += 1
-            unavailable = CandidateOutcome(
-                action_id="trip-assignment-unavailable",
-                channel="duty_crossover",
-                status=CandidateStatus.NO_CHANGE,
-                changed_duty_ids=frozenset(),
-                candidate=first.solution,
-                evaluation=first.evaluation.full,
-                error=str(error),
-            )
-            accounting.mechanism.record_outcome(unavailable)
-            if trajectory_sink is not None:
-                emit(
-                    _trajectory_row(
-                        iteration=accounting.crossover_calls,
-                        phase="crossover",
-                        arm=arm,
-                        before=first.solution,
-                        before_evaluation=first.evaluation.full,
-                        outcome=unavailable,
-                        accepted=False,
-                    )
+            record(
+                CandidateOutcome(
+                    action_id=action_id,
+                    channel=channel,
+                    status=CandidateStatus.NO_CHANGE,
+                    changed_duty_ids=frozenset(),
+                    candidate=first.solution,
+                    evaluation=first.evaluation.full,
                 )
-            return first
-        if crossed.unserved_customers:
-            accounting.rejected_candidates += 1
-            error = ValueError(
-                "crossover produced incomplete customer service"
             )
-            accounting.rejection_reasons[str(error)] += 1
-            reject(error)
-            accounting.crossover_noops += 1
             return first
+
+        move = DutySkeletonMove(
+            action_id=action_id,
+            channel=channel,
+            replacements=replacements,
+            dynamic_future_only=evaluator.context.dynamic_state is not None,
+        )
+        raw_candidate = None
         try:
+            raw_candidate = move.apply(first.solution)
+            assert_locks_preserved(first.solution, raw_candidate)
             assert_candidate_routes_single_shift(
-                crossed.child,
-                getattr(
-                    evaluator.context,
-                    "rebuilt_route_constraints",
-                    None,
-                ),
+                raw_candidate,
+                evaluator.context.rebuilt_route_constraints,
             )
             assert_fleet_activation_allowed(
                 first.solution,
-                crossed.child,
+                raw_candidate,
                 enabled=effective_execution.fleet_activation_enabled,
             )
+        except (TypeError, ValueError) as error:
+            accounting.rejected_candidates += 1
+            accounting.rejection_reasons[
+                f"{type(error).__name__}: {error}"
+            ] += 1
+            record(
+                CandidateOutcome(
+                    action_id=action_id,
+                    channel=channel,
+                    status=(
+                        CandidateStatus.REJECTED_LOCK
+                        if "lock" in str(error).lower()
+                        else CandidateStatus.REJECTED_REGISTRY
+                        if "fleet" in str(error).lower()
+                        else CandidateStatus.REJECTED_INTERFACE
+                    ),
+                    changed_duty_ids=move.changed_duty_ids,
+                    candidate=raw_candidate,
+                    error_type=type(error).__name__,
+                    error=str(error),
+                )
+            )
+            return None
+
+        if raw_candidate.unserved_customers:
+            accounting.rejected_candidates += 1
+            error = ValueError(
+                "official crossover left incomplete customer service"
+            )
+            accounting.rejection_reasons[str(error)] += 1
+            record(
+                CandidateOutcome(
+                    action_id=action_id,
+                    channel=channel,
+                    status=CandidateStatus.REPAIR_INCOMPLETE,
+                    changed_duty_ids=move.changed_duty_ids,
+                    candidate=raw_candidate,
+                    error_type=type(error).__name__,
+                    error=str(error),
+                )
+            )
+            return None
+
+        try:
             charging_outcome = repair_search_candidate(
                 first.solution,
-                crossed.child,
-                crossed.changed_duty_ids,
+                raw_candidate,
+                move.changed_duty_ids,
             )
         except (TypeError, ValueError) as error:
-            evaluated = (
-                coordinate_candidate(
-                    first.solution,
-                    crossed.child,
-                    crossed.changed_duty_ids,
-                    channel="duty_crossover",
-                )
-                if effective_execution.schedule_cross_repair_fallback
-                else None
-            )
-            if evaluated is None:
-                accounting.rejected_candidates += 1
-                accounting.rejection_reasons[
-                    f"{type(error).__name__}: {error}"
-                ] += 1
-                if any(
-                    token in str(error).lower()
-                    for token in ("charg", "battery", "energy", "soc")
-                ):
-                    emit_schedule_capture(
-                        channel="duty_crossover",
-                        action_id="trip-assignment",
-                        iteration=accounting.crossover_calls,
-                        reference=first.solution,
-                        raw_candidate=crossed.child,
-                        changed_duty_ids=frozenset(
-                            crossed.changed_duty_ids
-                        ),
-                        context=evaluator.context,
-                        a0_status="INFEASIBLE",
-                        error=error,
-                    )
-                reject(error)
-                accounting.crossover_noops += 1
-                return first
-            accounting.mechanism.schedule_rescued_candidates_by_channel[
-                "duty_crossover"
+            accounting.rejected_candidates += 1
+            accounting.rejection_reasons[
+                f"{type(error).__name__}: {error}"
             ] += 1
-        else:
-            if charging_outcome.candidate is None:
-                error = charging_outcome.error or ValueError(
-                    charging_outcome.reason_code
-                    or charging_outcome.status.value
-                )
-                evaluated = (
-                    coordinate_candidate(
-                        first.solution,
-                        crossed.child,
-                        crossed.changed_duty_ids,
-                        channel="duty_crossover",
-                    )
-                    if effective_execution.schedule_cross_repair_fallback
-                    else None
-                )
-                if evaluated is None:
-                    accounting.rejected_candidates += 1
-                    accounting.rejection_reasons[
-                        f"{type(error).__name__}: {error}"
-                    ] += 1
-                    reject(
-                        error,
-                        forced_status=(
-                            CandidateStatus.REJECTED_INTERFACE
-                            if charging_outcome.status
-                            == ChargingCandidateStatus.REJECTED_INTERFACE
-                            else CandidateStatus.REJECTED_CHARGING
-                        ),
-                        charging_outcome=charging_outcome,
-                    )
-                    accounting.crossover_noops += 1
-                    return first
-                accounting.mechanism.schedule_rescued_candidates_by_channel[
-                    "duty_crossover"
-                ] += 1
-            else:
-                completed = charging_outcome.candidate
-                emit_schedule_capture(
-                    channel="crossover",
-                    action_id="trip-assignment",
-                    iteration=accounting.crossover_calls,
-                    reference=first.solution,
-                    raw_candidate=crossed.child,
-                    changed_duty_ids=frozenset(crossed.changed_duty_ids),
-                    context=evaluator.context,
-                    a0_status="FEASIBLE",
-                    error=None,
-                )
-                evaluated = evaluate(completed)
-                if (
-                    evaluated is None
-                    and effective_execution.schedule_cross_repair_fallback
-                ):
-                    evaluated = coordinate_candidate(
-                        first.solution,
-                        crossed.child,
-                        crossed.changed_duty_ids,
-                        channel="duty_crossover",
-                    )
-                    if evaluated is not None:
-                        accounting.mechanism.schedule_rescued_candidates_by_channel[
-                            "duty_crossover"
-                        ] += 1
-                if evaluated is None:
-                    accounting.crossover_noops += 1
-                    return first
-        before_penalized = float(
-            complete_penalties.cost(first.evaluation.full)
-        )
-        after_penalized = float(
-            complete_penalties.cost(evaluated.evaluation.full)
-        )
-        accepted = bool(
-            evaluated.evaluation.full.feasible
-            and after_penalized < before_penalized - 1.0e-9
-        )
-        if evaluated.solution.duties != first.solution.duties:
-            accounting.mechanism.record_crossover(
-                "TRIP_ASSIGNMENT",
-                crossed.deterministic_work_units,
-            )
-        constructed = CandidateOutcome(
-            action_id="trip-assignment",
-            channel="duty_crossover",
-            status=CandidateStatus.EVALUATED,
-            changed_duty_ids=crossed.changed_duty_ids,
-            candidate=evaluated.solution,
-            evaluation=evaluated.evaluation.full,
-        )
-        accounting.mechanism.record_outcome(constructed)
-        if accepted:
-            accounting.mechanism.record_acceptance("duty_crossover")
-            accounting.mechanism.record_accepted_effect(
-                "duty_crossover",
-                first.solution,
-                first.evaluation.full,
-                evaluated.solution,
-                evaluated.evaluation.full,
-            )
-        if trajectory_sink is not None:
-            emit(
-                _trajectory_row(
-                    iteration=accounting.crossover_calls,
-                    phase="crossover",
-                    arm=arm,
-                    before=first.solution,
-                    before_evaluation=first.evaluation.full,
-                    outcome=constructed,
-                    accepted=accepted,
+            record(
+                CandidateOutcome(
+                    action_id=action_id,
+                    channel=channel,
+                    status=CandidateStatus.REJECTED_CHARGING,
+                    changed_duty_ids=move.changed_duty_ids,
+                    candidate=raw_candidate,
+                    error_type=type(error).__name__,
+                    error=str(error),
+                    charging_rejection_reason=charging_rejection_reason(error),
                 )
             )
+            return None
+
+        completed = charging_outcome.candidate
+        if completed is None:
+            accounting.rejected_candidates += 1
+            error = charging_outcome.error or ValueError(
+                charging_outcome.reason_code
+                or charging_outcome.status.value
+            )
+            accounting.rejection_reasons[
+                f"{type(error).__name__}: {error}"
+            ] += 1
+            record(
+                CandidateOutcome(
+                    action_id=action_id,
+                    channel=channel,
+                    status=(
+                        CandidateStatus.REJECTED_INTERFACE
+                        if charging_outcome.status
+                        == ChargingCandidateStatus.REJECTED_INTERFACE
+                        else CandidateStatus.REJECTED_CHARGING
+                    ),
+                    changed_duty_ids=move.changed_duty_ids,
+                    candidate=raw_candidate,
+                    error_type=type(error).__name__,
+                    error=str(error),
+                    charging_rejection_reason=charging_outcome.reason_code,
+                    charging_candidate_status=charging_outcome.status,
+                )
+            )
+            return None
+
+        evaluated = evaluate(completed)
+        if evaluated is None:
+            accounting.rejected_candidates += 1
+            accounting.rejection_reasons[
+                "official crossover full evaluation rejected candidate"
+            ] += 1
+            record(
+                CandidateOutcome(
+                    action_id=action_id,
+                    channel=channel,
+                    status=CandidateStatus.REJECTED_INTERFACE,
+                    changed_duty_ids=move.changed_duty_ids,
+                    candidate=completed,
+                    error_type="FULL_EVALUATION_REJECTED",
+                    error=(
+                        "official crossover candidate did not reach "
+                        "a complete evaluation"
+                    ),
+                )
+            )
+            return None
+
+        record(
+            CandidateOutcome(
+                action_id=action_id,
+                channel=channel,
+                status=CandidateStatus.EVALUATED,
+                changed_duty_ids=move.changed_duty_ids,
+                candidate=evaluated.solution,
+                evaluation=evaluated.evaluation.full,
+            )
+        )
         return evaluated
 
     def _educate(
@@ -1149,43 +693,6 @@ def build_integrated_private_hgs(
             DutyIndividual,
             PrivateIntegratedEvaluation,
         ],
-    ) -> tuple[
-        EvaluatedSolution[
-            DutyIndividual,
-            PrivateIntegratedEvaluation,
-        ],
-        ...,
-    ]:
-        refined = _educate(
-            candidate,
-            repair=False,
-            engine=effective_execution.route_stage_engine,
-        )
-        if refined.solution.fingerprint == candidate.solution.fingerprint:
-            return (candidate,)
-        return (refined,)
-
-    def repair(
-        candidate: EvaluatedSolution[
-            DutyIndividual,
-            PrivateIntegratedEvaluation,
-        ],
-    ) -> EvaluatedSolution[
-        DutyIndividual,
-        PrivateIntegratedEvaluation,
-    ]:
-        repaired = _educate(
-            candidate,
-            repair=True,
-            engine=effective_execution.route_stage_engine,
-        )
-        return repaired
-
-    def finalise(
-        candidate: EvaluatedSolution[
-            DutyIndividual,
-            PrivateIntegratedEvaluation,
-        ],
     ) -> EvaluatedSolution[
         DutyIndividual,
         PrivateIntegratedEvaluation,
@@ -1201,6 +708,31 @@ def build_integrated_private_hgs(
             engine=effective_execution.mechanism_stage_engine,
         )
 
+    def repair(
+        candidate: EvaluatedSolution[
+            DutyIndividual,
+            PrivateIntegratedEvaluation,
+        ],
+    ) -> EvaluatedSolution[
+        DutyIndividual,
+        PrivateIntegratedEvaluation,
+    ]:
+        repaired = _educate(
+            candidate,
+            repair=True,
+            engine=effective_execution.route_stage_engine,
+        )
+        if (
+            effective_execution.mechanism_stage_engine is not None
+            and repaired.evaluation.feasible
+        ):
+            repaired = _educate(
+                repaired,
+                repair=False,
+                engine=effective_execution.mechanism_stage_engine,
+            )
+        return repaired
+
     adapter = IntegratedProblemAdapter(
         evaluate=evaluate,
         refine=refine,
@@ -1214,7 +746,6 @@ def build_integrated_private_hgs(
         minimum_initial_population_size=SelfAdaptivePenalty.minimum_reference_size,
         breed=breed,
         repair=repair,
-        finalise=finalise,
     )
     population = ExternalPopulation(
         broken_pairs_distance,

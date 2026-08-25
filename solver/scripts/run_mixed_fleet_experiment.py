@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Run MAIN-2 mixed-fleet arms serially with paired seed identities.
-
-Dry-run mode performs only input, arm, budget, and pairing validation.  A
-non-dry run additionally requires an externally frozen Pi0 manifest and writes
-one auditable package without starting parallel workers.
-"""
+"""Run the four registered mixed-fleet levels with the current serial solver."""
 
 from __future__ import annotations
 
@@ -45,18 +40,27 @@ FORBIDDEN_OUTPUT_DIRS = (
     "solver/reports/dss_step1_gate2",
     "solver/reports/endogenous_fleet_trial_20260810",
 )
-FLEET_AUTHORITY = Path(
-    "data/ChinaInstances/"
-    "china81_finite_fleet_authority_v3_20260802/fleet_caps.csv"
-)
-WITNESS_DIR = Path(
-    "data/ChinaInstances/"
-    "china81_finite_fleet_authority_v3_20260802/witnesses"
+FLEET_PACKAGE = Path(
+    "data/ChinaInstances/china81_final_suite_v2_20260815"
 )
 
-FLEET_PARAMETER_CLASS_IDS = {
-    "fixed25": "DERIVED_FIXED_TOTAL_MULTITRIP_ZERO_SEARCH_AUTHORITY",
-    "endogenous": "ENDOGENOUS_RD_RE_NO_ADDITIONAL_TOTAL_CAP",
+FLEET_LEVEL_CAPS = {
+    "cv18_ev2": {
+        "D_OSM_WAY_1003511503": (5, 1),
+        "D_OSM_WAY_1071205721": (13, 1),
+    },
+    "cv13_ev7": {
+        "D_OSM_WAY_1003511503": (3, 3),
+        "D_OSM_WAY_1071205721": (10, 4),
+    },
+    "cv7_ev13": {
+        "D_OSM_WAY_1003511503": (2, 4),
+        "D_OSM_WAY_1071205721": (5, 9),
+    },
+    "cv2_ev18": {
+        "D_OSM_WAY_1003511503": (1, 5),
+        "D_OSM_WAY_1071205721": (1, 13),
+    },
 }
 
 
@@ -70,41 +74,14 @@ class ArmDefinition:
 
 
 ARM_DEFINITIONS: Mapping[str, ArmDefinition] = {
-    "endogenous": ArmDefinition(
-        "endogenous",
-        "内生 CV/EV 搭配（每车场 Rd/Re，无额外总量上限）",
-        "endogenous_rd_re",
-        "25",
-        "MAIN_TREATMENT",
-    ),
-    "fixed25": ArmDefinition(
-        "fixed25",
-        "原 25% 固定车队参考",
-        "fixed25",
-        "25",
-        "HISTORICAL_REFERENCE",
-    ),
-    "same_total_cap": ArmDefinition(
-        "same_total_cap",
-        "车型可选但沿用原 25% 总车数上限",
-        "endogenous_types_fixed25_total",
-        "25",
-        "FLEET_SIZE_CONFOUND_CONTROL",
-    ),
-    "all_cv": ArmDefinition(
-        "all_cv",
-        "全燃油优化端点",
-        "all_cv_rd",
-        "0",
-        "OPTIONAL_OPTIMIZED_ENDPOINT",
-    ),
-    "all_ev": ArmDefinition(
-        "all_ev",
-        "全电优化端点",
-        "all_ev_re",
-        "100",
-        "OPTIONAL_OPTIMIZED_ENDPOINT",
-    ),
+    name: ArmDefinition(
+        name,
+        name.removeprefix("cv").replace("_ev", " CV / ") + " EV",
+        name,
+        "native_registered_population",
+        "PAPER_FLEET_LEVEL",
+    )
+    for name in FLEET_LEVEL_CAPS
 }
 
 
@@ -227,7 +204,7 @@ def _validate_output_path(repo: Path, output: Path) -> None:
 
 
 def _authority_rows(repo: Path) -> dict[str, dict[str, dict[str, str]]]:
-    path = repo / FLEET_AUTHORITY
+    path = repo / FLEET_PACKAGE / "fleet_caps.csv"
     with path.open(newline="", encoding="utf-8") as handle:
         rows: dict[str, dict[str, dict[str, str]]] = {}
         for row in csv.DictReader(handle):
@@ -235,24 +212,13 @@ def _authority_rows(repo: Path) -> dict[str, dict[str, dict[str, str]]]:
     return rows
 
 
-def _validate_witness(repo: Path, instance_id: str, levels: Iterable[str]) -> None:
-    path = repo / WITNESS_DIR / f"{instance_id}.json"
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if str(payload.get("instance_id")) != instance_id:
-        raise ValueError(f"witness identity mismatch: {path}")
-    for level_name in levels:
-        level = payload.get("levels", {}).get(level_name)
-        if not isinstance(level, dict):
-            raise ValueError(f"witness has no level {level_name}: {instance_id}")
-        if level.get("status") != "CERTIFIED" or level.get("violations"):
-            raise ValueError(
-                f"witness level is not certified: {instance_id}/{level_name}"
-            )
-
-
 def _input_snapshot(repo: Path, instances: Sequence[str]) -> dict[str, str]:
-    paths = [repo / FLEET_AUTHORITY]
-    paths.extend(repo / WITNESS_DIR / f"{instance}.json" for instance in instances)
+    paths = [repo / FLEET_PACKAGE / "fleet_caps.csv"]
+    paths.extend(
+        repo / FLEET_PACKAGE / "instances" / instance / name
+        for instance in instances
+        for name in ("nodes.csv", "orders.csv", "enterprise_assignment.csv")
+    )
     return {
         str(path.relative_to(repo)): _sha256(path)
         for path in sorted(paths)
@@ -285,42 +251,15 @@ def _pair_identities(
 
 
 def _validate_static_inputs(args: argparse.Namespace, repo: Path) -> dict[str, Any]:
-    from setp_solver.pi0_manifest import load_pi0_manifest
-
-    _validate_output_path(repo, args.output_dir)
     authorities = _authority_rows(repo)
     missing = [instance for instance in args.instances if instance not in authorities]
     if missing:
         raise ValueError(f"instances absent from fleet authority: {missing}")
-    required_levels = {
-        ARM_DEFINITIONS[arm].initial_witness_level for arm in args.arms
-    }
-    for instance in args.instances:
-        _validate_witness(repo, instance, required_levels)
     source_hashes = _input_snapshot(repo, args.instances)
     snapshot_sha = _json_sha256(source_hashes)
-    pi0_records = None
-    if args.pi0_manifest is not None:
-        pi0_records = load_pi0_manifest(args.pi0_manifest.resolve())
-        missing_pi0 = [instance for instance in args.instances if instance not in pi0_records]
-        if missing_pi0:
-            raise ValueError(f"Pi0 manifest misses requested instances: {missing_pi0}")
-        for instance in args.instances:
-            if pi0_records[instance]["formal_reuse_allowed"] is not True:
-                raise ValueError(
-                    f"probe-only Pi0 cannot enter a formal mixed-fleet run: {instance}"
-                )
-            expected_depots = set(authorities[instance])
-            actual_depots = set(pi0_records[instance]["values"])
-            if actual_depots != expected_depots:
-                raise ValueError(
-                    f"Pi0 depot set mismatch for {instance}: "
-                    f"expected={sorted(expected_depots)}, actual={sorted(actual_depots)}"
-                )
     return {
         "source_hashes": source_hashes,
         "input_snapshot_sha256": snapshot_sha,
-        "pi0_records": pi0_records,
     }
 
 
@@ -345,7 +284,7 @@ def _dry_run_payload(
             groups.append([asdict(identity) for identity in identities])
     return {
         "mode": "DRY_RUN",
-        "experiment_id": "MAIN-2",
+        "experiment_id": args.experiment_id,
         "solver_entered": False,
         "output_directory_created": False,
         "serial_execution": True,
@@ -357,6 +296,8 @@ def _dry_run_payload(
         "wall_clock_budget_seconds_per_run": args.wall_clock_seconds,
         "p20_limit_seconds": MAX_WALL_CLOCK_SECONDS,
         "objective_mode": args.objective_mode,
+        "charging_curve": args.charging_curve,
+        "charge_timing_policy": args.charge_timing_policy,
         "fleet_parameter_class_id": fleet_parameter_class_id,
         "fleet_parameter_class_ids_by_arm": {
             arm: _planned_fleet_parameter_class_id(arm) for arm in args.arms
@@ -367,225 +308,17 @@ def _dry_run_payload(
         "planned_run_count": len(args.instances) * len(args.seeds) * len(args.arms),
         "input_source_hashes": validated["source_hashes"],
         "input_snapshot_sha256": validated["input_snapshot_sha256"],
-        "pi0_manifest": (
-            None if args.pi0_manifest is None else str(args.pi0_manifest.resolve())
-        ),
-        "formal_launch_ready": validated["pi0_records"] is not None,
+        "formal_launch_ready": True,
         "formal_package_files": (
             "metadata.json",
             "raw_runs.csv",
+            "decision.json",
             "report.md",
-            "artifact_hashes.json",
         ),
     }
 
 
-def _witness_skeleton(repo: Path, bundle: Any, level_name: str) -> Any:
-    from setp_solver.solution import Route, Solution
-
-    path = repo / WITNESS_DIR / f"{bundle.instance_id}.json"
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    level = payload["levels"][level_name]
-    routes = []
-    for depot_id, depot in sorted(level["depots"].items()):
-        for vehicle_type in ("cv", "ev"):
-            for index, timed in enumerate(depot[f"{vehicle_type}_routes"], start=1):
-                routes.append(
-                    Route(
-                        vehicle_id=(
-                            f"MAIN2-{depot_id}-{vehicle_type.upper()}-{index:03d}"
-                        ),
-                        vehicle_type=vehicle_type,
-                        home_depot_id=depot_id,
-                        node_sequence=[
-                            depot_id,
-                            *[str(customer) for customer in timed["customers"]],
-                            depot_id,
-                        ],
-                    )
-                )
-    return Solution(routes=routes)
-
-
-def _witness_endpoint_solution(
-    repo: Path,
-    bundle: Any,
-    level_name: str,
-) -> Any:
-    """Materialise the authority's certified homogeneous multi-trip witness."""
-
-    from setp_solver.china81_completion import annotate_cross_site_services
-    from setp_solver.search.multitrip_schedule import _curve_for_prices
-    from setp_solver.solution import (
-        ChargingAction,
-        Route,
-        Solution,
-        route_trip_vehicle_id,
-    )
-
-    payload = json.loads(
-        (repo / WITNESS_DIR / f"{bundle.instance_id}.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    level = payload["levels"][level_name]
-    curve = _curve_for_prices(bundle.prices, bundle.instance)
-    routes = []
-    actions = []
-    for depot_id, depot in sorted(level["depots"].items()):
-        for vehicle_type in ("cv", "ev"):
-            by_route_id = {
-                str(row["route_id"]): row
-                for row in depot[f"{vehicle_type}_routes"]
-            }
-            for vehicle_index, chain in enumerate(
-                depot[f"{vehicle_type}_cover"]["chains"],
-                start=1,
-            ):
-                physical_id = f"{vehicle_type.upper()}_{depot_id}_{vehicle_index}"
-                previous_return = 6.0 * 60.0 * 60.0
-                for trip_index, route_id in enumerate(chain, start=1):
-                    timed = by_route_id[str(route_id)]
-                    trip_vehicle_id = route_trip_vehicle_id(
-                        physical_id,
-                        trip_index,
-                    )
-                    routes.append(
-                        Route(
-                            vehicle_id=trip_vehicle_id,
-                            vehicle_type=vehicle_type,
-                            home_depot_id=depot_id,
-                            node_sequence=[
-                                depot_id,
-                                *[str(customer) for customer in timed["customers"]],
-                                depot_id,
-                            ],
-                        )
-                    )
-                    if vehicle_type == "ev":
-                        energy = float(timed["drive_energy_kwh"])
-                        duration = curve.duration_seconds(0.0, energy)
-                        if (
-                            previous_return + duration
-                            > float(timed["departure_second"]) + 1.0e-6
-                        ):
-                            raise ValueError(
-                                "certified endpoint chain cannot recharge before "
-                                f"departure: {bundle.instance_id}/{depot_id}/{route_id}"
-                            )
-                        actions.append(
-                            ChargingAction(
-                                vehicle_id=trip_vehicle_id,
-                                station_id=depot_id,
-                                energy_kwh=energy,
-                                occupancy_minutes=duration / 60.0,
-                                charge_start_second=previous_return,
-                                start_energy_kwh=0.0,
-                                end_energy_kwh=energy,
-                                charging_curve_id=curve.curve_id,
-                            )
-                        )
-                    previous_return = float(timed["return_second"])
-    solution = Solution(routes=routes, charging_actions=actions)
-    return annotate_cross_site_services(solution, bundle.customer_home_depot)
-
-
-def _register_available_slots(individual: Any, bundle: Any) -> Any:
-    """Register typed candidates even in the same-total-cap control arm."""
-
-    from setp_solver.algorithms.problem_hgs.model import PhysicalVehicleDuty
-
-    by_id = {duty.physical_vehicle_id: duty for duty in individual.duties}
-    for depot_id, caps in sorted(bundle.fleet_caps_by_depot.items()):
-        expected_ids = set()
-        for vehicle_type, field in (("cv", "num_cv"), ("ev", "num_ev")):
-            for index in range(1, int(caps[field]) + 1):
-                vehicle_id = f"{vehicle_type.upper()}_{depot_id}_{index}"
-                expected_ids.add(vehicle_id)
-                by_id.setdefault(
-                    vehicle_id,
-                    PhysicalVehicleDuty(
-                        physical_vehicle_id=vehicle_id,
-                        vehicle_type=vehicle_type,
-                        home_depot_id=depot_id,
-                        trips=(),
-                    ),
-                )
-        actual_ids = {
-            duty.physical_vehicle_id
-            for duty in individual.duties
-            if duty.home_depot_id == depot_id
-        }
-        unexpected = actual_ids.difference(expected_ids)
-        if unexpected:
-            raise RuntimeError(
-                "initial solution uses unregistered vehicles: "
-                + ", ".join(sorted(unexpected))
-            )
-    return replace(
-        individual,
-        duties=tuple(by_id[vehicle_id] for vehicle_id in sorted(by_id)),
-        source="main2-mixed-fleet-initial",
-    )
-
-
-def _arm_bundle(repo: Path, instance_id: str, arm: str) -> Any:
-    from setp_solver.china81 import (
-        ENDOGENOUS_FLEET_PARAMETERS,
-        FIXED_25_PERCENT_FLEET_PARAMETERS,
-        load_china81_bundle,
-    )
-
-    fixed = load_china81_bundle(
-        repo,
-        instance_id,
-        fleet_parameters=FIXED_25_PERCENT_FLEET_PARAMETERS,
-    )
-    if arm == "fixed25":
-        return fixed
-    endogenous = load_china81_bundle(
-        repo,
-        instance_id,
-        fleet_parameters=ENDOGENOUS_FLEET_PARAMETERS,
-    )
-    if arm == "endogenous":
-        return endogenous
-
-    caps = {}
-    for depot_id, row in endogenous.fleet_caps_by_depot.items():
-        rd = int(row["num_cv"])
-        re = int(row["num_ev"])
-        if arm == "same_total_cap":
-            values = {
-                "num_cv": rd,
-                "num_ev": re,
-                "total_fleet_cap": int(
-                    fixed.fleet_caps_by_depot[depot_id]["total_fleet_cap"]
-                ),
-            }
-        elif arm == "all_cv":
-            values = {"num_cv": rd, "num_ev": 0, "total_fleet_cap": rd}
-        elif arm == "all_ev":
-            values = {"num_cv": 0, "num_ev": re, "total_fleet_cap": re}
-        else:  # pragma: no cover - argparse prevents this branch.
-            raise ValueError(f"unknown arm: {arm}")
-        caps[depot_id] = MappingProxyType(values)
-    return replace(
-        endogenous,
-        instance=replace(
-            endogenous.instance,
-            num_cv=sum(int(row["num_cv"]) for row in caps.values()),
-            num_ev=sum(int(row["num_ev"]) for row in caps.values()),
-        ),
-        fleet_caps_by_depot=MappingProxyType(caps),
-        fleet_parameter_class_id=ARM_DEFINITIONS[arm].cap_mode,
-        has_additional_total_fleet_cap=(arm == "same_total_cap"),
-    )
-
-
 def _planned_fleet_parameter_class_id(arm: str) -> str:
-    if arm in FLEET_PARAMETER_CLASS_IDS:
-        return FLEET_PARAMETER_CLASS_IDS[arm]
     return ARM_DEFINITIONS[arm].cap_mode
 
 
@@ -600,47 +333,75 @@ def _arm_setup(
     repo: Path,
     instance_id: str,
     arm: str,
-    pi0_record: Mapping[str, Any],
+    charging_curve: str,
 ) -> tuple[Any, Any, Any]:
-    from setp_solver.algorithms.problem_hgs.evaluation import (
-        DutyEvaluationContext,
-        FrozenMappingIdentity,
+    from run_problem_hgs_private_technical import _build_context
+    from setp_solver.algorithms.problem_hgs.fleet_registry import (
+        register_all_vehicle_slots,
     )
     from setp_solver.algorithms.problem_hgs.model import DutyIndividual
-    from setp_solver.china81_completion import complete_china81_route_skeleton
-    from setp_solver.search.multitrip_schedule import (
-        DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
+    from setp_solver.charging_curve import (
+        L100_CONTROL,
+        M17_FAST_SHAPE_SCALED_60KW_PWL,
     )
-    from setp_solver.mapping_identity import mapping_sha256
+    from setp_solver.china81 import ENDOGENOUS_FLEET_PARAMETERS
 
-    bundle = _arm_bundle(repo, instance_id, arm)
-    level_name = ARM_DEFINITIONS[arm].initial_witness_level
-    if arm in {"all_cv", "all_ev"}:
-        completed = _witness_endpoint_solution(repo, bundle, level_name)
-    else:
-        skeleton = _witness_skeleton(repo, bundle, level_name)
-        completed = complete_china81_route_skeleton(skeleton, bundle).solution
-    initial = _register_available_slots(DutyIndividual.from_solution(completed), bundle)
-    pi0 = dict(pi0_record["values"])
-    if set(pi0) != set(bundle.fleet_caps_by_depot):
-        raise ValueError(f"Pi0 depot set differs from bundle: {instance_id}")
-    runtime_sha = mapping_sha256(pi0)
-    if runtime_sha != pi0_record["value_sha256"]:
-        raise ValueError(f"Pi0 runtime hash differs from manifest: {instance_id}")
-    context = DutyEvaluationContext(
-        bundle=bundle,
-        independent_profit=pi0,
-        independent_profit_identity=FrozenMappingIdentity(
-            source_id=str(pi0_record["source_id"]),
-            value_sha256=runtime_sha,
-            externally_frozen=True,
-        ),
-        prior_profit={depot_id: 0.0 for depot_id in pi0},
-        theta=1.0,
-        carbon_quota_kg=0.0,
-        depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
-        fairness_enabled=True,
+    base, _old_initial, _neutral, context = _build_context(
+        repo,
+        instance_id,
+        fleet_parameters=ENDOGENOUS_FLEET_PARAMETERS,
     )
+    requested = FLEET_LEVEL_CAPS[arm]
+    if set(requested) != set(base.fleet_caps_by_depot):
+        raise ValueError("registered fleet level does not cover both depots")
+    caps = MappingProxyType(
+        {
+            depot_id: MappingProxyType(
+                {"num_cv": cv, "num_ev": ev, "total_fleet_cap": cv + ev}
+            )
+            for depot_id, (cv, ev) in requested.items()
+        }
+    )
+    bundle = replace(
+        base,
+        instance=replace(
+            base.instance,
+            num_cv=sum(cv for cv, _ev in requested.values()),
+            num_ev=sum(ev for _cv, ev in requested.values()),
+        ),
+        fleet_caps_by_depot=caps,
+        fleet_parameter_class_id=ARM_DEFINITIONS[arm].cap_mode,
+        has_additional_total_fleet_cap=True,
+    )
+    curve = {
+        "linear": L100_CONTROL,
+        "literature_pwl": M17_FAST_SHAPE_SCALED_60KW_PWL,
+    }[charging_curve]
+    prices = replace(
+        bundle.prices,
+        charging_curve_id=curve.curve_id,
+        charging_soc_breakpoints=curve.soc_breakpoints,
+        charging_relative_powers=curve.relative_powers,
+        depot_charging_curve_id=curve.curve_id,
+        depot_charging_soc_breakpoints=curve.soc_breakpoints,
+        depot_charging_relative_powers=curve.relative_powers,
+        public_charging_curve_id=curve.curve_id,
+        public_charging_soc_breakpoints=curve.soc_breakpoints,
+        public_charging_relative_powers=curve.relative_powers,
+    )
+    bundle = replace(bundle, prices=prices)
+    customers = tuple(
+        node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c"
+    )
+    initial = register_all_vehicle_slots(
+        DutyIndividual(
+            duties=(),
+            unserved_customers=customers,
+            source=f"mixed-fleet-native-initial/{arm}",
+        ),
+        bundle,
+    )
+    context = replace(context, bundle=bundle, fairness_enabled=False, theta=0.0)
     return bundle, initial, context
 
 
@@ -652,6 +413,7 @@ def _prepare_population(
     wall_clock_budget_seconds: float,
     objective_mode: str,
     population_mode: str,
+    charge_timing_policy: str,
 ) -> tuple[Any, float]:
     from run_problem_hgs_private_technical import (
         _parameters,
@@ -668,11 +430,10 @@ def _prepare_population(
 
     started = perf_counter()
     evaluator = DutyFullEvaluator(context)
-    policy = _policy(evaluator)
+    policy = _policy(evaluator, charge_timing_policy=charge_timing_policy)
     parameters = _parameters(
         random_seed=seed,
         population_mode=population_mode,
-        crossover_mode="fast_only",
         objective_mode=objective_mode,
     )
     full_calls_before = evaluator.full_calls
@@ -699,6 +460,10 @@ def _prepare_population(
             initial,
             random_seed=seed,
             stream_role="main2_initialization",
+            depot_assignment_operator_enabled=True,
+            rebuilt_volume_capacity_enabled=True,
+            rebuilt_shift_neighbours_only=True,
+            shift_aware_ev_unit_cost_enabled=True,
         )
         population = build_initial_population(
             initial,
@@ -708,6 +473,7 @@ def _prepare_population(
             requested_size=parameters.population.min_pop_size,
             random_seed=seed,
             max_random_attempts=None,
+            include_reference_candidate=False,
             stop_requested=lambda: (
                 perf_counter() - started >= wall_clock_budget_seconds
             ),
@@ -810,8 +576,9 @@ def _run_one(
     wall_clock_budget_seconds: float,
     objective_mode: str,
     population_mode: str,
+    charging_curve: str,
+    charge_timing_policy: str,
     pair_identity: PairIdentity,
-    pi0_record: Mapping[str, Any],
     run_dir: Path,
 ) -> dict[str, Any]:
     from run_problem_hgs_private_technical import _parameters, _policy
@@ -829,7 +596,7 @@ def _run_one(
         repo,
         instance_id,
         arm,
-        pi0_record,
+        charging_curve,
     )
     built, initialization_wall_seconds = _prepare_population(
         initial,
@@ -838,13 +605,13 @@ def _run_one(
         wall_clock_budget_seconds=wall_clock_budget_seconds,
         objective_mode=objective_mode,
         population_mode=population_mode,
+        charge_timing_policy=charge_timing_policy,
     )
     evaluator = DutyFullEvaluator(context)
-    policy = _policy(evaluator)
+    policy = _policy(evaluator, charge_timing_policy=charge_timing_policy)
     parameters = _parameters(
         random_seed=seed,
         population_mode=population_mode,
-        crossover_mode="fast_only",
         objective_mode=objective_mode,
     )
     route_engine = IndependentKernelDutyRouteProposalEngine(
@@ -852,6 +619,10 @@ def _run_one(
         initial,
         random_seed=seed,
         stream_role="main2_main_route",
+        depot_assignment_operator_enabled=True,
+        rebuilt_volume_capacity_enabled=True,
+        rebuilt_shift_neighbours_only=True,
+        shift_aware_ev_unit_cost_enabled=True,
     )
     population_identity = FrozenPopulationIdentity(
         source_id=f"main2-{instance_id}-{arm}-seed-{seed}",
@@ -891,13 +662,13 @@ def _run_one(
         "pair_group_id": pair_identity.pair_group_id,
         "run_status": result.termination_status,
         "objective_mode": objective_mode,
+        "charging_curve": charging_curve,
+        "charge_timing_policy": charge_timing_policy,
         "wall_clock_budget_seconds": float(wall_clock_budget_seconds),
         "fleet_parameter_class_id": bundle.fleet_parameter_class_id,
         "initial_population_sha256": population_identity.value_sha256,
         "evaluation_context_sha256": evaluator.context_sha256,
         "search_configuration_sha256": result.provenance.search_configuration_sha256,
-        "pi0_source_id": pi0_record["source_id"],
-        "pi0_value_sha256": pi0_record["value_sha256"],
         "total_cost_cny": float(selected_evaluation.total_cost),
         "direct_emissions_kg": float(
             selected_evaluation.breakdown["E_cv_direct"]
@@ -1112,10 +883,9 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
         for row in successful
     }
     comparisons = (
-        ("endogenous", "fixed25"),
-        ("same_total_cap", "fixed25"),
-        ("endogenous", "same_total_cap"),
-        ("all_ev", "all_cv"),
+        ("cv18_ev2", "cv13_ev7"),
+        ("cv13_ev7", "cv7_ev13"),
+        ("cv7_ev13", "cv2_ev18"),
     )
     for left, right in comparisons:
         if left not in arms or right not in arms:
@@ -1145,32 +915,33 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
     )
     return "\n".join(lines) + "\n"
 
-
-def _artifact_hashes(output: Path) -> dict[str, str]:
-    return {
-        str(path.relative_to(output)): _sha256(path)
-        for path in sorted(output.rglob("*"))
-        if path.is_file()
-        and path.name != "artifact_hashes.json"
-        and not path.name.startswith("._")
-    }
-
-
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--data-repo-root", type=Path)
     parser.add_argument("--instances", nargs="+", required=True)
     parser.add_argument(
         "--arms",
         nargs="+",
         choices=tuple(ARM_DEFINITIONS),
     )
-    parser.add_argument(
-        "--fleet-parameters",
-        choices=tuple(FLEET_PARAMETER_CLASS_IDS),
-    )
     parser.add_argument("--seeds", type=int, nargs="+", required=True)
     parser.add_argument("--wall-clock-seconds", type=float, required=True)
+    parser.add_argument(
+        "--experiment-id",
+        choices=("MIXED_FLEET", "NONLINEAR_CHARGING", "TIME_VARYING_CARBON"),
+        default="MIXED_FLEET",
+    )
+    parser.add_argument(
+        "--charging-curve",
+        choices=("linear", "literature_pwl"),
+        default="literature_pwl",
+    )
+    parser.add_argument(
+        "--charge-timing-policy",
+        choices=("asap", "cost_plus_carbon"),
+        default="cost_plus_carbon",
+    )
     parser.add_argument(
         "--objective-mode",
         choices=("single_objective",),
@@ -1181,19 +952,10 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         choices=("technical_two_parent", "copied_hgs_defaults"),
         default="copied_hgs_defaults",
     )
-    parser.add_argument("--pi0-manifest", type=Path)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
-    fleet_parameters_was_explicit = args.fleet_parameters is not None
-    if args.fleet_parameters is None:
-        args.fleet_parameters = "fixed25"
     if args.arms is None:
-        args.arms = [args.fleet_parameters]
-    elif fleet_parameters_was_explicit and args.arms != [args.fleet_parameters]:
-        parser.error(
-            "--fleet-parameters selects its matching direct fleet arm; "
-            "omit --arms or pass the same single arm"
-        )
+        args.arms = list(ARM_DEFINITIONS)
     if not 0.0 < args.wall_clock_seconds <= MAX_WALL_CLOCK_SECONDS:
         parser.error(
             f"--wall-clock-seconds must be in (0, {MAX_WALL_CLOCK_SECONDS:g}]"
@@ -1205,19 +967,22 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     ):
         if len(set(values)) != len(values):
             parser.error(f"{label} cannot contain duplicates")
-    if not args.dry_run and args.pi0_manifest is None:
-        parser.error("non-dry MAIN-2 requires --pi0-manifest (P28 frozen values)")
     return args
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
-    repo = Path(__file__).resolve().parents[2]
-    validated = _validate_static_inputs(args, repo)
+    code_repo = Path(__file__).resolve().parents[2]
+    data_repo = (
+        code_repo
+        if args.data_repo_root is None
+        else args.data_repo_root.resolve()
+    )
+    validated = _validate_static_inputs(args, data_repo)
     if args.dry_run:
         print(
             json.dumps(
-                _dry_run_payload(args, repo, validated),
+                _dry_run_payload(args, data_repo, validated),
                 ensure_ascii=False,
                 indent=2,
                 allow_nan=False,
@@ -1232,7 +997,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
-    protected_before = {path: _sha256(repo / path) for path in PROTECTED}
+    protected_before = {path: _sha256(code_repo / path) for path in PROTECTED}
     from run_problem_hgs_private_technical import (
         _effective_population_metadata,
         _parameters,
@@ -1242,7 +1007,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     rows: list[dict[str, Any]] = []
     metadata = {
         "status": "RUNNING",
-        "experiment_id": "MAIN-2",
+        "experiment_id": args.experiment_id,
         "instances": list(args.instances),
         "arms": list(args.arms),
         "arm_definitions": {
@@ -1252,6 +1017,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "wall_clock_budget_seconds_per_run": args.wall_clock_seconds,
         "budget_semantics": "initial population construction plus search wall clock",
         "objective_mode": args.objective_mode,
+        "charging_curve": args.charging_curve,
+        "charge_timing_policy": args.charge_timing_policy,
         "effective_population": _effective_population_metadata(
             args.population_mode,
             _parameters(
@@ -1267,13 +1034,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "pair_fields": PAIR_FIELDS,
         "input_source_hashes": validated["source_hashes"],
         "input_snapshot_sha256": validated["input_snapshot_sha256"],
-        "pi0_manifest": str(args.pi0_manifest.resolve()),
-        "pi0_manifest_sha256": _sha256(args.pi0_manifest.resolve()),
         "protected_hashes_before": protected_before,
         "command_argv": list(sys.argv if argv is None else argv),
     }
     _write_json(output / "metadata.json", metadata)
-    pi0_records = validated["pi0_records"]
     for instance_id in args.instances:
         for seed in args.seeds:
             identities = _pair_identities(
@@ -1291,15 +1055,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 run_dir = output / "runs" / instance_id / arm / f"seed_{seed}"
                 try:
                     row = _run_one(
-                        repo=repo,
+                        repo=data_repo,
                         instance_id=instance_id,
                         arm=arm,
                         seed=seed,
                         wall_clock_budget_seconds=args.wall_clock_seconds,
                         objective_mode=args.objective_mode,
                         population_mode=args.population_mode,
+                        charging_curve=args.charging_curve,
+                        charge_timing_policy=args.charge_timing_policy,
                         pair_identity=by_arm[arm],
-                        pi0_record=pi0_records[instance_id],
                         run_dir=run_dir,
                     )
                 except Exception as error:  # Preserve exact per-run failure.
@@ -1310,7 +1075,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     row.update(_assess_row(row).row_fields())
                 rows.append(row)
 
-    protected_after = {path: _sha256(repo / path) for path in PROTECTED}
+    protected_after = {path: _sha256(code_repo / path) for path in PROTECTED}
     protected_ok = protected_after == protected_before
     if not protected_ok:
         for row in rows:

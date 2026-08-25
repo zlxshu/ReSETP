@@ -2174,6 +2174,7 @@ def _main3b_report(
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--data-repo-root", type=Path)
     parser.add_argument("--instance-id")
     parser.add_argument(
         "--dynamic-stream-dir",
@@ -2305,27 +2306,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         build_production_problem,
     )
 
-    repo = SOLVER_ROOT.parent
+    code_repo = SOLVER_ROOT.parent
+    data_repo = (
+        code_repo
+        if args.data_repo_root is None
+        else args.data_repo_root.resolve()
+    )
     problem = build_production_problem(
-        repo,
-        (repo / args.dynamic_stream_dir).resolve()
+        data_repo,
+        (data_repo / args.dynamic_stream_dir).resolve()
         if not args.dynamic_stream_dir.is_absolute()
         else args.dynamic_stream_dir,
     )
     target_dir = (
-        repo
+        data_repo
         / "data/ChinaInstances/china81_final_suite_v2_20260815/instances"
         / problem.instance_id
     )
     source_hashes_before = package_file_hashes(target_dir)
     source_hash_before = package_content_sha256(source_hashes_before)
     protected_paths = (
-        repo / "solver/src/setp_solver/cost.py",
-        repo / "solver/src/setp_solver/check.py",
-        repo / "solver/src/setp_solver/search/evaluation.py",
+        code_repo / "solver/src/setp_solver/cost.py",
+        code_repo / "solver/src/setp_solver/check.py",
+        code_repo / "solver/src/setp_solver/search/evaluation.py",
     )
     protected_before = {
-        str(path.relative_to(repo)): _file_sha256(path)
+        str(path.relative_to(code_repo)): _file_sha256(path)
         for path in protected_paths
     }
     try:
@@ -2339,13 +2345,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     except Exception as error:
         source_hashes_after = package_file_hashes(target_dir)
         protected_after = {
-            str(path.relative_to(repo)): _file_sha256(path)
+            str(path.relative_to(code_repo)): _file_sha256(path)
             for path in protected_paths
         }
         acceptance = _write_main3b_halt_package(
             output_dir=args.output_dir,
             error=error,
-            repo=repo,
+            repo=code_repo,
             protocol=protocol,
             source_hash_before=source_hash_before,
             source_hash_after=package_content_sha256(source_hashes_after),
@@ -2366,7 +2372,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return package_exit_code(acceptance)
     source_hashes_after = package_file_hashes(target_dir)
     protected_after = {
-        str(path.relative_to(repo)): _file_sha256(path)
+        str(path.relative_to(code_repo)): _file_sha256(path)
         for path in protected_paths
     }
     acceptance = _write_main3b_package(
@@ -2376,7 +2382,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         protocol=protocol,
         seeds=args.seeds,
         wall_clock_seconds=float(args.wall_clock_seconds),
-        repo=repo,
+        repo=code_repo,
         source_hash_before=source_hash_before,
         source_hash_after=package_content_sha256(source_hashes_after),
         protected_before=protected_before,

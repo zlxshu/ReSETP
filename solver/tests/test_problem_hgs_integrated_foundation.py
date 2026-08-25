@@ -186,7 +186,7 @@ def test_complete_feasibility_controls_subpopulation_and_selection() -> None:
     )
 
 
-def test_population_refreshes_penalties_after_add_purge_and_restart() -> None:
+def test_population_refreshes_penalties_once_before_selection() -> None:
     references: list[tuple[float, ...]] = []
     population = ExternalPopulation(
         lambda left, right: float(left.name != right.name),
@@ -214,17 +214,19 @@ def test_population_refreshes_penalties_after_add_purge_and_restart() -> None:
             )
         )
 
-    assert [len(reference) for reference in references] == [4, 5, 6, 7, 8, 7, 6]
-    assert set(references[0]) == {0, 1, 2, 3}
+    assert references == []
+    population.select(_Rng((0, 1)))
+    assert len(references) == 1
+    assert len(references[0]) == 6
 
     population.clear()
-    refreshes_before_restart = len(references)
-    for index in range(3):
+    for index in range(4):
         population.add(
             EvaluatedSolution(_Solution(str(index)), _Evaluation(index, True))
         )
-    assert len(references) == refreshes_before_restart
-    population.add(EvaluatedSolution(_Solution("3"), _Evaluation(3, True)))
+    assert len(references) == 1
+    population.select(_Rng((0, 1)))
+    assert len(references) == 2
     assert len(references[-1]) == 4
 
 
@@ -235,7 +237,7 @@ def test_integrated_loop_rejects_fewer_than_four_retained_initials() -> None:
             if solution.name == "kept"
             else None
         ),
-        refine=lambda candidate: (candidate,),
+        refine=lambda candidate: candidate,
         is_feasible=lambda evaluation: evaluation.feasible,
         objective=lambda evaluation: evaluation.full_cost,
         penalised_cost=lambda evaluation: evaluation.full_cost,
@@ -451,43 +453,6 @@ def test_merged_first_trip_windows_use_the_repeated_representative_day_profile(
 
 
 
-def test_private_common_loop_keeps_complete_duty_as_population_gene() -> None:
-    individual = DutyIndividual(
-        duties=(
-            PhysicalVehicleDuty(
-                "CV_D0_1",
-                "cv",
-                "D0",
-                trips=(DutyTrip(1, ()),),
-            ),
-        ),
-        source="complete-duty-test",
-    )
-    bundle = build_integrated_private_hgs(
-        (individual,) * 4,
-        evaluator=_FullEvaluator(),
-        charging_policy=ChargingRepairPolicy(
-            strategy="integrated",
-            carbon_weight=1.0,
-            depot_charge_window_mode="same_day_predeparture",
-            charge_timing_policy="cost_plus_carbon",
-            charge_amount_strategy="just_enough",
-            public_station_candidate_mode="parallel",
-            carbon_profiles_by_day_offset=None,
-        ),
-        route_engine=_RouteProposalEngine(),
-        stagnation_patience=10,
-        include_mechanism_refinement=False,
-    )
-
-    result = bundle.algorithm.run(MaxIterations(1))
-
-    assert result.best.solution is individual
-    assert result.best.evaluation.individual is individual
-    assert result.best.evaluation.full.total_cost == 10.0
-    assert bundle.accounting.crossover_noops == 1
-
-
 def test_sequential_proposals_finish_route_stage_before_mechanisms() -> None:
     engine = SequentialProposalEngine(
         (
@@ -667,9 +632,7 @@ def test_education_no_improvement_return_keeps_the_three_part_contract() -> None
     assert result == (individual, initial_evaluation, ())
 
 
-def test_private_refinement_admits_only_the_final_educated_duty(
-    monkeypatch,
-) -> None:
+def test_private_refinement_is_identity_when_mechanisms_are_disabled() -> None:
     initial = DutyIndividual(
         duties=(
             PhysicalVehicleDuty(
@@ -680,26 +643,6 @@ def test_private_refinement_admits_only_the_final_educated_duty(
             ),
         ),
         source="initial",
-    )
-    improved = DutyIndividual(
-        duties=(
-            PhysicalVehicleDuty(
-                "CV_D0_1",
-                "cv",
-                "D0",
-                trips=(DutyTrip(1, ("C1",)),),
-            ),
-        ),
-        source="improved",
-    )
-    improved_evaluation = _FullEvaluation(
-        individual_fingerprint=improved.fingerprint,
-        total_cost=5.0,
-    )
-    monkeypatch.setattr(
-        integrated_module,
-        "educate_best_improvement",
-        lambda *args, **kwargs: (improved, improved_evaluation, ()),
     )
     bundle = build_integrated_private_hgs(
         (initial,) * 4,
@@ -720,14 +663,12 @@ def test_private_refinement_admits_only_the_final_educated_duty(
     evaluated = bundle.algorithm._adapter.evaluate(initial)
     assert evaluated is not None
 
-    children = bundle.algorithm._adapter.refine(evaluated)
+    refined = bundle.algorithm._adapter.refine(evaluated)
 
-    assert len(children) == 1
-    assert children[0].solution is improved
-    assert children[0].evaluation.full is improved_evaluation
+    assert refined is evaluated
 
 
-def test_private_mechanisms_run_once_on_the_final_feasible_incumbent(
+def test_private_mechanism_stage_runs_during_refinement(
     monkeypatch,
 ) -> None:
     individual = DutyIndividual(
@@ -769,12 +710,11 @@ def test_private_mechanisms_run_once_on_the_final_feasible_incumbent(
     evaluated = bundle.algorithm._adapter.evaluate(individual)
     assert evaluated is not None
 
-    bundle.algorithm._adapter.refine(evaluated)
-    bundle.algorithm._adapter.refine(evaluated)
-    finalised = bundle.algorithm._adapter.finalise(evaluated)
+    refined = bundle.algorithm._adapter.refine(evaluated)
 
+    assert len(calls) == 1
     assert sum("mechanism" in source_id for source_id in calls) == 1
-    assert finalised is evaluated
+    assert refined is evaluated
 
 
 def test_private_common_loop_rejects_incomplete_customer_service() -> None:

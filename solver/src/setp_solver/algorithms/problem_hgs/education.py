@@ -534,6 +534,7 @@ def educate_best_improvement(
                 and stop_requested()
             ):
                 stop_after_round = True
+                break
             outcome = evaluate_move(
                 current,
                 move,

@@ -396,6 +396,7 @@ class DutySkeletonMove:
                         if customers
                     ),
                     charging_sessions=(),
+                    schedule=None,
                 )
             )
         rebuilt_customers = {
@@ -481,14 +482,13 @@ class OpenTripMove:
             for index, (_, trip) in enumerate(rows, start=1)
         )
         locked_sessions = tuple(
-            session
-            for session in duty.charging_sessions
-            if session.locked
+            session for session in duty.charging_sessions if session.locked
         )
         rebuilt_duty = replace(
             duty,
             trips=rebuilt_trips,
             charging_sessions=locked_sessions,
+            schedule=None,
         )
         return replace(
             individual,
@@ -517,7 +517,7 @@ class ChargingRetimeMove:
         retained = tuple(
             session for session in duty.charging_sessions if session.locked
         )
-        rebuilt = replace(duty, charging_sessions=retained)
+        rebuilt = replace(duty, charging_sessions=retained, schedule=None)
         return replace(
             individual,
             duties=tuple(
@@ -560,6 +560,7 @@ class ChargingScheduleMove:
                 for trip in duty.trips
             ),
             charging_sessions=tuple(self.charging_sessions),
+            schedule=None,
         )
         return replace(
             individual,
@@ -602,11 +603,13 @@ class WholeDutyTypeExchangeMove:
             left,
             trips=_unlocked_task_chain(right),
             charging_sessions=(),
+            schedule=None,
         )
         rebuilt_right = replace(
             right,
             trips=_unlocked_task_chain(left),
             charging_sessions=(),
+            schedule=None,
         )
         return replace(
             individual,
@@ -675,6 +678,7 @@ class InsertUnservedMove:
                     for item in duty.trips
                 ),
             )
+        rebuilt = compact_empty_trips(rebuilt)
         return replace(
             individual,
             duties=tuple(
@@ -745,6 +749,7 @@ class ExchangeUnservedMove:
                 for item in duty.trips
             ),
         )
+        rebuilt_duty = compact_empty_trips(rebuilt_duty)
         return replace(
             individual,
             duties=tuple(
@@ -1333,6 +1338,7 @@ def compact_empty_trips(duty: PhysicalVehicleDuty) -> PhysicalVehicleDuty:
         duty,
         trips=trips,
         charging_sessions=locked_sessions,
+        schedule=None,
     )
 
 

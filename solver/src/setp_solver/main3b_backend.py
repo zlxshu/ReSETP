@@ -37,6 +37,7 @@ from run_problem_hgs_private_technical import (  # noqa: E402
 from setp_solver.algorithms.problem_hgs.dynamic import (  # noqa: E402
     DutyDynamicState,
     PreparedDynamicCandidate,
+    full_executed_prefix,
     future_individual_from_cut,
     prepare_dynamic_candidate,
 )
@@ -44,7 +45,6 @@ from setp_solver.algorithms.problem_hgs.dynamic_insertion import (  # noqa: E402
     DynamicInsertionFailure,
     DynamicInsertionOperator,
     INSERTED_AND_FULL_EVALUATION_FEASIBLE,
-    _committed_sha256,
 )
 from setp_solver.algorithms.problem_hgs.evaluation import (  # noqa: E402
     DutyEvaluationContext,
@@ -298,6 +298,11 @@ class ProductionBackend:
         visible_customer_ids: Sequence[str],
         deadline_seconds: float,
     ) -> tuple[ProductionState, str]:
+        decision_started = _now()
+        budget_seconds = max(0.0, float(deadline_seconds))
+        stop_requested = (
+            lambda: _now() - decision_started >= budget_seconds
+        )
         stream = _require_bound_stream(self)
         trigger = _current_trigger(stream, current.stage_index)
         active = frozenset(map(str, visible_customer_ids))
@@ -309,7 +314,7 @@ class ProductionBackend:
             next_state = replace(current, stage_index=current.stage_index + 1)
             return next_state, "rolling_no_new_unserved_suffix"
 
-        policy = _policy(frame.evaluator)
+        policy = _policy(frame.evaluator, frvcpy_enabled=True)
         try:
             insertion = DynamicInsertionOperator(
                 enabled=True,
@@ -320,6 +325,7 @@ class ProductionBackend:
                 charging_policy=policy,
                 newly_revealed_customer_ids=pending,
                 current_evaluation=stage_evaluation,
+                stop_requested=stop_requested,
             )
         except (DynamicInsertionFailure, TypeError, ValueError) as error:
             deferred = _deferred_state(
@@ -376,7 +382,7 @@ class ProductionBackend:
         candidate, evaluation, run_result = self._run_hgs(
             insertion.individual,
             frame.context,
-            float(deadline_seconds),
+            max(0.0, budget_seconds - (_now() - decision_started)),
             arm="rolling_dynamic",
             stage_index=current.stage_index + 1,
         )
@@ -873,6 +879,13 @@ class ProductionBackend:
                 {
                     *previous.planning_dynamic_state.certified_dynamic_route_ids,
                     *cut.completed_route_ids,
+                    *(
+                        str(asset.in_progress_route_id)
+                        for asset in cut.asset_states.values()
+                        if getattr(asset, "in_progress_route_id", None) is not None
+                        and getattr(asset, "continuation_route_id", None) is None
+                        and not tuple(getattr(asset, "editable_suffix", ()))
+                    ),
                 }
             )
             timing = dict(previous.timing_by_route)
@@ -995,7 +1008,7 @@ class ProductionBackend:
         result = run_integrated_problem_hgs(
             (candidate,) * 4,
             evaluator=evaluator,
-            charging_policy=_policy(evaluator),
+            charging_policy=_policy(evaluator, frvcpy_enabled=True),
             parameters=parameters,
             initial_population_identity=identity,
             stop=lambda state: _stop_at_deadline(
@@ -1010,7 +1023,6 @@ class ProductionBackend:
             cross_depot_enabled=True,
             multi_trip_enabled=True,
             type_exchange_enabled=True,
-            route_layer_crossover_enabled=False,
         )
         _require_normal_hgs_termination(result, arm=arm)
         return result.best, result.best_evaluation, result
@@ -1280,9 +1292,13 @@ def _committed_history_sha256(
         *state.cut.completed_route_ids,
         *(route.vehicle_id for route in state.prior_committed_solution.routes),
     }
-    locked_actions = (
-        *state.prior_committed_solution.charging_actions,
-        *state.cut.locked_charging_actions,
+    locked_actions = tuple(
+        dict.fromkeys(
+            (
+                *state.prior_committed_solution.charging_actions,
+                *state.cut.locked_charging_actions,
+            )
+        )
     )
     locked_action_keys = {
         (
@@ -1298,12 +1314,17 @@ def _committed_history_sha256(
         history_source = (
             state.source_full_execution_solution or state.source_solution
         )
+        prior_route_ids = {
+            route.vehicle_id
+            for route in state.prior_committed_solution.routes
+        }
         source_routes = (
             *state.prior_committed_solution.routes,
             *(
                 route
                 for route in history_source.routes
                 if route.vehicle_id in committed_route_ids
+                and route.vehicle_id not in prior_route_ids
             ),
         )
         source_actions = locked_actions
@@ -1420,7 +1441,10 @@ def _executed_history_customers(
     committed: set[str] = set()
     for asset in cut.asset_states.values():
         prefix = tuple(getattr(asset, "executed_prefix", ()))
-        route_id = getattr(asset, "continuation_route_id", None)
+        route_id = (
+            getattr(asset, "continuation_route_id", None)
+            or getattr(asset, "in_progress_route_id", None)
+        )
         if prefix and route_id is None:
             candidates = [
                 candidate
@@ -1434,22 +1458,20 @@ def _executed_history_customers(
                 )
             if candidates:
                 route_id = candidates[0]
-        history: tuple[str, ...] = ()
+        executed = prefix
         if prefix and route_id in route_by_id:
-            sequence = tuple(route_by_id[str(route_id)].node_sequence)
-            positions = [
-                index
-                for index in range(len(sequence) - len(prefix) + 1)
-                if sequence[index : index + len(prefix)] == prefix
-            ]
-            if len(positions) != 1:
+            try:
+                executed = full_executed_prefix(
+                    route_by_id[str(route_id)],
+                    prefix,
+                )
+            except ValueError as error:
                 raise ProductionBackendHalt(
                     "dynamic continuation cannot locate its unique prior prefix"
-                )
-            history = sequence[: positions[0]]
+                ) from error
         committed.update(
             str(node_id)
-            for node_id in (*history, *prefix)
+            for node_id in executed
             if str(node_id) in active_customer_ids
         )
     return committed
@@ -1457,7 +1479,16 @@ def _executed_history_customers(
 
 def _advance_prior_history(state: DutyDynamicState) -> Solution:
     prior = state.prior_committed_solution or Solution()
-    committed_ids = set(state.cut.completed_route_ids)
+    committed_ids = {
+        *state.cut.completed_route_ids,
+        *(
+            str(asset.in_progress_route_id)
+            for asset in state.asset_states.values()
+            if getattr(asset, "in_progress_route_id", None) is not None
+            and getattr(asset, "continuation_route_id", None) is None
+            and not tuple(getattr(asset, "editable_suffix", ()))
+        ),
+    }
     routes = {route.vehicle_id: route for route in prior.routes}
     history_source = (
         state.source_full_execution_solution or state.source_solution

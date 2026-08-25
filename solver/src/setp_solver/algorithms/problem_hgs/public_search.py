@@ -92,7 +92,7 @@ def build_integrated_public_hgs(
 
     adapter = IntegratedProblemAdapter(
         evaluate=evaluate,
-        refine=lambda candidate: (candidate,),
+        refine=lambda candidate: candidate,
         is_feasible=lambda evaluation: evaluation.feasible,
         objective=lambda evaluation: float(evaluation.objective),
         penalised_cost=lambda evaluation: float(

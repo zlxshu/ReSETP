@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import hashlib
 from collections import Counter
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -93,6 +93,7 @@ class MechanismProposalEngine:
     cross_depot_enabled: bool = True
     multi_trip_enabled: bool = True
     type_exchange_enabled: bool = True
+    stop_requested: Callable[[], bool] | None = None
     fairness_generation_prescreen_enabled: bool = True
     source_id: str = "problem-hgs-problem-mechanism-actions-v1"
     _generation_counts: Counter[str] = field(
@@ -154,6 +155,8 @@ class MechanismProposalEngine:
         *,
         include_whole_duty_type_exchange: bool,
     ) -> Iterable[DutyMove]:
+        if self.stop_requested is not None and self.stop_requested():
+            return
         duties = tuple(individual.duties)
         if (
             self.include_non_charging_candidates
@@ -217,6 +220,7 @@ class MechanismProposalEngine:
                         duty,
                         context=self.context,
                         policy=self.charging_policy,
+                        stop_requested=self.stop_requested,
                         other_session_end_seconds_by_station=(
                             _other_session_end_seconds_by_station(
                                 individual,
@@ -230,9 +234,12 @@ class MechanismProposalEngine:
                             duty,
                             context=self.context,
                             policy=self.charging_policy,
+                            stop_requested=self.stop_requested,
                         )
                     )
                 for candidate in charging_candidates:
+                    if self.stop_requested is not None and self.stop_requested():
+                        return
                     payload = repr(
                         (
                             candidate.charging_sessions,

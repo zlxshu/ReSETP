@@ -14,18 +14,14 @@ from run_problem_hgs_private_technical import (  # noqa: E402
 )
 
 
-def test_route_layer_acceptance_without_education_acceptance_passes_sentinel_gate() -> None:
-    accepted = {
-        "duty_crossover": 1,
-        "hgs_population": 2,
-        "route_layer_crossover": 1,
-    }
+def test_population_admission_is_the_full_evaluation_acceptance() -> None:
+    accepted = {"hgs_population": 2}
 
     classification = _sentinel_acceptance_classification(accepted)
 
     assert classification == {
         "incremental_education": {},
-        "full_evaluation": accepted,
+        "full_evaluation": {"hgs_population": 2},
     }
     assert _sentinel_validation_failures(
         accepted_actions=accepted,

@@ -1,10 +1,4 @@
-# declared_identity=PROJECT_DOMAIN
-# provenance_status=UNKNOWN
-# first_seen_commit=15ea9919006a53909745caa8f669f1c68aee0641
-# git_commit_author=Leixishu Zhou (not evidence of content authorship)
-# original_author=UNKNOWN
-# pre_move_sha256=2d40fc90dbbf5b15e3551691f9256ef630f67956275b78f0ee0bd2d881cac788
-"""One copied HGS control flow for native and complete-problem evaluation."""
+"""Project-domain adaptation of the PyVRP 0.12.2 HGS control flow."""
 
 from __future__ import annotations
 
@@ -33,7 +27,7 @@ class IntegratedProblemAdapter(Generic[SolutionT, EvaluationT]):
     ]
     refine: Callable[
         [EvaluatedSolution[SolutionT, EvaluationT]],
-        tuple[EvaluatedSolution[SolutionT, EvaluationT], ...],
+        EvaluatedSolution[SolutionT, EvaluationT],
     ]
     is_feasible: Callable[[EvaluationT], bool]
     objective: Callable[[EvaluationT], float]
@@ -54,10 +48,6 @@ class IntegratedProblemAdapter(Generic[SolutionT, EvaluationT]):
         [EvaluatedSolution[SolutionT, EvaluationT]],
         EvaluatedSolution[SolutionT, EvaluationT] | None,
     ] | None = None
-    finalise: Callable[
-        [EvaluatedSolution[SolutionT, EvaluationT]],
-        EvaluatedSolution[SolutionT, EvaluationT] | None,
-    ] | None = None
 
 
 @dataclass(frozen=True)
@@ -65,7 +55,6 @@ class IntegratedRunAccounting:
     iterations: int
     rejected: int
     repaired: int
-    finalised: int
     restarts: int
     elapsed_seconds: float
 
@@ -114,7 +103,6 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
         started = perf_counter()
         rejected = 0
         repaired = 0
-        finalised = 0
         restarts = 0
 
         initial = []
@@ -127,7 +115,14 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
             self._pop.add(candidate)
         if len(initial) < self._adapter.minimum_initial_population_size:
             raise ValueError("complete evaluator retained too few initial solutions")
-        best = self._best()
+        best = min(
+            initial,
+            key=lambda candidate: (
+                self._adapter.objective(candidate.evaluation)
+                if self._adapter.is_feasible(candidate.evaluation)
+                else float("inf")
+            ),
+        )
         self._best_so_far = best
 
         def restart() -> None:
@@ -138,8 +133,10 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
                 self._pop.add(candidate)
 
         control = HGSControl(
-            should_stop=lambda _state: stop(self._best_value(best)),
-            best_value=lambda: self._best_value(best),
+            should_stop=lambda _state: stop(
+                self._best_value(self._best_so_far)
+            ),
+            best_value=lambda: self._best_value(self._best_so_far),
             restart_after_iterations_without_improvement=(
                 self._params.num_iters_no_improvement
             ),
@@ -162,75 +159,59 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
             if candidate is None:
                 rejected += 1
                 continue
-            refined_candidates = self._adapter.refine(candidate)
-            if not refined_candidates:
-                raise ValueError("problem refiner returned no candidates")
-            for refined in refined_candidates:
-                self._pop.add(refined)
-                self._register(refined.evaluation)
-                if self._better(refined, best):
-                    best = refined
-                    self._best_so_far = best
-
-            if (
-                not self._adapter.is_feasible(candidate.evaluation)
-                and self._rng.rand() < self._params.repair_probability
-            ):
-                if self._adapter.repair is None:
-                    repair_solution = self._search(
-                        candidate.solution,
-                        self._pm.booster_cost_evaluator(),
-                    )
-                    repaired_candidate = self._adapter.evaluate(
-                        repair_solution
-                    )
-                else:
-                    repaired_candidate = self._adapter.repair(candidate)
-                if repaired_candidate is None:
-                    rejected += 1
-                    continue
-                repaired += 1
-                repaired_candidates = self._adapter.refine(
-                    repaired_candidate
-                )
-                if not repaired_candidates:
-                    raise ValueError("problem refiner returned no candidates")
-                for refined in repaired_candidates:
-                    if self._adapter.is_feasible(refined.evaluation):
-                        self._pop.add(refined)
-                        self._register(refined.evaluation)
-                    if self._better(refined, best):
-                        best = refined
-                        self._best_so_far = best
-
-        if self._adapter.finalise is not None:
-            final_candidate = self._adapter.finalise(best)
-            if final_candidate is not None:
-                finalised += 1
-                self._pop.add(final_candidate)
-                self._register(final_candidate.evaluation)
-                if self._better(final_candidate, best):
-                    best = final_candidate
-                    self._best_so_far = best
+            rejected_delta, repaired_delta = self._improve_offspring(candidate)
+            rejected += rejected_delta
+            repaired += repaired_delta
 
         state = control.state
         return IntegratedRunResult(
-            best,
+            self._best_so_far,
             IntegratedRunAccounting(
                 iterations=state.iterations,
                 rejected=rejected,
                 repaired=repaired,
-                finalised=finalised,
                 restarts=restarts,
                 elapsed_seconds=perf_counter() - started,
             ),
         )
 
-    def _best(self) -> EvaluatedSolution[SolutionT, EvaluationT]:
-        candidate = self._pop.best_feasible() or self._pop.best_penalised()
-        if candidate is None:
-            raise AssertionError("integrated population is empty")
-        return candidate
+    def _improve_offspring(
+        self,
+        candidate: EvaluatedSolution[SolutionT, EvaluationT],
+    ) -> tuple[int, int]:
+        refined = self._adapter.refine(candidate)
+        self._pop.add(refined)
+        self._register(refined.evaluation)
+        self._consider_for_best(refined)
+
+        if (
+            self._adapter.is_feasible(refined.evaluation)
+            or self._rng.rand() >= self._params.repair_probability
+        ):
+            return 0, 0
+
+        if self._adapter.repair is None:
+            repair_solution = self._search(
+                refined.solution,
+                self._pm.booster_cost_evaluator(),
+            )
+            repaired = self._adapter.evaluate(repair_solution)
+        else:
+            repaired = self._adapter.repair(refined)
+        if repaired is None:
+            return 1, 0
+        if self._adapter.is_feasible(repaired.evaluation):
+            self._pop.add(repaired)
+            self._register(repaired.evaluation)
+        self._consider_for_best(repaired)
+        return 0, 1
+
+    def _consider_for_best(
+        self,
+        candidate: EvaluatedSolution[SolutionT, EvaluationT],
+    ) -> None:
+        if self._better(candidate, self._best_so_far):
+            self._best_so_far = candidate
 
     def _register(self, evaluation: EvaluationT) -> None:
         if self._adapter.register is not None:
@@ -243,7 +224,7 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
         evaluation = candidate.evaluation
         if self._adapter.is_feasible(evaluation):
             return self._adapter.objective(evaluation)
-        return self._adapter.penalised_cost(evaluation)
+        return float("inf")
 
     def _better(
         self,
@@ -252,12 +233,8 @@ class IntegratedGeneticAlgorithm(Generic[SolutionT, EvaluationT]):
     ) -> bool:
         candidate_feasible = self._adapter.is_feasible(candidate.evaluation)
         incumbent_feasible = self._adapter.is_feasible(incumbent.evaluation)
-        if candidate_feasible != incumbent_feasible:
-            return candidate_feasible
-        if candidate_feasible:
-            return self._adapter.objective(
-                candidate.evaluation
-            ) < self._adapter.objective(incumbent.evaluation)
-        return self._adapter.penalised_cost(
+        if not candidate_feasible:
+            return False
+        return not incumbent_feasible or self._adapter.objective(
             candidate.evaluation
-        ) < self._adapter.penalised_cost(incumbent.evaluation)
+        ) < self._adapter.objective(incumbent.evaluation)

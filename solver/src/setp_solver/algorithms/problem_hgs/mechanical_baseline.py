@@ -190,7 +190,7 @@ def _insert_one_customer(
         and violation.location == customer_id
         and "not served" in violation.detail
     ]
-    if unexpected_base_violations or len(expected_unserved_markers) != 1:
+    if unexpected_base_violations or not expected_unserved_markers:
         details = "; ".join(
             f"{item.type}:{item.location}:{item.detail}"
             for item in base_evaluation.violations

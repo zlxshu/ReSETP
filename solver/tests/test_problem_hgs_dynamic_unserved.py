@@ -1,9 +1,5 @@
-import random
 from types import SimpleNamespace
 
-from setp_solver.algorithms.problem_hgs.crossover import (
-    trip_assignment_exchange,
-)
 from setp_solver.algorithms.problem_hgs.model import (
     DutyIndividual,
     DutyTrip,
@@ -61,91 +57,6 @@ def test_complete_skeleton_rejects_unknown_customer() -> None:
         assert "outside the candidate universe" in str(error)
     else:
         raise AssertionError("unknown customer was accepted")
-
-
-def test_fast_crossover_accepts_donor_routing_a_newly_revealed_customer() -> None:
-    main = DutyIndividual(
-        duties=(
-            PhysicalVehicleDuty(
-                physical_vehicle_id="CV_D0_1",
-                vehicle_type="cv",
-                home_depot_id="D0",
-                trips=(DutyTrip(1, ("C1",), locked_customer_prefix=("C1",)),),
-            ),
-            PhysicalVehicleDuty(
-                physical_vehicle_id="CV_D0_2",
-                vehicle_type="cv",
-                home_depot_id="D0",
-                trips=(),
-            ),
-        ),
-        unserved_customers=("C2",),
-    )
-    donor = DutyIndividual(
-        duties=(
-            PhysicalVehicleDuty(
-                physical_vehicle_id="CV_D0_1",
-                vehicle_type="cv",
-                home_depot_id="D0",
-                trips=(DutyTrip(1, ("C1",), locked_customer_prefix=("C1",)),),
-            ),
-            PhysicalVehicleDuty(
-                physical_vehicle_id="CV_D0_2",
-                vehicle_type="cv",
-                home_depot_id="D0",
-                trips=(DutyTrip(1, ("C2",)),),
-            ),
-        ),
-    )
-
-    crossed = trip_assignment_exchange(
-        (main, donor),
-        random.Random(1),
-        {"C1": (0.0, 0.0), "C2": (1.0, 0.0)},
-    )
-
-    served = {
-        customer
-        for duty in crossed.child.duties
-        for trip in duty.trips
-        for customer in trip.customer_ids
-    }
-    assert served == {"C1", "C2"}
-    assert crossed.child.unserved_customers == ()
-
-
-def test_fast_crossover_can_reassign_across_vehicle_type_and_depot() -> None:
-    parent = DutyIndividual(
-        duties=(
-            PhysicalVehicleDuty(
-                physical_vehicle_id="CV_D0_1",
-                vehicle_type="cv",
-                home_depot_id="D0",
-                trips=(DutyTrip(1, ("C1",)),),
-            ),
-            PhysicalVehicleDuty(
-                physical_vehicle_id="EV_D1_1",
-                vehicle_type="ev",
-                home_depot_id="D1",
-                trips=(),
-            ),
-        ),
-    )
-
-    crossed = trip_assignment_exchange(
-        (parent, parent),
-        random.Random(1),
-        {"C1": (0.0, 0.0)},
-    )
-
-    by_id = {
-        duty.physical_vehicle_id: duty for duty in crossed.child.duties
-    }
-    assert by_id["CV_D0_1"].trips == ()
-    assert by_id["EV_D1_1"].trips[0].customer_ids == ("C1",)
-    assert by_id["EV_D1_1"].vehicle_type == "ev"
-    assert by_id["EV_D1_1"].home_depot_id == "D1"
-    assert crossed.child.unserved_customers == ()
 
 
 def test_exchange_unserved_keeps_ejected_customer_explicit_for_repair() -> None:

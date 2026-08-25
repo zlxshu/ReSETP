@@ -333,6 +333,7 @@ def cut_dynamic_certificate_at_trigger(
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: dynamic cut time is not finite")
     if trigger < previous_stage_start - _TOL:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: next trigger precedes the previous stage")
+    same_stage = abs(trigger - previous_stage_start) <= _TOL
 
     validate_dynamic_multitrip_certificate(
         solution,
@@ -368,7 +369,11 @@ def cut_dynamic_certificate_at_trigger(
         carried_in_progress = (
             inherited_state is not None
             and tracked_route_id == trip.route_id
-            and trigger < float(inherited_state.available_second) - _TOL
+            and (
+                same_stage
+                or trigger < float(inherited_state.available_second) - _TOL
+                or execution_state == NOT_STARTED
+            )
         )
         if carried_in_progress:
             in_progress.append(trip.route_id)
@@ -405,8 +410,33 @@ def cut_dynamic_certificate_at_trigger(
     for asset_id, state in inherited.items():
         chain = [trip for trip in certificate.trips if trip.physical_vehicle_id == asset_id]
         tracked_route_id = state.continuation_route_id or state.in_progress_route_id
-        if tracked_route_id is not None and trigger < float(state.available_second) - _TOL:
-            carried = _carry_unreleased_state(state, trigger)
+        tracked_not_started = (
+            tracked_route_id in trip_by_id
+            and _trip_state(trip_by_id[str(tracked_route_id)], trigger)
+            == NOT_STARTED
+        )
+        if tracked_route_id is not None and (
+            same_stage
+            or trigger < float(state.available_second) - _TOL
+            or tracked_not_started
+        ):
+            if same_stage:
+                carried = state
+            elif trigger < float(state.available_second) - _TOL:
+                carried = _carry_unreleased_state(state, trigger)
+            else:
+                carried = replace(
+                    state,
+                    trigger_position_node_id=(
+                        state.release_node_id or state.position_node_id
+                    ),
+                    trigger_time=float(trigger),
+                    trigger_arc_progress=None,
+                    trigger_remaining_load_kg=float(state.remaining_load_kg),
+                    trigger_remaining_battery_kwh=float(
+                        state.remaining_battery_kwh
+                    ),
+                )
             states[asset_id] = carried
             route_id = str(tracked_route_id)
             if route_id in route_by_id:

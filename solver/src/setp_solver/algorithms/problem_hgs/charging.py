@@ -20,7 +20,6 @@ sum rather than the Cartesian product of legal start times.
 
 from __future__ import annotations
 
-import hashlib
 from collections import Counter
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field, replace
@@ -47,7 +46,10 @@ from setp_solver.search.multitrip_schedule import (
 )
 from setp_solver.solution import ChargingAction, Route, Solution, physical_vehicle_id
 
-from .evaluation import DutyEvaluationContext, evaluation_context_sha256
+from .evaluation import (
+    DutyEvaluationContext,
+    _shift_minimum_departure_second_by_route,
+)
 from .frvcpy_adapter import solve_fixed_route_charging
 from .contracts import (
     ChargingCandidateStatus,
@@ -498,24 +500,10 @@ class ChargingRepairCache:
     context: DutyEvaluationContext
     policy: ChargingRepairPolicy
     repaired: dict[
-        tuple[
-            str,
-            str,
-            PhysicalVehicleDuty,
-            PhysicalVehicleDuty,
-        ],
-        PhysicalVehicleDuty,
+        tuple[PhysicalVehicleDuty, PhysicalVehicleDuty], PhysicalVehicleDuty
     ] = field(default_factory=dict)
     hits: int = 0
     misses: int = 0
-    context_identity: str = field(init=False, repr=False)
-    policy_identity: str = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        self.context_identity = evaluation_context_sha256(self.context)
-        self.policy_identity = hashlib.sha256(
-            repr(self.policy).encode("utf-8")
-        ).hexdigest()
 
     def repair(
         self,
@@ -529,12 +517,7 @@ class ChargingRepairCache:
             raise ValueError(
                 "charging repair cache was reused with another context or policy"
             )
-        key = (
-            self.context_identity,
-            self.policy_identity,
-            reference,
-            candidate,
-        )
+        key = (reference, candidate)
         cached = self.repaired.get(key)
         if cached is not None:
             self.hits += 1
@@ -950,6 +933,7 @@ def build_dynamic_ev_duty_charging_candidates(
     *,
     context: DutyEvaluationContext,
     policy: ChargingRepairPolicy,
+    stop_requested: Callable[[], bool] | None = None,
 ) -> Iterator[PhysicalVehicleDuty]:
     """Expose public-station route, amount, and clock choices after a cut.
 
@@ -982,6 +966,8 @@ def build_dynamic_ev_duty_charging_candidates(
     )
     seen = {duty}
     for trip in duty.trips:
+        if stop_requested is not None and stop_requested():
+            return
         route_id = duty.route_id(trip.trip_index)
         route = Route(
             vehicle_id=route_id,
@@ -994,6 +980,8 @@ def build_dynamic_ev_duty_charging_candidates(
             ],
         )
         for amount_strategy in amount_strategies:
+            if stop_requested is not None and stop_requested():
+                return
             try:
                 candidates = repair_route_charging_candidates(
                     route,
@@ -1013,6 +1001,8 @@ def build_dynamic_ev_duty_charging_candidates(
             except (TypeError, ValueError):
                 continue
             for _label, repaired_route, repaired_actions in candidates:
+                if stop_requested is not None and stop_requested():
+                    return
                 public_actions = tuple(
                     action
                     for action in repaired_actions
@@ -1539,6 +1529,14 @@ def _repair_one_ev_duty_with_frvcpy(
 
     routes: list[Route] = []
     actions: list[ChargingAction] = []
+    current_energy = float(bundle.prices.initial_ev_battery_kwh)
+    if reference.has_dynamic_commitment:
+        witnesses = (
+            () if reference.schedule is None else reference.schedule.trip_witnesses
+        )
+        if not witnesses or witnesses[0].start_soc_kwh is None:
+            raise ValueError("dynamic duty has no ScheduledDuty starting SOC")
+        current_energy = float(witnesses[0].start_soc_kwh)
     for trip in duty.trips:
         temporary_id = duty.route_id(trip.trip_index)
         route = Route(
@@ -1552,6 +1550,13 @@ def _repair_one_ev_duty_with_frvcpy(
             ],
         )
         if int(trip.trip_index) in locked_trip_indices:
+            if reference.schedule is None:
+                raise ValueError("locked frvcpy trip has no ScheduledDuty SOC endpoint")
+            current_energy = reference.schedule.trip_witnesses[
+                int(trip.trip_index) - 1
+            ].end_soc_kwh
+            if current_energy is None:
+                raise ValueError("locked frvcpy trip has no ending SOC")
             routes.append(route)
             actions.extend(
                 _session_to_action(session, temporary_id)
@@ -1562,9 +1567,7 @@ def _repair_one_ev_duty_with_frvcpy(
             route,
             bundle.instance,
             bundle.prices,
-            initial_energy_kwh=float(
-                bundle.prices.initial_ev_battery_kwh
-            ),
+            initial_energy_kwh=float(current_energy),
         )
         if (
             policy.public_station_candidate_mode
@@ -1590,6 +1593,7 @@ def _repair_one_ev_duty_with_frvcpy(
         )
         routes.append(plan.route)
         actions.extend(route_actions)
+        current_energy = float(plan.final_energy_kwh)
 
     return _rebuild_ev_duty(
         reference,
@@ -1785,11 +1789,15 @@ def _rebuild_ev_duty(
         context=context,
         policy=policy,
     )
+    solution = Solution(routes=routes, charging_actions=anchored)
     prepared, _certificate = prepare_multitrip_solution(
-        Solution(routes=routes, charging_actions=anchored),
+        solution,
         bundle.instance,
         bundle.prices,
         depot_charge_window_mode=policy.depot_charge_window_mode,
+        minimum_departure_second_by_route=(
+            _shift_minimum_departure_second_by_route(solution, context)
+        ),
     )
     physical_ids = {
         physical_vehicle_id(route.vehicle_id) for route in prepared.routes
@@ -2043,6 +2051,9 @@ def _verify_prepared_ledger(
         context.bundle.instance,
         context.bundle.prices,
         depot_charge_window_mode=context.depot_charge_window_mode,
+        minimum_departure_second_by_route=(
+            _shift_minimum_departure_second_by_route(solution, context)
+        ),
     )
     if repeated != solution:
         raise ValueError("charging repair did not close under full ledger replay")
