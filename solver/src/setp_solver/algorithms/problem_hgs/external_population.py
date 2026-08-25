@@ -87,11 +87,9 @@ class ExternalPopulation(Generic[SolutionT, EvaluationT]):
             )
             item.proximity.insert(item_position, (distance, id(other)))
         subpopulation.append(item)
-        self._refresh_penalties()
         retained = True
         if len(subpopulation) > self._params.max_pop_size:
             retained = self._purge(subpopulation, candidate)
-            self._refresh_penalties()
         return retained
 
     def select(self, rng, k: int = 2) -> tuple[
