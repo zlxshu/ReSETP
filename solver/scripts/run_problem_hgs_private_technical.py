@@ -908,7 +908,10 @@ def _load_v3_suite_bundle(
     }
     assignment_path = saved_root / "enterprise_assignment.csv"
     assignment = None
-    if assignment_path.is_file():
+    endogenous_customer_assignment = instance_id == DEPOT_SEARCH_INSTANCE_ID
+    if endogenous_customer_assignment:
+        customer_home_depot = MappingProxyType({})
+    elif assignment_path.is_file():
         assignment = load_enterprise_assignment(
             assignment_path,
             saved_root / "nodes.csv",

@@ -1,0 +1,31 @@
+{
+  "base_instance_id": "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd",
+  "seed": 3658606345,
+  "event_count": 10,
+  "event_type_counts": {
+    "add": 5,
+    "cancel": 2,
+    "demand_change": 2,
+    "time_window_change": 1
+  },
+  "reception_window_second": [
+    28800,
+    36000
+  ],
+  "service_horizon_second": [
+    28800,
+    68400
+  ],
+  "customer_assignment": "not_preassigned",
+  "source_dynamic_stream": "data/dynamic_streams/cn-jjj-50c-01-DEPOTSEARCH-d996f755bd_q500_t30_17ffb3f5d091",
+  "generation_components": [
+    "setp_solver.c8_dynamic_stream",
+    "setp_instance_lab.generator._generate_dynamic_events"
+  ],
+  "selection_rules": {
+    "new_orders": "first five program-generated additions, ordered by appearance time",
+    "changed_orders": "randomly sampled from PM customers whose service begins after the reception window",
+    "collision_avoidance": "changed-order candidates exclude the coordinate proxies used by generated additions",
+    "event_ratio": "5 additions, 2 cancellations, 1 demand increase, 1 demand decrease, 1 time-window change"
+  }
+}

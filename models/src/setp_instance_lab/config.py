@@ -12,6 +12,8 @@ class DynamicEventConfig:
     event_ratio: tuple[float, float, float, float] = (5.0, 2.0, 1.0, 1.0)
     time_window_change_ratio: tuple[float, float, float] = (1.0, 3.0, 1.0)
     random_mode: str = "random"
+    reception_start_second: float | None = None
+    reception_end_second: float | None = None
     q_kg: float = 500.0
     t_min: float = 1800.0
     q_accum_policy: str = "positive_only"

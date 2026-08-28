@@ -1,0 +1,296 @@
+\section{模型建立}
+
+\subsection{问题描述与基本假设}
+
+本文研究多家配送企业在动态需求环境下的协同配送问题。各企业拥有独立车场和油电混合车队，
+车辆从所属车场出发并返回所属车场，可直接服务其他企业的客户，但不在车场之间转运货物。
+同一车辆可在一个运营日内连续执行多趟配送任务；电动车可在车场或公共充电站进行部分充电，
+充电功率随电池荷电状态变化，充电费用由实际充电时段的分时电价决定。
+动态订单到达后，系统在批事件处理时刻对尚未完成的任务重新规划。
+
+模型作如下假设：1）客户需求不可拆分，每个客户仅由一辆车服务一次；
+2）车辆载重、客户时间窗和电池容量均为硬约束；
+3）同一车辆相邻两趟在时间上不得重叠；
+4）车辆行驶距离、行驶时间、所属车场及车型参数已知；
+5）电网碳强度和分时电价为外生参数；
+6）协同路径确定后再进行联盟成本分摊，不以分摊结果改写路径模型。
+
+本文沿用邱莹莹\cite{ref:71}的五项成本和静态--动态平行结构，
+以Zhen等\cite{ref:44}的完整多车场多趟约束为路径模型，
+并分别嵌入陈婉茹等\cite{ref:23}的混合车队能耗模块、
+Wang等\cite{ref:94}的非线性充电与分时电价模块，以及巩亮等\cite{ref:95}
+和Deng等\cite{ref:96}的碳排放核算模块。主要符号如表\ref{tab:symbols}所示；
+各文献模块的局部符号在相应公式后说明。
+
+\begin{table}[H]
+\centering
+\caption{主要符号说明}
+\label{tab:symbols}
+\setpsymtabsetup
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cJcJ@{}}
+\toprule
+符号 & 说明 & 符号 & 说明\\
+\midrule
+$D,N,F$ & 车场、客户和充电站集合 & $K,W,E$ & 车辆、趟次和弧集合\\
+$q_i$ & 客户$i$的需求量 & $[e_i,l_i]$ & 客户$i$的时间窗\\
+$s_i$ & 客户$i$的服务时间 & $d_{ij}$ & 弧$(i,j)$的距离\\
+$Q,B$ & 车辆载重与电池容量 & $T^H,M$ & 规划时域与足够大的正数\\
+$x_{ij}^k$ & 车辆$k$是否行驶弧$(i,j)$ & $u_{ij}^k,v_{ij}^k$ & 弧段载重与行驶速度\\
+$\tau_i^k,t_i^k$ & 到达时刻与等待时间 & $\gamma_{k,w}$ & 车辆$k$是否执行第$w$趟\\
+$\xi_{i,j,k,w}$ & 趟内弧选择变量 & $\lambda_{k,i,w}$ & 客户--车辆--趟次指派变量\\
+$\mu_{k,i,w},\eta_{k,i,w}$ & 首、末客户变量 & $\tau_{k,w}^L,\tau_{k,w}^B$ & 趟次出发与返回时刻\\
+$\delta_{k,w}^L$ & 趟次出发载重 & $\phi_i,\psi_i,C_i$ & 充电、电价与充电成本函数\\
+$F_C,F_E$ & 油车和电车排放总量 & $c$ & 单位碳价\\
+$u(t),u_q$ & 批事件时刻与定量触发时刻 & $T,\bar q$ & 触发间隔与需求量上限\\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+\subsection{混合车队能耗与碳排放}
+
+陈婉茹等\cite{ref:23}以机械功率连接载重、速度、电耗和油耗。车辆$k$在弧$(i,j)$上的
+机械功率、电动车弧段电耗、燃油车单位时间油耗率和弧段油耗分别为
+\begin{align}
+T_{ij}^{k}(u_{ij}^{k},v_{ij}^{k})
+&=\frac{1}{2}c_d\rho A(v_{ij}^{k})^3
++(m_k+u_{ij}^{k})gc_rv_{ij}^{k},
+\label{eq:chen-power}\\
+b_{ij}^{k}(u_{ij}^{k},v_{ij}^{k})
+&=\phi^{d}\varphi^{d}T_{ij}^{k}(u_{ij}^{k},v_{ij}^{k})
+\frac{d_{ij}}{v_{ij}^{k}},
+\label{eq:chen-electricity}\\
+G_{ij}^{k}(u_{ij}^{k},v_{ij}^{k})
+&=\xi\frac{\varepsilon R+T_{ij}^{k}(u_{ij}^{k},v_{ij}^{k})/\eta}{\kappa\psi},
+\label{eq:chen-fuel-rate}\\
+f_{ij}^{k}(u_{ij}^{k},v_{ij}^{k})
+&=G_{ij}^{k}(u_{ij}^{k},v_{ij}^{k})\frac{d_{ij}}{v_{ij}^{k}}.
+\label{eq:chen-fuel}
+\end{align}
+其中，$c_d,\rho,A,g,c_r,m_k$依次表示空气阻力系数、空气密度、迎风面积、
+重力常量、滚动阻力系数和空车质量；$\phi^d,\varphi^d$分别为电动发动机效率和
+电池放电效率；$\xi,\varepsilon,R,\eta,\kappa,\psi$为燃油率模型参数。
+
+燃油车辆的直接排放采用巩亮等\cite{ref:95}式（10）、（11）和（14）：
+\begin{align}
+F_j&=\frac{12}{44}Q_jU_jO_j,
+\label{eq:gong-factor}\\
+C_{i1}&=\sum_j K_{i,j}\times F_j,
+\label{eq:gong-direct}\\
+F_C&=\delta C_{i1}.
+\label{eq:gong-fc}
+\end{align}
+其中，$F_j$为$j$类化石燃料的碳排放因子，$Q_j,U_j,O_j$分别为低位发热量、
+单位热值含碳量和碳氧化率，$K_{i,j}$为第$i$种交通方式对$j$类燃料的消耗量，
+$\delta$为燃油车辆比例。
+
+电动车充电的间接排放采用Deng等\cite{ref:96}式（44）--（45）：
+\begin{align}
+IC_m(d)&=CO_{2eq}^{\mathrm{Wind}}Pt_m^{\mathrm{Wind}}(d)
++CO_{2eq}^{\mathrm{Others}}Pt_m^{\mathrm{Others}}(d),
+\label{eq:deng-intensity}\\
+CO_{2eq}(d)&=\sum_{m\in M}IC_m(d)r_m(d).
+\label{eq:deng-emission}
+\end{align}
+其中，$IC_m(d)$为第$d$日时段$m$的电网碳强度，$r_m(d)$为该时段充电量。
+将式（\ref{eq:deng-emission}）的输出量记为$F_E$后，巩亮等\cite{ref:95}式（16）给出总碳成本：
+\begin{equation}
+W_6=c(F_C+F_E).
+\label{eq:gong-carbon-cost}
+\end{equation}
+
+\subsection{目标函数}
+
+按照邱莹莹\cite{ref:71}的母版结构，总成本由车辆启动成本$f_1$、行驶成本$f_2$、
+充电成本$f_3$、油耗成本$f_4$和碳排放成本$f_5$构成：
+\begin{align}
+f_1&=c^C\sum_{k\in K^C}\sum_{j\in O}x_{0jk}^C
++c^E\sum_{k\in K^E}\sum_{j\in A}x_{0jk}^E,
+\label{eq:qiu-f1}\\
+f_2&=m^C\sum_{k\in K^C}\sum_{(i,j)\in O}x_{ijk}^Cd_{ij}
++m^E\sum_{k\in K^E}\sum_{(i,j)\in A}x_{ijk}^Ed_{ij},
+\label{eq:qiu-f2}\\
+f_3&=w_r\sum_{k\in K^E}\sum_{(i,j)\in A}x_{ijk}^Er_i,
+\label{eq:qiu-f3}\\
+f_4&=w_o\sum_{k\in K^C}\sum_{(i,j)\in O}x_{ijk}^CL_{ij},
+\label{eq:qiu-f4}\\
+f_5&=w_c\sum_{k\in K^C}\sum_{(i,j)\in O}x_{ijk}^CE_{ij}.
+\label{eq:qiu-f5}
+\end{align}
+其中，$K^C,K^E$分别为燃油车和电动车集合，$O$为车场与客户节点集合，
+$A$为加入充电站后的节点集合。本文以式（\ref{eq:chen-fuel}）给出的弧段油耗对应$L_{ij}$；
+充电量及费用由式（\ref{eq:wang-charge-function}）--（\ref{eq:wang-charge-cross}）确定；
+碳成本$f_5$采用式（\ref{eq:gong-carbon-cost}）给出的油车与电车合计值。
+静态目标函数保持母版原式：
+\begin{equation}
+\min F=f_1+f_2+f_3+f_4+f_5.
+\label{eq:obj}
+\end{equation}
+
+\subsection{多车场多趟路径约束}
+
+Zhen等\cite{ref:44}以车辆自己的车场为出发点和返回点，用趟次索引$w$表示同一车辆的连续任务。
+其式（2）--（20）构成完整的多车场多趟约束组：
+\begin{align}
+\sum_{k\in K}\sum_{w\in W}\lambda_{k,i,w}&=1,
+&&\forall i\in N,
+\label{eq:zhen-2}\\
+\mu_{k,l,w}+\sum_{i\in N}\xi_{i,l,k,w}
+&=\eta_{k,l,w}+\sum_{j\in N}\xi_{l,j,k,w}
+=\lambda_{k,l,w},
+&&\forall l\in N,k\in K,w\in W,
+\label{eq:zhen-3}\\
+\sum_{i\in N}\mu_{k,i,w}
+&=\sum_{i\in N}\eta_{k,i,w}=\gamma_{k,w},
+&&\forall k\in K,w\in W,
+\label{eq:zhen-4}\\
+\gamma_{k,w+1}&\le\gamma_{k,w},
+&&\forall k\in K,w\in W/|W|,
+\label{eq:zhen-5}\\
+\sum_{i\in N}\lambda_{k,i,w}&\le\gamma_{k,w}|N|,
+&&\forall k\in K,w\in W,
+\label{eq:zhen-6}\\
+\delta_{k,w}^{L}&=\sum_{i\in N}\lambda_{k,i,w}q_i,
+&&\forall k\in K,w\in W,
+\label{eq:zhen-7}\\
+\delta_{k,w}^{L}&\le\gamma_{k,w}Q,
+&&\forall k\in K,w\in W,
+\label{eq:zhen-8}\\
+\tau_{k,i,w}&\le\lambda_{k,i,w}l_i,
+&&\forall i\in N,k\in K,w\in W.
+\label{eq:zhen-9}
+\end{align}
+\begin{align}
+\tau_{k,w}^{L}&\ge\lambda_{k,i,w}(t_i^{R}+t_k^{D})-M(1-\gamma_{k,w}),
+&&\forall i\in N,k\in K,w\in W,
+\label{eq:zhen-10}\\
+\tau_{k,w+1}^{L}&\ge\tau_{k,w}^{B}+t_k^{D}-M(1-\gamma_{k,w+1}),
+&&\forall i\in N,k\in K,w\in W,
+\label{eq:zhen-11}\\
+\tau_{k,i,w}&\ge\tau_{k,w}^{L}+t_{k,i}-M(1-\mu_{k,i,w}),
+&&\forall i\in N,k\in K,w\in W,
+\label{eq:zhen-12}\\
+\tau_{k,w}^{B}&\ge\max\{\tau_{k,i,w},e_i\}+t_i^{S}+t_{k,i}-M(1-\eta_{k,i,w}),
+&&\forall i\in N,k\in K,w\in W,
+\label{eq:zhen-13}\\
+\tau_{k,j,w}&\ge\max\{\tau_{k,i,w},e_i\}+t_i^{S}+t_{ij}^{N}-M(1-\xi_{i,j,k,w}),
+&&\forall i,j\in N,k\in K,w\in W,
+\label{eq:zhen-14}\\
+\tau_{k,w}^{B}&\le T^{H},
+&&\forall k\in K,w\in W.
+\label{eq:zhen-15}
+\end{align}
+\begin{align}
+\gamma_{k,w}&\in\{0,1\},
+&&\forall k\in K,w\in W,
+\label{eq:zhen-16}\\
+\xi_{i,j,k,w}&\in\{0,1\},
+&&\forall i,j\in N,k\in K,w\in W,
+\label{eq:zhen-17}\\
+\lambda_{k,i,w}&\in\{0,1\},
+&&\forall i\in N,k\in K,w\in W,
+\label{eq:zhen-18}\\
+\mu_{k,i,w}&\in\{0,1\},
+&&\forall i\in N,k\in K,w\in W,
+\label{eq:zhen-19}\\
+\eta_{k,i,w}&\in\{0,1\},
+&&\forall i\in N,k\in K,w\in W.
+\label{eq:zhen-20}
+\end{align}
+式（\ref{eq:zhen-2}）保证每个客户只服务一次；式（\ref{eq:zhen-3}）--（\ref{eq:zhen-6}）
+定义趟内访问顺序和连续趟次；式（\ref{eq:zhen-7}）--（\ref{eq:zhen-15}）保证载重、时间窗、
+相邻趟衔接和运营时域可行；式（\ref{eq:zhen-16}）--（\ref{eq:zhen-20}）规定变量域。
+本文的$K$包含所有企业车场的车辆，$t_{k,i}$和$t_k^D$均按车辆$k$所属车场取值，
+因而允许其他车场车辆直接服务客户，同时不引入车场间货物转运变量。
+
+\subsection{非线性充电与分时电价}
+
+Wang等\cite{ref:94}同时给出非线性充电函数和分时电价下的充电成本函数。
+设$BC_i=\{0,\ldots,bc_i\}$为充电函数断点集合，$q_{i,k}$和$\epsilon_{i,k}$分别为
+第$k$个断点的电量和累计充电时间，$\rho_{i,k}$为相邻断点间的充电斜率。原式为
+\begin{equation}
+\phi_i(t)=
+\begin{cases}
+\rho_{i,0}t, & t\le\epsilon_{i,0},\\
+q_{i,0}+\rho_{i,1}(t-\epsilon_{i,0}), & \epsilon_{i,0}<t\le\epsilon_{i,1},\\
+\cdots & \cdots\\
+q_{i,k-1}+\rho_{i,k}(t-\epsilon_{i,k-1}),
+& \epsilon_{i,k-1}<t\le\epsilon_{i,k},\\
+\cdots & \cdots
+\end{cases}
+\label{eq:wang-charge-function}
+\end{equation}
+\begin{equation}
+\phi_i(q,\Delta t_1,\Delta t_2)
+=\phi_i\!\left(\phi_i^{-1}(q)+\Delta t_2\right)
+-\phi_i\!\left(\phi_i^{-1}(q)+\Delta t_1\right),
+\quad
+\phi_i^{-1}(q)\le\Delta t_1\le\Delta t_2\le\epsilon_{i,bc_i}.
+\label{eq:wang-charge-increment}
+\end{equation}
+
+设$BE_i=\{0,\ldots,be_i\}$为电价断点集合，$U_{i,k}$为断点时刻，
+$c_{i,k}^{e}$为第$k$个时段的单位电价。分时电价函数为
+\begin{equation}
+\psi_i(t)=
+\begin{cases}
+c_{i,1}^{e}, & U_{i,0}\le t\le U_{i,1},\\
+\cdots & \cdots\\
+c_{i,k}^{e}, & U_{i,k-1}\le t\le U_{i,k},\\
+\cdots & \cdots\\
+c_{i,be_i}^{e}, & U_{i,be_i-1}\le t\le U_{i,be_i}.
+\end{cases}
+\label{eq:wang-price}
+\end{equation}
+当充电开始时刻$t^{cb}$与结束时刻$t^{ce}$位于同一电价时段时，充电成本为
+\begin{equation}
+C_i(q,\bar q,t^{cb},t^{ce},\phi_i)
+=(\bar q-q)c_{i,k}^{e},
+\quad U_{i,k-1}\le t^{cb}\le t^{ce}\le U_{i,k}.
+\label{eq:wang-charge-single}
+\end{equation}
+当充电过程跨越电价断点$[U_{i,k_1},\ldots,U_{i,k_n}]$时，原文给出
+\begin{align}
+C_i(q,\bar q,t^{cb},t^{ce},\phi_i)
+={}&\phi_i(q,0,U_{i,k_1}-t^{cb})c_{i,k_1}^{e}
++\sum_{j=2}^{n}\phi_i(q,U_{i,k_j}-t^{cb},U_{i,k_j}-t^{cb})c_{i,k_j}^{e}\notag\\
+&+\phi_i(q,U_{i,k_n}-t^{cb},t^{ce}-t^{cb})c_{i,k_n+1}^{e},
+\quad t^{cb}\le U_{i,k_1}\le\cdots\le U_{i,k_n}\le t^{cb}.
+\label{eq:wang-charge-cross}
+\end{align}
+式（\ref{eq:wang-charge-function}）--（\ref{eq:wang-charge-increment}）描述电量随充电时间的
+分段非线性变化；式（\ref{eq:wang-price}）--（\ref{eq:wang-charge-cross}）按实际充电时段核算电费。
+
+\subsection{动态信息处理}
+
+动态阶段沿用邱莹莹\cite{ref:71}的五项成本结构。设$N'$为更新后待配送客户集合，
+$K^{C'},K^{E'}$为更新后尚未出发的燃油车和电动车集合，$Z^C,Z^E$为重新派出的车辆集合，原式为
+\begin{align}
+f_1'&=f_1+c^C\sum_{k\in Z^C}\sum_{j\in N'}x_{0jk}^C
++c^E\sum_{k\in Z^E}\sum_{j\in N'}x_{0jk}^E,
+\label{eq:qiu-dyn-f1}\\
+f_2'&=m^C\sum_{k'\in k\cup K^{C'}}\sum_{(i,j)\in N\cup N'}x_{ijk'}^Cd_{ij}
++m^E\sum_{k'\in k\cup K^{E'}}\sum_{(i,j)\in A\cup N'}x_{ijk'}^Ed_{ij},
+\label{eq:qiu-dyn-f2}\\
+f_3'&=w_r\sum_{k'\in k\cup K^{E'}}\sum_{(i,j)\in N'\cup A}x_{ijk'}^Er_i,
+\label{eq:qiu-dyn-f3}\\
+f_4'&=w_o\sum_{k'\in k\cup K^{C'}}\sum_{(i,j)\in O\cup N'}x_{ijk'}^CL_{ij},
+\label{eq:qiu-dyn-f4}\\
+f_5'&=w_c\sum_{k'\in k\cup K^{C'}}\sum_{(i,j)\in O\cup N'}x_{ijk'}^CE_{ij},
+\label{eq:qiu-dyn-f5}\\
+\min F'&=f_1'+f_2'+f_3'+f_4'+f_5'.
+\label{eq:qiu-dyn-obj}
+\end{align}
+动态阶段的$f_3'$和$f_5'$仍分别由前述分时充电成本模块和油电合计碳成本模块计量。
+
+设$[t_0,t_n]$为接收动态需求的时间区间，$T$为处理间隔，$\bar q$为累计需求上限。
+联合定时、定量批事件处理时刻由邱莹莹式（3-2）--（3-3）确定：
+\begin{align}
+u(t)&=\min\{u_q,u(t-1)+T,t_n\},
+\label{eq:qiu-trigger-time}\\
+u_q&=\min\{u_q\mid q(u(t-1),u_q)\ge\bar q,\ u(t-1)>u_q\}.
+\label{eq:qiu-trigger-quantity}
+\end{align}
+在批事件时刻，新增、取消和改量订单按原文流程更新；已完成任务不再进入下一次规划，
+尚未完成的客户和可用车辆重新代入式（\ref{eq:qiu-dyn-f1}）--（\ref{eq:qiu-dyn-obj}）求解。
+本模型由此以文献原式完成混合车队能耗、碳排放、五项成本、多车场多趟、
+非线性充电、分时电价和动态需求之间的连接。

@@ -53,6 +53,8 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--dynamic-event-rate", type=float)
     generate.add_argument("--dynamic-event-ratio", default="5,2,1,1", help="add,cancel,demand_change,time_window_change ratio.")
     generate.add_argument("--time-window-change-ratio", default="1,3,1", help="shrink,keep,extend ratio for time_window_change events.")
+    generate.add_argument("--dynamic-reception-start", type=float)
+    generate.add_argument("--dynamic-reception-end", type=float)
     generate.add_argument("--donor-limit", type=int, default=80, help="Max migrated Goeke instances used as add-event donor pool.")
     generate.add_argument("--no-evrptwmf", action="store_true")
 
@@ -96,6 +98,8 @@ def main(argv: list[str] | None = None) -> int:
         event_rate=args.dynamic_event_rate,
         event_ratio=_parse_ratio(args.dynamic_event_ratio, 4),
         time_window_change_ratio=_parse_ratio(args.time_window_change_ratio, 3),
+        reception_start_second=args.dynamic_reception_start,
+        reception_end_second=args.dynamic_reception_end,
     )
     config = ScenarioConfig(
         scenario_id=args.scenario_id,

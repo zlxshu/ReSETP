@@ -5,18 +5,18 @@
 \newfontfamily\songti{Songti SC}
 \newfontfamily\heiti{Heiti TC}
 \newfontfamily\tnr{Times New Roman}
-\definecolor{sorianoblue}{RGB}{74,133,193}
-\definecolor{entA}{RGB}{200,121,30}
-\definecolor{entAdk}{RGB}{160,95,22}
-\definecolor{entB}{RGB}{47,109,163}
-\definecolor{entBdk}{RGB}{35,82,124}
-\definecolor{sorianodark}{RGB}{51,95,140}
+\definecolor{sorianoblue}{gray}{0.25}
+\definecolor{entA}{gray}{0.15}
+\definecolor{entAdk}{gray}{0.10}
+\definecolor{entB}{gray}{0.55}
+\definecolor{entBdk}{gray}{0.25}
+\definecolor{sorianodark}{gray}{0.10}
 \definecolor{annotationgray}{gray}{0.34}
 
 \tikzset{
   route/.style={draw=sorianoblue,line width=0.525bp,line cap=round,line join=round},
   routeA/.style={draw=entA,line width=0.84bp,line cap=round,line join=round},
-  routeB/.style={draw=entB,line width=0.84bp,line cap=round,line join=round},
+  routeB/.style={draw=entB,dashed,line width=0.84bp,line cap=round,line join=round},
   customer circle/.style={circle,draw=entAdk,fill=white,line width=0.525bp,minimum size=4.70bp,inner sep=0pt},
   customer triangle/.style={regular polygon,regular polygon sides=3,draw=entBdk,fill=white,line width=0.525bp,minimum size=5.50bp,inner sep=0pt},
   depot circle/.style={circle,draw=entAdk,fill=entA,line width=0.84bp,minimum size=6.30bp,inner sep=0pt},

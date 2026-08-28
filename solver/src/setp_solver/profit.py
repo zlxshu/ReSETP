@@ -80,14 +80,18 @@ def calculate_depot_profits(
 
     Revenue follows ``R_i = rho * q_i`` and is credited to the depot serving the
     customer. Fixed, distance, fuel, electricity, occupancy, route-time, and
-    carbon costs are allocated to the vehicle's route home depot. Cross-site
-    service cost is charged when the service depot differs from inferred or
-    supplied ``d_i^0``.
+    carbon costs are allocated to the vehicle's route home depot. ``None`` keeps
+    the legacy nearest-depot inference; an empty mapping means that customers
+    have no exogenous depot ownership and therefore incurs no cross-site charge.
     """
 
     node_lookup = instance.node_lookup
     depot_ids = sorted(node.node_id for node in instance.nodes if node.node_type.lower() == "d")
-    owners = customer_home_depot or infer_customer_home_depots(instance)
+    owners = (
+        infer_customer_home_depots(instance)
+        if customer_home_depot is None
+        else customer_home_depot
+    )
     prior = prior_profit or {}
     rho = _price(prices, "revenue_per_kg") if revenue_per_kg is None else float(revenue_per_kg)
     route_by_vehicle = {route.vehicle_id: route for route in solution.routes}
@@ -137,7 +141,10 @@ def calculate_depot_profits(
             row["revenue"] += rho * demand
             row["customers_served"] += 1
             row["demand_kg"] += demand
-            if owners.get(customer_id) != depot_id:
+            if (
+                customer_id in owners
+                and owners[customer_id] != depot_id
+            ):
                 row["cost_transship"] += _price(prices, "cross_site_cost")
 
     for action in solution.charging_actions:

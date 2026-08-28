@@ -60,6 +60,30 @@ def test_existing_fixed_25_percent_loader_path_is_unchanged() -> None:
     assert implicit.has_additional_total_fleet_cap is True
 
 
+def test_china81_carbon_profile_uses_24_hourly_values() -> None:
+    bundle = load_china81_bundle(REPO, TARGETS[1])
+    beijing_rows = [
+        row
+        for row in bundle.time_profile
+        if row["city"] == "beijing"
+    ]
+
+    assert len(beijing_rows) == 48
+    assert sorted({row["hourly_calendar_row"] for row in beijing_rows}) == list(
+        range(1, 25)
+    )
+    for hour in range(1, 25):
+        rows = [
+            row
+            for row in beijing_rows
+            if row["hourly_calendar_row"] == hour
+        ]
+        assert len(rows) == 2
+        assert rows[0]["actual_gco2_per_kwh"] == pytest.approx(
+            rows[1]["actual_gco2_per_kwh"]
+        )
+
+
 @pytest.mark.parametrize("instance_id", TARGETS)
 def test_endogenous_caps_are_exactly_rd_re_with_unchanged_depot_chargers(
     instance_id: str,

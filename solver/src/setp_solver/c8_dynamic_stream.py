@@ -340,7 +340,6 @@ def _pm_rows(order_rows: Sequence[Mapping[str, str]]) -> list[dict[str, str]]:
 def _direct_serviceability(
     *,
     bundle: China81Bundle,
-    home_depot_id: str,
     proxy_customer_id: str,
     appearance_second: float,
     trigger_second: float,
@@ -350,56 +349,71 @@ def _direct_serviceability(
     demand_kg: float,
     volume_m3: float,
 ) -> tuple[bool, bool, float, float, str]:
-    distance, direct, _ = bundle.instance.arc_metrics(
-        home_depot_id,
-        proxy_customer_id,
-        "cv",
-        fallback_speed_mps=1.0,
-    )
-    _ = distance
-    back = bundle.instance.arc_metrics(
-        proxy_customer_id,
-        home_depot_id,
-        "cv",
-        fallback_speed_mps=1.0,
-    )[1]
-    depot = next(
-        node for node in bundle.instance.nodes if node.node_id == home_depot_id
-    )
-    reasons: list[str] = []
     payload = 1_735.0
     if bundle.instance.vehicle_parameters is not None:
         payload = float(
             bundle.instance.vehicle_parameters["cv"].payload_capacity_kg
         )
-    reveal_arrival = float(appearance_second) + float(direct)
-    trigger_arrival = float(trigger_second) + float(direct)
-    reveal_start = max(reveal_arrival, float(ready_second))
-    trigger_start = max(trigger_arrival, float(ready_second))
-    reveal_return = reveal_start + float(service_second) + float(back)
-    trigger_return = trigger_start + float(service_second) + float(back)
     capacity_pass = float(demand_kg) <= payload + _TOL and float(volume_m3) <= 7.2 + _TOL
     if not capacity_pass:
-        reasons.append("capacity_exceeds_cv_contract")
-    reveal_pass = (
-        capacity_pass
-        and reveal_start <= float(due_second) + _TOL
-        and reveal_return <= float(depot.due_time) + _TOL
+        return False, False, 0.0, 0.0, "capacity_exceeds_cv_contract"
+
+    checks: list[tuple[bool, bool, float, float]] = []
+    for depot in (
+        node
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "d"
+    ):
+        direct = bundle.instance.arc_metrics(
+            depot.node_id,
+            proxy_customer_id,
+            "cv",
+            fallback_speed_mps=1.0,
+        )[1]
+        back = bundle.instance.arc_metrics(
+            proxy_customer_id,
+            depot.node_id,
+            "cv",
+            fallback_speed_mps=1.0,
+        )[1]
+        reveal_start = max(
+            float(appearance_second) + float(direct),
+            float(ready_second),
+        )
+        trigger_start = max(
+            float(trigger_second) + float(direct),
+            float(ready_second),
+        )
+        checks.append(
+            (
+                reveal_start <= float(due_second) + _TOL
+                and reveal_start + float(service_second) + float(back)
+                <= float(depot.due_time) + _TOL,
+                trigger_start <= float(due_second) + _TOL
+                and trigger_start + float(service_second) + float(back)
+                <= float(depot.due_time) + _TOL,
+                float(direct),
+                float(back),
+            )
+        )
+
+    reveal_pass = any(row[0] for row in checks)
+    trigger_pass = any(row[1] for row in checks)
+    preferred = min(
+        (row for row in checks if row[1]),
+        default=min(checks, key=lambda row: row[2] + row[3]),
+        key=lambda row: row[2] + row[3],
     )
-    trigger_pass = (
-        capacity_pass
-        and trigger_start <= float(due_second) + _TOL
-        and trigger_return <= float(depot.due_time) + _TOL
-    )
+    reasons: list[str] = []
     if not reveal_pass:
-        reasons.append("not_reveal_serviceable")
+        reasons.append("not_reveal_serviceable_from_any_depot")
     if not trigger_pass:
-        reasons.append("not_trigger_serviceable")
+        reasons.append("not_trigger_serviceable_from_any_depot")
     return (
         bool(reveal_pass),
         bool(trigger_pass),
-        float(direct),
-        float(back),
+        preferred[2],
+        preferred[3],
         "PASS" if not reasons else ";".join(reasons),
     )
 
@@ -417,16 +431,17 @@ def c8_generation_rules(protocol: C8Protocol = C8Protocol()) -> dict[str, Any]:
             "from the same unified target orders.csv"
         ),
         "time_window_rule": (
-            "copy PM shift, window, service time and home depot from the sampled "
-            "coordinate row; no old GZ-FS stream is read"
+            "copy PM shift, window and service time from the sampled coordinate "
+            "row; customers are not assigned to an enterprise or depot in advance"
         ),
         "matrix_rule": (
             "copy the unified target directed CV/EV matrix row and column of the "
             "coordinate proxy in memory only"
         ),
         "serviceability_rule": (
-            "reject deterministic candidate attempts only when direct CV service "
-            "after the trigger is outside the time/capacity contract; no objective "
+            "reject deterministic candidate attempts only when no depot can provide "
+            "direct CV service after the trigger within the time/capacity contract; "
+            "no objective "
             "or search result is inspected"
         ),
         "dynamic_order_count": C8_DYNAMIC_ORDER_COUNT,
@@ -486,7 +501,6 @@ def generate_c8_stream(
             )
             customer_id = f"C8_D{index:03d}"
             event_id = f"C8_ADD_{index:03d}"
-            home = str(coordinate_row["home_depot_id"])
             ready = float(coordinate_row["time_window_early_minute"]) * 60.0
             due = float(coordinate_row["time_window_late_minute"]) * 60.0
             service_minutes = float(coordinate_row["service_minutes"])
@@ -494,7 +508,6 @@ def generate_c8_stream(
             volume = float(demand_row["source_volume_m3"])
             reveal_pass, trigger_pass, direct, back, reason = _direct_serviceability(
                 bundle=bundle,
-                home_depot_id=home,
                 proxy_customer_id=str(coordinate_row["customer_id"]),
                 appearance_second=appearance,
                 trigger_second=protocol.reception_end_second,
@@ -516,7 +529,7 @@ def generate_c8_stream(
                     ready_second=ready,
                     due_second=due,
                     shift_id=str(coordinate_row["shift_id"]),
-                    home_depot_id=home,
+                    home_depot_id="",
                     city=str(coordinate_row["city"]).lower(),
                     latitude=float(coordinate_row["latitude"]),
                     longitude=float(coordinate_row["longitude"]),
@@ -704,7 +717,11 @@ def write_c8_stream(
     return output_dir
 
 
-def _event_from_row(row: Mapping[str, str]) -> C8DynamicEvent:
+def _event_from_row(
+    row: Mapping[str, str],
+    *,
+    clear_customer_assignment: bool = True,
+) -> C8DynamicEvent:
     boolean = lambda value: str(value).strip().lower() in {"1", "true", "yes"}
     integer_fields = {"trigger_batch_index"}
     float_fields = {
@@ -727,6 +744,8 @@ def _event_from_row(row: Mapping[str, str]) -> C8DynamicEvent:
         payload[key] = float(row[key])
     for key in ("reveal_serviceable", "trigger_serviceable"):
         payload[key] = boolean(row[key])
+    if clear_customer_assignment:
+        payload["home_depot_id"] = ""
     return C8DynamicEvent(**payload)
 
 
@@ -738,10 +757,18 @@ def load_c8_stream(path: Path, *, expected_base_instance_id: str = C8_BASE_INSTA
     if "GZ-FS" in str(metadata.get("base_instance_id", "")):
         raise ValueError("retired GZ-FS stream is forbidden")
     with (path / "events.csv").open(newline="", encoding="utf-8") as handle:
-        events = tuple(_event_from_row(row) for row in csv.DictReader(handle))
+        event_rows = list(csv.DictReader(handle))
+    source_events = tuple(
+        _event_from_row(row, clear_customer_assignment=False)
+        for row in event_rows
+    )
+    events = tuple(
+        replace(event, home_depot_id="")
+        for event in source_events
+    )
     protocol = C8Protocol(**metadata["protocol"])
     source_hashes = MappingProxyType(dict(metadata["source_instance_file_hashes"]))
-    event_payload = [asdict(event) for event in events]
+    event_payload = [asdict(event) for event in source_events]
     content_payload = {
         "schema": metadata["schema"],
         "base_instance_id": metadata["base_instance_id"],
@@ -860,10 +887,6 @@ def overlay_c8_bundle(bundle: China81Bundle, stream: C8DynamicStream | None) -> 
     instance = _expanded_instance(bundle, stream.events)
     home = dict(bundle.customer_home_depot)
     owners = dict(bundle.enterprise_assignment_by_customer)
-    for event in stream.events:
-        home[event.customer_id] = event.home_depot_id
-        if event.coordinate_proxy_customer_id in owners:
-            owners[event.customer_id] = owners[event.coordinate_proxy_customer_id]
     source_paths = {
         **dict(bundle.source_paths),
         "c8_dynamic_stream": str(stream.stream_directory or "<in-memory-c8-stream>"),
@@ -900,6 +923,7 @@ def subset_c8_bundle(bundle: China81Bundle, active_customer_ids: Iterable[str]) 
     home = {
         customer_id: bundle.customer_home_depot[customer_id]
         for customer_id in active
+        if customer_id in bundle.customer_home_depot
     }
     owners = {
         customer_id: bundle.enterprise_assignment_by_customer[customer_id]

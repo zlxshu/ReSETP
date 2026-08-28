@@ -48,6 +48,29 @@ class ScenarioGeneratorTests(unittest.TestCase):
             matrix = np.load(paths["distance_matrix_npy"])
             self.assertEqual(matrix.shape, (30, 30))
 
+    def test_dynamic_reception_window_is_independent_of_service_horizon(self) -> None:
+        config = ScenarioConfig(
+            n_customers=25,
+            seed=7,
+            horizon_start=8 * 3600.0,
+            horizon_end=19 * 3600.0,
+            dynamic_event_config=DynamicEventConfig(
+                enabled=True,
+                n_events=5,
+                event_ratio=(0, 2, 2, 1),
+                reception_start_second=8 * 3600.0,
+                reception_end_second=10 * 3600.0,
+            ),
+        )
+        scenario = generate_scenario(config)
+        self.assertEqual(len(scenario.dynamic_events), 5)
+        self.assertTrue(
+            all(
+                8 * 3600.0 <= event.t_appear <= 10 * 3600.0
+                for event in scenario.dynamic_events
+            )
+        )
+
     def test_station_node_overlap_avoidance_on_by_default(self) -> None:
         config = ScenarioConfig(
             n_depots=2,

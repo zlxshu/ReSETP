@@ -48,6 +48,11 @@ TARGET_DIR = (
     / "data/ChinaInstances/china81_final_suite_v2_20260815/instances"
     / C8_BASE_INSTANCE_ID
 )
+EXISTING_STREAM_DIR = (
+    REPO_ROOT
+    / "data/dynamic_streams"
+    / "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd_q500_t30_17ffb3f5d091"
+)
 
 
 class C8DynamicStreamTests(unittest.TestCase):
@@ -79,7 +84,7 @@ class C8DynamicStreamTests(unittest.TestCase):
                 "ready_second": 46_800.0,
                 "due_second": 50_000.0,
                 "shift_id": "PM",
-                "home_depot_id": "D",
+                "home_depot_id": "",
                 "city": "beijing",
                 "latitude": 0.0,
                 "longitude": 0.0,
@@ -120,6 +125,7 @@ class C8DynamicStreamTests(unittest.TestCase):
         self.assertEqual(first.seed, second.seed)
         self.assertEqual(len(first.events), C8_DYNAMIC_ORDER_COUNT)
         self.assertTrue(all(event.trigger_serviceable for event in first.events))
+        self.assertTrue(all(not event.home_depot_id for event in first.events))
         self.assertEqual(first.source_instance_sha256, self.source_hash)
         self.assertNotIn("GZ-FS", first.base_instance_id)
 
@@ -139,7 +145,17 @@ class C8DynamicStreamTests(unittest.TestCase):
         )
         self.assertEqual(base_customers, 50)
         self.assertEqual(expanded_customers, 60)
+        self.assertEqual(dict(self.bundle.customer_home_depot), {})
+        self.assertEqual(dict(expanded.customer_home_depot), {})
+        self.assertEqual(dict(expanded.enterprise_assignment_by_customer), {})
         self.assertEqual(package_file_hashes(TARGET_DIR), self.source_hashes)
+
+    def test_existing_stream_discards_legacy_customer_assignment(self) -> None:
+        stream = load_c8_stream(EXISTING_STREAM_DIR)
+        self.assertTrue(all(not event.home_depot_id for event in stream.events))
+        expanded = overlay_c8_bundle(self.bundle, stream)
+        self.assertEqual(dict(expanded.customer_home_depot), {})
+        self.assertEqual(dict(expanded.enterprise_assignment_by_customer), {})
 
     def test_dynamic_operator_disabled_returns_same_object(self) -> None:
         evaluator = DutyFullEvaluator(self.context)

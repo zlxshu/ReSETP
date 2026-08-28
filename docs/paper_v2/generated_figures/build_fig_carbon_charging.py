@@ -58,17 +58,17 @@ axa = fig.add_axes([0.135, 0.64, 0.73, 0.245])
 axb = fig.add_axes([0.12, 0.17, 0.34, 0.31])
 axc = fig.add_axes([0.59, 0.17, 0.34, 0.31])
 
-axa.step(hs, np.r_[price, price[-1]], where="post", color=MONEY,
+axa.step(hs, np.r_[price, price[-1]], where="post", color="black",
          ls="--", lw=RULE_HEAVY)
-axa.set_ylabel("电价（元/kWh）", fontproperties=CN, color=MONEY)
+axa.set_ylabel("电价（元/kWh）", fontproperties=CN, color="black")
 axa.set_xlim(-0.8, 24.5)
 axa.set_xticks((0, 4, 8, 12, 16, 20, 24))
 axa.set_ylim(0.45, 1.34)
 axa.tick_params(labelbottom=False, labelsize=TICK)
 a2 = axa.twinx()
-a2.step(hs, np.r_[carbon, carbon[-1]], where="post", color=CARBON,
-        lw=RULE_HEAVY)
-a2.set_ylabel("碳强度（kgCO$_2$e/kWh）", fontproperties=CN, color=CARBON)
+a2.step(hs, np.r_[carbon, carbon[-1]], where="post", color="0.35",
+        ls="-", lw=RULE_HEAVY)
+a2.set_ylabel("碳强度（kgCO$_2$e/kWh）", fontproperties=CN, color="black")
 a2.set_ylim(0.10, 0.80)
 a2.tick_params(labelsize=TICK)
 axa.text(0.5, 1.13, "(a) 分时电价与时变碳强度输入",
@@ -76,11 +76,16 @@ axa.text(0.5, 1.13, "(a) 分时电价与时变碳强度输入",
 
 def paired_panel(ax, left, right, ylabel, title, annotation):
     means = (left.mean(), right.mean())
-    ax.bar((0, 1), means, color=(MONEY, CARBON), width=0.62)
+    bars = ax.bar((0, 1), means, color=("white", "0.72"),
+                  edgecolor="black", linewidth=RULE_LIGHT, width=0.62)
+    bars[0].set_hatch("///")
+    bars[1].set_hatch("...")
     for idx, values in enumerate((left, right)):
         offsets = np.linspace(-0.10, 0.10, len(values))
-        ax.scatter(idx + offsets, values, s=18, facecolors="white",
-                   edgecolors="#333333", linewidths=RULE_LIGHT, zorder=3)
+        marker = "o" if idx == 0 else "s"
+        ax.scatter(idx + offsets, values, s=18, marker=marker,
+                   facecolors="white", edgecolors="black",
+                   linewidths=RULE_LIGHT, zorder=3)
     ax.set_xticks((0, 1), ("有空即充", "碳感知"), fontproperties=CNs)
     ax.set_ylabel(ylabel, fontproperties=CN)
     ax.set_title(title, fontproperties=CN, pad=8)

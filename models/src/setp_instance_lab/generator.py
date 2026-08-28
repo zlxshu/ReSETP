@@ -458,7 +458,29 @@ def _generate_dynamic_events(nodes: list[Node], config: ScenarioConfig, rng: np.
         raise ValueError("Dynamic add events require add_event_source_paths from migrated Goeke instances; run with --base-id or provide donor paths.")
     add_donors = _load_add_event_donors(config, nodes, rng) if counts[0] > 0 else []
     rng.shuffle(types)
-    times = _sample_event_times(rng, n_events, config.horizon_start, config.horizon_end, dyn.random_mode)
+    reception_start = (
+        config.horizon_start
+        if dyn.reception_start_second is None
+        else float(dyn.reception_start_second)
+    )
+    reception_end = (
+        config.horizon_end
+        if dyn.reception_end_second is None
+        else float(dyn.reception_end_second)
+    )
+    if not (
+        config.horizon_start <= reception_start < reception_end <= config.horizon_end
+    ):
+        raise ValueError(
+            "dynamic reception window must lie inside the planning horizon"
+        )
+    times = _sample_event_times(
+        rng,
+        n_events,
+        reception_start,
+        reception_end,
+        dyn.random_mode,
+    )
     events: list[DynamicEvent] = []
     customer_indices = rng.choice(len(customers), size=min(n_events, len(customers)), replace=False)
     if len(customer_indices) < n_events:

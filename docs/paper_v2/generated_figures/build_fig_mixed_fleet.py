@@ -37,14 +37,15 @@ for arm in ARMS:
 x = np.arange(len(ARMS))
 fig = plt.figure(figsize=(5.8, 3.6))
 ax = fig.add_axes([0.135, 0.255, 0.80, 0.56])
-ax.bar(x, cv, color=MONEY, edgecolor="white", lw=RULE_LIGHT, label="实际燃油车")
-ax.bar(x, ev, bottom=cv, color=CARBON, edgecolor="white", lw=RULE_LIGHT,
-       label="实际电动车")
+ax.bar(x, cv, color="white", edgecolor="black", lw=RULE_LIGHT,
+       hatch="///", label="实际燃油车")
+ax.bar(x, ev, bottom=cv, color="0.72", edgecolor="black", lw=RULE_LIGHT,
+       hatch="...", label="实际电动车")
 for idx, (left, right) in enumerate(zip(cv, ev)):
     ax.text(idx, left / 2, f"{left:.1f}", ha="center", va="center",
-            fontproperties=CNs, color="white")
+            fontproperties=CNs, color="black")
     ax.text(idx, left + right / 2, f"{right:.1f}", ha="center", va="center",
-            fontproperties=CNs, color="white")
+            fontproperties=CNs, color="black")
 
 ax.set_xticks(x, LABELS, fontproperties=CNs)
 ax.set_ylim(0, 12.5)

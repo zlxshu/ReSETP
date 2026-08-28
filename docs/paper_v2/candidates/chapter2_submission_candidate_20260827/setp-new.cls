@@ -1,0 +1,1 @@
+../../setp-new.cls

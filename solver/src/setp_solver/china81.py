@@ -1037,6 +1037,7 @@ def _load_time_profile(
     }
     for row in selected:
         by_city[row["city"].strip().lower()].append(row)
+    hourly_carbon_by_city: dict[str, dict[int, float]] = {}
     for city, rows in by_city.items():
         slots = sorted(calendar_row_number(row) for row in rows)
         if slots != list(range(1, 49)):
@@ -1130,16 +1131,41 @@ def _load_time_profile(
                     f"China81 public charging price components do not close for {city!r}"
                 )
 
+        rows_by_slot = {
+            calendar_row_number(row): row
+            for row in rows
+        }
+        hourly_carbon: dict[int, float] = {}
+        for hour in range(24):
+            left = rows_by_slot[2 * hour + 1]
+            right = rows_by_slot[2 * hour + 2]
+            left_gamma = float(left["carbon_factor_kgco2e_per_kwh"])
+            right_gamma = float(right["carbon_factor_kgco2e_per_kwh"])
+            if not math.isclose(
+                left_gamma,
+                right_gamma,
+                rel_tol=0.0,
+                abs_tol=1.0e-12,
+            ):
+                raise ValueError(
+                    "China81 hourly carbon intensity disagrees within "
+                    f"hour {hour:02d}:00 for {city!r} on {date}"
+                )
+            hourly_carbon[hour] = left_gamma
+        hourly_carbon_by_city[city] = hourly_carbon
+
     profile = []
     for row in selected:
-        gamma_kg = float(row["carbon_factor_kgco2e_per_kwh"])
+        city = row["city"].strip().lower()
+        hour = int(row["minute_of_day"]) // 60
+        gamma_kg = hourly_carbon_by_city[city][hour]
         profile.append(
             {
-                "city": row["city"].strip().lower(),
+                "city": city,
                 "region": row["region"].strip().lower(),
                 "date": row["date"],
                 "time_index": calendar_row_number(row),
-                "hourly_calendar_row": calendar_row_number(row),
+                "hourly_calendar_row": hour + 1,
                 "horizon_second_start": (
                     float(row["minute_of_day"]) * 60.0
                 ),

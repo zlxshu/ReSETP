@@ -18,10 +18,10 @@ TICK = 8.0                                     # 刻度数字
 RULE_HEAVY = 0.84    # 数据曲线／主要图形元素
 RULE_LIGHT = 0.525   # 坐标轴、刻度、框线、辅助线
 
-# 配色：橙管钱与企业A，蓝管碳与企业B，灰管中性背景
-MONEY  = "#C8791E"
-CARBON = "#2F6DA3"
-GREY   = "#B0B0B0"
+# 黑白印刷配色：类别差异主要由线型、点型和纹理承担
+MONEY  = "#D9D9D9"
+CARBON = "#666666"
+GREY   = "#A6A6A6"
 DARK   = "#333333"
 
 def apply_axes(ax, spines=("left", "bottom")):
