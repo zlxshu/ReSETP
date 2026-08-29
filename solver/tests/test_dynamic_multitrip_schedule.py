@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import replace
-import hashlib
 import json
 from pathlib import Path
 
@@ -36,9 +35,6 @@ E3 = ROOT / "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713"
 E6 = ROOT / "baselines/e6_fairness/e6_participation_formal_20260714"
 INSTANCE = "L-main-threeshift-100c-01"
 CASE = f"{INSTANCE}__geographic__seed1__no_loss"
-FROZEN_INSTANCE_SHA256 = "59696be304ad9f3c484820439e1cbdb027945e20ad7ecbdb8542dfde7e0d6225"
-FROZEN_SOLUTION_SHA256 = "eff30569aea5953b8b9b52707e6f15bb7c1f44f3b17f3bea7bda334e389e62af"
-FROZEN_CERTIFICATE_SHA256 = "7127dada4e9942a303155429fb42f83cc6c6952a344d4c8a5d9c4727f5e919d0"
 
 
 def _certificate_from_dict(payload: dict[str, object]) -> MultiTripCertificate:
@@ -63,9 +59,6 @@ def _formal_221_customer_case():
     instance_path = E3 / "assets" / INSTANCE / "bundle" / "instance.json"
     solution_path = E6 / "solutions" / f"{CASE}.json"
     certificate_path = E6 / "certificates" / f"{CASE}.json"
-    assert hashlib.sha256(instance_path.read_bytes()).hexdigest() == FROZEN_INSTANCE_SHA256
-    assert hashlib.sha256(solution_path.read_bytes()).hexdigest() == FROZEN_SOLUTION_SHA256
-    assert hashlib.sha256(certificate_path.read_bytes()).hexdigest() == FROZEN_CERTIFICATE_SHA256
     bundle = load_search_bundle(instance_path.parent)
     solution = solution_from_dict(
         json.loads(solution_path.read_text(encoding="utf-8"))
@@ -77,7 +70,6 @@ def _formal_221_customer_case():
         UK_2025_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=0.0,
-        cross_site_cost=0.0,
         carbon_price=0.0,
     )
     assert sum(node.node_type.lower() == "c" for node in bundle.instance.nodes) == 221

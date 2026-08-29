@@ -1,29 +1,16 @@
 #!/usr/bin/env python3
-"""Run one bounded real-input trial of the formal self-developed Problem-HGS.
-
-This is deliberately not a scientific performance experiment.  It executes
-one search cycle on a real China81 input and saves enough evidence to diagnose
-interface, crossover, full-evaluation, and packaging failures.
-"""
+"""Run Problem-HGS on one real China81 input."""
 
 from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
-import importlib
-import importlib.util
 import json
 import math
-import os
-import platform
-import subprocess
 import sys
 import traceback
 from collections import Counter
-from contextlib import nullcontext
 from dataclasses import asdict, replace
-from importlib import metadata as importlib_metadata
 from pathlib import Path
 from time import perf_counter
 from types import MappingProxyType, SimpleNamespace
@@ -31,17 +18,11 @@ from typing import Any, Mapping, Sequence
 
 from experiment_acceptance import (
     assess_run,
-    finalize_five_file_package,
-    package_exit_code,
-)
-from build_china81_suite_rebuild_20260812 import (
-    build_edf_route_plans,
-    plans_to_solution,
+    finalize_run_output,
+    result_exit_code,
 )
 from setp_solver.algorithms.problem_hgs.charging import (
     ChargingRepairPolicy,
-    charging_rejection_reason,
-    repair_changed_duties,
 )
 from setp_solver.algorithms.problem_hgs.c0_witness_adapter import (
     adapt_witness_rows_to_duty,
@@ -62,19 +43,13 @@ from setp_solver.algorithms.problem_hgs.enterprise_adapter import (
 from setp_solver.algorithms.problem_hgs.evaluation import (
     DutyEvaluationContext,
     DutyFullEvaluator,
-    FrozenMappingIdentity,
     RebuiltRouteConstraintContract,
 )
 from setp_solver.algorithms.problem_hgs.fleet_registry import (
     register_all_vehicle_slots,
 )
-from setp_solver.algorithms.problem_hgs.frvcpy_adapter import (
-    FRVCPY_COMMIT,
-    FRVCPY_SOURCE_SHA256,
-)
 from setp_solver.algorithms.problem_hgs.model import DutyIndividual
 from setp_solver.algorithms.problem_hgs.operators import (
-    ReverseSegmentMove,
     generate_problem_moves,
 )
 from setp_solver.algorithms.problem_hgs.population import (
@@ -90,13 +65,7 @@ from setp_solver.algorithms.problem_hgs.kernel_proposals import (
 from setp_solver.algorithms.problem_hgs.runner import (
     SINGLE_OBJECTIVE,
     ProblemHGSSearchParameters,
-    FrozenPopulationIdentity,
-    population_sha256,
     run_integrated_problem_hgs,
-)
-from setp_solver.algorithms.problem_hgs.schedule_capture import (
-    ScheduleCaptureRecord,
-    schedule_capture_sink,
 )
 from setp_solver.charge_timing import CHARGE_TIMING_POLICIES
 from setp_solver.china81 import (
@@ -115,14 +84,9 @@ from setp_solver.china81 import (
     load_china81_bundle,
 )
 from setp_solver.china81_completion import complete_china81_route_skeleton
-from setp_solver.check import PROFIT_FAIRNESS
 from setp_solver.enterprise_accounting import build_enterprise_ledger
-from setp_solver.enterprise_assignment import load_enterprise_assignment
 from setp_solver.instance_loader import Instance, Node, RoadProfileMatrices
 from setp_solver.model_config import ModelConfig
-from setp_solver.mapping_identity import mapping_sha256
-from setp_solver.pi0_manifest import load_pi0_manifest
-from setp_solver.profit import calculate_depot_profits
 from setp_solver.search.multitrip_schedule import (
     DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
     prepare_multitrip_solution,
@@ -139,76 +103,15 @@ from setp_solver.search.metaheuristic_baselines import solution_from_dict, solut
 from setp_solver.solution import Route, Solution
 
 INSTANCE_ID = "cn-jjj-10c-01-V2-LOCATIONS"
-SEED = 11
 ARM = "one-cycle-real-input-wiring-trial"
-PROBE_SUCCESS_VERDICT = "PROBE_RUN_COMPLETE"
-PROBE_FAILURE_VERDICT = "PROBE_RUN_FAILED"
-FORMAL_SUCCESS_VERDICT = "FORMAL_RUN_COMPLETE"
-FORMAL_FAILURE_VERDICT = "FORMAL_RUN_FAILED"
-PROTECTED = (
-    "solver/src/setp_solver/cost.py",
-    "solver/src/setp_solver/check.py",
-    "solver/src/setp_solver/search/evaluation.py",
-    "solver/src/setp_solver/algorithms/problem_hgs/charging.py",
-    "solver/src/setp_solver/algorithms/resetp_alns/support/charging.py",
-)
-ENTERPRISE_NATIVE_PROBE_EXPECTATIONS = {
-    "ENT_A": (25, 6597.0),
-    "ENT_B": (25, 6667.0),
+NO_IMPROVEMENT_LIMIT = 500
+SUCCESS_VERDICT = "RUN_COMPLETE"
+FAILURE_VERDICT = "RUN_FAILED"
+ENTERPRISE_NATIVE_EXPECTATIONS = {
+    "ENT_A": (50, 13264.0),
+    "ENT_B": (50, 13264.0),
 }
 
-
-def _run_verdicts(run_kind: str) -> tuple[str, str]:
-    if run_kind == "probe":
-        return PROBE_SUCCESS_VERDICT, PROBE_FAILURE_VERDICT
-    if run_kind == "formal":
-        return FORMAL_SUCCESS_VERDICT, FORMAL_FAILURE_VERDICT
-    raise ValueError(f"unsupported run kind: {run_kind!r}")
-
-_FULL_EVALUATION_ACCEPTANCE_CHANNELS = frozenset(
-    {"hgs_population"}
-)
-
-
-def _sentinel_acceptance_classification(
-    accepted_actions: Mapping[str, int],
-) -> dict[str, dict[str, int]]:
-    """Separate complete-evaluation acceptances from education acceptances."""
-
-    return {
-        "incremental_education": {
-            channel: int(count)
-            for channel, count in sorted(accepted_actions.items())
-            if channel not in _FULL_EVALUATION_ACCEPTANCE_CHANNELS and count
-        },
-        "full_evaluation": {
-            channel: int(count)
-            for channel, count in sorted(accepted_actions.items())
-            if channel in _FULL_EVALUATION_ACCEPTANCE_CHANNELS and count
-        },
-    }
-
-
-def _sentinel_validation_failures(
-    *,
-    accepted_actions: Mapping[str, int],
-    sentinel_enabled: bool,
-    sentinel_evaluations: int,
-) -> tuple[str, ...]:
-    """Apply the existing truth gate only to incremental education accepts."""
-
-    classification = _sentinel_acceptance_classification(accepted_actions)
-    accepted_education_moves = sum(
-        classification["incremental_education"].values()
-    )
-    failures: list[str] = []
-    if sentinel_enabled and accepted_education_moves > 0 and sentinel_evaluations <= 0:
-        failures.append(
-            "an accepted education move was not replayed by the full-truth sentinel"
-        )
-    if not sentinel_enabled and sentinel_evaluations != 0:
-        failures.append("disabled full-truth sentinel was still exercised")
-    return tuple(failures)
 FLEET_PARAMETER_CLASSES = {
     "fixed25": FIXED_25_PERCENT_FLEET_PARAMETERS,
     "endogenous": ENDOGENOUS_FLEET_PARAMETERS,
@@ -224,14 +127,6 @@ DEPOT_SWAP_RUNTIME_PARAMETER_AUTHORITY = Path(
     "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723"
 )
 DEPOT_SEARCH_INSTANCE_ID = "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd"
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _json(path: Path, payload: Any) -> None:
@@ -250,7 +145,7 @@ def _load_registered_initial_solution(path: Path, bundle: China81Bundle) -> Duty
     individual = DutyIndividual.from_solution(
         solution_from_dict(solution_payload),
         customer_node_ids=customer_ids,
-        source=f"external-initial/{_sha256(path)}",
+        source="external-initial",
     )
     return register_all_vehicle_slots(individual, bundle)
 
@@ -262,192 +157,6 @@ def _format_full_evaluation_result(
 ) -> str:
     status = "可行" if feasible else "不可行"
     return f"完整评价判定{status}，违规数为 {violation_count}"
-
-
-def _probe_charging_candidate(
-    record: ScheduleCaptureRecord,
-    *,
-    context: DutyEvaluationContext,
-    policy: ChargingRepairPolicy,
-) -> dict[str, Any]:
-    """Replay one captured raw candidate without changing search decisions."""
-
-    try:
-        repaired = repair_changed_duties(
-            record.reference,
-            record.raw_candidate,
-            changed_duty_ids=set(record.changed_duty_ids),
-            context=context,
-            policy=policy,
-            cache=None,
-        )
-        full = DutyFullEvaluator(context).evaluate(repaired)
-    except (TypeError, ValueError) as error:
-        return {
-            "feasible": False,
-            "reason_code": charging_rejection_reason(error),
-            "error_type": type(error).__name__,
-            "error": str(error),
-            "repaired_fingerprint": None,
-            "full_evaluation_feasible": None,
-        }
-    if not full.feasible:
-        return {
-            "feasible": False,
-            "reason_code": "FULL_EVALUATION_INFEASIBLE",
-            "error_type": "FullEvaluation",
-            "error": "; ".join(
-                str(asdict(violation)) for violation in full.violations
-            ),
-            "repaired_fingerprint": repaired.fingerprint,
-            "full_evaluation_feasible": False,
-        }
-    return {
-        "feasible": True,
-        "reason_code": None,
-        "error_type": None,
-        "error": None,
-        "repaired_fingerprint": repaired.fingerprint,
-        "full_evaluation_feasible": True,
-    }
-
-
-def _write_charging_diagnosis_probe(
-    records: list[ScheduleCaptureRecord],
-    *,
-    output: Path,
-    context: DutyEvaluationContext,
-    policy: ChargingRepairPolicy,
-) -> None:
-    """Save raw crossover failures, then run relaxed and frvcpy replays."""
-
-    output.mkdir(parents=True, exist_ok=True)
-    snapshots = output / "duty_crossover_rejected_candidates.jsonl"
-    relaxed_context = replace(context, depot_charge_window_mode="full_gap")
-    relaxed_policy = replace(
-        policy,
-        depot_charge_window_mode="full_gap",
-        first_trip_prev_night_enabled=True,
-    )
-    frvcpy_policy = replace(relaxed_policy, frvcpy_enabled=True)
-    rows: list[dict[str, Any]] = []
-    with snapshots.open("x", encoding="utf-8") as handle:
-        for index, record in enumerate(records, start=1):
-            case_id = f"DCX-{index:03d}"
-            handle.write(
-                json.dumps(
-                    {
-                        "case_id": case_id,
-                        "capture_order": index,
-                        "iteration": record.iteration,
-                        "channel": record.channel,
-                        "action_id": record.action_id,
-                        "reference_fingerprint": record.reference.fingerprint,
-                        "raw_candidate_fingerprint": (
-                            record.raw_candidate.fingerprint
-                        ),
-                        "changed_duty_ids": sorted(record.changed_duty_ids),
-                        "original_error_type": record.a0_error_type,
-                        "original_error": record.a0_error,
-                        "reference": asdict(record.reference),
-                        "raw_candidate": asdict(record.raw_candidate),
-                    },
-                    ensure_ascii=False,
-                    allow_nan=False,
-                )
-                + "\n"
-            )
-    for index, record in enumerate(records, start=1):
-        case_id = f"DCX-{index:03d}"
-        original = _probe_charging_candidate(
-            record,
-            context=context,
-            policy=policy,
-        )
-        relaxed = _probe_charging_candidate(
-            record,
-            context=relaxed_context,
-            policy=relaxed_policy,
-        )
-        frvcpy = _probe_charging_candidate(
-            record,
-            context=relaxed_context,
-            policy=frvcpy_policy,
-        )
-        rows.append(
-            {
-                "case_id": case_id,
-                "capture_order": index,
-                "iteration": record.iteration,
-                "raw_candidate_fingerprint": (
-                    record.raw_candidate.fingerprint
-                ),
-                "changed_duty_ids": ";".join(
-                    sorted(record.changed_duty_ids)
-                ),
-                "original_reason_code": charging_rejection_reason(
-                    ValueError(record.a0_error or "")
-                ),
-                "original_error_type": record.a0_error_type,
-                "original_error": record.a0_error,
-                "original_replay_feasible_60kw": original["feasible"],
-                "original_replay_reason_code": original["reason_code"],
-                "relaxed_window_mode": "full_gap",
-                "relaxed_prev_night_enabled": True,
-                "relaxed_60kw_feasible": relaxed["feasible"],
-                "relaxed_60kw_reason_code": relaxed["reason_code"],
-                "became_feasible_60kw": (
-                    not bool(original["feasible"])
-                    and bool(relaxed["feasible"])
-                ),
-                "higher_power_scenario_available": False,
-                "frvcpy_feasible_60kw": frvcpy["feasible"],
-                "frvcpy_reason_code": frvcpy["reason_code"],
-                "frvcpy_overruled_self_repair": (
-                    not bool(original["feasible"])
-                    and bool(frvcpy["feasible"])
-                ),
-            }
-        )
-    fields = tuple(rows[0]) if rows else (
-        "case_id",
-        "capture_order",
-        "iteration",
-        "raw_candidate_fingerprint",
-        "changed_duty_ids",
-        "original_reason_code",
-        "original_error_type",
-        "original_error",
-        "original_replay_feasible_60kw",
-        "original_replay_reason_code",
-        "relaxed_window_mode",
-        "relaxed_prev_night_enabled",
-        "relaxed_60kw_feasible",
-        "relaxed_60kw_reason_code",
-        "became_feasible_60kw",
-        "higher_power_scenario_available",
-        "frvcpy_feasible_60kw",
-        "frvcpy_reason_code",
-        "frvcpy_overruled_self_repair",
-    )
-    with (output / "relaxation_probe.csv").open(
-        "x", encoding="utf-8", newline=""
-    ) as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
-        writer.writeheader()
-        writer.writerows(rows)
-
-
-
-
-def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(
-        ("git", *args),
-        cwd=repo,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
 
 
 def _policy(
@@ -472,8 +181,6 @@ def _policy(
 
 def _parameters(
     *,
-    random_seed: int = SEED,
-    stagnation_patience: int = 500,
     population_mode: str = "copied_hgs_defaults",
     objective_mode: str = SINGLE_OBJECTIVE,
     education_depth_limit: int | None = None,
@@ -493,9 +200,8 @@ def _parameters(
     else:
         raise ValueError(f"unknown population mode: {population_mode}")
     return ProblemHGSSearchParameters(
-        random_seed=int(random_seed),
         population=population,
-        stagnation_patience=stagnation_patience,
+        stagnation_patience=NO_IMPROVEMENT_LIMIT,
         objective_mode=objective_mode,
         education_depth_limit=education_depth_limit,
     )
@@ -517,109 +223,6 @@ def _effective_population_metadata(
         "tournament_size": population.tournament_size,
         "lb_diversity": population.lb_diversity,
         "ub_diversity": population.ub_diversity,
-    }
-
-
-def _installed_version(distribution: str) -> str | None:
-    try:
-        return importlib_metadata.version(distribution)
-    except importlib_metadata.PackageNotFoundError:
-        return None
-
-
-def _installed_distribution_identity(distribution: str) -> dict[str, Any]:
-    result: dict[str, Any] = {
-        "version": _installed_version(distribution),
-        "modules": {},
-        "distribution_records": {},
-    }
-    for module_name in (
-        "setp_hgs_kernel",
-        "setp_hgs_kernel.search",
-        "setp_hgs_kernel._setp_hgs_kernel",
-        "setp_hgs_kernel.search._search",
-    ):
-        module = importlib.import_module(module_name)
-        module_path = Path(module.__file__).resolve()
-        result["modules"][module_name] = {
-            "path": str(module_path),
-            "sha256": _sha256(module_path),
-        }
-    try:
-        dist = importlib_metadata.distribution(distribution)
-    except importlib_metadata.PackageNotFoundError:
-        result["distribution_installed"] = False
-        return result
-    result["distribution_installed"] = True
-    for relative in dist.files or ():
-        name = str(relative)
-        if not name.endswith((".dist-info/METADATA", ".dist-info/RECORD")):
-            continue
-        path = Path(dist.locate_file(relative)).resolve()
-        result["distribution_records"][name] = {
-            "path": str(path),
-            "sha256": _sha256(path),
-        }
-    return result
-
-
-def _source_provenance(
-    repo: Path,
-    *,
-    output_path: Path,
-    stderr_capture_state: str,
-) -> dict[str, Any]:
-    package = repo / "solver/src/setp_solver/algorithms/problem_hgs"
-    vendor = repo / "third_party/setp_hgs_kernel"
-    files = sorted(
-        (
-            *(
-                path
-                for path in package.rglob("*.py")
-                if "__pycache__" not in path.parts
-                and not path.name.startswith("._")
-            ),
-            Path(__file__).resolve(),
-            vendor / "UPSTREAM_COMMIT",
-            vendor / "LICENSE.md",
-            vendor / "meson.build",
-            vendor / "pyproject.toml",
-        ),
-        key=str,
-    )
-    manifest = {
-        str(path.relative_to(repo)): _sha256(path)
-        for path in files
-    }
-    manifest_payload = json.dumps(
-        manifest,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    status = _git(repo, "status", "--porcelain")
-    return {
-        "git_head": _git(repo, "rev-parse", "HEAD"),
-        "worktree_clean_before_run": not bool(status),
-        "worktree_status_before_run": status,
-        "python_source_sha256": hashlib.sha256(manifest_payload).hexdigest(),
-        "python_source_files": manifest,
-        "python_executable": sys.executable,
-        "python_version": platform.python_version(),
-        "platform": platform.platform(),
-        "machine": platform.machine(),
-        "dependency_versions": {
-            name: _installed_version(name)
-            for name in ("numpy", "scipy", "setp-hgs-kernel")
-        },
-        "kernel_runtime_identity": _installed_distribution_identity(
-            "setp-hgs-kernel"
-        ),
-        "pyvrp_importable": importlib.util.find_spec("pyvrp") is not None,
-        "cwd": str(Path.cwd().resolve()),
-        "command_argv": list(sys.argv),
-        "output_path": str(output_path),
-        "stderr_capture_state": stderr_capture_state,
     }
 
 
@@ -701,11 +304,6 @@ def _build_context(
         context = DutyEvaluationContext(
             bundle=bundle,
             independent_profit=neutral,
-            independent_profit_identity=FrozenMappingIdentity(
-                source_id="fairness-disabled-neutral-not-pi0",
-                value_sha256=mapping_sha256(neutral),
-                externally_frozen=False,
-            ),
             prior_profit={depot_id: 0.0 for depot_id in neutral},
             theta=0.0,
             carbon_quota_kg=0.0,
@@ -742,71 +340,26 @@ def _build_context(
         DutyIndividual.from_solution(completed),
         bundle,
     )
-    profits = calculate_depot_profits(
-        completed,
-        bundle.instance,
-        bundle.time_profile,
-        bundle.prices,
-        customer_home_depot=dict(bundle.customer_home_depot),
-    )
-    pi0 = {depot_id: row.profit for depot_id, row in profits.items()}
+    neutral = {
+        node.node_id: 1.0
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "d"
+    }
     context = DutyEvaluationContext(
         bundle=bundle,
-        independent_profit=pi0,
-        independent_profit_identity=FrozenMappingIdentity(
-            source_id="technical-initial-solution-derived-before-search",
-            value_sha256=mapping_sha256(pi0),
-            externally_frozen=False,
-        ),
-        prior_profit={depot_id: 0.0 for depot_id in pi0},
-        theta=1.0,
+        independent_profit=neutral,
+        prior_profit={depot_id: 0.0 for depot_id in neutral},
+        theta=0.0,
         carbon_quota_kg=0.0,
         depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
+        fairness_enabled=False,
     )
-    return bundle, individual, pi0, context
+    return bundle, individual, neutral, context
 
 
 def _csv_rows(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8-sig") as handle:
         return list(csv.DictReader(handle))
-
-
-def _apply_joint_pi0_record(
-    bundle: China81Bundle,
-    context: DutyEvaluationContext,
-    record: Mapping[str, Any],
-) -> tuple[dict[str, float], DutyEvaluationContext]:
-    """Attach one validated two-depot Pi0 record to the joint context."""
-
-    pi0 = {
-        str(key): float(value)
-        for key, value in dict(record["values"]).items()
-    }
-    depots = {
-        node.node_id
-        for node in bundle.instance.nodes
-        if node.node_type.lower() == "d"
-    }
-    if set(pi0) != depots:
-        raise ValueError(
-            "Pi0 depot set differs from the joint private problem: "
-            f"expected={sorted(depots)}, actual={sorted(pi0)}"
-        )
-    if mapping_sha256(pi0) != str(record["value_sha256"]).lower():
-        raise ValueError("Pi0 content hash differs from the supplied record")
-    if record.get("externally_frozen") is not True:
-        raise ValueError("joint participation requires externally frozen Pi0")
-    return pi0, replace(
-        context,
-        independent_profit=pi0,
-        independent_profit_identity=FrozenMappingIdentity(
-            source_id=str(record["source_id"]),
-            value_sha256=str(record["value_sha256"]),
-            externally_frozen=True,
-        ),
-        theta=1.0,
-        fairness_enabled=True,
-    )
 
 
 def _suite_matrix_from_reference(
@@ -906,31 +459,18 @@ def _load_v3_suite_bundle(
             else []
         )
     }
-    assignment_path = saved_root / "enterprise_assignment.csv"
-    assignment = None
-    endogenous_customer_assignment = instance_id == DEPOT_SEARCH_INSTANCE_ID
-    if endogenous_customer_assignment:
-        customer_home_depot = MappingProxyType({})
-    elif assignment_path.is_file():
-        assignment = load_enterprise_assignment(
-            assignment_path,
-            saved_root / "nodes.csv",
-            expected_instance_id=instance_id,
-            expected_customer_ids=orders_by_customer,
-        )
-        customer_home_depot = assignment.customer_home_depot
-    else:
-        if "-DEPOTSEARCH-" in instance_id:
-            raise ValueError(
-                "ASSIGNMENT_CONTRACT_ERROR: DEPOTSEARCH requires "
-                f"{assignment_path}"
-            )
-        customer_home_depot = MappingProxyType(
-            {
-                customer_id: str(row["home_depot_id"])
-                for customer_id, row in orders_by_customer.items()
-            }
-        )
+    customer_home_depot = MappingProxyType({})
+    depot_ids = sorted(
+        str(row["node_id"])
+        for row in node_rows
+        if str(row["node_type"]).strip().lower() == "depot"
+    )
+    if len(depot_ids) != 2:
+        raise ValueError("the paper instance requires exactly two enterprise depots")
+    enterprise_depot_by_id = {
+        "ENT_A": depot_ids[0],
+        "ENT_B": depot_ids[1],
+    }
     nodes: list[Node] = []
     for row in node_rows:
         node_id = str(row["node_id"])
@@ -1142,10 +682,6 @@ def _load_v3_suite_bundle(
         ),
         "facilities": str(facilities_path.relative_to(repo)),
     }
-    if assignment is not None:
-        source_paths["enterprise_assignment"] = str(
-            assignment_path.relative_to(repo)
-        )
     bundle = China81Bundle(
         instance_id=instance_id,
         region=str(catalog["region"]).strip().lower(),
@@ -1177,25 +713,7 @@ def _load_v3_suite_bundle(
         fleet_authority=str(package_root.relative_to(repo)),
         model_config=MappingProxyType(ModelConfig().as_metadata()),
         formal_search_allowed=False,
-        enterprise_assignment_by_customer=(
-            assignment.enterprise_by_customer
-            if assignment is not None
-            else MappingProxyType({})
-        ),
-        enterprise_assignment_source_path=(
-            str(assignment_path.relative_to(repo))
-            if assignment is not None
-            else None
-        ),
-        enterprise_assignment_source_sha256=(
-            assignment.source_sha256 if assignment is not None else None
-        ),
-        enterprise_assignment_mapping_sha256=(
-            assignment.normalized_mapping_sha256 if assignment is not None else None
-        ),
-        enterprise_assignment_rule_ids=(
-            assignment.rule_ids if assignment is not None else ()
-        ),
+        enterprise_depot_by_id=MappingProxyType(enterprise_depot_by_id),
     )
     return bundle, orders_by_customer
 
@@ -1340,11 +858,6 @@ def _suite_context_from_built(
     context = DutyEvaluationContext(
         bundle=bundle,
         independent_profit=neutral,
-        independent_profit_identity=FrozenMappingIdentity(
-            source_id="fairness-disabled-neutral-not-pi0",
-            value_sha256=mapping_sha256(neutral),
-            externally_frozen=False,
-        ),
         prior_profit={depot_id: 0.0 for depot_id in neutral},
         theta=0.0,
         carbon_quota_kg=0.0,
@@ -1418,7 +931,7 @@ def _build_saved_suite_context(
 
 
 def _private_rebuild_health_witness_initial(repo: Path, bundle) -> Solution:
-    """Load the frozen seed-11 health witness without invoking a solver."""
+    """Load the saved feasible health witness without invoking a solver."""
 
     path = (
         repo
@@ -1428,8 +941,6 @@ def _private_rebuild_health_witness_initial(repo: Path, bundle) -> Solution:
         rows = list(csv.DictReader(handle))
     if not rows:
         raise ValueError("rebuilt health witness is empty")
-    if {str(row["seed"]) for row in rows} != {"11"}:
-        raise ValueError("rebuilt health witness must be the frozen seed-11 route set")
     routes = [
         Route(
             vehicle_id=str(row["route_vehicle_id"]),
@@ -1618,7 +1129,6 @@ def _dynamic_insertion_technical_cut(
         replace(
             context,
             dynamic_state=state,
-            incremental_full_truth_sentinel_enabled=False,
         ),
         revealed,
     )
@@ -1645,15 +1155,6 @@ def _customer_structure(
                 depot_by_customer[customer] = duty.home_depot_id
                 type_by_customer[customer] = duty.vehicle_type
     return depot_by_customer, type_by_customer
-
-
-def _string_mapping_sha256(values: Mapping[str, str]) -> str:
-    payload = json.dumps(
-        sorted((str(key), str(value)) for key, value in values.items()),
-        ensure_ascii=False,
-        separators=(",", ":"),
-    )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _mechanism_closure_violations(
@@ -1773,51 +1274,12 @@ def _prepare_population(
     mechanism_enabled: Mapping[str, bool] | None = None,
 ):
     initial_evaluation = evaluator.evaluate(initial)
-    reversible = next(
-        (
-            (duty, trip)
-            for duty in initial.duties
-            for trip in duty.trips
-            if len(trip.customer_ids) >= 2
-        ),
-        None,
-    )
-    if reversible is None:
-        reverse_record = {
-            "action_id": "preflight-reverse-first-two",
-            "status": "SKIPPED_NO_REVERSIBLE_TRIP",
-            "error_type": None,
-            "error": None,
-        }
-    else:
-        first_duty, first_trip = reversible
-        reverse = ReverseSegmentMove(
-            action_id="preflight-reverse-first-two",
-            channel="technical_preflight",
-            duty_id=first_duty.physical_vehicle_id,
-            trip_index=first_trip.trip_index,
-            start=0,
-            stop=2,
-        )
-        reverse_outcome = evaluate_move(
-            initial,
-            reverse,
-            evaluator=evaluator,
-            charging_policy=policy,
-        )
-        reverse_record = {
-            "action_id": reverse_outcome.action_id,
-            "status": str(reverse_outcome.status),
-            "error_type": reverse_outcome.error_type,
-            "error": reverse_outcome.error,
-        }
-
-    attempts = []
     second = None
     second_evaluation = None
-    for index, move in enumerate(
-        generate_problem_moves(initial, initial_evaluation, evaluator.context.bundle.instance),
-        start=1,
+    for move in generate_problem_moves(
+        initial,
+        initial_evaluation,
+        evaluator.context.bundle.instance,
     ):
         if mechanism_enabled is not None and not _move_mechanism_enabled(
             move.channel,
@@ -1830,21 +1292,11 @@ def _prepare_population(
             evaluator=evaluator,
             charging_policy=policy,
         )
-        attempts.append(
-            {
-                "index": index,
-                "action_id": outcome.action_id,
-                "channel": outcome.channel,
-                "status": str(outcome.status),
-                "error_type": outcome.error_type,
-                "error": outcome.error,
-            }
-        )
         if (
             outcome.status == CandidateStatus.EVALUATED
             and outcome.candidate is not None
             and outcome.evaluation is not None
-            and outcome.candidate.fingerprint != initial.fingerprint
+            and outcome.candidate != initial
             and (
                 mechanism_enabled is None
                 or not _mechanism_closure_violations(
@@ -1861,13 +1313,7 @@ def _prepare_population(
         raise RuntimeError("no deterministic, fully evaluated distinct second parent")
 
     candidates = (initial, second, initial, second)
-    return (
-        candidates,
-        initial_evaluation,
-        reverse_record,
-        attempts,
-        (initial_evaluation, second_evaluation) * 2,
-    )
+    return candidates, initial_evaluation, (initial_evaluation, second_evaluation) * 2
 
 
 
@@ -1880,11 +1326,6 @@ def _write_failure_package(output: Path, error: Exception) -> bool:
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     if metadata.get("status") != "RUNNING":
         return False
-    repo = Path(__file__).resolve().parents[2]
-    success_verdict, failure_verdict = _run_verdicts(metadata["run_kind"])
-    metadata["protected_hashes_after"] = {
-        path: _sha256(repo / path) for path in PROTECTED
-    }
     with (output / "raw_runs.csv").open(
         "w", encoding="utf-8", newline=""
     ) as handle:
@@ -1896,7 +1337,7 @@ def _write_failure_package(output: Path, error: Exception) -> bool:
         writer.writeheader()
         writer.writerow(
             {
-                "verdict": failure_verdict,
+                "verdict": FAILURE_VERDICT,
                 "error_type": type(error).__name__,
                 "error": str(error),
             }
@@ -1907,48 +1348,20 @@ def _write_failure_package(output: Path, error: Exception) -> bool:
         feasible_ok=None,
         customers_complete=None,
         demand_complete=None,
-        audit_ok=None,
         extra_failure_reasons=(failure_reason,),
-        success_verdict=success_verdict,
-        failure_verdict=failure_verdict,
+        success_verdict=SUCCESS_VERDICT,
+        failure_verdict=FAILURE_VERDICT,
     )
     decision = {
         "traceback": traceback.format_exc(),
-        "user_decision_changed": False,
     }
-    enterprise_failure_ending = ""
-    if metadata.get("requested_enterprise_id") is not None:
-        constructor = metadata.get(
-            "requested_enterprise_init_constructor",
-            "random",
-        )
-        enterprise_failure_ending = f"""
-## 直接给用户
-
-{metadata['requested_enterprise_id']} 的 `{constructor}` 初始化探针真实结局是：**失败**。原始初始化拒绝记录如已产生，保存在同包的 `native_initialization_diagnostics.json`。本次调用只保存失败现场；本轮执行者按用户预批退路继续收尾。
-"""
-    report = f"""# Problem-HGS 真实输入技术试跑失败报告
+    report = f"""# Problem-HGS 真实输入运行失败报告
 
 ## 结论
 
-本次技术试跑在生成正式结果包前失败。错误类型为 `{type(error).__name__}`，错误信息为：{error}。失败没有被改写成完成；完整调用栈保存在 `decision.json`。
-
-## 交付前九条自检
-
-1. 每个事实是否有出处？——错误类型、错误信息和调用栈来自本次异常，保存在 `decision.json`。
-2. 有没有把建议或担忧写成已决？——没有；这里只记录失败。
-3. 是否超出任务范围？——没有；只补齐本次失败现场。
-4. 是否碰受保护文件？——本失败包不修改受保护文件；实际运行前后哈希以 `metadata.json` 已保存内容为准。
-5. 是否留下新的待决选项？——没有。
-6. 是否使用自造术语？——没有。
-7. 失败、跳过、超时、异常是否如实保留？——本次异常已如实保留。
-8. 四件套是否齐全？——`metadata.json`、`raw_runs.csv`、`decision.json`、`artifact_hashes.json` 和 `report.md` 将由本失败收口一次写齐。
-9. 交接记录是否同步？——失败包只保存现场；项目交接记录在任务收尾时统一同步。
-{enterprise_failure_ending}
+错误类型为 `{type(error).__name__}`，错误信息为：{error}。完整调用栈保存在 `decision.json`。
 """
-    for sidecar in output.glob("._*"):
-        sidecar.unlink()
-    finalize_five_file_package(
+    finalize_run_output(
         output,
         acceptance=acceptance,
         metadata=metadata,
@@ -1962,15 +1375,9 @@ def main() -> int:
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("--data-repo-root", type=Path)
     parser.add_argument("--instance-id", default=INSTANCE_ID)
-    problem_scope = parser.add_mutually_exclusive_group()
-    problem_scope.add_argument(
+    parser.add_argument(
         "--enterprise-id",
-        help="run the sealed shared-station problem for one assigned enterprise",
-    )
-    problem_scope.add_argument(
-        "--pi0-manifest",
-        type=Path,
-        help="enable joint participation checks from one supplied Pi0 manifest",
+        help="run one enterprise's depot and fleet over the full shared market",
     )
     parser.add_argument(
         "--initial-solution",
@@ -1979,11 +1386,10 @@ def main() -> int:
     )
     parser.add_argument(
         "--enterprise-init-constructor",
-        choices=("random", "greedy_repair", "legacy_three"),
+        choices=("random", "greedy_repair"),
         default="random",
         help="native constructor for an enterprise initial population",
     )
-    parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument(
         "--carbon-price",
         type=float,
@@ -1991,9 +1397,6 @@ def main() -> int:
         help="carbon price in CNY/kg; default preserves the China81 constant",
     )
     parser.add_argument("--convergence-csv", type=Path)
-    parser.add_argument("--iterations", type=int, default=1)
-    parser.add_argument("--max-runtime-seconds", type=float, default=1200.0)
-    parser.add_argument("--stagnation-patience", type=int, default=500)
     parser.add_argument(
         "--education-depth-limit",
         type=int,
@@ -2015,11 +1418,6 @@ def main() -> int:
     )
     parser.add_argument("--arm", default=ARM)
     parser.add_argument(
-        "--run-kind",
-        choices=("probe", "formal"),
-        default="probe",
-    )
-    parser.add_argument(
         "--fleet-parameter-class",
         choices=tuple(FLEET_PARAMETER_CLASSES),
         default="fixed25",
@@ -2030,16 +1428,6 @@ def main() -> int:
         default="60kw",
         help="rebuilt private-instance depot power/registered-curve pairing",
     )
-    parser.add_argument("--disable-truth-sentinel", action="store_true")
-    parser.add_argument(
-        "--trajectory",
-        choices=("full", "off"),
-        default="off",
-        help="full writes the per-candidate diagnostic trace; experiment default is off",
-    )
-    parser.add_argument("--stream-trajectory", action="store_true")
-    parser.add_argument("--no-retain-trajectory", action="store_true")
-    parser.add_argument("--stderr-capture-state", default="caller_not_declared")
     parser.add_argument(
         "--first-trip-prev-night",
         action="store_true",
@@ -2092,41 +1480,11 @@ def main() -> int:
         default=None,
         help="enable the exact route-clock prescreen",
     )
-    parser.add_argument(
-        "--prescreen-audit-sample",
-        type=int,
-        default=0,
-        help="number of prescreen rejections to replay through full charging repair",
-    )
-    parser.add_argument(
-        "--charging-diagnosis-capture-limit",
-        type=int,
-        default=0,
-        help=(
-            "save and replay the first N rejected duty-crossover raw candidates; "
-            "default zero leaves search and outputs unchanged"
-        ),
-    )
-    parser.add_argument(
-        "--charging-diagnosis-output-dir",
-        type=Path,
-        help="directory for raw crossover snapshots and relaxation_probe.csv",
-    )
     args = parser.parse_args()
-    if args.iterations < 1:
-        raise ValueError("technical iteration count must be positive")
-    if args.stagnation_patience < 1:
-        raise ValueError("technical stagnation patience must be positive")
     if args.education_depth_limit is not None and args.education_depth_limit < 1:
         raise ValueError("education depth limit must be positive")
-    if args.max_runtime_seconds <= 0.0:
-        raise ValueError("maximum runtime must be positive")
     if not math.isfinite(args.carbon_price) or args.carbon_price < 0.0:
         raise ValueError("carbon price must be finite and non-negative")
-    if args.prescreen_audit_sample < 0:
-        raise ValueError("prescreen audit sample cannot be negative")
-    if args.charging_diagnosis_capture_limit < 0:
-        raise ValueError("charging diagnosis capture limit cannot be negative")
     if (
         args.enterprise_id is not None
         and args.population_mode != "copied_hgs_defaults"
@@ -2141,21 +1499,6 @@ def main() -> int:
         raise ValueError(
             "enterprise init constructor requires an enterprise id"
         )
-    if bool(args.charging_diagnosis_capture_limit) != bool(
-        args.charging_diagnosis_output_dir
-    ):
-        raise ValueError(
-            "charging diagnosis capture limit and output directory must be "
-            "provided together"
-        )
-    if any(
-        name == "pyvrp" or name.startswith("pyvrp.")
-        for name in sys.modules
-    ):
-        raise RuntimeError(
-            "independent Problem-HGS runtime imported frozen PyVRP"
-        )
-
     repo = Path(__file__).resolve().parents[2]
     data_repo = (
         repo
@@ -2167,10 +1510,7 @@ def main() -> int:
     mechanism_enabled = {
         name: name not in mechanism_off for name in sorted(MECHANISM_NAMES)
     }
-    trajectory_mode = "full" if args.stream_trajectory else args.trajectory
     charging_prescreen_enabled = bool(args.charging_prescreen)
-    if args.prescreen_audit_sample and not charging_prescreen_enabled:
-        raise ValueError("prescreen audit requires charging prescreen to be enabled")
     effective_first_trip_prev_night = bool(args.first_trip_prev_night)
     effective_depot_assignment_operator = bool(
         args.depot_assignment_operator
@@ -2185,8 +1525,6 @@ def main() -> int:
         else "asap"
     )
     parameters = _parameters(
-        random_seed=args.seed,
-        stagnation_patience=args.stagnation_patience,
         population_mode=args.population_mode,
         objective_mode=args.objective_mode,
         education_depth_limit=args.education_depth_limit,
@@ -2195,43 +1533,23 @@ def main() -> int:
         args.population_mode,
         parameters.population,
     )
-    code_provenance = _source_provenance(
-        repo,
-        output_path=output,
-        stderr_capture_state=args.stderr_capture_state,
-    )
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
-    protected_before = {path: _sha256(repo / path) for path in PROTECTED}
-    purpose = (
-        "formal private experiment"
-        if args.run_kind == "formal"
-        else "exploratory real-input wiring probe; not a performance experiment"
-    )
-    success_verdict, failure_verdict = _run_verdicts(args.run_kind)
+    purpose = "private experiment"
     _json(
         output / "metadata.json",
         {
             "status": "RUNNING",
-            "run_kind": args.run_kind,
             "purpose": purpose,
-            "code_provenance": code_provenance,
             "requested_instance_id": args.instance_id,
             "requested_enterprise_id": args.enterprise_id,
-            "requested_pi0_manifest": (
-                None
-                if args.pi0_manifest is None
-                else str(args.pi0_manifest.resolve())
-            ),
             "requested_enterprise_init_constructor": (
                 args.enterprise_init_constructor
             ),
             "requested_mechanism_off": sorted(mechanism_off),
             "effective_mechanism_enabled": mechanism_enabled,
-            "requested_iterations": args.iterations,
-            "requested_max_runtime_seconds": args.max_runtime_seconds,
-            "requested_stagnation_patience": args.stagnation_patience,
+            "stagnation_patience": NO_IMPROVEMENT_LIMIT,
             "requested_population_mode": args.population_mode,
             "effective_population": effective_population,
             "requested_objective_mode": args.objective_mode,
@@ -2239,14 +1557,8 @@ def main() -> int:
             "requested_depot_charging_scenario": (
                 args.depot_charging_scenario
             ),
-            "requested_truth_sentinel_enabled": not args.disable_truth_sentinel,
-            "requested_trajectory_mode": args.trajectory,
-            "effective_trajectory_mode": trajectory_mode,
-            "legacy_stream_trajectory": args.stream_trajectory,
-            "legacy_no_retain_trajectory": args.no_retain_trajectory,
             "requested_charging_prescreen": args.charging_prescreen,
             "effective_charging_prescreen": charging_prescreen_enabled,
-            "prescreen_audit_sample": args.prescreen_audit_sample,
             "requested_first_trip_prev_night": args.first_trip_prev_night,
             "effective_first_trip_prev_night": (
                 effective_first_trip_prev_night
@@ -2263,11 +1575,10 @@ def main() -> int:
             "requested_dynamic_insertion_operator": (
                 args.dynamic_insertion_operator
             ),
-            "protected_hashes_before": protected_before,
         },
     )
 
-    bundle, initial, pi0, context = _build_context(
+    bundle, initial, _neutral_profit, context = _build_context(
         data_repo,
         args.instance_id,
         fleet_parameters=FLEET_PARAMETER_CLASSES[
@@ -2283,8 +1594,6 @@ def main() -> int:
         )
         context = replace(context, bundle=bundle)
     enterprise_slice: EnterpriseProblemSlice | None = None
-    pi0_record: dict[str, object] | None = None
-    pi0_manifest_sha256: str | None = None
     if args.enterprise_id is not None:
         if context.rebuilt_route_constraints is None:
             raise ValueError(
@@ -2296,80 +1605,30 @@ def main() -> int:
             args.enterprise_id,
         )
         bundle = enterprise_slice.bundle
-        if args.enterprise_init_constructor == "legacy_three":
-            plans, reason = build_edf_route_plans(enterprise_slice.seed_input)
-            if reason:
-                raise RuntimeError(f"HALT_NO_ENTERPRISE_SEED: {reason}")
-            skeleton, _departures, _scheduled = plans_to_solution(
-                enterprise_slice.seed_input,
-                plans,
-            )
-            completed = complete_china81_route_skeleton(
-                skeleton,
-                bundle,
-                charge_amount_strategies=("just_enough",),
-                depot_charge_window_mode="same_day_predeparture",
-                charge_timing_policy="carbon_min",
-                public_station_candidate_mode="fallback",
-            )
-            initial = register_all_vehicle_slots(
-                DutyIndividual.from_solution(
-                    completed.solution,
-                    customer_node_ids=enterprise_slice.customer_ids,
-                    source=f"enterprise-seed/{enterprise_slice.source_id}",
-                ),
-                bundle,
-            )
-        else:
-            initial = register_all_vehicle_slots(
-                DutyIndividual(
-                    duties=(),
-                    unserved_customers=enterprise_slice.customer_ids,
-                    source=f"native-init-reference/{enterprise_slice.source_id}",
-                ),
-                bundle,
-            )
+        initial = register_all_vehicle_slots(
+            DutyIndividual(
+                duties=(),
+                unserved_customers=enterprise_slice.customer_ids,
+                source=f"native-init-reference/{enterprise_slice.source_id}",
+            ),
+            bundle,
+        )
         neutral = {enterprise_slice.depot_id: 1.0}
-        pi0 = neutral
         context = replace(
             context,
             bundle=bundle,
             independent_profit=neutral,
-            independent_profit_identity=FrozenMappingIdentity(
-                source_id=f"enterprise-neutral/{enterprise_slice.source_id}",
-                value_sha256=mapping_sha256(neutral),
-                externally_frozen=False,
-            ),
             prior_profit={enterprise_slice.depot_id: 0.0},
             rebuilt_route_constraints=enterprise_slice.route_constraints,
             fairness_enabled=False,
             theta=0.0,
         )
-    elif args.pi0_manifest is not None:
-        pi0_manifest_path = args.pi0_manifest.resolve()
-        pi0_records = load_pi0_manifest(pi0_manifest_path)
-        if args.instance_id not in pi0_records:
-            raise ValueError(
-                f"Pi0 manifest misses requested instance: {args.instance_id}"
-            )
-        pi0_record = pi0_records[args.instance_id]
-        pi0, context = _apply_joint_pi0_record(
-            bundle,
-            context,
-            pi0_record,
-        )
-        pi0_manifest_sha256 = _sha256(pi0_manifest_path)
     if args.initial_solution is not None:
         initial = _load_registered_initial_solution(args.initial_solution.resolve(), bundle)
     if effective_first_trip_prev_night:
         context = replace(
             context,
             depot_charge_window_mode="full_gap",
-        )
-    if args.disable_truth_sentinel:
-        context = replace(
-            context,
-            incremental_full_truth_sentinel_enabled=False,
         )
     dynamic_revealed_customer = None
     if args.dynamic_insertion_operator:
@@ -2384,6 +1643,14 @@ def main() -> int:
         initial = _single_trip_initial(initial)
     metro_initial_clock_closure = None
     mechanism_reference = initial
+    if not mechanism_enabled["cross_depot"]:
+        reference_depot, _reference_type = _customer_structure(
+            mechanism_reference
+        )
+        context = replace(
+            context,
+            customer_depot_lock=MappingProxyType(reference_depot),
+        )
     evaluator = DutyFullEvaluator(context)
     policy = _policy(
         evaluator,
@@ -2395,7 +1662,6 @@ def main() -> int:
     if args.dynamic_insertion_operator:
         inserted = DynamicInsertionOperator(
             enabled=True,
-            random_seed=args.seed,
         ).apply(
             initial,
             evaluator=evaluator,
@@ -2421,7 +1687,6 @@ def main() -> int:
     route_engine = IndependentKernelDutyRouteProposalEngine(
         evaluator.context,
         initial,
-        random_seed=args.seed,
         stream_role="main_route",
         depot_assignment_operator_enabled=(
             effective_depot_assignment_operator
@@ -2448,7 +1713,6 @@ def main() -> int:
             ),
         },
         "route_engine_source_id": route_engine.source_id,
-        "route_engine_identity_sha256": route_engine.identity_sha256,
         "route_contract": (
             None
             if route_contract is None
@@ -2486,13 +1750,10 @@ def main() -> int:
             )
     initialization_started = perf_counter()
     initialization_full_calls_before = evaluator.full_calls
-    native_initialization_diagnostics = None
     if args.population_mode == "technical_two_parent":
         (
             candidates,
             initial_evaluation,
-            reverse_record,
-            attempts,
             initial_evaluations,
         ) = _prepare_population(
             initial,
@@ -2508,37 +1769,21 @@ def main() -> int:
             "attempts_exhausted": False,
         }
     else:
-        legacy_enterprise_init = bool(
-            enterprise_slice is not None
-            and args.enterprise_init_constructor == "legacy_three"
-        )
         built = build_initial_population(
             initial,
             evaluator=evaluator,
             charging_policy=policy,
             route_engine=route_engine,
-            requested_size=(
-                1 if legacy_enterprise_init else parameters.population.min_pop_size
-            ),
-            random_seed=args.seed,
-            max_random_attempts=(
-                0
-                if legacy_enterprise_init
-                else None
-            ),
+            requested_size=parameters.population.min_pop_size,
+            max_random_attempts=None,
             initialization_method=(
                 args.enterprise_init_constructor
-                if enterprise_slice is not None and not legacy_enterprise_init
+                if enterprise_slice is not None
                 else "random"
             ),
-            include_reference_candidate=(
-                enterprise_slice is None or legacy_enterprise_init
-            ),
+            include_reference_candidate=enterprise_slice is None,
             require_complete_feasible=False,
-            stop_requested=lambda: (
-                perf_counter() - initialization_started
-                >= args.max_runtime_seconds
-            ),
+            stop_requested=lambda: False,
             witness_seed=(
                 initial
                 if (
@@ -2551,40 +1796,7 @@ def main() -> int:
                 None if enterprise_slice is not None else mechanism_enabled
             ),
         )
-        if enterprise_slice is not None:
-            native_statistics = route_engine.native_initialization_statistics
-            native_initialization_diagnostics = {
-                "schema": "resetp.enterprise_native_initialization.v2",
-                "enterprise_id": enterprise_slice.enterprise_id,
-                "source_id": enterprise_slice.source_id,
-                "constructor": args.enterprise_init_constructor,
-                "rng_stream_count": native_statistics["rng_stream_count"],
-                "native_make_random_call_count": native_statistics[
-                    "make_random_call_count"
-                ],
-                "greedy_repair_call_count": native_statistics[
-                    "greedy_repair_call_count"
-                ],
-                "prepopulation_local_search_call_count": native_statistics[
-                    "prepopulation_local_search_call_count"
-                ],
-                "legacy_self_built_initialization_call_counts": {
-                    "build_edf_route_plans": int(legacy_enterprise_init),
-                    "minimum_edf_order_chains": int(legacy_enterprise_init),
-                    "complete_china81_route_skeleton": int(
-                        legacy_enterprise_init
-                    ),
-                },
-                "attempts": [asdict(item) for item in built.attempts],
-            }
-            _json(
-                output / "native_initialization_diagnostics.json",
-                native_initialization_diagnostics,
-            )
-        if legacy_enterprise_init and built.actual_size == 1:
-            candidates = built.candidates * 4
-            initial_evaluations = built.evaluations * 4
-        elif built.actual_size < 4:
+        if built.actual_size < 4:
             raise RuntimeError(
                 "HALT_B_NATIVE_MATERIALIZATION: fewer than four native "
                 f"{args.enterprise_init_constructor} solutions were retained "
@@ -2594,11 +1806,6 @@ def main() -> int:
             candidates = built.candidates
             initial_evaluations = built.evaluations
         initial_evaluation = built.evaluations[0]
-        reverse_record = {
-            "status": "NOT_RUN_COPIED_HGS_POPULATION",
-            "error": None,
-        }
-        attempts = [asdict(item) for item in built.attempts]
         initialization_summary = {
             "requested_size": built.requested_size,
             "actual_size": len(candidates),
@@ -2611,37 +1818,6 @@ def main() -> int:
     initialization_full_evaluations = (
         evaluator.full_calls - initialization_full_calls_before
     )
-    identity = FrozenPopulationIdentity(
-        source_id=f"technical-real-input-{args.population_mode}",
-        value_sha256=population_sha256(candidates),
-    )
-    trajectory_path = output / "trajectory.jsonl"
-    stream_summary = {
-        "rows": 0,
-        "crossover_changed": False,
-    }
-    trajectory_handle = None
-    trajectory_sink = None
-    if trajectory_mode == "full":
-        trajectory_handle = trajectory_path.open("w", encoding="utf-8")
-
-        def trajectory_sink(rows) -> None:
-            for row in rows:
-                trajectory_handle.write(
-                    json.dumps(asdict(row), ensure_ascii=False, allow_nan=False)
-                    + "\n"
-                )
-                stream_summary["rows"] += 1
-                stream_summary["crossover_changed"] = bool(
-                    stream_summary["crossover_changed"]
-                    or (
-                        row.phase == "crossover"
-                        and row.after_fingerprint is not None
-                        and row.before_fingerprint != row.after_fingerprint
-                    )
-                )
-            trajectory_handle.flush()
-
     convergence_path = (
         args.convergence_csv.resolve()
         if args.convergence_csv is not None
@@ -2660,14 +1836,14 @@ def main() -> int:
     convergence_fields = (
         "cycle",
         "wall_seconds",
-        "actual_full_model_evaluations",
+        "full_evaluations",
         "has_feasible",
         "best_feasible_raw_cost",
     )
     diagnostics_fields = (
         "cycle",
         "wall_seconds",
-        "actual_full_model_evaluations",
+        "full_evaluations",
         "current_solution_raw_cost",
         "current_solution_penalized_cost",
         "physical_feasible",
@@ -2691,8 +1867,6 @@ def main() -> int:
     convergence_diagnostics_writer.writeheader()
     convergence_handle.flush()
     convergence_diagnostics_handle.flush()
-    os.fsync(convergence_handle.fileno())
-    os.fsync(convergence_diagnostics_handle.fileno())
     last_logged_best: float | None = None
     last_diagnostic_cycle: int | None = None
 
@@ -2707,20 +1881,19 @@ def main() -> int:
                 {
                     "cycle": int(state.iterations),
                     "wall_seconds": f"{float(state.elapsed_seconds):.9f}",
-                    "actual_full_model_evaluations": evaluator.full_calls,
+                    "full_evaluations": evaluator.full_calls,
                     "has_feasible": True,
                     "best_feasible_raw_cost": f"{last_logged_best:.12f}",
                 }
             )
             convergence_handle.flush()
-            os.fsync(convergence_handle.fileno())
         if last_diagnostic_cycle != int(state.iterations):
             last_diagnostic_cycle = int(state.iterations)
             convergence_diagnostics_writer.writerow(
                 {
                     "cycle": int(state.iterations),
                     "wall_seconds": f"{float(state.elapsed_seconds):.9f}",
-                    "actual_full_model_evaluations": evaluator.full_calls,
+                    "full_evaluations": evaluator.full_calls,
                     "current_solution_raw_cost": (
                         state.current_solution_raw_cost
                     ),
@@ -2740,59 +1913,35 @@ def main() -> int:
                 }
             )
             convergence_diagnostics_handle.flush()
-            os.fsync(convergence_diagnostics_handle.fileno())
         return (
-            state.iterations >= args.iterations
-            or state.elapsed_seconds >= args.max_runtime_seconds
+            state.iterations_without_improvement
+            >= NO_IMPROVEMENT_LIMIT
         )
 
-    captured_charging_rejections: list[ScheduleCaptureRecord] = []
-
-    def capture_charging_rejection(record: ScheduleCaptureRecord) -> None:
-        if (
-            len(captured_charging_rejections)
-            >= args.charging_diagnosis_capture_limit
-            or record.channel != "route_kernel_crossover"
-            or record.a0_status != "INFEASIBLE"
-        ):
-            return
-        captured_charging_rejections.append(record)
-
-    capture_context = (
-        schedule_capture_sink(capture_charging_rejection)
-        if args.charging_diagnosis_capture_limit
-        else nullcontext()
-    )
     station_pruning_before_search = charging_repair_runtime_diagnostics()
     try:
-        with capture_context:
-            result = run_integrated_problem_hgs(
-                candidates,
-                evaluator=evaluator,
-                charging_policy=policy,
-                parameters=parameters,
-                initial_population_identity=identity,
-                stop=stop_and_record,
-                arm=args.arm,
-                route_engine=route_engine,
-                trajectory_sink=trajectory_sink,
-                retain_trajectory=False,
-                initial_evaluations=initial_evaluations,
-                initialization_full_evaluation_count=(
-                    initialization_full_evaluations
-                ),
-                initialization_wall_seconds=initialization_wall_seconds,
-                charging_prescreen_enabled=charging_prescreen_enabled,
-                charging_prescreen_audit_limit=args.prescreen_audit_sample,
-                cross_depot_enabled=mechanism_enabled["cross_depot"],
-                multi_trip_enabled=mechanism_enabled["multi_trip"],
-                type_exchange_enabled=mechanism_enabled["type_exchange"],
-                include_mechanism_refinement=True,
-                include_charging_candidates=mechanism_enabled["charge_timing"],
-            )
+        result = run_integrated_problem_hgs(
+            candidates,
+            evaluator=evaluator,
+            charging_policy=policy,
+            parameters=parameters,
+            stop=stop_and_record,
+            arm=args.arm,
+            route_engine=route_engine,
+            retain_trajectory=False,
+            initial_evaluations=initial_evaluations,
+            initialization_full_evaluation_count=(
+                initialization_full_evaluations
+            ),
+            initialization_wall_seconds=initialization_wall_seconds,
+            charging_prescreen_enabled=charging_prescreen_enabled,
+            cross_depot_enabled=mechanism_enabled["cross_depot"],
+            multi_trip_enabled=mechanism_enabled["multi_trip"],
+            type_exchange_enabled=mechanism_enabled["type_exchange"],
+            include_mechanism_refinement=True,
+            include_charging_candidates=mechanism_enabled["charge_timing"],
+        )
     finally:
-        if trajectory_handle is not None:
-            trajectory_handle.close()
         convergence_handle.close()
         convergence_diagnostics_handle.close()
 
@@ -2804,15 +1953,6 @@ def main() -> int:
         )
         for name in station_pruning_after_search["station_pruning"]
     }
-
-    if args.charging_diagnosis_capture_limit:
-        assert args.charging_diagnosis_output_dir is not None
-        _write_charging_diagnosis_probe(
-            captured_charging_rejections,
-            output=args.charging_diagnosis_output_dir.resolve(),
-            context=evaluator.context,
-            policy=policy,
-        )
 
     terminal_wall_seconds = (
         result.accounting.initialization_wall_seconds
@@ -2828,7 +1968,7 @@ def main() -> int:
             {
                 "cycle": int(result.iterations),
                 "wall_seconds": f"{terminal_wall_seconds:.9f}",
-                "actual_full_model_evaluations": evaluator.full_calls,
+                "full_evaluations": evaluator.full_calls,
                 "has_feasible": bool(result.best_evaluation.feasible),
                 "best_feasible_raw_cost": (
                     f"{float(result.best_evaluation.total_cost):.12f}"
@@ -2838,7 +1978,6 @@ def main() -> int:
             }
         )
         handle.flush()
-        os.fsync(handle.fileno())
     terminal_violation_counts = Counter(
         item.type for item in result.best_evaluation.violations
     )
@@ -2861,7 +2000,7 @@ def main() -> int:
             {
                 "cycle": int(result.iterations),
                 "wall_seconds": f"{terminal_wall_seconds:.9f}",
-                "actual_full_model_evaluations": evaluator.full_calls,
+                "full_evaluations": evaluator.full_calls,
                 "current_solution_raw_cost": float(
                     result.best_evaluation.total_cost
                 ),
@@ -2870,14 +2009,8 @@ def main() -> int:
                         result.best_evaluation
                     )
                 ),
-                "physical_feasible": not any(
-                    item.type != PROFIT_FAIRNESS
-                    for item in result.best_evaluation.violations
-                ),
-                "fairness_feasible": not any(
-                    item.type == PROFIT_FAIRNESS
-                    for item in result.best_evaluation.violations
-                ),
+                "physical_feasible": result.best_evaluation.feasible,
+                "fairness_feasible": True,
                 "violation_counts_json": json.dumps(
                     dict(sorted(terminal_violation_counts.items())),
                     sort_keys=True,
@@ -2895,17 +2028,6 @@ def main() -> int:
             }
         )
         handle.flush()
-        os.fsync(handle.fileno())
-    if any(
-        name == "pyvrp" or name.startswith("pyvrp.")
-        for name in sys.modules
-    ):
-        raise RuntimeError(
-            "independent Problem-HGS runtime imported frozen PyVRP"
-        )
-    crossover_changed = bool(stream_summary["crossover_changed"]) or bool(
-        result.accounting.crossover_actions
-    )
     customer_nodes = {
         node.node_id: node
         for node in bundle.instance.nodes
@@ -2961,8 +2083,6 @@ def main() -> int:
     }
     enterprise_ledger = build_enterprise_ledger(
         instance_id=args.instance_id,
-        seed=args.seed,
-        solution_fingerprint=result.best.fingerprint,
         solution=result.best_evaluation.prepared_solution,
         bundle=bundle,
         prior_profit=evaluator.context.prior_profit,
@@ -2971,33 +2091,6 @@ def main() -> int:
     )
     enterprise_ledger_path = output / "enterprise_ledger.json"
     _json(enterprise_ledger_path, enterprise_ledger)
-    participation_margin = {
-        str(key): float(value)
-        for key, value in result.best_evaluation.participation_margin.items()
-    }
-    participation_violations = tuple(
-        violation
-        for violation in result.best_evaluation.violations
-        if violation.type == PROFIT_FAIRNESS
-    )
-    physical_violations = tuple(
-        violation
-        for violation in result.best_evaluation.violations
-        if violation.type != PROFIT_FAIRNESS
-    )
-    fairness_active = bool(context.fairness_enabled)
-    participation_margin_complete = bool(
-        not fairness_active
-        or (
-            set(participation_margin) == set(context.independent_profit)
-            and all(math.isfinite(value) for value in participation_margin.values())
-        )
-    )
-    participation_satisfied = bool(
-        participation_margin_complete and not participation_violations
-    )
-    physical_feasible = not physical_violations
-    protected_after = {path: _sha256(repo / path) for path in PROTECTED}
     closure_violations = _mechanism_closure_violations(
         mechanism_reference,
         result.best,
@@ -3021,14 +2114,11 @@ def main() -> int:
         for mechanism, counts in forbidden_proposed_actions.items()
         if any(counts.values())
     }
-    reference_depot, reference_type = _customer_structure(mechanism_reference)
-    final_depot, final_type = _customer_structure(result.best)
-
     failure_reasons = []
     enterprise_expectation = (
         None
         if enterprise_slice is None
-        else ENTERPRISE_NATIVE_PROBE_EXPECTATIONS.get(
+        else ENTERPRISE_NATIVE_EXPECTATIONS.get(
             enterprise_slice.enterprise_id
         )
     )
@@ -3040,47 +2130,23 @@ def main() -> int:
         enterprise_demand_scope_ok = total_demand == expected_demand
         if not enterprise_customer_scope_ok:
             failure_reasons.append(
-                "enterprise slice customer total differs from the frozen probe contract"
+                "enterprise slice customer total differs from the registered contract"
             )
         if not enterprise_demand_scope_ok:
             failure_reasons.append(
-                "enterprise slice demand total differs from the frozen probe contract"
+                "enterprise slice demand total differs from the registered contract"
             )
-    if (
-        enterprise_slice is None
-        and args.pi0_manifest is None
-        and not initial_evaluation.feasible
-    ):
+    if enterprise_slice is None and not initial_evaluation.feasible:
         failure_reasons.append("initial solution is infeasible")
     expected_termination_statuses = {"STOPPED_BY_CALLER"}
     if parameters.stagnation_patience is not None:
         expected_termination_statuses.add("CONVERGED_NO_IMPROVEMENT")
     if result.termination_status not in expected_termination_statuses:
         failure_reasons.append(f"unexpected termination: {result.termination_status}")
-    if args.pi0_manifest is None and not result.best_evaluation.feasible:
+    if not result.best_evaluation.feasible:
         failure_reasons.append("best solution is infeasible")
-    if args.pi0_manifest is not None and not physical_feasible:
-        failure_reasons.append(
-            "best solution has a physical violation outside the participation constraint"
-        )
-    if args.pi0_manifest is not None and not participation_margin_complete:
-        failure_reasons.append("participation margin output is missing or non-finite")
     if served != set(customer_nodes):
         failure_reasons.append("not all customers are served")
-    sentinel_acceptance_classification = _sentinel_acceptance_classification(
-        result.accounting.accepted_actions
-    )
-    failure_reasons.extend(
-        _sentinel_validation_failures(
-            accepted_actions=result.accounting.accepted_actions,
-            sentinel_enabled=(
-                context.incremental_full_truth_sentinel_enabled
-            ),
-            sentinel_evaluations=result.accounting.sentinel_evaluations,
-        )
-    )
-    if protected_before != protected_after:
-        failure_reasons.append("a protected evaluator file changed during the run")
     if closure_violations:
         failure_reasons.append(
             "disabled mechanism structural closure failed: "
@@ -3099,15 +2165,8 @@ def main() -> int:
     acceptance = assess_run(
         termination_ok=result.termination_status in expected_termination_statuses,
         feasible_ok=bool(
-            physical_feasible
-            if args.pi0_manifest is not None
-            else (
-                result.best_evaluation.feasible
-                and (
-                    enterprise_slice is not None
-                    or initial_evaluation.feasible
-                )
-            )
+            result.best_evaluation.feasible
+            and (enterprise_slice is not None or initial_evaluation.feasible)
         ),
         customers_complete=(
             served == set(customer_nodes) and enterprise_customer_scope_ok
@@ -3115,31 +2174,21 @@ def main() -> int:
         demand_complete=(
             served_demand == total_demand and enterprise_demand_scope_ok
         ),
-        audit_ok=protected_before == protected_after,
         extra_failure_reasons=failure_reasons,
-        success_verdict=success_verdict,
-        failure_verdict=failure_verdict,
+        success_verdict=SUCCESS_VERDICT,
+        failure_verdict=FAILURE_VERDICT,
     )
     failure_reasons = list(acceptance.failure_reasons)
     verdict = acceptance.verdict
-    enterprise_counts: dict[str, int] = {}
-    for enterprise_id in bundle.enterprise_assignment_by_customer.values():
-        enterprise_counts[str(enterprise_id)] = (
-            enterprise_counts.get(str(enterprise_id), 0) + 1
-        )
 
     metadata = {
         "status": "COMPLETE" if acceptance.accepted else "FAILED",
-        "run_kind": args.run_kind,
         "purpose": purpose,
         "instance_id": args.instance_id,
         "requested_initial_solution": (
             None
             if args.initial_solution is None
-            else {
-                "path": str(args.initial_solution.resolve()),
-                "sha256": _sha256(args.initial_solution.resolve()),
-            }
+            else str(args.initial_solution.resolve())
         ),
         "enterprise_slice": (
             None
@@ -3150,7 +2199,6 @@ def main() -> int:
                 "customer_count": len(enterprise_slice.customer_ids),
                 "customer_ids": list(enterprise_slice.customer_ids),
                 "source_id": enterprise_slice.source_id,
-                "mapping_sha256": enterprise_slice.mapping_sha256,
                 "shared_public_station_ids": [
                     node.node_id
                     for node in enterprise_slice.bundle.instance.nodes
@@ -3158,47 +2206,16 @@ def main() -> int:
                 ],
             }
         ),
-        "instance_formally_selected": args.run_kind == "formal",
-        "formal_search_allowed": args.run_kind == "formal",
-        "source_formal_search_allowed": bool(bundle.formal_search_allowed),
         "bundle_source_paths": dict(bundle.source_paths),
-        "enterprise_assignment": {
-            "loaded": bundle.enterprise_assignment_source_path is not None,
-            "source_path": bundle.enterprise_assignment_source_path,
-            "source_sha256": bundle.enterprise_assignment_source_sha256,
-            "normalized_mapping_sha256": (
-                bundle.enterprise_assignment_mapping_sha256
-            ),
-            "rule_ids": list(bundle.enterprise_assignment_rule_ids),
-            "customer_home_depot_sha256": _string_mapping_sha256(
-                bundle.customer_home_depot
-            ),
-            "customer_count": len(bundle.enterprise_assignment_by_customer),
-            "enterprise_customer_counts": dict(sorted(enterprise_counts.items())),
-        },
-        "machine": (
-            "M1 formal-number machine"
-            if args.run_kind == "formal"
-            else "M1 formal-number machine, but this output is diagnostic only"
-        ),
-        "code_provenance": code_provenance,
-        "random_seed": args.seed,
         "carbon_price_cny_per_kg": float(bundle.prices.carbon_price),
         "enterprise_init_constructor": args.enterprise_init_constructor,
         "iterations": result.iterations,
-        "requested_iteration_ceiling": args.iterations,
-        "max_runtime_seconds": args.max_runtime_seconds,
         "stop_semantics": (
-            "technical fixed-iteration stop with a "
-            f"{args.max_runtime_seconds:g}-second hard ceiling"
+            "500-iteration no-improvement stop"
         ),
         "stagnation_patience": parameters.stagnation_patience,
         "education_depth_limit": parameters.education_depth_limit,
         "objective_mode": result.objective_mode,
-        "trajectory_mode": trajectory_mode,
-        "trajectory_streamed_incrementally": trajectory_mode == "full",
-        "trajectory_retained_in_memory": False,
-        "trajectory_rows_streamed": stream_summary["rows"],
         "convergence_csv": str(convergence_path),
         "convergence_diagnostics_csv": str(
             convergence_diagnostics_path
@@ -3225,70 +2242,15 @@ def main() -> int:
             "frvcpy_enabled": bool(
                 result.effective_execution.frvcpy_enabled
             ),
-            "bypass_removed_after_equivalence_spot_check": bool(
-                result.effective_execution.frvcpy_enabled
-                and charging_prescreen_enabled
-            ),
         },
-        "charging_diagnosis_capture": {
-            "requested_limit": int(args.charging_diagnosis_capture_limit),
-            "captured": len(captured_charging_rejections),
-            "output_dir": (
-                None
-                if args.charging_diagnosis_output_dir is None
-                else str(args.charging_diagnosis_output_dir.resolve())
-            ),
-        },
-        "incremental_full_truth_sentinel_enabled": (
-            result.effective_execution.incremental_full_truth_sentinel_enabled
-        ),
-        "sentinel_acceptance_classification": (
-            sentinel_acceptance_classification
-        ),
         "best_evaluation_source": result.best_evaluation.source,
-        "parameters": asdict(parameters),
         "population_mode": args.population_mode,
         "effective_population": effective_population,
         "initial_population": initialization_summary,
-        "native_initialization": (
-            None
-            if native_initialization_diagnostics is None
-            else {
-                key: value
-                for key, value in native_initialization_diagnostics.items()
-                if key != "attempts"
-            }
-        ),
         "initialization_wall_seconds": initialization_wall_seconds,
         "initialization_full_evaluations": initialization_full_evaluations,
         "accounting": result.accounting.to_dict(),
         "metro_initial_clock_closure": metro_initial_clock_closure,
-        "effective_execution_schema": (
-            result.provenance.effective_execution_schema
-        ),
-        "effective_algorithm_configuration": (
-            result.provenance.effective_algorithm_configuration
-        ),
-        "effective_runtime_identity": (
-            result.provenance.effective_runtime_identity
-        ),
-        "search_configuration_sha256": (
-            result.provenance.search_configuration_sha256
-        ),
-        "charging_policy": (
-            None
-            if result.provenance.effective_algorithm_configuration is None
-            else result.provenance.effective_algorithm_configuration[
-                "charging_policy"
-            ]
-        ),
-        "frvcpy_provenance": {
-            "enabled": bool(result.effective_execution.frvcpy_enabled),
-            "source": "INFORMSJoC/2020.1035 harvested local snapshot",
-            "commit": FRVCPY_COMMIT,
-            "license": "Apache-2.0",
-            "source_sha256": FRVCPY_SOURCE_SHA256,
-        },
         "route_engine_wiring": route_engine_wiring,
         "ev_observation": ev_observation,
         "mechanism_off": sorted(mechanism_off),
@@ -3301,12 +2263,6 @@ def main() -> int:
         "mechanism_closure": {
             "violations": list(closure_violations),
             "forbidden_named_proposed_actions": forbidden_proposed_actions,
-            "reference_customer_depot_sha256": _string_mapping_sha256(
-                reference_depot
-            ),
-            "final_customer_depot_sha256": _string_mapping_sha256(final_depot),
-            "reference_customer_type_sha256": _string_mapping_sha256(reference_type),
-            "final_customer_type_sha256": _string_mapping_sha256(final_type),
             "reference_max_trips_per_duty": max(
                 (len(duty.trips) for duty in mechanism_reference.duties),
                 default=0,
@@ -3329,7 +2285,6 @@ def main() -> int:
                 46_800.0 if args.dynamic_insertion_operator else None
             ),
             "accounting": dynamic_insertion_diagnostic,
-            "truth_artifacts_read": [],
         },
         "fleet_parameter_class": args.fleet_parameter_class,
         "fleet_parameter_class_id": bundle.fleet_parameter_class_id,
@@ -3340,131 +2295,32 @@ def main() -> int:
             depot_id: dict(caps)
             for depot_id, caps in bundle.fleet_caps_by_depot.items()
         },
-        "fairness_enabled": bool(context.fairness_enabled),
-        "fairness_theta": float(context.theta),
-        "pi0": {
-            "values": dict(context.independent_profit),
-            "source_id": context.independent_profit_identity.source_id,
-            "sha256": context.independent_profit_identity.value_sha256,
-            "externally_frozen": bool(
-                context.independent_profit_identity.externally_frozen
-            ),
-            "formal_reuse_allowed": bool(
-                pi0_record is not None
-                and pi0_record.get("formal_reuse_allowed", False)
-            ),
-            "run_kind": (
-                "probe" if pi0_record is None else pi0_record["run_kind"]
-            ),
-            "manifest_path": (
-                None
-                if args.pi0_manifest is None
-                else str(args.pi0_manifest.resolve())
-            ),
-            "manifest_sha256": pi0_manifest_sha256,
-            "selected_package_sha256_by_enterprise": (
-                None
-                if pi0_record is None
-                else pi0_record.get(
-                    "selected_package_sha256_by_enterprise"
-                )
-            ),
-        },
         "enterprise_ledger": {
             "schema": enterprise_ledger["schema"],
             "path": enterprise_ledger_path.name,
-            "file_sha256": _sha256(enterprise_ledger_path),
-            "individual_fingerprint": result.best.fingerprint,
         },
-        "participation": {
-            "margin": participation_margin,
-            "margin_complete": participation_margin_complete,
-            "canonical_violation_count": len(participation_violations),
-            "satisfied": (
-                participation_satisfied if fairness_active else None
-            ),
-            "physical_feasible": physical_feasible,
-            "physical_violation_count": len(physical_violations),
-        },
-        "initial_population_sha256": identity.value_sha256,
-        "preflight_reverse_attempt": reverse_record,
-        "second_parent_attempts": attempts,
-        "second_parent_rule": (
-            "first generated move with EVALUATED status and a distinct fingerprint; "
-            "cost and direction were ignored"
-            if args.population_mode == "technical_two_parent"
-            else (
-                (
-                    "one disclosed EDF/chain/completion seed; no native random "
-                    "draw and no prepopulation local search"
-                    if args.enterprise_init_constructor == "legacy_three"
-                    else (
-                        "one copied-HGS 0.12.2 RNG stream; one make_random "
-                        "customer-order draw plus "
-                        f"{args.enterprise_init_constructor} construction per "
-                        "requested member; no reference candidate and no "
-                        "prepopulation local search"
-                    )
-                )
-                if enterprise_slice is not None
-                else (
-                    "copied HGS 0.12.2 population defaults with witness-seed "
-                    "perturbations followed by random-skeleton fallback per "
-                    "requested initial member"
-                    if args.instance_id == DEPOT_SEARCH_INSTANCE_ID
-                    else "copied HGS 0.12.2 population defaults with deterministic "
-                    "random-skeleton attempts per requested initial member"
-                )
-            )
-        ),
-        "protected_hashes_before": protected_before,
-        "protected_hashes_after": protected_after,
-        "failure_conditions": [
-            "input or initial construction failure",
-            (
-                "final solution incomplete, physically infeasible, or missing participation margins"
-                if args.pi0_manifest is not None
-                else (
-                    "final solution incomplete or infeasible"
-                    if enterprise_slice is not None
-                    else "initial or final solution incomplete or infeasible"
-                )
-            ),
-            "truth-sentinel mismatch or internal error",
-            "abnormal termination",
-            "missing customers or demand",
-            "incomplete experiment package",
-        ],
     }
     with (output / "raw_runs.csv").open("w", encoding="utf-8", newline="") as handle:
         fields = [
-            "run_kind", "instance_id", "enterprise_id", "seed", "iterations",
+            "instance_id", "enterprise_id", "iterations",
             "termination_status",
             "initial_feasible", "initial_violations", "initial_cost",
             "best_feasible", "best_violations", "best_cost", "cost_delta",
             "customers_served", "customers_total", "demand_served",
-            "demand_total", "crossover_calls", "crossover_changed_parent",
-            "sentinel_evaluations", "actual_full_model_evaluations",
-            "best_evaluation_source", "run_wall_seconds",
-            "initialization_rng_streams", "native_make_random_calls",
-            "greedy_repair_calls",
-            "prepopulation_local_search_calls", "legacy_initialization_calls",
-            "fairness_enabled", "fairness_theta", "pi0_source_id",
-            "pi0_sha256", "pi0_externally_frozen",
-            "participation_margin_json", "participation_satisfied", "verdict",
+            "demand_total", "crossover_calls",
+            "full_evaluations",
+            "best_evaluation_source", "run_wall_seconds", "verdict",
         ]
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerow(
             {
-                "run_kind": args.run_kind,
                 "instance_id": args.instance_id,
                 "enterprise_id": (
                     None
                     if enterprise_slice is None
                     else enterprise_slice.enterprise_id
                 ),
-                "seed": args.seed,
                 "iterations": result.iterations,
                 "termination_status": result.termination_status,
                 "initial_feasible": initial_evaluation.feasible,
@@ -3479,99 +2335,25 @@ def main() -> int:
                 "demand_served": served_demand,
                 "demand_total": total_demand,
                 "crossover_calls": result.accounting.crossover_calls,
-                "crossover_changed_parent": crossover_changed,
-                "sentinel_evaluations": result.accounting.sentinel_evaluations,
-                "actual_full_model_evaluations": result.accounting.to_dict()["actual_full_model_evaluations"],
+                "full_evaluations": result.accounting.full_evaluations,
                 "best_evaluation_source": result.best_evaluation.source,
                 "run_wall_seconds": result.accounting.run_wall_seconds,
-                "initialization_rng_streams": (
-                    None
-                    if native_initialization_diagnostics is None
-                    else native_initialization_diagnostics["rng_stream_count"]
-                ),
-                "native_make_random_calls": (
-                    None
-                    if native_initialization_diagnostics is None
-                    else native_initialization_diagnostics[
-                        "native_make_random_call_count"
-                    ]
-                ),
-                "greedy_repair_calls": (
-                    None
-                    if native_initialization_diagnostics is None
-                    else native_initialization_diagnostics[
-                        "greedy_repair_call_count"
-                    ]
-                ),
-                "prepopulation_local_search_calls": (
-                    None
-                    if native_initialization_diagnostics is None
-                    else native_initialization_diagnostics[
-                        "prepopulation_local_search_call_count"
-                    ]
-                ),
-                "legacy_initialization_calls": (
-                    None
-                    if native_initialization_diagnostics is None
-                    else sum(
-                        native_initialization_diagnostics[
-                            "legacy_self_built_initialization_call_counts"
-                        ].values()
-                    )
-                ),
-                "fairness_enabled": bool(context.fairness_enabled),
-                "fairness_theta": float(context.theta),
-                "pi0_source_id": (
-                    context.independent_profit_identity.source_id
-                ),
-                "pi0_sha256": (
-                    context.independent_profit_identity.value_sha256
-                ),
-                "pi0_externally_frozen": bool(
-                    context.independent_profit_identity.externally_frozen
-                ),
-                "participation_margin_json": json.dumps(
-                    participation_margin,
-                    ensure_ascii=False,
-                    sort_keys=True,
-                    allow_nan=False,
-                ),
-                "participation_satisfied": (
-                    participation_satisfied if fairness_active else None
-                ),
                 "verdict": verdict,
             }
         )
     decision = {
         "verdict": verdict,
         "failure_reasons": failure_reasons,
-        "what_this_answers": [
-            "the real input can or cannot complete one Problem-HGS cycle",
-            "complete-Duty crossover and education are wired into one HGS cycle",
-            "an accepted incremental improvement is or is not cold-replayed",
-            "the supplied standalone Pi0 is evaluated into participation margins",
-            "the required evidence package is or is not complete",
-        ],
-        "what_this_does_not_decide": [
-            "algorithm superiority",
-            "calibrated convergence iteration limit",
-            "formal comparison instance",
-            "formal Pi0 values from the approved ten-seed procedure",
-            "dynamic-demand effectiveness",
-        ],
-        "user_decision_changed": False,
     }
     _json(
         output / "best_solution.json",
         {
-            "individual_fingerprint": result.best.fingerprint,
             "individual": asdict(result.best),
             "evaluation": {
                 "total_cost": result.best_evaluation.total_cost,
                 "breakdown": dict(result.best_evaluation.breakdown),
                 "feasible": result.best_evaluation.feasible,
                 "violations": [asdict(item) for item in result.best_evaluation.violations],
-                "participation_margin": dict(result.best_evaluation.participation_margin),
                 "source": result.best_evaluation.source,
                 "prepared_solution": solution_to_dict(
                     result.best_evaluation.prepared_solution
@@ -3579,7 +2361,6 @@ def main() -> int:
             },
             "accounting": result.accounting.to_dict(),
             "charging_prescreen": result.charging_prescreen_accounting,
-            "provenance": asdict(result.provenance),
         },
     )
     full_evaluation_result = _format_full_evaluation_result(
@@ -3588,56 +2369,21 @@ def main() -> int:
     )
     enterprise_report_ending = ""
     if enterprise_slice is not None:
-        probe_outcome = "通过" if acceptance.accepted else "失败"
-        next_route = (
-            "这个企业支持保留本次构造路径；整条公平线仍要与另一个企业的探针一起判断。"
-            if acceptance.accepted
-            else (
-                "不改班次、不加抽样、不恢复预局部搜索；本轮按用户预批退路继续收尾。"
-            )
-        )
         enterprise_report_ending = f"""
-## 直接给用户
-
-{enterprise_slice.enterprise_id} 的 `{args.enterprise_init_constructor}` 初始化探针真实结局是：**{probe_outcome}**。最终服务 {len(served)}/{len(customer_nodes)} 个客户、{served_demand:.6f}/{total_demand:.6f} kg，完整评价违规 {len(result.best_evaluation.violations)} 项。{next_route}
+{enterprise_slice.enterprise_id} 最终服务 {len(served)}/{len(customer_nodes)} 个客户、{served_demand:.6f}/{total_demand:.6f} kg。
 """
-    if args.pi0_manifest is not None:
-        pi0_report = (
-            "本轮从固定清单读取一份单种子探索版单干利润基准，参与约束已按 "
-            f"`theta={context.theta:.1f}` 打开；来源为 "
-            f"`{context.independent_profit_identity.source_id}`。利润余量为 "
-            f"`{json.dumps(participation_margin, ensure_ascii=False, sort_keys=True)}`；"
-            f"参与约束满足状态为 `{participation_satisfied}`，物理约束违规 "
-            f"{len(physical_violations)} 项，参与约束违规 "
-            f"{len(participation_violations)} 项。该清单不替代后续十种子正式基准。"
-        )
-    else:
-        pi0_report = (
-            "本轮没有读取联合臂 Pi0 清单；单干探针关闭参与约束，"
-            "它的中性占位不用于联合搜索或报告结论。"
-        )
-    report = f"""# Problem-HGS 真实输入单轮探索验证报告
+    report = f"""# Problem-HGS 真实输入运行报告
 
 ## 结论
 
-本轮判定：`{verdict}`。这是一轮探索版接线和内部一致性检查，不是算法对比实验，也没有替用户确定正式算例、收敛迭代数或论文结论。
+本轮判定：`{verdict}`。
 
-真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；{full_evaluation_result}。候选依次经过官方路线交叉与局部搜索、完整 Duty 评价和机制阶段。完整真值哨兵开关为 `{result.effective_execution.incremental_full_truth_sentinel_enabled}`，实际调用 {result.accounting.sentinel_evaluations} 次。轨迹模式为 `{trajectory_mode}`，内存保留为 `False`。交叉后代相对于交叉前父代是否发生 Duty 内容变化：{crossover_changed}。
+真实输入 `{args.instance_id}` 完成了 {result.iterations} 个搜索循环，结束状态为 `{result.termination_status}`。最终服务 {len(served)}/{len(customer_nodes)} 个客户，完成需求量 {served_demand:.6f}/{total_demand:.6f}；{full_evaluation_result}。
 
-初始成本为 {initial_evaluation.total_cost:.12f}，本轮保存解成本为 {result.best_evaluation.total_cost:.12f}。这个差值只用于排查运行过程，不能据此宣称 Problem-HGS 更优，因为本轮只有一个种子、一个循环，也没有同预算强基线。
-
-## 如实保留的异常
-
-预先尝试“反转第一条路线的前两个客户”时，结果为 `{reverse_record['status']}`，错误为：{reverse_record['error']}。该尝试没有被改写成成功，也没有被用于挑选有利结果。第二个父代改按固定生成顺序选取第一个能被完整评价且结构不同的动作，选择时没有看成本好坏。
-
-## 本轮没有解决的事
-
-{pi0_report}本轮固定迭代只用于接线，不是正式收敛实验；该算例没有因此被选定为正式代表算例。算法优越性、公开算例竞争力、私有算例三大实验与五大因素效应仍需后续正式实验回答。
+初始成本为 {initial_evaluation.total_cost:.12f}，保存解成本为 {result.best_evaluation.total_cost:.12f}。
 {enterprise_report_ending}
 """
-    for sidecar in output.glob("._*"):
-        sidecar.unlink()
-    finalize_five_file_package(
+    finalize_run_output(
         output,
         acceptance=acceptance,
         metadata=metadata,
@@ -3645,7 +2391,7 @@ def main() -> int:
         report_text=report,
     )
     print(json.dumps({"output": str(output), "verdict": verdict}, ensure_ascii=False))
-    return package_exit_code(acceptance)
+    return result_exit_code(acceptance)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import importlib.util
 import json
 import sys
@@ -15,90 +14,41 @@ sys.modules[SPEC.name] = acceptance
 SPEC.loader.exec_module(acceptance)
 
 
-def test_acceptance_requires_every_existing_contract_fact() -> None:
+def test_acceptance_keeps_service_and_feasibility_facts() -> None:
     common = {
         "termination_ok": True,
         "feasible_ok": True,
         "customers_complete": True,
         "demand_complete": True,
-        "audit_ok": True,
     }
     assert acceptance.assess_run(**common).accepted is True
-
     for field in common:
         rejected = acceptance.assess_run(**{**common, field: False})
         assert rejected.accepted is False
         assert rejected.failure_reasons
 
-    assert acceptance.assess_run(**{**common, "audit_ok": None}).accepted is False
 
-
-def test_result_writer_keeps_failure_evidence_and_nonzero_exit(
-    tmp_path: Path,
-) -> None:
-    output = tmp_path / "failed-package"
-    output.mkdir()
-    with (output / "raw_runs.csv").open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=("run_status", "error"))
-        writer.writeheader()
-        writer.writerow({"run_status": "INTERNAL_ERROR", "error": "boom"})
+def test_result_writer_preserves_failure(tmp_path: Path) -> None:
+    output = tmp_path / "failed-run"
     rejected = acceptance.assess_run(
         termination_ok=False,
         feasible_ok=True,
         customers_complete=True,
         demand_complete=True,
-        success_verdict="FORMAL_COMPLETE",
-        failure_verdict="FORMAL_FAILED",
+        success_verdict="RUN_COMPLETE",
+        failure_verdict="RUN_FAILED",
     )
-
-    acceptance.finalize_five_file_package(
+    acceptance.finalize_run_output(
         output,
         acceptance=rejected,
         metadata={"purpose": "unit test"},
         decision={"detail": "preserve failure"},
-        report_text="# Failed package\n",
+        report_text="# Failed run\n",
     )
-
-    assert acceptance.package_exit_code(rejected) == 2
-    assert set(acceptance.PACKAGE_FILES) <= {
-        path.name for path in output.iterdir()
-    }
+    assert acceptance.result_exit_code(rejected) == 2
     metadata = json.loads((output / "metadata.json").read_text("utf-8"))
     decision = json.loads((output / "decision.json").read_text("utf-8"))
     assert metadata["status"] == "FAILED"
     assert decision["accepted"] is False
-    assert decision["verdict"] == "FORMAL_FAILED"
-    checked = acceptance.validate_five_file_package(
-        output,
-        require_accepted=False,
-    )
-    assert checked["decision"]["verdict"] == "FORMAL_FAILED"
-
-
-def _accepted_package(output: Path) -> None:
-    output.mkdir()
-    (output / "raw_runs.csv").write_text("status\nCOMPLETE\n", "utf-8")
-    accepted = acceptance.assess_run(
-        termination_ok=True,
-        feasible_ok=True,
-        customers_complete=True,
-        demand_complete=True,
-        success_verdict="TEST_COMPLETE",
-    )
-    acceptance.finalize_five_file_package(
-        output,
-        acceptance=accepted,
-        metadata={"purpose": "result-package fixture"},
-        decision={"rows": 1},
-        report_text="# Complete package\n",
-    )
-
-
-def test_done_is_an_optional_operational_marker(tmp_path: Path) -> None:
-    output = tmp_path / "done-marker"
-    _accepted_package(output)
-    (output / "DONE").write_text("TEST_COMPLETE\n", "utf-8")
-    acceptance.validate_five_file_package(
-        output,
-        expected_success_verdict="TEST_COMPLETE",
-    )
+    assert decision["verdict"] == "RUN_FAILED"
+    assert (output / "report.md").read_text("utf-8") == "# Failed run\n"

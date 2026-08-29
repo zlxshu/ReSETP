@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any
 
 
-SOURCE_COMMIT = "72153c7771bc6d910be023e5d72c8922cecaa80f"
 SOURCE_RELATIVE_PATH = Path(
     "third_party/harvested_materials/07_collaboration_profit/"
     "pycoopgame/upstream/pyCoopGame/Shapley.py"
@@ -50,7 +49,14 @@ class TwoEnterpriseShapleyAllocation:
     allocated_profit: Mapping[str, float]
     operational_participation_margin: Mapping[str, float]
     allocated_participation_margin: Mapping[str, float]
-    source_commit: str
+
+
+class _CoalitionTable(dict[str, list[object]]):
+    """Minimal column table accepted by the upstream Shapley function."""
+
+    @property
+    def index(self) -> range:
+        return range(len(self["value"]))
 
 
 def coalition_value_rows(
@@ -81,9 +87,13 @@ def allocate_two_enterprise_costs(
     rows = coalition_value_rows(costs)
     enterprises = (costs.enterprise_a, costs.enterprise_b)
     _validate_participation(participation, set(enterprises))
-    pandas = _import_pandas()
     shapley = _load_upstream_shapley(repo_root / SOURCE_RELATIVE_PATH)
-    shares = shapley(pandas.DataFrame(rows))
+    shares = shapley(
+        _CoalitionTable(
+            coalition=[row["coalition"] for row in rows],
+            value=[row["value"] for row in rows],
+        )
+    )
     allocated_cost = {
         enterprise: float(shares[enterprise]) for enterprise in enterprises
     }
@@ -148,7 +158,6 @@ def allocate_two_enterprise_costs(
             )
             for enterprise in enterprises
         },
-        source_commit=SOURCE_COMMIT,
     )
 
 
@@ -189,12 +198,6 @@ def _load_upstream_shapley(path: Path) -> Any:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.Shapley
-
-
-def _import_pandas() -> Any:
-    import pandas
-
-    return pandas
 
 
 def _close(left: float, right: float) -> bool:

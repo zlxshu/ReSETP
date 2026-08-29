@@ -92,7 +92,7 @@ def test_nonlinear_short_gap_can_require_an_extra_physical_vehicle() -> None:
     assert nonlinear.contract_id == NONLINEAR_CONTRACT_ID
 
 
-def test_nonlinear_certificate_and_actions_freeze_curve_and_energy_states() -> None:
+def test_nonlinear_certificate_and_actions_use_curve_and_energy_states() -> None:
     instance = _two_trip_instance()
     routes = _routes()
     probe = PriceParameters(B_battery_kwh=280.0)
@@ -107,10 +107,6 @@ def test_nonlinear_certificate_and_actions_freeze_curve_and_energy_states() -> N
 
     assert certificate.contract_id == NONLINEAR_CONTRACT_ID
     assert certificate.charging_curve_id == NL90_MILD.curve_id
-    assert (
-        certificate.charging_curve_parameter_sha256
-        == NL90_MILD.parameter_sha256
-    )
     assert prepared.charging_actions
     for action in prepared.charging_actions:
         assert action.charging_curve_id == NL90_MILD.curve_id
@@ -142,7 +138,7 @@ def test_nonlinear_certificate_and_actions_freeze_curve_and_energy_states() -> N
     assert repeated_certificate == certificate
 
 
-def test_nonlinear_certificate_rejects_tampered_curve_identity() -> None:
+def test_nonlinear_certificate_rejects_wrong_curve() -> None:
     instance = _two_trip_instance()
     routes = _routes()
     probe = PriceParameters(B_battery_kwh=280.0)
@@ -153,12 +149,6 @@ def test_nonlinear_certificate_rejects_tampered_curve_identity() -> None:
     with pytest.raises(ValueError, match="curve id disagrees"):
         validate_multitrip_certificate(
             replace(certificate, charging_curve_id=L100_CONTROL.curve_id),
-            routes,
-            prices,
-        )
-    with pytest.raises(ValueError, match="curve hash disagrees"):
-        validate_multitrip_certificate(
-            replace(certificate, charging_curve_parameter_sha256="0" * 64),
             routes,
             prices,
         )

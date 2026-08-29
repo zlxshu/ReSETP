@@ -1,9 +1,3 @@
-# declared_identity=PROJECT_DOMAIN
-# provenance_status=UNKNOWN
-# first_seen_commit=15ea9919006a53909745caa8f669f1c68aee0641
-# git_commit_author=Leixishu Zhou (not evidence of content authorship)
-# original_author=UNKNOWN
-# pre_move_sha256=de2102b985cce83a31a4ec1f5d401c8bab9ba0d62dc91bdce4cdd0f855065b10
 """Shared HGS iteration control derived from PyVRP 0.12.2.
 
 This module keeps the upstream control semantics in one place while allowing

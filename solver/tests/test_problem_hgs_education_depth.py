@@ -55,7 +55,6 @@ class _Evaluator:
     context = SimpleNamespace(
         bundle=SimpleNamespace(instance=object()),
         dynamic_state=None,
-        incremental_full_truth_sentinel_enabled=False,
     )
 
 
@@ -67,7 +66,6 @@ class _Move:
 
 class _FiniteProposalEngine:
     source_id = "education-depth-test"
-    identity_sha256 = "0" * 64
 
     def __init__(self, move_count: int) -> None:
         self._move_count = move_count

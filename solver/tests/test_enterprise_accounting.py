@@ -18,9 +18,6 @@ def _row(cost: float) -> DepotProfitBreakdown:
         cost_km=0.0,
         cost_fuel=0.0,
         cost_electricity=0.0,
-        cost_occupancy=0.0,
-        cost_time=0.0,
-        cost_transship=0.0,
         cost_carbon=0.0,
         cost_total=cost,
         profit=100.0 - cost,
@@ -47,8 +44,6 @@ def test_ledger_serializes_existing_route_owner_accounting() -> None:
     ) as calculator:
         ledger = build_enterprise_ledger(
             instance_id="instance",
-            seed=1,
-            solution_fingerprint="a" * 64,
             solution=Solution(),
             bundle=bundle,
             prior_profit={"D0": 0.0},
@@ -57,7 +52,6 @@ def test_ledger_serializes_existing_route_owner_accounting() -> None:
         )
 
     assert ledger["rows"]["D0"]["profit"] == 60.0
-    assert ledger["solution_sha256"] == "a" * 64
     assert calculator.call_count == 1
 
 
@@ -74,8 +68,6 @@ def test_ledger_rejects_cost_that_does_not_close() -> None:
     ), pytest.raises(RuntimeError, match="HALT_ACCOUNTING_MISMATCH"):
         build_enterprise_ledger(
             instance_id="instance",
-            seed=1,
-            solution_fingerprint="a" * 64,
             solution=Solution(),
             bundle=bundle,
             prior_profit={"D0": 0.0},

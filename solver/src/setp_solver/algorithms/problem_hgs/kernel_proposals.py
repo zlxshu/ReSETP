@@ -9,10 +9,9 @@ profit participation, and complete feasibility remain in Duty evaluation.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import replace
 from decimal import ROUND_HALF_UP, Decimal
+from random import SystemRandom
 
 from setp_hgs_kernel import Model, __version__ as kernel_version
 from setp_hgs_kernel import Route as IndependentKernelRoute
@@ -52,7 +51,6 @@ class IndependentKernelDutyRouteProposalEngine:
         context: DutyEvaluationContext,
         fleet_template: DutyIndividual,
         *,
-        random_seed: int,
         stream_role: str = "main_route",
         include_propulsion_proxy: bool = True,
         depot_assignment_operator_enabled: bool = False,
@@ -131,7 +129,9 @@ class IndependentKernelDutyRouteProposalEngine:
             for customer in trip.customer_ids
         }
         params = SolveParams()
-        rng = RandomNumberGenerator(seed=int(random_seed))
+        rng = RandomNumberGenerator(
+            seed=SystemRandom().randrange(1, 2**31)
+        )
         self._rng = rng
         self._initialization_rng_stream_count = 1
         self._native_random_solution_calls = 0
@@ -210,78 +210,6 @@ class IndependentKernelDutyRouteProposalEngine:
             )
             + self.stream_role
         )
-        dynamic_identity = None
-        if context.dynamic_state is not None:
-            dynamic_identity = {
-                "trigger_second": float(
-                    context.dynamic_state.cut.trigger_second
-                ),
-                "assets": tuple(
-                    (
-                        asset_id,
-                        float(asset.available_second),
-                        float(asset.remaining_battery_kwh),
-                        int(asset.next_trip_index),
-                    )
-                    for asset_id, asset in sorted(
-                        context.dynamic_state.asset_states.items()
-                    )
-                ),
-                "future_customers": tuple(
-                    sorted(context.dynamic_state.future_customer_ids)
-                ),
-            }
-        identity = {
-            "source_id": self.source_id,
-            "instance_id": context.bundle.instance_id,
-            "fleet_registry": self._fleet_registry,
-            "random_seed": int(random_seed),
-            "stream_role": self.stream_role,
-            "node_operators": self._node_operator_names,
-            "route_operators": self._route_operator_names,
-            "neighbours": self._local_search.neighbours,
-            "route_cost_scale": _ROUTE_COST_SCALE,
-            "route_cost_scope": (
-                "vehicle-fixed-plus-half-load-propulsion-carbon-distance-time"
-                if self.include_propulsion_proxy
-                else "vehicle-fixed-plus-non-energy-distance-time"
-            ),
-            "dynamic_state": dynamic_identity,
-            "rebuilt_volume_capacity_enabled": (
-                self.rebuilt_volume_capacity_enabled
-            ),
-            "rebuilt_shift_neighbours_only": (
-                self.rebuilt_shift_neighbours_only
-            ),
-        }
-        if not self.cross_depot_enabled:
-            identity["cross_depot_enabled"] = False
-        if not self.multi_trip_enabled:
-            identity["multi_trip_enabled"] = False
-        if not self.type_exchange_enabled:
-            identity["type_exchange_enabled"] = False
-        if self.shift_aware_ev_unit_cost_enabled:
-            identity["shift_aware_ev_proxy"] = self._shift_aware_ev_proxy
-        if self.depot_assignment_operator_enabled:
-            identity["depot_assignment_operator"] = {
-                "name": "DepotSplit",
-                "compatible_vehicle_groups": (
-                    self._compatible_vehicle_groups()
-                ),
-                "scope": (
-                    "same-vehicle-class-cross-depot-trip-prefix-or-suffix-"
-                    "to-empty-duty"
-                ),
-            }
-        self.identity_sha256 = hashlib.sha256(
-            json.dumps(
-                identity,
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-        ).hexdigest()
-
     @property
     def data(self):
         """Return the independently compiled native routing problem."""
@@ -465,9 +393,9 @@ class IndependentKernelDutyRouteProposalEngine:
             DutySkeletonMove(
                 action_id=(
                     "setp_hgs_kernel-ls-skeleton:"
-                    + hashlib.sha256(
-                        repr(component).encode("utf-8")
-                    ).hexdigest()[:16]
+                    + "+".join(
+                        duty_id for duty_id, _trips in component
+                    )
                 ),
                 channel="route_kernel",
                 replacements=component,
@@ -957,9 +885,6 @@ def _build_unique_asset_problem(
             tw_early=round(vehicle_tw_early),
             tw_late=round(depot_open.due_time),
             unit_distance_cost=1,
-            unit_duration_cost=_money_units(
-                float(bundle.prices.route_time_cost_per_hour) / 3_600.0
-            ),
             profile=profiles[(duty.vehicle_type, duty.home_depot_id)],
             name=duty.physical_vehicle_id,
             reload_depots=[depot] if multi_trip_enabled else [],

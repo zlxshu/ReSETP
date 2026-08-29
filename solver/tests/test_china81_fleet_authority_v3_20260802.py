@@ -59,7 +59,7 @@ def test_v3_zero_search_certifies_all_405_units_without_violations() -> None:
     assert counts == {level: 81 for level in counts}
 
 
-def test_v3_manifest_preserves_historical_hashes_and_minimality_scope() -> None:
+def test_v3_manifest_preserves_prior_authority_references_and_scope() -> None:
     manifest = json.loads((AUTHORITY / "manifest.json").read_text(encoding="utf-8"))
     decision = json.loads((AUTHORITY / "decision.json").read_text(encoding="utf-8"))
     determinants = read_csv(AUTHORITY / "fleet_determinants.csv")

@@ -16,8 +16,6 @@ dynamic history even when that history is kept outside the future candidate.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, fields, is_dataclass
 from functools import cached_property
@@ -110,15 +108,11 @@ class ScheduleAccountingVector:
 
     electricity_cost: float = 0.0
     emissions_kg: float = 0.0
-    occupancy_cost: float = 0.0
-    route_time_cost: float = 0.0
 
     def __post_init__(self) -> None:
         values = (
             float(self.electricity_cost),
             float(self.emissions_kg),
-            float(self.occupancy_cost),
-            float(self.route_time_cost),
         )
         if any(value < -1.0e-9 for value in values):
             raise ValueError("schedule accounting components cannot be negative")
@@ -128,8 +122,6 @@ class ScheduleAccountingVector:
         return (
             float(self.electricity_cost),
             float(self.emissions_kg),
-            float(self.occupancy_cost),
-            float(self.route_time_cost),
         )
 
 
@@ -280,7 +272,6 @@ class ScheduledDuty:
     charging_sessions: tuple[ScheduledChargingSession, ...]
     occupancy_signature: tuple[tuple[str, int, int, str], ...]
     local_accounting_vector: ScheduleAccountingVector
-    schedule_contract_sha256: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "vehicle_type", str(self.vehicle_type).lower())
@@ -301,20 +292,10 @@ class ScheduledDuty:
         for left, right in zip(self.soc_points, self.soc_points[1:]):
             if abs(float(left.soc_after_kwh) - float(right.soc_before_kwh)) > 1.0e-7:
                 raise ValueError("scheduled SOC points do not form one continuous chain")
-        digest = str(self.schedule_contract_sha256).lower()
-        if len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest):
-            raise ValueError("schedule contract identity must be a SHA-256 digest")
-
     @cached_property
     def schedule_fingerprint(self) -> str:
         payload = _canonical_identity(_dataclass_payload(self))
-        encoded = json.dumps(
-            payload,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return hashlib.sha256(encoded).hexdigest()
+        return repr(payload)
 
     def legacy_charging_sessions(self) -> tuple[DutyChargingSession, ...]:
         return tuple(
@@ -419,13 +400,7 @@ class PhysicalVehicleDuty:
             "trips": [_dataclass_payload(trip) for trip in self.trips],
             "has_dynamic_commitment": bool(self.has_dynamic_commitment),
         }
-        encoded = json.dumps(
-            _canonical_identity(payload),
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return hashlib.sha256(encoded).hexdigest()
+        return repr(_canonical_identity(payload))
 
     @cached_property
     def fingerprint_payload(self) -> dict[str, object]:
@@ -485,13 +460,7 @@ class DutyIndividual:
             "duties": duty_payloads,
             "unserved_customers": list(self.unserved_customers),
         }
-        encoded = json.dumps(
-            payload,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return hashlib.sha256(encoded).hexdigest()
+        return repr(payload)
 
     def to_solution(self) -> Solution:
         routes: list[Route] = []
@@ -639,18 +608,14 @@ class DutyIndividual:
 def duty_trip_route_signature(trip: DutyTrip) -> str:
     """Return the structure-only identity bound into a trip witness."""
 
-    encoded = json.dumps(
-        {
-            "trip_index": int(trip.trip_index),
-            "customer_ids": list(trip.customer_ids),
-            "locked_customer_prefix": list(trip.locked_customer_prefix),
-            "route_visits": list(trip.effective_route_visits),
-        },
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return repr(
+        (
+            int(trip.trip_index),
+            tuple(trip.customer_ids),
+            tuple(trip.locked_customer_prefix),
+            tuple(trip.effective_route_visits),
+        )
+    )
 
 
 def _canonical_identity(value):

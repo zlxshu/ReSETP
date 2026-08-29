@@ -65,10 +65,6 @@ UK_2025_CARBON_PRICE_GBP_PER_KG = 0.05034  # £/kgCO2e, 主值, 折合 £50.34/t
 UK_2025_CARBON_PRICE_LOW_GBP_PER_KG = 0.04184  # £/kgCO2e, 敏感性低值, 折合 £41.84/tCO2e, UK ETS 2025 民事处罚碳价官方真值。参考文献: 英国能源安全与净零部. UK ETS civil penalty carbon price 2025[EB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/participating-in-the-uk-ets/how-to-comply-with-the-uk-ets.
 UK_2025_DIESEL_EF_KG_PER_L = 2.57082  # kgCO2e/L, 英国 2025 温室气体转换因子, 零售柴油(含约 3% 生物柴油混合)真值。参考文献: 英国环境食品与乡村事务部, 能源安全与净零部. 2025 government greenhouse gas conversion factors for company reporting[DB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025.
 vehicle_fixed_cost = 80.0  # £/班次, 中型柴油货车单班次启用成本代理值, 英国货车日租代理。参考文献: 代理值说明, 研究情景参数, 需在论文中明确标为 proxy.
-occupancy_fee = 0.50  # £/min, 公共充电桩超时占用费代理值, 英国快充网络。参考文献: 代理值说明, 研究情景参数, 需在论文中明确标为 proxy.
-# 主值=完全共享基线；95 为历史上无来源的高摩擦代理，只保留在 0/10/25/50/95 敏感性轴。
-# 相关协同文献更常见成本共担/利润分配或按实际跨场往返收费；本项目不把 95 当现实标定值。
-cross_site_cost = 0.0  # £/客户服务, c_tr 主值；非零档位仅作无现实标定的摩擦敏感性代理。
 # v2026-06-12: V0 profit-fairness revenue proxy. National Pallets lists a
 # 250 kg UK quarter-pallet shipment at £47.34 exc VAT, so rho=47.34/250.
 revenue_per_kg = 0.18936  # £/kg, public UK pallet-delivery revenue proxy. https://www.nationalpallets.co.uk/pallet-delivery/uk
@@ -172,10 +168,6 @@ class PriceParameters:
     )
     diesel_ef: float | _ExplicitScenarioValueRequired = _EXPLICIT_DIESEL_EF
     vehicle_fixed_cost: float = vehicle_fixed_cost
-    # Disabled by default. E5-P1 sets 75 CNY/h only in its sensitivity bundle.
-    route_time_cost_per_hour: float = 0.0
-    occupancy_fee: float = occupancy_fee
-    cross_site_cost: float = cross_site_cost
     revenue_per_kg: float = revenue_per_kg
     fairness_theta: float = fairness_theta
     c_km: float = c_km
@@ -191,14 +183,6 @@ class PriceParameters:
     public_charging_curve_id: str | None = None
     public_charging_soc_breakpoints: tuple[float, ...] | None = None
     public_charging_relative_powers: tuple[float, ...] | None = None
-
-    @property
-    def charging_occupancy_fee(self) -> float:
-        return self.occupancy_fee
-
-    @property
-    def cross_site_service_cost(self) -> float:
-        return self.cross_site_cost
 
     @property
     def diesel_emission_factor(self) -> float:

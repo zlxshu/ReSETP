@@ -1,10 +1,5 @@
-# declared_identity=UPSTREAM_PATCHED
-# provenance_status=UNKNOWN
-# upstream_url=https://github.com/PyVRP/PyVRP/blob/v0.12.2/pyvrp/GeneticAlgorithm.py
-# upstream_commit=ea0c4211819edac6fd920413ad7508cc9ad56e0e
-# patch_path=third_party/setp_hgs_kernel/patches/problem_hgs_genetic_algorithm.patch
-# original_author=PyVRP team; project patch author=UNKNOWN
-# pre_move_sha256=2cdba74c246dbfe59bdf8148edbb1770c3f4cdbd2dd646392519a6f62faa4e8d
+"""PyVRP 0.12.2 genetic algorithm adapted to the shared HGS control loop."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

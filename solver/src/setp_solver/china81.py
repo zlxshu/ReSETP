@@ -240,13 +240,9 @@ class China81Bundle:
     model_config: Mapping[str, object]
     carbon_price_cny_per_kg: float = CHINA81_CARBON_PRICE_CNY_PER_KG
     formal_search_allowed: bool = False
-    enterprise_assignment_by_customer: Mapping[str, str] = field(
+    enterprise_depot_by_id: Mapping[str, str] = field(
         default_factory=lambda: MappingProxyType({})
     )
-    enterprise_assignment_source_path: str | None = None
-    enterprise_assignment_source_sha256: str | None = None
-    enterprise_assignment_mapping_sha256: str | None = None
-    enterprise_assignment_rule_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         """Fail closed if China81 profiles and prices are mixed or diverge."""
@@ -1288,8 +1284,6 @@ def _china_prices(
         carbon_price_low=CHINA81_CARBON_PRICE_LOW_CNY_PER_KG,
         diesel_ef=CHINA81_DIESEL_EF_KG_PER_L,
         vehicle_fixed_cost=float(cv_fixed_cost),
-        occupancy_fee=0.5,
-        cross_site_cost=0.0,
         revenue_per_kg=1.5,
         fairness_theta=1.0,
         c_km=0.78,

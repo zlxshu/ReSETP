@@ -16,8 +16,6 @@ from setp_solver.algorithms.problem_hgs.charging import (
 from setp_solver.algorithms.problem_hgs.contracts import SearchAccounting
 from setp_solver.algorithms.problem_hgs.evaluation import (
     DutyEvaluationContext,
-    FrozenMappingIdentity,
-    mapping_sha256,
 )
 from setp_solver.algorithms.problem_hgs.model import (
     DutyIndividual,
@@ -136,11 +134,6 @@ def _minimum_context() -> DutyEvaluationContext:
     return DutyEvaluationContext(
         bundle=bundle,
         independent_profit=pi0,
-        independent_profit_identity=FrozenMappingIdentity(
-            source_id="minimum-test",
-            value_sha256=mapping_sha256(pi0),
-            externally_frozen=False,
-        ),
         prior_profit={"D": 0.0},
         theta=1.0,
         carbon_quota_kg=0.0,

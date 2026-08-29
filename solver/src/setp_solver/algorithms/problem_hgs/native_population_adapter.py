@@ -1,9 +1,3 @@
-# declared_identity=PROJECT_DOMAIN
-# provenance_status=UNKNOWN
-# first_seen_commit=15ea9919006a53909745caa8f669f1c68aee0641
-# git_commit_author=Leixishu Zhou (not evidence of content authorship)
-# original_author=UNKNOWN
-# pre_move_sha256=371b547a18a654a70869340a2031a59d189c3d6e8f6071a891d844b42997fcca
 """Expose the copied native population through the integrated-loop API."""
 
 from __future__ import annotations

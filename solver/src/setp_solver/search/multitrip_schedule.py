@@ -149,9 +149,7 @@ class MultiTripCertificate:
     depot_charge_power_kw: float
     first_trip_charge_day_offset: int = STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET
     charging_curve_id: str = L100_CONTROL.curve_id
-    charging_curve_parameter_sha256: str = L100_CONTROL.parameter_sha256
     battery_capacity_kwh: float | None = None
-    charging_curve_physical_sha256: str | None = None
     initial_battery_kwh: float | None = None
     continuous_soc_contract_id: str | None = None
     soc_initial: float | None = None
@@ -190,21 +188,10 @@ def multitrip_certificate_from_dict(
         charging_curve_id=str(
             payload.get("charging_curve_id", L100_CONTROL.curve_id)
         ),
-        charging_curve_parameter_sha256=str(
-            payload.get(
-                "charging_curve_parameter_sha256",
-                L100_CONTROL.parameter_sha256,
-            )
-        ),
         battery_capacity_kwh=(
             None
             if payload.get("battery_capacity_kwh") is None
             else float(payload["battery_capacity_kwh"])
-        ),
-        charging_curve_physical_sha256=(
-            None
-            if payload.get("charging_curve_physical_sha256") is None
-            else str(payload["charging_curve_physical_sha256"])
         ),
         initial_battery_kwh=(
             None
@@ -277,10 +264,6 @@ def _certificate_curve(
         raise ValueError(
             f"{NONLINEAR_CONTRACT_ID}: certificate curve id disagrees with prices"
         )
-    if certificate.charging_curve_parameter_sha256 != curve.parameter_sha256:
-        raise ValueError(
-            f"{NONLINEAR_CONTRACT_ID}: certificate curve hash disagrees with prices"
-        )
     if (
         certificate.contract_id == NONLINEAR_CONTRACT_ID
         or (
@@ -288,7 +271,6 @@ def _certificate_curve(
             and instance.vehicle_parameters is not None
         )
         or certificate.battery_capacity_kwh is not None
-        or certificate.charging_curve_physical_sha256 is not None
     ):
         if certificate.battery_capacity_kwh is None or (
             abs(
@@ -299,14 +281,6 @@ def _certificate_curve(
         ):
             raise ValueError(
                 f"{NONLINEAR_CONTRACT_ID}: certificate battery capacity "
-                "disagrees with the scaled curve"
-            )
-        if (
-            certificate.charging_curve_physical_sha256
-            != curve.physical_parameter_sha256
-        ):
-            raise ValueError(
-                f"{NONLINEAR_CONTRACT_ID}: certificate physical curve hash "
                 "disagrees with the scaled curve"
             )
     return curve
@@ -398,9 +372,9 @@ def route_timing(
 ) -> TripTiming:
     """Compute one legal route-to-trip interval without changing route schema.
 
-    The frozen route representation has no departure-time field.  We therefore
+    The route representation has no departure-time field.  We therefore
     choose a feasible clock that removes avoidable customer waiting.  This is
-    deliberately one reproducible witness clock, not a proof that no other
+    one concrete witness clock, not a proof that no other
     clock could make a fixed route set use fewer physical vehicles.
     """
 
@@ -1221,7 +1195,7 @@ def build_multitrip_certificate(
     continuous_soc_contract: ContinuousSOCContract | None = None,
     minimum_departure_second_by_route: Mapping[str, float] | None = None,
 ) -> MultiTripCertificate:
-    """Build a reproducible physical-vehicle schedule for one fixed route set.
+    """Build a physical-vehicle schedule for one fixed route set.
 
     This is a *feasibility witness*, not a proof of the minimum vehicle count.
     It deliberately reads depot charging power from the same ``prices`` object
@@ -1340,9 +1314,7 @@ def build_multitrip_certificate(
         depot_charge_power_kw,
         STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
         charging_curve.curve_id,
-        charging_curve.parameter_sha256,
         battery_kwh,
-        charging_curve.physical_parameter_sha256,
         ledger_initial_battery,
         (
             None
@@ -2187,12 +2159,14 @@ def _certificate_from_prepared_solution(
                 )
                 if value is not None
             ]
+            first_trip = previous_return is None
             timing = route_timing(
                 route,
                 instance,
                 prices,
                 charging_actions=list(solution.charging_actions),
-                forced_departure_second=max(floors),
+                forced_departure_second=(None if first_trip else max(floors)),
+                minimum_departure_second=(max(floors) if first_trip else None),
             )
             timings[route.vehicle_id] = timing
             previous_return = timing.return_second
@@ -2321,9 +2295,7 @@ def _certificate_from_prepared_solution(
         power,
         first_trip_charge_day_offset,
         charging_curve.curve_id,
-        charging_curve.parameter_sha256,
         battery_cap,
-        charging_curve.physical_parameter_sha256,
         inherited,
     )
     validate_multitrip_certificate(

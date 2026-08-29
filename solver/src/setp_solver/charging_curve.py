@@ -8,11 +8,9 @@ this module instead of reimplementing ``energy / power`` arithmetic.
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from functools import cache, cached_property
-from hashlib import sha256
 from math import isfinite
 from typing import Iterable, Sequence
 
@@ -53,16 +51,6 @@ class ChargingCurveSpec:
         object.__setattr__(self, "curve_id", curve_id)
         object.__setattr__(self, "soc_breakpoints", soc)
         object.__setattr__(self, "relative_powers", powers)
-
-    @property
-    def parameter_sha256(self) -> str:
-        payload = json.dumps(
-            asdict(self),
-            ensure_ascii=True,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return sha256(payload).hexdigest()
 
     @cache
     def scale(
@@ -292,7 +280,6 @@ class PiecewiseChargingCurve:
     """A scaled charging curve expressed in energy and cumulative time."""
 
     curve_id: str
-    parameter_sha256: str
     energy_breakpoints_kwh: tuple[float, ...]
     cumulative_seconds: tuple[float, ...]
 
@@ -359,7 +346,6 @@ class PiecewiseChargingCurve:
             times.append(times[-1] + 3600.0 * (right - left) / (power * factor))
         return cls(
             curve_id=spec.curve_id,
-            parameter_sha256=spec.parameter_sha256,
             energy_breakpoints_kwh=energies,
             cumulative_seconds=tuple(times),
         )
@@ -367,22 +353,6 @@ class PiecewiseChargingCurve:
     @property
     def capacity_kwh(self) -> float:
         return self.energy_breakpoints_kwh[-1]
-
-    @cached_property
-    def physical_parameter_sha256(self) -> str:
-        """Hash the normalized curve together with its physical scaling."""
-
-        payload = json.dumps(
-            {
-                "curve_parameter_sha256": self.parameter_sha256,
-                "energy_breakpoints_kwh": self.energy_breakpoints_kwh,
-                "cumulative_seconds": self.cumulative_seconds,
-            },
-            ensure_ascii=True,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return sha256(payload).hexdigest()
 
     @cached_property
     def segment_powers_kw(self) -> tuple[float, ...]:

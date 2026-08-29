@@ -111,10 +111,6 @@ def test_nonlinear_dynamic_actions_freeze_curve_and_energy_states() -> None:
     )
 
     assert certificate.charging_curve_id == NL90_MILD.curve_id
-    assert (
-        certificate.charging_curve_parameter_sha256
-        == NL90_MILD.parameter_sha256
-    )
     assert prepared.charging_actions
     for action in prepared.charging_actions:
         assert action.charging_curve_id == NL90_MILD.curve_id

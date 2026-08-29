@@ -14,8 +14,6 @@ gate.  The old static preparation path is not modified.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from types import MappingProxyType
@@ -97,7 +95,6 @@ class CertificateCut:
     """Immutable partition and asset ledger at one absolute trigger time."""
 
     trigger_second: float
-    source_certificate_sha256: str
     completed_route_ids: tuple[str, ...]
     in_progress_route_ids: tuple[str, ...]
     editable_route_ids: tuple[str, ...]
@@ -295,7 +292,6 @@ def cut_certificate_at_trigger(
     )
     return CertificateCut(
         trigger_second=trigger,
-        source_certificate_sha256=ledger.certificate_sha256,
         completed_route_ids=tuple(sorted(completed)),
         in_progress_route_ids=tuple(sorted(in_progress)),
         editable_route_ids=tuple(sorted(editable)),
@@ -545,7 +541,6 @@ def cut_dynamic_certificate_at_trigger(
     )
     return CertificateCut(
         trigger_second=trigger,
-        source_certificate_sha256=_canonical_sha256(certificate.as_dict()),
         completed_route_ids=tuple(sorted(completed)),
         in_progress_route_ids=tuple(sorted(in_progress)),
         editable_route_ids=tuple(sorted(editable)),
@@ -1175,16 +1170,10 @@ def validate_dynamic_multitrip_certificate(
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: depot charge power disagrees with prices")
     if certificate.charging_curve_id != charging_curve.curve_id:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: certificate curve id disagrees with prices")
-    if (
-        certificate.charging_curve_parameter_sha256
-        != charging_curve.parameter_sha256
-    ):
-        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: certificate curve hash disagrees with prices")
     physical_identity_required = (
         instance.vehicle_parameters is not None
         or charging_curve.curve_id != L100_CONTROL.curve_id
         or certificate.battery_capacity_kwh is not None
-        or certificate.charging_curve_physical_sha256 is not None
     )
     if physical_identity_required:
         if (
@@ -1197,14 +1186,6 @@ def validate_dynamic_multitrip_certificate(
         ):
             raise ValueError(
                 f"{DYNAMIC_CONTRACT_ID}: certificate battery capacity "
-                "disagrees"
-            )
-        if (
-            certificate.charging_curve_physical_sha256
-            != charging_curve.physical_parameter_sha256
-        ):
-            raise ValueError(
-                f"{DYNAMIC_CONTRACT_ID}: certificate physical curve hash "
                 "disagrees"
             )
     route_by_id = {route.vehicle_id: route for route in solution.routes}
@@ -1665,11 +1646,7 @@ def _close_dynamic_battery_ledger(
         depot_charge_power_kw=power,
         first_trip_charge_day_offset=0,
         charging_curve_id=charging_curve.curve_id,
-        charging_curve_parameter_sha256=charging_curve.parameter_sha256,
         battery_capacity_kwh=battery_cap,
-        charging_curve_physical_sha256=(
-            charging_curve.physical_parameter_sha256
-        ),
     )
     return prepared, certificate
 
@@ -2377,17 +2354,6 @@ def _validate_depot_charger_capacity(
                 f"{DYNAMIC_CONTRACT_ID}: charger capacity exceeded at {station_id}, "
                 f"day={day_offset}, slot={slot_index}; occupied={len(asset_ids)}, C_s={capacity}"
             )
-
-
-def _canonical_sha256(payload: object) -> str:
-    encoded = json.dumps(
-        payload,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _finite(value: object) -> bool:

@@ -13,8 +13,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
-import hashlib
-import json
 from types import MappingProxyType
 from typing import Literal
 
@@ -54,7 +52,6 @@ class TripExecution:
     """Immutable executed-trip witness, indexed by the stable route id."""
 
     route_id: str
-    route_signature: str
     physical_vehicle_id: str
     trip_index: int
     vehicle_type: str
@@ -89,7 +86,6 @@ class CertificateExecutionLedger:
     """Read-only route and physical-asset index bound to one certificate."""
 
     contract_id: str
-    certificate_sha256: str
     routes: Mapping[str, TripExecution]
     assets: Mapping[str, PhysicalAsset]
 
@@ -180,10 +176,8 @@ def build_certificate_execution_ledger(
         routes_by_id,
         executions,
     )
-    certificate_sha256 = _canonical_sha256(certificate.as_dict())
     return CertificateExecutionLedger(
         contract_id=EXECUTION_CLOCK_CONTRACT_ID,
-        certificate_sha256=certificate_sha256,
         routes=MappingProxyType(dict(executions)),
         assets=MappingProxyType(dict(assets)),
     )
@@ -297,17 +291,8 @@ def _replay_trip(
             f"{EXECUTION_CLOCK_CONTRACT_ID}: route {route.vehicle_id} replay returns at "
             f"{clock:.12f}, certificate says {trip.return_second:.12f}"
         )
-    signature = _canonical_sha256(
-        {
-            "route_id": route.vehicle_id,
-            "vehicle_type": route.vehicle_type.lower(),
-            "home_depot_id": route.home_depot_id,
-            "node_sequence": list(route.node_sequence),
-        }
-    )
     return TripExecution(
         route_id=route.vehicle_id,
-        route_signature=signature,
         physical_vehicle_id=trip.physical_vehicle_id,
         trip_index=int(trip.trip_index),
         vehicle_type=trip.vehicle_type.lower(),
@@ -667,17 +652,6 @@ def _validate_public_charging_ledger(
             f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} public "
             "charging battery ledger does not close"
         )
-
-
-def _canonical_sha256(payload: object) -> str:
-    encoded = json.dumps(
-        payload,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _finite(value: object) -> bool:

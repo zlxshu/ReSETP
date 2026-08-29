@@ -40,7 +40,6 @@ class EnterpriseProblemSlice:
     depot_id: str
     customer_ids: tuple[str, ...]
     source_id: str
-    mapping_sha256: str
 
 
 def _enterprise_scope(
@@ -51,34 +50,22 @@ def _enterprise_scope(
     selected_enterprise = str(enterprise_id).strip()
     if not selected_enterprise:
         raise ValueError("enterprise id cannot be empty")
-    assignment = bundle.enterprise_assignment_by_customer
-    if not assignment:
-        raise ValueError("enterprise assignment is unavailable")
-    customer_ids = tuple(
+    market_customer_ids = tuple(
         node.node_id
         for node in bundle.instance.nodes
         if node.node_type.lower() == "c"
-        and assignment.get(node.node_id) == selected_enterprise
     )
-    if not customer_ids:
-        raise ValueError(f"unknown enterprise id: {selected_enterprise}")
-    if set(customer_ids) - set(route_constraints.customer_shift_by_id):
-        raise ValueError("enterprise customers are outside the route contract")
+    if set(market_customer_ids) != set(route_constraints.customer_shift_by_id):
+        raise ValueError("shared market differs from the route contract")
     try:
-        customer_home_depot = {
-            customer_id: str(bundle.customer_home_depot[customer_id])
-            for customer_id in customer_ids
-        }
+        depot_id = str(bundle.enterprise_depot_by_id[selected_enterprise])
     except KeyError as exc:
-        raise ValueError("enterprise customer has no registered home depot") from exc
-    depot_ids = set(customer_home_depot.values())
-    if len(depot_ids) != 1:
-        raise ValueError("one enterprise must map to exactly one depot")
+        raise ValueError("enterprise depot is unavailable") from exc
     return (
         selected_enterprise,
-        customer_ids,
-        customer_home_depot,
-        next(iter(depot_ids)),
+        market_customer_ids,
+        {customer_id: depot_id for customer_id in market_customer_ids},
+        depot_id,
     )
 
 
@@ -180,7 +167,7 @@ def slice_enterprise_problem(
     route_constraints: RebuiltRouteConstraintContract,
     enterprise_id: str,
 ) -> EnterpriseProblemSlice:
-    """Select one depot, its customers, and every shared public station."""
+    """Select one enterprise's depot and fleet for the full shared market."""
 
     (
         selected_enterprise,
@@ -209,25 +196,13 @@ def slice_enterprise_problem(
         customer_ids,
     )
 
-    mapping_sha256 = bundle.enterprise_assignment_mapping_sha256
-    if mapping_sha256 is None or len(mapping_sha256) != 64:
-        raise ValueError("enterprise assignment identity is unavailable")
-    source_id = (
-        f"{bundle.instance_id}/enterprise/{selected_enterprise}/"
-        f"{mapping_sha256}"
-    )
+    source_id = f"{bundle.instance_id}/enterprise/{selected_enterprise}/full-market"
     selected_bundle = replace(
         bundle,
         instance=sliced_instance,
         customer_home_depot=MappingProxyType(customer_home_depot),
         fleet_caps_by_depot=MappingProxyType({depot_id: selected_caps}),
         charger_scenario_by_node=selected_chargers,
-        enterprise_assignment_by_customer=MappingProxyType(
-            {
-                customer_id: selected_enterprise
-                for customer_id in customer_ids
-            }
-        ),
     )
     nodes_by_id = {node.node_id: node for node in selected_nodes}
     seed_input = EnterpriseSeedInput(
@@ -267,5 +242,4 @@ def slice_enterprise_problem(
         depot_id=depot_id,
         customer_ids=customer_ids,
         source_id=source_id,
-        mapping_sha256=mapping_sha256,
     )

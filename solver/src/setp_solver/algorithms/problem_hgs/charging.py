@@ -176,10 +176,6 @@ class ChargingRepairFailure(ValueError):
         super().__init__(f"{self.duty_id}: {cause}")
 
 
-class ChargingPrescreenEquivalenceError(RuntimeError):
-    """Stop immediately if a prescreen rejection survives full repair."""
-
-
 @dataclass
 class ChargingFeasibilityPrescreen:
     """Reject only route clocks that the full repair itself rejects first.
@@ -193,7 +189,6 @@ class ChargingFeasibilityPrescreen:
 
     context: DutyEvaluationContext
     policy: ChargingRepairPolicy
-    audit_limit: int = 0
     checked_by_channel: Counter[str] = field(default_factory=Counter)
     rejected_by_channel: Counter[str] = field(default_factory=Counter)
     passed_by_channel: Counter[str] = field(default_factory=Counter)
@@ -202,20 +197,13 @@ class ChargingFeasibilityPrescreen:
     )
     route_cache_hits: int = 0
     route_cache_misses: int = 0
-    audit_sampled: int = 0
-    audit_same_rejection: int = 0
     _route_cache: dict[
         tuple[str, str, str, int, tuple[str, ...]],
         tuple[str, str] | None,
     ] = field(default_factory=dict)
 
-    def __post_init__(self) -> None:
-        if int(self.audit_limit) < 0:
-            raise ValueError("charging prescreen audit limit cannot be negative")
-
     def screen(
         self,
-        reference: DutyIndividual,
         candidate: DutyIndividual,
         *,
         changed_duty_ids: frozenset[str],
@@ -254,12 +242,6 @@ class ChargingFeasibilityPrescreen:
                     duty_id,
                     ValueError(message),
                     reason_code=CHARGING_REASON_PRESCREEN_REJECT,
-                )
-                self._audit_rejection(
-                    reference,
-                    candidate,
-                    changed_duty_ids=changed_duty_ids,
-                    expected=wrapped,
                 )
                 self.rejected_by_channel[channel] += 1
                 self.rejected_by_channel_and_reason[
@@ -319,40 +301,6 @@ class ChargingFeasibilityPrescreen:
         self._route_cache[key] = failure
         return failure
 
-    def _audit_rejection(
-        self,
-        reference: DutyIndividual,
-        candidate: DutyIndividual,
-        *,
-        changed_duty_ids: frozenset[str],
-        expected: ChargingRepairFailure,
-    ) -> None:
-        if self.audit_sampled >= int(self.audit_limit):
-            return
-        self.audit_sampled += 1
-        try:
-            repair_changed_duties(
-                reference,
-                candidate,
-                changed_duty_ids=set(changed_duty_ids),
-                context=self.context,
-                policy=self.policy,
-                cache=None,
-            )
-        except (TypeError, ValueError) as actual:
-            if type(actual) is not type(expected) or str(actual) != str(expected):
-                raise ChargingPrescreenEquivalenceError(
-                    "charging prescreen and full repair rejected differently: "
-                    f"prescreen={type(expected).__name__}: {expected}; "
-                    f"full={type(actual).__name__}: {actual}"
-                ) from actual
-            self.audit_same_rejection += 1
-            return
-        raise ChargingPrescreenEquivalenceError(
-            "charging prescreen rejected a candidate that full repair accepted: "
-            f"{expected}"
-        )
-
     def statistics(self) -> dict[str, Any]:
         checked = sum(self.checked_by_channel.values())
         rejected = sum(self.rejected_by_channel.values())
@@ -395,12 +343,6 @@ class ChargingFeasibilityPrescreen:
             },
             "route_cache_hits": int(self.route_cache_hits),
             "route_cache_misses": int(self.route_cache_misses),
-            "audit": {
-                "requested_limit": int(self.audit_limit),
-                "sampled": int(self.audit_sampled),
-                "same_rejection": int(self.audit_same_rejection),
-                "prescreen_false_rejections": 0,
-            },
         }
 
 

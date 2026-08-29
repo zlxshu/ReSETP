@@ -99,11 +99,9 @@ class ScoredChargeOption:
     option: ChargeOption
     timing: ChargeTimingChoice
     electricity_cost: float
-    occupancy_cost: float
     detour_cost: float
     carbon_cost: float
     total_incremental_cost: float
-    time_cost: float = 0.0
 
 
 def integrated_charge_carbon_kg(
@@ -229,7 +227,6 @@ def score_charge_option(
             ),
             candidates_evaluated=-1,
         )
-    is_depot = option.node_type.lower() == "d"
     placed_action = option.action_at(timing.start_second)
     electricity_cost = (
         charging_action_electricity_cost(
@@ -248,34 +245,16 @@ def score_charge_option(
             timing_contexts=timing_contexts,
         )
     )
-    occupancy_cost = 0.0 if is_depot else option.occupancy_seconds / 60.0 * float(prices.occupancy_fee)
     detour_cost = float(option.detour_m) / 1000.0 * float(prices.c_km)
-    time_cost = (
-        0.0
-        if is_depot
-        else (
-            option.occupancy_seconds + float(option.detour_seconds)
-        )
-        / 3600.0
-        * float(prices.route_time_cost_per_hour)
-    )
     carbon_cost = float(timing.carbon_kg) * float(prices.carbon_price) * float(carbon_weight)
-    total = (
-        electricity_cost
-        + occupancy_cost
-        + detour_cost
-        + time_cost
-        + carbon_cost
-    )
+    total = electricity_cost + detour_cost + carbon_cost
     return ScoredChargeOption(
         option=option,
         timing=timing,
         electricity_cost=electricity_cost,
-        occupancy_cost=occupancy_cost,
         detour_cost=detour_cost,
         carbon_cost=carbon_cost,
         total_incremental_cost=float(total),
-        time_cost=float(time_cost),
     )
 
 

@@ -13,9 +13,7 @@ import math
 from typing import Any
 
 from .cost import (
-    _e5_route_time_seconds,
     _evaluate_route,
-    _optional_price,
     _price,
     charging_action_electricity_cost,
     charging_action_emissions_kg,
@@ -34,9 +32,6 @@ class DepotProfitBreakdown:
     cost_km: float
     cost_fuel: float
     cost_electricity: float
-    cost_occupancy: float
-    cost_time: float
-    cost_transship: float
     cost_carbon: float
     cost_total: float
     profit: float
@@ -53,13 +48,16 @@ class DepotProfitBreakdown:
 
 
 def infer_customer_home_depots(instance: Instance) -> dict[str, str]:
-    """Infer ``d_i^0`` as the nearest depot when no explicit owner is stored."""
+    """Infer customer home depots for callers that need a geographic partition."""
 
     depots = [node for node in instance.nodes if node.node_type.lower() == "d"]
     if not depots:
         raise ValueError("Cannot infer customer home depots without depot nodes")
     return {
-        node.node_id: min(depots, key=lambda depot: instance.distance(depot.node_id, node.node_id)).node_id
+        node.node_id: min(
+            depots,
+            key=lambda depot: instance.distance(depot.node_id, node.node_id),
+        ).node_id
         for node in instance.nodes
         if node.node_type.lower() == "c"
     }
@@ -79,19 +77,11 @@ def calculate_depot_profits(
     """Return paper ``Pi_d`` and ``C_d`` components by service depot.
 
     Revenue follows ``R_i = rho * q_i`` and is credited to the depot serving the
-    customer. Fixed, distance, fuel, electricity, occupancy, route-time, and
-    carbon costs are allocated to the vehicle's route home depot. ``None`` keeps
-    the legacy nearest-depot inference; an empty mapping means that customers
-    have no exogenous depot ownership and therefore incurs no cross-site charge.
+    customer. The five paper costs are allocated to each route's home depot.
     """
 
     node_lookup = instance.node_lookup
     depot_ids = sorted(node.node_id for node in instance.nodes if node.node_type.lower() == "d")
-    owners = (
-        infer_customer_home_depots(instance)
-        if customer_home_depot is None
-        else customer_home_depot
-    )
     prior = prior_profit or {}
     rho = _price(prices, "revenue_per_kg") if revenue_per_kg is None else float(revenue_per_kg)
     route_by_vehicle = {route.vehicle_id: route for route in solution.routes}
@@ -141,12 +131,6 @@ def calculate_depot_profits(
             row["revenue"] += rho * demand
             row["customers_served"] += 1
             row["demand_kg"] += demand
-            if (
-                customer_id in owners
-                and owners[customer_id] != depot_id
-            ):
-                row["cost_transship"] += _price(prices, "cross_site_cost")
-
     for action in solution.charging_actions:
         route = route_by_vehicle.get(action.vehicle_id)
         if route is None:
@@ -166,32 +150,12 @@ def calculate_depot_profits(
         if station_type == "d":
             row["depot_charging_kwh"] += float(action.energy_kwh)
         else:
-            row["cost_occupancy"] += float(action.occupancy_minutes) * _price(prices, "occupancy_fee")
             row["station_charging_kwh"] += float(action.energy_kwh)
         row["ev_indirect_emissions_kg"] += _charging_action_emissions(
             action,
             instance,
             carbon_profile,
             prices,
-        )
-
-    actions_by_vehicle: dict[str, list[ChargingAction]] = {}
-    for action in solution.charging_actions:
-        actions_by_vehicle.setdefault(action.vehicle_id, []).append(action)
-    time_rate = _optional_price(prices, "route_time_cost_per_hour")
-    for route in solution.routes:
-        data[route.home_depot_id]["cost_time"] += (
-            _e5_route_time_seconds(
-                Solution(
-                    routes=[route],
-                    charging_actions=actions_by_vehicle.get(route.vehicle_id, []),
-                ),
-                instance,
-                node_lookup,
-                prices,
-            )
-            / 3600.0
-            * time_rate
         )
 
     total_emissions = sum(row["cv_direct_emissions_kg"] + row["ev_indirect_emissions_kg"] for row in data.values())
@@ -224,9 +188,6 @@ def _empty_row(depot_id: str, prior_profit: float) -> dict[str, float]:
         "cost_km": 0.0,
         "cost_fuel": 0.0,
         "cost_electricity": 0.0,
-        "cost_occupancy": 0.0,
-        "cost_time": 0.0,
-        "cost_transship": 0.0,
         "cost_carbon": 0.0,
         "customers_served": 0.0,
         "demand_kg": 0.0,
@@ -244,9 +205,6 @@ def _finalize_row(depot_id: str, row: dict[str, float]) -> DepotProfitBreakdown:
         + row["cost_km"]
         + row["cost_fuel"]
         + row["cost_electricity"]
-        + row["cost_occupancy"]
-        + row["cost_time"]
-        + row["cost_transship"]
         + row["cost_carbon"]
     )
     profit = row["prior_profit"] + row["revenue"] - cost_total
@@ -257,9 +215,6 @@ def _finalize_row(depot_id: str, row: dict[str, float]) -> DepotProfitBreakdown:
         cost_km=row["cost_km"],
         cost_fuel=row["cost_fuel"],
         cost_electricity=row["cost_electricity"],
-        cost_occupancy=row["cost_occupancy"],
-        cost_time=row["cost_time"],
-        cost_transship=row["cost_transship"],
         cost_carbon=row["cost_carbon"],
         cost_total=cost_total,
         profit=profit,

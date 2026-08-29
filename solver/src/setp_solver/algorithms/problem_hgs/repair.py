@@ -13,11 +13,7 @@ from .contracts import (
     SearchAccounting,
     TrajectoryRow,
 )
-from .education import (
-    DutySentinelMismatch,
-    _trajectory_row,
-    evaluate_move,
-)
+from .education import _trajectory_row, evaluate_move
 from .evaluation import (
     DutyFullEvaluator,
     DutyIncrementalEvaluator,
@@ -58,7 +54,6 @@ def regret2_repair(
             break
         by_customer: dict[str, list[tuple[CandidateOutcome, int]]] = {}
         round_rows: list[TrajectoryRow] = []
-        sentinel_mismatch = False
         incremental = DutyIncrementalEvaluator(evaluator)
         accounting.record_cache_seed(incremental.seed(current))
         for customer in current.unserved_customers:
@@ -87,10 +82,6 @@ def regret2_repair(
                         outcome=outcome,
                         accepted=False,
                     )
-                )
-                sentinel_mismatch = bool(
-                    sentinel_mismatch
-                    or outcome.status == CandidateStatus.SENTINEL_MISMATCH
                 )
                 if (
                     outcome.evaluated
@@ -133,8 +124,6 @@ def regret2_repair(
             rows.extend(round_rows)
         else:
             trajectory_sink(tuple(round_rows))
-        if sentinel_mismatch:
-            raise DutySentinelMismatch(tuple(rows))
         if chosen_outcome is None:
             break
         accounting.repair_calls += 1

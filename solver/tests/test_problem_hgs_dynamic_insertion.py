@@ -28,7 +28,6 @@ from setp_solver.algorithms.problem_hgs.dynamic import (  # noqa: E402
 )
 from setp_solver.algorithms.problem_hgs.dynamic_insertion import (  # noqa: E402
     DynamicInsertionOperator,
-    PublicStandbyScenario,
 )
 from setp_solver.algorithms.problem_hgs.evaluation import (  # noqa: E402
     DutyFullEvaluator,
@@ -155,7 +154,6 @@ def _build_dynamic_fixture(trigger: float):
     context = replace(
         base_context,
         dynamic_state=state,
-        incremental_full_truth_sentinel_enabled=False,
     )
     return bundle, future, context, revealed, committed_customers
 
@@ -174,26 +172,6 @@ def in_progress_dynamic_fixture():
 
 
 
-
-
-def test_standby_scenario_interface_rejects_non_public_artifacts() -> None:
-    context = SimpleNamespace(
-        dynamic_state=SimpleNamespace(
-            cut=SimpleNamespace(trigger_second=28_800.0)
-        )
-    )
-    individual = SimpleNamespace()
-
-    with pytest.raises(ValueError, match="public 08:00 manifest"):
-        PublicStandbyScenario(
-            context=context,
-            initial_future=individual,
-            source_artifacts=(
-                "public/algorithm_visible_at_0800.json",
-                "private/true_dynamic_events.csv",
-            ),
-            decision_horizon_second=30_600.0,
-        )
 
 
 def test_second_cut_keeps_history_before_the_previous_virtual_origin() -> None:
@@ -226,7 +204,6 @@ def test_second_cut_keeps_history_before_the_previous_virtual_origin() -> None:
         source_full_execution_solution=Solution(routes=[full]),
         cut=CertificateCut(
             trigger_second=20.0,
-            source_certificate_sha256="0" * 64,
             completed_route_ids=(),
             in_progress_route_ids=(route_id,),
             editable_route_ids=(),

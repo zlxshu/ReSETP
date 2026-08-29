@@ -9,17 +9,14 @@ import pytest
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import UK_2025_PRICES
-from setp_solver.profit import calculate_depot_profits, infer_customer_home_depots
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.certificate_execution import (
     COMPLETED,
+    NodeExecution,
     TripExecution,
     build_certificate_execution_ledger,
 )
-from setp_solver.search.execution_accounting import (
-    ExecutionAccountingLedger,
-    whole_route_signature,
-)
+from setp_solver.search.execution_accounting import ExecutionAccountingLedger
 from setp_solver.search.metaheuristic_baselines import solution_from_dict
 from setp_solver.search.multitrip_schedule import MultiTripCertificate, ScheduledTrip
 from setp_solver.solution import Route, Solution
@@ -51,7 +48,6 @@ def _execution(route: Route, *, departure: float = 0.0, returned: float = 100.0)
     physical_id, trip_text = route.vehicle_id.split("#T", 1)
     return TripExecution(
         route_id=route.vehicle_id,
-        route_signature=whole_route_signature(route),
         physical_vehicle_id=physical_id,
         trip_index=int(trip_text),
         vehicle_type=route.vehicle_type,
@@ -59,7 +55,16 @@ def _execution(route: Route, *, departure: float = 0.0, returned: float = 100.0)
         departure_second=departure,
         return_second=returned,
         drive_energy_kwh=0.0,
-        nodes=(),
+        nodes=tuple(
+            NodeExecution(
+                position=index,
+                node_id=node_id,
+                arrival_second=departure if index == 0 else returned,
+                service_start_second=departure if index == 0 else returned,
+                departure_second=departure if index == 0 else returned,
+            )
+            for index, node_id in enumerate(route.node_sequence)
+        ),
     )
 
 
@@ -82,7 +87,6 @@ def _formal_114_customer_case():
         UK_2025_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=0.0,
-        cross_site_cost=0.0,
         carbon_price=0.0,
     )
     assert sum(node.node_type.lower() == "c" for node in bundle.instance.nodes) == 114
@@ -126,7 +130,7 @@ def test_whole_trip_accounting_defeats_the_depot_fragment_overcount() -> None:
     assert old_fragmented["total_cost"] > summary.system.total_cost
 
 
-def test_signature_or_customer_revenue_rebooking_is_a_hard_error() -> None:
+def test_route_or_customer_revenue_rebooking_is_a_hard_error() -> None:
     instance = _small_instance()
     first = Route("CV_D0_1#T1", "cv", "D0", ["D0", "C1", "D0"])
     second = Route("CV_D0_2#T1", "cv", "D0", ["D0", "C1", "C2", "D0"])
@@ -139,17 +143,17 @@ def test_signature_or_customer_revenue_rebooking_is_a_hard_error() -> None:
     first_execution = _execution(first)
     assert ledger.register_trip(first_execution, at_second=100.0) is True
 
-    with pytest.raises(ValueError, match="whole-route signature"):
+    changed_nodes = list(first_execution.nodes)
+    changed_nodes[1] = replace(changed_nodes[1], node_id="C2")
+    with pytest.raises(ValueError, match="whole-route node sequence"):
         ledger.register_trip(
-            replace(first_execution, route_signature="0" * 64),
+            replace(first_execution, nodes=tuple(changed_nodes)),
             at_second=100.0,
         )
-    with pytest.raises(ValueError, match="changed accounting evidence"):
+    with pytest.raises(ValueError, match="changed execution data"):
         ledger.register_trip(
             replace(first_execution, return_second=101.0),
             at_second=101.0,
         )
     with pytest.raises(ValueError, match="duplicate customer revenue claim"):
         ledger.register_trip(_execution(second), at_second=100.0)
-
-

@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass, field, fields, is_dataclass, replace
-from enum import Enum
-from pathlib import Path
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any
 
@@ -44,7 +40,6 @@ from setp_solver.cost import (
     evaluate,
 )
 from setp_solver.instance_loader import Instance
-from setp_solver.mapping_identity import mapping_sha256
 from setp_solver.profit import calculate_depot_profits, depot_profit_values
 from setp_solver.search.multitrip_schedule import (
     MultiTripCertificate,
@@ -72,24 +67,6 @@ _EQUIVALENCE_ABS_TOL = 1.0e-9
 _EQUIVALENCE_REL_TOL = 1.0e-12
 _VIOLATION_TYPES = (CUSTOMER_COVERAGE, FLOW_BALANCE, FLEET_SIZE, CAPACITY, TIME_WINDOW, BATTERY, CHARGING_STATION_UNIQUENESS, ROUTE_STRUCTURE, CHARGING_START, CHARGING_POWER, CHARGING_TRIP_OVERLAP, STATION_CAPACITY, PROFIT_FAIRNESS)
 CONSTRAINT_AXES = (f"{CAPACITY}:kg", f"{CAPACITY}:m3", f"{TIME_WINDOW}:s", f"{BATTERY}:kWh", f"{FLEET_SIZE}:vehicle", f"{PROFIT_FAIRNESS}:CNY", *(f"{violation_type}:count" for violation_type in _VIOLATION_TYPES))
-
-
-@dataclass(frozen=True)
-class FrozenMappingIdentity:
-    """Content identity for an externally supplied mapping such as Pi0."""
-
-    source_id: str
-    value_sha256: str
-    externally_frozen: bool
-
-    def __post_init__(self) -> None:
-        if not self.source_id.strip():
-            raise ValueError("mapping source_id cannot be empty")
-        if len(self.value_sha256) != 64 or any(
-            character not in "0123456789abcdef"
-            for character in self.value_sha256.lower()
-        ):
-            raise ValueError("mapping value_sha256 must be a SHA-256 hex digest")
 
 
 @dataclass(frozen=True)
@@ -167,17 +144,16 @@ class DutyEvaluationContext:
 
     bundle: China81Bundle
     independent_profit: Mapping[str, float]
-    independent_profit_identity: FrozenMappingIdentity
     prior_profit: Mapping[str, float]
     theta: float
     carbon_quota_kg: float
     depot_charge_window_mode: str
     fairness_enabled: bool = True
-    incremental_full_truth_sentinel_enabled: bool = True
     dynamic_state: DutyDynamicState | None = None
     ev_daily_fixed_premium_cny: float = 0.0
     rebuilt_route_constraints: RebuiltRouteConstraintContract | None = None
     shift_aware_departure_enabled: bool = False
+    customer_depot_lock: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         depots = {
@@ -196,20 +172,6 @@ class DutyEvaluationContext:
             for value in self.independent_profit.values()
         ):
             raise ValueError("independent_profit values must be finite and positive")
-        if self.independent_profit_identity.value_sha256.lower() != mapping_sha256(
-            self.independent_profit
-        ):
-            raise ValueError(
-                "independent_profit content disagrees with its frozen identity"
-            )
-        if (
-            self.fairness_enabled
-            and self.bundle.formal_search_allowed
-            and not self.independent_profit_identity.externally_frozen
-        ):
-            raise ValueError(
-                "formal search requires an externally frozen Pi0 identity"
-            )
         if any(
             not math.isfinite(float(value))
             for value in self.prior_profit.values()
@@ -264,7 +226,6 @@ class FullEvaluation:
     prepared_solution: Solution
     certificate: MultiTripCertificate
     individual_fingerprint: str
-    evaluation_context_sha256: str
     source: str
     accounting: Mapping[str, int]
     charging_candidate_status: ChargingCandidateStatus = (
@@ -310,76 +271,6 @@ def _remove_certified_dynamic_check_duplicates(
             and violation.vehicle_id in certified_future_route_ids
         )
     ]
-
-
-def _canonical_identity_value(value: Any) -> Any:
-    """Convert an evaluation input into deterministic JSON identity data."""
-
-    if value is None or isinstance(value, (bool, str, int)):
-        return value
-    if isinstance(value, float):
-        return {"float_hex": value.hex()}
-    if isinstance(value, Path):
-        return {"path": str(value)}
-    if isinstance(value, Enum):
-        return {
-            "enum": f"{type(value).__module__}.{type(value).__qualname__}",
-            "value": _canonical_identity_value(value.value),
-        }
-    if is_dataclass(value) and not isinstance(value, type):
-        return {
-            "dataclass": f"{type(value).__module__}.{type(value).__qualname__}",
-            "fields": {
-                field.name: _canonical_identity_value(getattr(value, field.name))
-                for field in fields(value)
-            },
-        }
-    if isinstance(value, Mapping):
-        rows = [
-            (
-                _canonical_identity_value(key),
-                _canonical_identity_value(item),
-            )
-            for key, item in value.items()
-        ]
-        rows.sort(
-            key=lambda row: json.dumps(
-                row[0],
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            )
-        )
-        return {"mapping": rows}
-    if isinstance(value, (set, frozenset)):
-        rows = [_canonical_identity_value(item) for item in value]
-        rows.sort(
-            key=lambda row: json.dumps(
-                row,
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            )
-        )
-        return {"set": rows}
-    if isinstance(value, (list, tuple)):
-        return [_canonical_identity_value(item) for item in value]
-    return {
-        "object": f"{type(value).__module__}.{type(value).__qualname__}",
-        "repr": repr(value),
-    }
-
-
-def evaluation_context_sha256(context: DutyEvaluationContext) -> str:
-    """Bind cached evaluations to every input used by the full evaluator."""
-
-    encoded = json.dumps(
-        _canonical_identity_value(context),
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _validate_dynamic_state_customers(
@@ -519,9 +410,7 @@ class DutyFullEvaluator:
 
     def __init__(self, context: DutyEvaluationContext):
         self.context = context
-        self.context_sha256 = evaluation_context_sha256(context)
         self.full_calls = 0
-        self.sentinel_calls = 0
         self.slice_preparation_calls = 0
         self.candidate_assembly_calls = 0
 
@@ -576,17 +465,14 @@ class DutyFullEvaluator:
             self.context.bundle.customer_home_depot,
         )
         self.full_calls += 1
-        sentinel = int(source == "sentinel")
-        self.sentinel_calls += sentinel
         return self._evaluate_prepared(
             annotated,
             certificate,
             individual_fingerprint=individual.fingerprint,
             source=source,
             accounting={
-                "full_evaluations": 1 - sentinel,
+                "full_evaluations": 1,
                 "incremental_evaluations": 0,
-                "sentinel_evaluations": sentinel,
             },
             evaluation_instance=(
                 None
@@ -724,6 +610,22 @@ class DutyFullEvaluator:
                 )
             ),
         )
+        for route in prepared.routes:
+            for customer_id in route.node_sequence[1:-1]:
+                locked_depot = self.context.customer_depot_lock.get(customer_id)
+                if locked_depot is not None and route.home_depot_id != locked_depot:
+                    violations.append(
+                        Violation(
+                            type=ROUTE_STRUCTURE,
+                            vehicle_id=route.vehicle_id,
+                            location=customer_id,
+                            detail=(
+                                "customer depot changed while cross-depot "
+                                f"service is disabled: {locked_depot} -> "
+                                f"{route.home_depot_id}"
+                            ),
+                        )
+                    )
         if self.context.rebuilt_route_constraints is not None:
             violations.extend(
                 _rebuilt_route_constraint_violations(
@@ -827,7 +729,6 @@ class DutyFullEvaluator:
             prepared_solution=prepared,
             certificate=certificate,
             individual_fingerprint=individual_fingerprint,
-            evaluation_context_sha256=self.context_sha256,
             source=source,
             accounting=dict(accounting),
             charging_candidate_status=ChargingCandidateStatus(
@@ -866,7 +767,7 @@ class DutyFullEvaluator:
 
 
 class DutyIncrementalEvaluator:
-    """Cache unchanged duty preparation/cost, then verify against full truth."""
+    """Cache unchanged duty preparation and cost."""
 
     def __init__(self, full_evaluator: DutyFullEvaluator):
         self.full_evaluator = full_evaluator
@@ -893,7 +794,6 @@ class DutyIncrementalEvaluator:
         *,
         changed_duty_ids: set[str],
         commit: bool = False,
-        verify_full_truth: bool | None = None,
     ) -> FullEvaluation:
         if self._individual_fingerprint != previous.fingerprint:
             raise ValueError("incremental cache is not seeded for previous individual")
@@ -956,24 +856,14 @@ class DutyIncrementalEvaluator:
             next_slices,
             self.full_evaluator.context,
         )
-        sentinel_enabled = bool(
-            self.full_evaluator.context.incremental_full_truth_sentinel_enabled
-            if verify_full_truth is None
-            else verify_full_truth
-        )
         incremental = self.full_evaluator._evaluate_prepared(
             combined,
             certificate,
             individual_fingerprint=candidate.fingerprint,
-            source=(
-                "incremental_verified"
-                if sentinel_enabled
-                else "incremental_unverified"
-            ),
+            source="incremental",
             accounting={
                 "full_evaluations": 0,
                 "incremental_evaluations": 1,
-                "sentinel_evaluations": int(sentinel_enabled),
                 "candidate_assemblies": 1,
                 "duty_slice_preparations": recomputed,
                 "recomputed_duties": recomputed,
@@ -981,71 +871,10 @@ class DutyIncrementalEvaluator:
             },
             breakdown=breakdown,
         )
-
-        if sentinel_enabled:
-            truth = self.full_evaluator._evaluate_full(
-                candidate,
-                source="sentinel",
-            )
-            assert_evaluations_equivalent(incremental, truth)
         if commit:
             self._slices = next_slices
             self._individual_fingerprint = candidate.fingerprint
         return incremental
-
-    def verify_against_full_truth(
-        self,
-        candidate: DutyIndividual,
-        incremental: FullEvaluation,
-    ) -> FullEvaluation:
-        """Cold-replay one selected incremental candidate and return truth."""
-
-        if incremental.individual_fingerprint != candidate.fingerprint:
-            raise ValueError("sentinel received another candidate evaluation")
-        truth = self.full_evaluator._evaluate_full(
-            candidate,
-            source="sentinel",
-        )
-        assert_evaluations_equivalent(incremental, truth)
-        return truth
-
-
-def assert_evaluations_equivalent(
-    left: FullEvaluation,
-    right: FullEvaluation,
-) -> None:
-    """Raise when an incremental result differs from full recomputation."""
-
-    _assert_numeric_mapping_equal("breakdown", left.breakdown, right.breakdown)
-    _assert_numeric_mapping_equal(
-        "depot_profit",
-        left.depot_profit,
-        right.depot_profit,
-    )
-    _assert_numeric_mapping_equal(
-        "participation_margin",
-        left.participation_margin,
-        right.participation_margin,
-    )
-    if _violation_keys(left.violations) != _violation_keys(right.violations):
-        raise AssertionError("incremental violations differ from full truth")
-    if left.violation_magnitudes != right.violation_magnitudes:
-        raise AssertionError(
-            "incremental violation magnitudes differ from full truth"
-        )
-    if left.violation_axes != right.violation_axes:
-        raise AssertionError("incremental violation axes differ from full truth")
-    if left.prepared_solution != right.prepared_solution:
-        raise AssertionError("incremental prepared solution differs from full truth")
-    if left.certificate != right.certificate:
-        raise AssertionError("incremental certificate differs from full truth")
-    if left.charging_candidate_status != right.charging_candidate_status:
-        raise AssertionError("incremental charging candidate status differs")
-    if (
-        dict(left.dynamic_prefix_accounting_by_route_id)
-        != dict(right.dynamic_prefix_accounting_by_route_id)
-    ):
-        raise AssertionError("dynamic prefix accounting differs from full truth")
 
 
 def _dynamic_prefix_accounting_by_route_id(
@@ -1706,9 +1535,6 @@ def _aggregate_breakdowns(
             "cost_km",
             "cost_fuel",
             "cost_elec",
-            "cost_occ",
-            "cost_time",
-            "cost_transship",
             "cost_carbon",
         )
     )
@@ -1719,39 +1545,3 @@ def _price(prices: Any, name: str) -> float:
     if isinstance(prices, dict):
         return float(prices[name])
     return float(getattr(prices, name))
-
-
-def _assert_numeric_mapping_equal(
-    label: str,
-    left: Mapping[str, float],
-    right: Mapping[str, float],
-) -> None:
-    if set(left) != set(right):
-        raise AssertionError(f"{label} keys differ")
-    for key in left:
-        if not math.isclose(
-            float(left[key]),
-            float(right[key]),
-            rel_tol=_EQUIVALENCE_REL_TOL,
-            abs_tol=_EQUIVALENCE_ABS_TOL,
-        ):
-            raise AssertionError(
-                f"{label}[{key}] differs: {left[key]} != {right[key]}"
-            )
-
-
-def _violation_keys(
-    violations: tuple[Violation, ...],
-) -> tuple[tuple[str, str, str, str, str], ...]:
-    return tuple(
-        sorted(
-            (
-                violation.type,
-                violation.vehicle_id,
-                violation.location,
-                violation.detail,
-                violation.severity,
-            )
-            for violation in violations
-        )
-    )

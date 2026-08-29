@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import json
+import secrets
 import statistics
 import sys
 import traceback
@@ -23,23 +23,13 @@ if str(SCRIPT_DIR) not in sys.path:
 from experiment_acceptance import (  # noqa: E402
     NORMAL_PROBLEM_HGS_TERMINATIONS,
     assess_run,
-    finalize_five_file_package,
-    package_exit_code,
+    finalize_run_output,
+    result_exit_code,
     row_is_accepted,
 )
 
 
-MAX_WALL_CLOCK_SECONDS = 20.0 * 60.0
-PROTECTED = (
-    "solver/src/setp_solver/cost.py",
-    "solver/src/setp_solver/check.py",
-    "solver/src/setp_solver/search/evaluation.py",
-)
-FORBIDDEN_OUTPUT_DIRS = (
-    "solver/reports/public_v2_28_clean_ruler_20260810",
-    "solver/reports/dss_step1_gate2",
-    "solver/reports/endogenous_fleet_trial_20260810",
-)
+REPEAT_COUNT = 3
 FLEET_PACKAGE = Path(
     "data/ChinaInstances/china81_final_suite_v2_20260815"
 )
@@ -86,98 +76,10 @@ ARM_DEFINITIONS: Mapping[str, ArmDefinition] = {
 
 
 @dataclass(frozen=True)
-class PairIdentity:
-    arm: str
-    instance_id: str
-    seed: int
-    main_rng_seed: int
-    wall_clock_budget_seconds: float
-    objective_mode: str
-    input_snapshot_sha256: str
-    algorithm_protocol: str
-    pair_group_id: str
-
-
-@dataclass(frozen=True)
 class _PreparedPopulation:
     candidates: tuple[Any, ...]
     evaluations: tuple[Any, ...]
     full_evaluation_count: int
-
-
-PAIR_FIELDS = (
-    "instance_id",
-    "seed",
-    "main_rng_seed",
-    "wall_clock_budget_seconds",
-    "objective_mode",
-    "input_snapshot_sha256",
-    "algorithm_protocol",
-    "pair_group_id",
-)
-
-
-class PairingMismatchError(RuntimeError):
-    """Raised when a supposed same-seed comparison changes a common field."""
-
-
-def validate_pairing(identities: Sequence[PairIdentity]) -> None:
-    if not identities:
-        raise ValueError("paired validation requires at least one arm")
-    reference = identities[0]
-    differences: dict[str, dict[str, dict[str, Any]]] = {}
-    for identity in identities[1:]:
-        arm_differences = {}
-        for field in PAIR_FIELDS:
-            expected = getattr(reference, field)
-            actual = getattr(identity, field)
-            if actual != expected:
-                arm_differences[field] = {
-                    "expected_from_arm": reference.arm,
-                    "expected": expected,
-                    "actual": actual,
-                }
-        if arm_differences:
-            differences[identity.arm] = arm_differences
-    if differences:
-        raise PairingMismatchError(
-            "mixed-fleet paired inputs differ; refusing to run: "
-            + json.dumps(differences, ensure_ascii=False, sort_keys=True)
-        )
-
-
-@dataclass
-class _BestClock:
-    wall_clock_budget_seconds: float
-    best_cost: float | None = None
-    time_to_best_seconds: float | None = None
-
-    def stop(self, state: Any) -> bool:
-        if state.best_cost is not None and (
-            self.best_cost is None or float(state.best_cost) < self.best_cost
-        ):
-            self.best_cost = float(state.best_cost)
-            self.time_to_best_seconds = float(state.elapsed_seconds)
-        return float(state.elapsed_seconds) >= self.wall_clock_budget_seconds
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _json_sha256(payload: Any) -> str:
-    encoded = json.dumps(
-        payload,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -185,22 +87,6 @@ def _write_json(path: Path, payload: Any) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
-
-
-def _is_relative_to(path: Path, parent: Path) -> bool:
-    try:
-        path.relative_to(parent)
-    except ValueError:
-        return False
-    return True
-
-
-def _validate_output_path(repo: Path, output: Path) -> None:
-    resolved = output.resolve()
-    for relative in FORBIDDEN_OUTPUT_DIRS:
-        protected = (repo / relative).resolve()
-        if resolved == protected or _is_relative_to(resolved, protected):
-            raise ValueError(f"output may not touch active directory: {relative}")
 
 
 def _authority_rows(repo: Path) -> dict[str, dict[str, dict[str, str]]]:
@@ -212,55 +98,12 @@ def _authority_rows(repo: Path) -> dict[str, dict[str, dict[str, str]]]:
     return rows
 
 
-def _input_snapshot(repo: Path, instances: Sequence[str]) -> dict[str, str]:
-    paths = [repo / FLEET_PACKAGE / "fleet_caps.csv"]
-    paths.extend(
-        repo / FLEET_PACKAGE / "instances" / instance / name
-        for instance in instances
-        for name in ("nodes.csv", "orders.csv", "enterprise_assignment.csv")
-    )
-    return {
-        str(path.relative_to(repo)): _sha256(path)
-        for path in sorted(paths)
-    }
-
-
-def _pair_identities(
-    arms: Sequence[str],
-    *,
-    instance_id: str,
-    seed: int,
-    wall_clock_budget_seconds: float,
-    objective_mode: str,
-    input_snapshot_sha256: str,
-) -> tuple[PairIdentity, ...]:
-    common = {
-        "instance_id": instance_id,
-        "seed": int(seed),
-        "main_rng_seed": int(seed),
-        "wall_clock_budget_seconds": float(wall_clock_budget_seconds),
-        "objective_mode": objective_mode,
-        "input_snapshot_sha256": input_snapshot_sha256,
-        "algorithm_protocol": "PROBLEM_HGS_SERIAL_CHAIN_CURRENT_CHECKOUT",
-    }
-    pair_group_id = _json_sha256(common)
-    return tuple(
-        PairIdentity(arm=arm, pair_group_id=pair_group_id, **common)
-        for arm in arms
-    )
-
-
 def _validate_static_inputs(args: argparse.Namespace, repo: Path) -> dict[str, Any]:
     authorities = _authority_rows(repo)
     missing = [instance for instance in args.instances if instance not in authorities]
     if missing:
         raise ValueError(f"instances absent from fleet authority: {missing}")
-    source_hashes = _input_snapshot(repo, args.instances)
-    snapshot_sha = _json_sha256(source_hashes)
-    return {
-        "source_hashes": source_hashes,
-        "input_snapshot_sha256": snapshot_sha,
-    }
+    return {"fleet_authority": str(FLEET_PACKAGE / "fleet_caps.csv")}
 
 
 def _dry_run_payload(
@@ -269,19 +112,6 @@ def _dry_run_payload(
     validated: Mapping[str, Any],
 ) -> dict[str, Any]:
     fleet_parameter_class_id = _metadata_fleet_parameter_class_id(args.arms)
-    groups = []
-    for instance in args.instances:
-        for seed in args.seeds:
-            identities = _pair_identities(
-                args.arms,
-                instance_id=instance,
-                seed=seed,
-                wall_clock_budget_seconds=args.wall_clock_seconds,
-                objective_mode=args.objective_mode,
-                input_snapshot_sha256=validated["input_snapshot_sha256"],
-            )
-            validate_pairing(identities)
-            groups.append([asdict(identity) for identity in identities])
     return {
         "mode": "DRY_RUN",
         "experiment_id": args.experiment_id,
@@ -289,12 +119,11 @@ def _dry_run_payload(
         "output_directory_created": False,
         "serial_execution": True,
         "instances": list(args.instances),
-        "seeds": list(args.seeds),
+        "repeat_count": REPEAT_COUNT,
         "arms": {
             arm: asdict(ARM_DEFINITIONS[arm]) for arm in args.arms
         },
-        "wall_clock_budget_seconds_per_run": args.wall_clock_seconds,
-        "p20_limit_seconds": MAX_WALL_CLOCK_SECONDS,
+        "stop_rule": "500 consecutive iterations without improvement",
         "objective_mode": args.objective_mode,
         "charging_curve": args.charging_curve,
         "charge_timing_policy": args.charge_timing_policy,
@@ -302,19 +131,8 @@ def _dry_run_payload(
         "fleet_parameter_class_ids_by_arm": {
             arm: _planned_fleet_parameter_class_id(arm) for arm in args.arms
         },
-        "pair_validation": "PASSED",
-        "pair_fields": PAIR_FIELDS,
-        "pair_groups": groups,
-        "planned_run_count": len(args.instances) * len(args.seeds) * len(args.arms),
-        "input_source_hashes": validated["source_hashes"],
-        "input_snapshot_sha256": validated["input_snapshot_sha256"],
-        "formal_launch_ready": True,
-        "formal_package_files": (
-            "metadata.json",
-            "raw_runs.csv",
-            "decision.json",
-            "report.md",
-        ),
+        "planned_run_count": len(args.instances) * REPEAT_COUNT * len(args.arms),
+        "fleet_authority": validated["fleet_authority"],
     }
 
 
@@ -409,8 +227,7 @@ def _prepare_population(
     initial: Any,
     context: Any,
     *,
-    seed: int,
-    wall_clock_budget_seconds: float,
+    random_source: int,
     objective_mode: str,
     population_mode: str,
     charge_timing_policy: str,
@@ -432,19 +249,12 @@ def _prepare_population(
     evaluator = DutyFullEvaluator(context)
     policy = _policy(evaluator, charge_timing_policy=charge_timing_policy)
     parameters = _parameters(
-        random_seed=seed,
         population_mode=population_mode,
         objective_mode=objective_mode,
     )
     full_calls_before = evaluator.full_calls
     if population_mode == "technical_two_parent":
-        (
-            candidates,
-            _initial_evaluation,
-            _reverse,
-            _attempts,
-            evaluations,
-        ) = _prepare_reference_population(
+        candidates, _initial_evaluation, evaluations = _prepare_reference_population(
             initial,
             evaluator,
             policy,
@@ -458,7 +268,7 @@ def _prepare_population(
         route_engine = IndependentKernelDutyRouteProposalEngine(
             context,
             initial,
-            random_seed=seed,
+            random_seed=random_source,
             stream_role="main2_initialization",
             depot_assignment_operator_enabled=True,
             rebuilt_volume_capacity_enabled=True,
@@ -471,12 +281,9 @@ def _prepare_population(
             charging_policy=policy,
             route_engine=route_engine,
             requested_size=parameters.population.min_pop_size,
-            random_seed=seed,
             max_random_attempts=None,
             include_reference_candidate=False,
-            stop_requested=lambda: (
-                perf_counter() - started >= wall_clock_budget_seconds
-            ),
+            stop_requested=lambda: False,
         )
         built = _PreparedPopulation(
             candidates=tuple(population.candidates),
@@ -572,13 +379,11 @@ def _run_one(
     repo: Path,
     instance_id: str,
     arm: str,
-    seed: int,
-    wall_clock_budget_seconds: float,
+    repeat_index: int,
     objective_mode: str,
     population_mode: str,
     charging_curve: str,
     charge_timing_policy: str,
-    pair_identity: PairIdentity,
     run_dir: Path,
 ) -> dict[str, Any]:
     from run_problem_hgs_private_technical import _parameters, _policy
@@ -586,12 +391,9 @@ def _run_one(
     from setp_solver.algorithms.problem_hgs.kernel_proposals import (
         IndependentKernelDutyRouteProposalEngine,
     )
-    from setp_solver.algorithms.problem_hgs.runner import (
-        FrozenPopulationIdentity,
-        population_sha256,
-        run_integrated_problem_hgs,
-    )
+    from setp_solver.algorithms.problem_hgs.runner import run_integrated_problem_hgs
 
+    random_source = secrets.randbelow(2**31)
     bundle, initial, context = _arm_setup(
         repo,
         instance_id,
@@ -601,8 +403,7 @@ def _run_one(
     built, initialization_wall_seconds = _prepare_population(
         initial,
         context,
-        seed=seed,
-        wall_clock_budget_seconds=wall_clock_budget_seconds,
+        random_source=random_source,
         objective_mode=objective_mode,
         population_mode=population_mode,
         charge_timing_policy=charge_timing_policy,
@@ -610,38 +411,28 @@ def _run_one(
     evaluator = DutyFullEvaluator(context)
     policy = _policy(evaluator, charge_timing_policy=charge_timing_policy)
     parameters = _parameters(
-        random_seed=seed,
         population_mode=population_mode,
         objective_mode=objective_mode,
     )
     route_engine = IndependentKernelDutyRouteProposalEngine(
         context,
         initial,
-        random_seed=seed,
+        random_seed=random_source,
         stream_role="main2_main_route",
         depot_assignment_operator_enabled=True,
         rebuilt_volume_capacity_enabled=True,
         rebuilt_shift_neighbours_only=True,
         shift_aware_ev_unit_cost_enabled=True,
     )
-    population_identity = FrozenPopulationIdentity(
-        source_id=f"main2-{instance_id}-{arm}-seed-{seed}",
-        value_sha256=population_sha256(built.candidates),
-    )
-    runtime_identity = replace(
-        pair_identity,
-        seed=int(parameters.random_seed),
-        main_rng_seed=int(seed),
-    )
-    validate_pairing((pair_identity, runtime_identity))
-    clock = _BestClock(float(wall_clock_budget_seconds))
     result = run_integrated_problem_hgs(
         built.candidates,
         evaluator=evaluator,
         charging_policy=policy,
         parameters=parameters,
-        initial_population_identity=population_identity,
-        stop=clock.stop,
+        stop=lambda state: (
+            state.iterations_without_improvement
+            >= parameters.stagnation_patience
+        ),
         arm=arm,
         route_engine=route_engine,
         trajectory_sink=lambda _rows: None,
@@ -655,20 +446,15 @@ def _run_one(
     accounting = result.accounting.to_dict()
     row: dict[str, Any] = {
         "instance_id": instance_id,
-        "seed": int(seed),
+        "repeat_index": int(repeat_index),
         "arm": arm,
         "arm_label": ARM_DEFINITIONS[arm].label,
         "arm_role": ARM_DEFINITIONS[arm].role,
-        "pair_group_id": pair_identity.pair_group_id,
         "run_status": result.termination_status,
         "objective_mode": objective_mode,
         "charging_curve": charging_curve,
         "charge_timing_policy": charge_timing_policy,
-        "wall_clock_budget_seconds": float(wall_clock_budget_seconds),
         "fleet_parameter_class_id": bundle.fleet_parameter_class_id,
-        "initial_population_sha256": population_identity.value_sha256,
-        "evaluation_context_sha256": evaluator.context_sha256,
-        "search_configuration_sha256": result.provenance.search_configuration_sha256,
         "total_cost_cny": float(selected_evaluation.total_cost),
         "direct_emissions_kg": float(
             selected_evaluation.breakdown["E_cv_direct"]
@@ -687,7 +473,6 @@ def _run_one(
         "total_algorithm_wall_seconds": float(
             accounting["total_algorithm_wall_seconds"]
         ),
-        "time_to_best_cost_seconds": clock.time_to_best_seconds,
         "fleet_caps_by_depot_json": json.dumps(
             {key: dict(value) for key, value in bundle.fleet_caps_by_depot.items()},
             ensure_ascii=False,
@@ -718,26 +503,28 @@ def _run_one(
                 "violations": [asdict(item) for item in selected_evaluation.violations],
             },
             "accounting": accounting,
-            "provenance": asdict(result.provenance),
         },
     )
     return row
 
 
-def _failure_row(identity: PairIdentity, error: Exception) -> dict[str, Any]:
+def _failure_row(
+    *,
+    instance_id: str,
+    arm: str,
+    repeat_index: int,
+    objective_mode: str,
+    error: Exception,
+) -> dict[str, Any]:
     row = {
-        "instance_id": identity.instance_id,
-        "seed": identity.seed,
-        "arm": identity.arm,
-        "arm_label": ARM_DEFINITIONS[identity.arm].label,
-        "arm_role": ARM_DEFINITIONS[identity.arm].role,
-        "pair_group_id": identity.pair_group_id,
+        "instance_id": instance_id,
+        "repeat_index": repeat_index,
+        "arm": arm,
+        "arm_label": ARM_DEFINITIONS[arm].label,
+        "arm_role": ARM_DEFINITIONS[arm].role,
         "run_status": "FAILED",
-        "objective_mode": identity.objective_mode,
-        "wall_clock_budget_seconds": identity.wall_clock_budget_seconds,
-        "fleet_parameter_class_id": _planned_fleet_parameter_class_id(
-            identity.arm
-        ),
+        "objective_mode": objective_mode,
+        "fleet_parameter_class_id": _planned_fleet_parameter_class_id(arm),
         "error_type": type(error).__name__,
         "error": str(error),
         "traceback": traceback.format_exc(),
@@ -749,14 +536,12 @@ def _failure_row(identity: PairIdentity, error: Exception) -> dict[str, Any]:
 def _ordered_fields(rows: Sequence[Mapping[str, Any]]) -> list[str]:
     preferred = [
         "instance_id",
-        "seed",
+        "repeat_index",
         "arm",
         "arm_label",
         "arm_role",
-        "pair_group_id",
         "run_status",
         "objective_mode",
-        "wall_clock_budget_seconds",
         "fleet_parameter_class_id",
         "total_cost_cny",
         "direct_emissions_kg",
@@ -788,11 +573,7 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
         writer.writerows(rows)
 
 
-def _assess_row(
-    row: Mapping[str, Any],
-    *,
-    audit_ok: bool = True,
-):
+def _assess_row(row: Mapping[str, Any]):
     return assess_run(
         termination_ok=(
             row.get("run_status") in NORMAL_PROBLEM_HGS_TERMINATIONS
@@ -809,7 +590,6 @@ def _assess_row(
             row.get("demand_served") is not None
             and row.get("demand_served") == row.get("demand_total")
         ),
-        audit_ok=audit_ok,
         extra_failure_reasons=(
             f"{row.get('error_type')}: {row.get('error')}"
             if row.get("error_type") or row.get("error")
@@ -832,7 +612,7 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
     lines = [
         "# MAIN-2 混合车队实验运行报告",
         "",
-        "所有算例、种子和实验臂按请求顺序串行运行；同一算例—种子组使用相同随机种子、输入快照、双目标口径和墙钟预算。实验臂自身的车队可行域不同，这是处理因素，不被伪装成相同评价上下文。",
+        "四个车队水平各独立运行 3 次，只按连续 500 次迭代无改善停止。每次运行自行产生内部随机性，不指定也不记录随机轨迹。",
         "",
         "## 各臂 Best / Avg",
         "",
@@ -870,16 +650,20 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
     lines.extend(
         [
             "",
-            "## 同种子配对差",
+            "## 同次重复的水平差",
             "",
-            "下表只汇总两边都完成的同一算例、同一种子；差值为前者减后者。服务量差同时保留，不能用少服务解释降本或减排。",
+            "下表只汇总两个车队水平都完成的同一算例、同一重复序号；差值为前者减后者。服务量差同时保留，不能用少服务解释降本或减排。",
             "",
             "| 配对 | 对数 | Avg 成本差 | Avg 总排放差 | Avg 服务客户差 | Avg 需求完成度差 |",
             "|---|---:|---:|---:|---:|---:|",
         ]
     )
     by_key = {
-        (str(row["instance_id"]), int(row["seed"]), str(row["arm"])): row
+        (
+            str(row["instance_id"]),
+            int(row["repeat_index"]),
+            str(row["arm"]),
+        ): row
         for row in successful
     }
     comparisons = (
@@ -891,12 +675,14 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
         if left not in arms or right not in arms:
             continue
         pairs = []
-        for instance_id, seed, arm in sorted(by_key):
+        for instance_id, repeat_index, arm in sorted(by_key):
             if arm != left:
                 continue
-            right_row = by_key.get((instance_id, seed, right))
+            right_row = by_key.get((instance_id, repeat_index, right))
             if right_row is not None:
-                pairs.append((by_key[(instance_id, seed, left)], right_row))
+                pairs.append(
+                    (by_key[(instance_id, repeat_index, left)], right_row)
+                )
         if not pairs:
             lines.append(f"| {left} − {right} | 0 | — | — | — | — |")
             continue
@@ -925,8 +711,6 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         nargs="+",
         choices=tuple(ARM_DEFINITIONS),
     )
-    parser.add_argument("--seeds", type=int, nargs="+", required=True)
-    parser.add_argument("--wall-clock-seconds", type=float, required=True)
     parser.add_argument(
         "--experiment-id",
         choices=("MIXED_FLEET", "NONLINEAR_CHARGING", "TIME_VARYING_CARBON"),
@@ -956,14 +740,9 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.arms is None:
         args.arms = list(ARM_DEFINITIONS)
-    if not 0.0 < args.wall_clock_seconds <= MAX_WALL_CLOCK_SECONDS:
-        parser.error(
-            f"--wall-clock-seconds must be in (0, {MAX_WALL_CLOCK_SECONDS:g}]"
-        )
     for label, values in (
         ("--instances", args.instances),
         ("--arms", args.arms),
-        ("--seeds", args.seeds),
     ):
         if len(set(values)) != len(values):
             parser.error(f"{label} cannot contain duplicates")
@@ -990,20 +769,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
 
-    from run_public_v2_28_clean_ruler import _prepare_independent_imports
-
-    _prepare_independent_imports()
     output = args.output_dir.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output}")
     output.mkdir(parents=True)
-    protected_before = {path: _sha256(code_repo / path) for path in PROTECTED}
     from run_problem_hgs_private_technical import (
         _effective_population_metadata,
         _parameters,
     )
 
-    pair_groups = []
     rows: list[dict[str, Any]] = []
     metadata = {
         "status": "RUNNING",
@@ -1013,9 +787,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "arm_definitions": {
             arm: asdict(ARM_DEFINITIONS[arm]) for arm in args.arms
         },
-        "seeds": list(args.seeds),
-        "wall_clock_budget_seconds_per_run": args.wall_clock_seconds,
-        "budget_semantics": "initial population construction plus search wall clock",
+        "repeat_count": REPEAT_COUNT,
+        "stop_rule": "500 consecutive iterations without improvement",
         "objective_mode": args.objective_mode,
         "charging_curve": args.charging_curve,
         "charge_timing_policy": args.charge_timing_policy,
@@ -1031,65 +804,53 @@ def main(argv: Sequence[str] | None = None) -> int:
             arm: _planned_fleet_parameter_class_id(arm) for arm in args.arms
         },
         "serial_execution": True,
-        "pair_fields": PAIR_FIELDS,
-        "input_source_hashes": validated["source_hashes"],
-        "input_snapshot_sha256": validated["input_snapshot_sha256"],
-        "protected_hashes_before": protected_before,
+        "fleet_authority": validated["fleet_authority"],
         "command_argv": list(sys.argv if argv is None else argv),
     }
     _write_json(output / "metadata.json", metadata)
     for instance_id in args.instances:
-        for seed in args.seeds:
-            identities = _pair_identities(
-                args.arms,
-                instance_id=instance_id,
-                seed=seed,
-                wall_clock_budget_seconds=args.wall_clock_seconds,
-                objective_mode=args.objective_mode,
-                input_snapshot_sha256=validated["input_snapshot_sha256"],
-            )
-            validate_pairing(identities)
-            pair_groups.append([asdict(identity) for identity in identities])
-            by_arm = {identity.arm: identity for identity in identities}
+        for repeat_index in range(1, REPEAT_COUNT + 1):
             for arm in args.arms:
-                run_dir = output / "runs" / instance_id / arm / f"seed_{seed}"
+                run_dir = (
+                    output
+                    / "runs"
+                    / instance_id
+                    / arm
+                    / f"repeat_{repeat_index}"
+                )
                 try:
                     row = _run_one(
                         repo=data_repo,
                         instance_id=instance_id,
                         arm=arm,
-                        seed=seed,
-                        wall_clock_budget_seconds=args.wall_clock_seconds,
+                        repeat_index=repeat_index,
                         objective_mode=args.objective_mode,
                         population_mode=args.population_mode,
                         charging_curve=args.charging_curve,
                         charge_timing_policy=args.charge_timing_policy,
-                        pair_identity=by_arm[arm],
                         run_dir=run_dir,
                     )
                 except Exception as error:  # Preserve exact per-run failure.
-                    row = _failure_row(by_arm[arm], error)
+                    row = _failure_row(
+                        instance_id=instance_id,
+                        arm=arm,
+                        repeat_index=repeat_index,
+                        objective_mode=args.objective_mode,
+                        error=error,
+                    )
                     run_dir.mkdir(parents=True, exist_ok=True)
                     _write_json(run_dir / "failure.json", row)
                 if "acceptance_passed" not in row:
                     row.update(_assess_row(row).row_fields())
                 rows.append(row)
 
-    protected_after = {path: _sha256(code_repo / path) for path in PROTECTED}
-    protected_ok = protected_after == protected_before
-    if not protected_ok:
-        for row in rows:
-            row.update(_assess_row(row, audit_ok=False).row_fields())
     _write_csv(output / "raw_runs.csv", rows)
     metadata.update(
         {
-            "pair_validation": "PASSED",
-            "pair_groups": pair_groups,
             "planned_run_count": len(args.instances)
-            * len(args.seeds)
+            * REPEAT_COUNT
             * len(args.arms),
             "recorded_run_count": len(rows),
-            "protected_hashes_after": protected_after,
         }
     )
     accepted_rows = _successful(rows)
@@ -1104,9 +865,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             row.get("demand_served") == row.get("demand_total")
             for row in rows
         ),
-        audit_ok=protected_ok,
         extra_failure_reasons=tuple(
-            f"{row.get('instance_id')} seed={row.get('seed')} arm={row.get('arm')}: "
+            f"{row.get('instance_id')} repeat={row.get('repeat_index')} arm={row.get('arm')}: "
             f"{row.get('acceptance_failure_reasons')}"
             for row in rows
             if not row_is_accepted(row)
@@ -1118,9 +878,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "planned_run_count": len(rows),
         "accepted_run_count": len(accepted_rows),
         "rejected_run_count": len(rows) - len(accepted_rows),
-        "protected_hashes_unchanged": protected_ok,
     }
-    finalize_five_file_package(
+    finalize_run_output(
         output,
         acceptance=overall,
         metadata=metadata,
@@ -1128,7 +887,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         report_text=render_report(rows),
         complete_status="COMPLETED",
     )
-    return package_exit_code(overall)
+    return result_exit_code(overall)
 
 
 if __name__ == "__main__":

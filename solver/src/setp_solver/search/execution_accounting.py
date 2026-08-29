@@ -16,8 +16,6 @@ booking the same customer twice is a hard error.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-import hashlib
-import json
 import math
 from types import MappingProxyType
 from typing import Any, Mapping
@@ -43,8 +41,6 @@ _COST_FIELDS = (
     "cost_km",
     "cost_fuel",
     "cost_elec",
-    "cost_occ",
-    "cost_transship",
     "cost_carbon",
 )
 _ADDITIVE_FIELDS = (
@@ -67,14 +63,12 @@ _ADDITIVE_FIELDS = (
 
 @dataclass(frozen=True)
 class ExecutionTotals:
-    """Seven cost items and their physical/revenue accounting witnesses."""
+    """The five paper costs and their physical/revenue accounting witnesses."""
 
     cost_fix: float
     cost_km: float
     cost_fuel: float
     cost_elec: float
-    cost_occ: float
-    cost_transship: float
     cost_carbon: float
     total_cost: float
     distance_total: float
@@ -105,8 +99,6 @@ class BookedTrip:
     """One original certified route, never a reconstructed customer fragment."""
 
     route_id: str
-    route_signature: str
-    accounting_source_sha256: str
     physical_vehicle_id: str
     trip_index: int
     vehicle_type: str
@@ -132,7 +124,6 @@ class _TripBase:
     execution_state: str
     route: Route
     customer_ids: tuple[str, ...]
-    accounting_source_sha256: str
     values: Mapping[str, float]
 
 
@@ -226,19 +217,13 @@ class ExecutionAccountingLedger:
             ) from exc
         self._validate_binding(execution, route)
         customer_ids = self._route_customers(route)
-        source_signature = self._accounting_source_sha256(execution, route, customer_ids)
 
         existing = self._records.get(execution.route_id)
         if existing is not None:
-            if existing.execution.route_signature != execution.route_signature:
+            if existing.execution != execution:
                 raise ValueError(
                     f"{EXECUTION_ACCOUNTING_CONTRACT_ID}: booked route "
-                    f"{execution.route_id} changed signature"
-                )
-            if existing.accounting_source_sha256 != source_signature:
-                raise ValueError(
-                    f"{EXECUTION_ACCOUNTING_CONTRACT_ID}: booked route "
-                    f"{execution.route_id} changed accounting evidence"
+                    f"{execution.route_id} changed execution data"
                 )
             if existing.execution_state == IN_PROGRESS and state == COMPLETED:
                 self._records[execution.route_id] = replace(existing, execution_state=COMPLETED)
@@ -306,7 +291,6 @@ class ExecutionAccountingLedger:
             execution_state=state,
             route=route,
             customer_ids=customer_ids,
-            accounting_source_sha256=source_signature,
             values=MappingProxyType(values),
         )
         for customer_id in customer_ids:
@@ -343,8 +327,6 @@ class ExecutionAccountingLedger:
             totals = _make_totals(values, len(base.customer_ids))
             trips[route_id] = BookedTrip(
                 route_id=route_id,
-                route_signature=base.execution.route_signature,
-                accounting_source_sha256=base.accounting_source_sha256,
                 physical_vehicle_id=base.execution.physical_vehicle_id,
                 trip_index=base.execution.trip_index,
                 vehicle_type=base.execution.vehicle_type,
@@ -374,11 +356,11 @@ class ExecutionAccountingLedger:
         )
 
     def _validate_binding(self, execution: TripExecution, route: Route) -> None:
-        expected_signature = whole_route_signature(route)
-        if execution.route_signature != expected_signature:
+        executed_nodes = tuple(node.node_id for node in execution.nodes)
+        if executed_nodes != tuple(route.node_sequence):
             raise ValueError(
                 f"{EXECUTION_ACCOUNTING_CONTRACT_ID}: route {route.vehicle_id} "
-                "does not match its certified whole-route signature"
+                "does not match its certified whole-route node sequence"
             )
         if execution.route_id != route.vehicle_id:
             raise ValueError(f"{EXECUTION_ACCOUNTING_CONTRACT_ID}: route id binding changed")
@@ -400,43 +382,6 @@ class ExecutionAccountingLedger:
     def _is_customer(self, node_id: str) -> bool:
         node = self._nodes.get(node_id)
         return node is not None and node.node_type.lower() == "c"
-
-    def _accounting_source_sha256(
-        self,
-        execution: TripExecution,
-        route: Route,
-        customer_ids: tuple[str, ...],
-    ) -> str:
-        actions = sorted(
-            (
-                action.vehicle_id,
-                action.station_id,
-                float(action.energy_kwh),
-                float(action.occupancy_minutes),
-                float(action.charge_start_second),
-                int(action.charge_day_offset),
-            )
-            for action in self._actions_by_route[route.vehicle_id]
-        )
-        cross = sorted(
-            (service.customer_id, service.served_by_depot_id)
-            for customer_id in customer_ids
-            if (service := self._cross_by_customer.get(customer_id)) is not None
-        )
-        return _canonical_sha256(
-            {
-                "route_signature": execution.route_signature,
-                "physical_vehicle_id": execution.physical_vehicle_id,
-                "trip_index": execution.trip_index,
-                "vehicle_type": execution.vehicle_type.lower(),
-                "home_depot_id": execution.home_depot_id,
-                "departure_second": execution.departure_second,
-                "return_second": execution.return_second,
-                "drive_energy_kwh": execution.drive_energy_kwh,
-                "charging_actions": actions,
-                "cross_site_services": cross,
-            }
-        )
 
     def _carbon_cost_shares(self) -> dict[str, float]:
         if not self._records:
@@ -515,19 +460,6 @@ class ExecutionAccountingLedger:
             )
 
 
-def whole_route_signature(route: Route) -> str:
-    """Return the same stable whole-route signature used by the clock ledger."""
-
-    return _canonical_sha256(
-        {
-            "route_id": route.vehicle_id,
-            "vehicle_type": route.vehicle_type.lower(),
-            "home_depot_id": route.home_depot_id,
-            "node_sequence": list(route.node_sequence),
-        }
-    )
-
-
 def _make_totals(values: Mapping[str, float], customers_served: int) -> ExecutionTotals:
     normalized = {field: float(values.get(field, 0.0)) for field in _ADDITIVE_FIELDS}
     total_cost = sum(normalized[field] for field in _COST_FIELDS)
@@ -563,17 +495,6 @@ def _assert_depot_closure(
             f"{EXECUTION_ACCOUNTING_CONTRACT_ID}: depot customer count does not close to system total"
         )
     if abs(system.total_cost - sum(getattr(system, field) for field in _COST_FIELDS)) > ACCOUNTING_TOLERANCE:
-        raise ValueError(f"{EXECUTION_ACCOUNTING_CONTRACT_ID}: seven cost items do not close")
+        raise ValueError(f"{EXECUTION_ACCOUNTING_CONTRACT_ID}: five cost items do not close")
     if abs(system.realized_profit - (system.revenue - system.total_cost)) > ACCOUNTING_TOLERANCE:
         raise ValueError(f"{EXECUTION_ACCOUNTING_CONTRACT_ID}: realized profit does not close")
-
-
-def _canonical_sha256(payload: object) -> str:
-    encoded = json.dumps(
-        payload,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()

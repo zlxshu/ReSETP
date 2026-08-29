@@ -8,12 +8,10 @@ checker-equivalent capacity calendar used by the prototype coordinator.
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from time import perf_counter
 from typing import Any
@@ -32,13 +30,12 @@ from setp_solver.cost import (
     ev_instance_arc_energy_kwh,
     time_profile_rows_for_node,
 )
-from setp_solver.cost import _charging_occupancy_cost
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.search.multitrip_schedule import route_timing
 from setp_solver.solution import ChargingAction, Route, Solution
 from setp_solver.station_copies import physical_station_id
 
-from .evaluation import DutyEvaluationContext, evaluation_context_sha256
+from .evaluation import DutyEvaluationContext
 from .model import (
     DutyIndividual,
     DutyTrip,
@@ -52,10 +49,6 @@ from .model import (
 )
 
 
-SCHEDULE_SCHEMA_VERSION = "DSS_STEP1_SCHEDULE_V1"
-EVENT_CONSTRUCTION_VERSION = "FINITE_PWL_VERTEX_EVENTS_V1"
-CAPACITY_SEMANTICS_VERSION = "CHECK_PY_583_644_20260810"
-DOMINANCE_VERSION = "TIME_SOC_COMPONENTS_OCCUPANCY_SUBSET_V1"
 ORACLE_MODE = "STATIC_EXACT_NO_RESOURCE_LIMITS"
 _TOL = 1.0e-7
 
@@ -113,8 +106,6 @@ class ScheduleOracleContext:
     time_profile: list[dict[str, Any]]
     node_by_id: Mapping[str, Node]
     stations: Mapping[str, _StationContext]
-    evaluation_context_sha256: str
-    schedule_contract_sha256: str
     depot_charge_window_mode: str
 
     @classmethod
@@ -126,7 +117,6 @@ class ScheduleOracleContext:
             instance=context.bundle.instance,
             prices=context.bundle.prices,
             time_profile=context.bundle.time_profile,
-            evaluation_sha256=evaluation_context_sha256(context),
             depot_charge_window_mode=context.depot_charge_window_mode,
         )
 
@@ -137,7 +127,6 @@ class ScheduleOracleContext:
         instance: Instance,
         prices: Any,
         time_profile: list[dict[str, Any]],
-        evaluation_sha256: str,
         depot_charge_window_mode: str,
     ) -> "ScheduleOracleContext":
         node_by_id = instance.node_lookup
@@ -201,46 +190,12 @@ class ScheduleOracleContext:
                 emissions_kg_per_kwh_by_slot=emissions_by_slot,
                 capacity=_station_capacity(node, customer_count),
             )
-        contract_payload = {
-            "schema": SCHEDULE_SCHEMA_VERSION,
-            "event_construction": EVENT_CONSTRUCTION_VERSION,
-            "capacity_semantics": CAPACITY_SEMANTICS_VERSION,
-            "dominance": DOMINANCE_VERSION,
-            "oracle_mode": ORACLE_MODE,
-            "slot_seconds": CARBON_SLOT_SECONDS.hex(),
-            "float_identity": "float.hex",
-            "physical_tolerance": _TOL.hex(),
-            "resource_limits": None,
-            "evaluation_context_sha256": str(evaluation_sha256),
-            "depot_charge_window_mode": str(depot_charge_window_mode),
-            "stations": [
-                {
-                    "node_id": node_id,
-                    "physical_station_id": station.physical_station_id,
-                    "curve_id": station.curve.curve_id,
-                    "curve_physical_sha256": (
-                        station.curve.physical_parameter_sha256
-                    ),
-                    "profile_slots": len(station.price_by_slot),
-                    "capacity": station.capacity,
-                }
-                for node_id, station in sorted(stations.items())
-            ],
-        }
-        encoded = json.dumps(
-            contract_payload,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
         return cls(
             instance=instance,
             prices=prices,
             time_profile=time_profile,
             node_by_id=node_by_id,
             stations=stations,
-            evaluation_context_sha256=str(evaluation_sha256),
-            schedule_contract_sha256=hashlib.sha256(encoded).hexdigest(),
             depot_charge_window_mode=str(depot_charge_window_mode),
         )
 
@@ -253,7 +208,6 @@ class _RoutePlan:
     arc_energy_kwh: tuple[float, ...]
     latest_departure_by_position: tuple[float, ...]
     drive_energy_kwh: float
-    route_time_cost: float
 
 
 @dataclass(frozen=True)
@@ -285,44 +239,24 @@ class SingleDutyScheduleOracle:
 
     def __init__(self, context: ScheduleOracleContext):
         self.context = context
-        self._cache: dict[tuple[str, ...], ScheduleOracleResult] = {}
+        self._cache: dict[tuple[object, ...], ScheduleOracleResult] = {}
 
     def solve(self, duty: PhysicalVehicleDuty) -> ScheduleOracleResult:
         started = perf_counter()
-        lock_payload = [
-            asdict(session)
-            for session in duty.charging_sessions
-            if session.locked
-        ]
-        lock_sha = hashlib.sha256(
-            json.dumps(
-                _float_hex_identity(lock_payload),
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-        ).hexdigest()
+        locked_sessions = tuple(
+            session for session in duty.charging_sessions if session.locked
+        )
         initial_soc = (
             0.0
             if duty.vehicle_type == "cv"
             else _price(self.context.prices, "initial_ev_battery_kwh")
         )
-        initial_sha = hashlib.sha256(
-            json.dumps(
-                {
-                    "home": duty.home_depot_id,
-                    "initial_soc_hex": float(initial_soc).hex(),
-                },
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-        ).hexdigest()
         key = (
             duty.structure_fingerprint,
-            initial_sha,
-            lock_sha,
-            self.context.evaluation_context_sha256,
-            self.context.schedule_contract_sha256,
+            duty.home_depot_id,
+            float(initial_soc),
+            locked_sessions,
+            self.context.depot_charge_window_mode,
             ORACLE_MODE,
         )
         cached = self._cache.get(key)
@@ -426,9 +360,6 @@ class SingleDutyScheduleOracle:
                 charging_sessions=label.charging_sessions,
                 occupancy_signature=tuple(sorted(label.occupancy)),
                 local_accounting_vector=label.accounting,
-                schedule_contract_sha256=(
-                    self.context.schedule_contract_sha256
-                ),
             )
             if self._terminal_pricing_matches(duty, schedule, counters):
                 schedules.append(schedule)
@@ -528,11 +459,6 @@ class SingleDutyScheduleOracle:
             travel,
             nodes,
         )
-        route_time_cost = (
-            sum(travel)
-            / 3600.0
-            * _optional_price(self.context.prices, "route_time_cost_per_hour")
-        )
         return _RoutePlan(
             trip=trip,
             route=route,
@@ -540,7 +466,6 @@ class SingleDutyScheduleOracle:
             arc_energy_kwh=tuple(energies),
             latest_departure_by_position=latest_depart,
             drive_energy_kwh=sum(energies),
-            route_time_cost=route_time_cost,
         )
 
     def _extend_trip(
@@ -787,10 +712,6 @@ class SingleDutyScheduleOracle:
         if added_session is not None:
             sessions.append(added_session)
         accounting = _add_vectors(base.accounting, added_accounting)
-        accounting = _add_vectors(
-            accounting,
-            ScheduleAccountingVector(route_time_cost=plan.route_time_cost),
-        )
         occupancy = frozenset((*base.occupancy, *added_occupancy))
         if departure_soc is not None:
             points.append(
@@ -983,17 +904,10 @@ class SingleDutyScheduleOracle:
                     action.vehicle_id,
                 )
             )
-        occupancy_cost = (
-            0.0
-            if station.node.node_type.lower() == "d"
-            else float(action.occupancy_minutes)
-            * _price(self.context.prices, "occupancy_fee")
-        )
         return (
             ScheduleAccountingVector(
                 electricity_cost=electricity,
                 emissions_kg=emissions,
-                occupancy_cost=occupancy_cost,
             ),
             frozenset(occupancy),
         )
@@ -1027,11 +941,6 @@ class SingleDutyScheduleOracle:
             )
             for action in solution.charging_actions
         )
-        truth_occupancy = _charging_occupancy_cost(
-            solution,
-            dict(self.context.node_by_id),
-            self.context.prices,
-        )
         vector = schedule.local_accounting_vector
         matches = (
             math.isclose(
@@ -1043,12 +952,6 @@ class SingleDutyScheduleOracle:
             and math.isclose(
                 float(vector.emissions_kg),
                 float(truth_emissions),
-                rel_tol=1.0e-12,
-                abs_tol=1.0e-9,
-            )
-            and math.isclose(
-                float(vector.occupancy_cost),
-                float(truth_occupancy),
                 rel_tol=1.0e-12,
                 abs_tol=1.0e-9,
             )
@@ -1071,7 +974,7 @@ class ScheduleCoordinator:
         self.context = context
         self.oracle = oracle or SingleDutyScheduleOracle(context)
         self.result_sink = result_sink
-        self._cache: dict[tuple[str, ...], ScheduleCoordinatorResult] = {}
+        self._cache: dict[tuple[object, ...], ScheduleCoordinatorResult] = {}
 
     def coordinate(
         self,
@@ -1108,7 +1011,7 @@ class ScheduleCoordinator:
             self.context.instance,
             self.context.prices,
         )
-        calendar_sha = capacity_calendar_fingerprint(calendar)
+        calendar_key = capacity_calendar_key(calendar)
         oracle_rows: list[tuple[PhysicalVehicleDuty, ScheduleOracleResult]] = []
         for duty_id in sorted(changed):
             duty = candidate_by_id[duty_id]
@@ -1127,24 +1030,22 @@ class ScheduleCoordinator:
                     wall_seconds=perf_counter() - started,
                 )
             oracle_rows.append((duty, result))
-        frontier_identities = []
+        frontier_keys = []
         for duty, result in oracle_rows:
-            encoded = "".join(
-                schedule.schedule_fingerprint
-                for schedule in result.frontier
-            ).encode("ascii")
-            frontier_identities.extend(
+            frontier_keys.extend(
                 (
                     duty.physical_vehicle_id,
                     duty.structure_fingerprint,
-                    hashlib.sha256(encoded).hexdigest(),
+                    tuple(
+                        schedule.schedule_fingerprint
+                        for schedule in result.frontier
+                    ),
                 )
             )
         cache_key = (
-            *frontier_identities,
-            calendar_sha,
-            self.context.evaluation_context_sha256,
-            self.context.schedule_contract_sha256,
+            *frontier_keys,
+            calendar_key,
+            self.context.depot_charge_window_mode,
         )
         cached = self._cache.get(cache_key)
         if cached is not None:
@@ -1233,7 +1134,7 @@ class ScheduleCoordinator:
                 "schedule_coordinator_capacity_prunes": capacity_prunes,
                 "schedule_coordinator_full_candidates": len(combined),
                 "changed_duty_count": len(changed),
-                "unchanged_capacity_calendar_fingerprint": calendar_sha,
+                "unchanged_capacity_calendar_entries": len(calendar),
             },
             wall_seconds=perf_counter() - started,
         )
@@ -1286,25 +1187,19 @@ def build_capacity_calendar(
     }
 
 
-def capacity_calendar_fingerprint(
+def capacity_calendar_key(
     calendar: Mapping[tuple[str, int, int], CapacityCalendarEntry],
-) -> str:
-    payload = [
-        {
-            "key": [station, day, slot],
-            "capacity": entry.capacity,
-            "occupied": sorted(entry.occupied_action_vehicle_ids),
-        }
+) -> tuple[tuple[object, ...], ...]:
+    return tuple(
+        (
+            station,
+            day,
+            slot,
+            entry.capacity,
+            tuple(sorted(entry.occupied_action_vehicle_ids)),
+        )
         for (station, day, slot), entry in sorted(calendar.items())
-    ]
-    return hashlib.sha256(
-        json.dumps(
-            payload,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-    ).hexdigest()
+    )
 
 
 def _station_capacity(node: Node, customer_count: int) -> int:
@@ -1338,25 +1233,6 @@ def _price(prices: Any, name: str) -> float:
     if isinstance(prices, dict):
         return float(prices[name])
     return float(getattr(prices, name))
-
-
-def _optional_price(prices: Any, name: str) -> float:
-    if isinstance(prices, dict):
-        return float(prices.get(name, 0.0))
-    return float(getattr(prices, name, 0.0))
-
-
-def _float_hex_identity(value: Any) -> Any:
-    if isinstance(value, float):
-        return {"float_hex": value.hex()}
-    if isinstance(value, dict):
-        return {
-            str(key): _float_hex_identity(item)
-            for key, item in sorted(value.items(), key=lambda row: str(row[0]))
-        }
-    if isinstance(value, (list, tuple)):
-        return [_float_hex_identity(item) for item in value]
-    return value
 
 
 def _arc_loads(
@@ -1554,10 +1430,6 @@ def _add_vectors(
         electricity_cost=float(left.electricity_cost)
         + float(right.electricity_cost),
         emissions_kg=float(left.emissions_kg) + float(right.emissions_kg),
-        occupancy_cost=float(left.occupancy_cost)
-        + float(right.occupancy_cost),
-        route_time_cost=float(left.route_time_cost)
-        + float(right.route_time_cost),
     )
 
 
@@ -1744,11 +1616,7 @@ def _prune_individual_schedules(
             if duty.schedule is None:
                 continue
             vector = duty.schedule.local_accounting_vector
-            cost += (
-                float(vector.electricity_cost)
-                + float(vector.occupancy_cost)
-                + float(vector.route_time_cost)
-            )
+            cost += float(vector.electricity_cost)
             emissions += float(vector.emissions_kg)
             occupancy.update(duty.schedule.occupancy_signature)
         rows.append((individual, cost, emissions, frozenset(occupancy)))

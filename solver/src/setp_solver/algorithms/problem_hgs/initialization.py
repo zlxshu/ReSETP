@@ -1,4 +1,4 @@
-"""Reproducible Problem-HGS initial-population construction.
+"""Problem-HGS initial-population construction.
 
 IndependentKernel supplies only random route skeletons.  Physical-vehicle identity,
 multi-trip reconstruction, charging, and complete feasibility remain in the
@@ -8,7 +8,7 @@ budget; this module does not freeze either value.
 
 from __future__ import annotations
 
-import random
+from random import SystemRandom
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from time import perf_counter
@@ -45,7 +45,6 @@ from .operators import (
 
 @dataclass(frozen=True)
 class InitialPopulationAttempt:
-    random_seed: int | None
     draw_index: int | None
     status: str
     fingerprint: str | None
@@ -415,7 +414,6 @@ def generate_witness_perturbation_moves(
     witness: DutyIndividual,
     *,
     customer_shift_by_id: Mapping[str, str],
-    random_seed: int,
 ) -> tuple[object, ...]:
     """Generate only the approved witness-seed perturbation actions.
 
@@ -527,7 +525,7 @@ def generate_witness_perturbation_moves(
                 )
             )
 
-    random.Random(int(random_seed)).shuffle(moves)
+    SystemRandom().shuffle(moves)
     return tuple(moves)
 
 
@@ -614,7 +612,6 @@ def build_initial_population(
     charging_policy: ChargingRepairPolicy,
     route_engine: IndependentKernelDutyRouteProposalEngine,
     requested_size: int,
-    random_seed: int,
     max_random_attempts: int | None,
     initialization_method: str = "random",
     include_reference_candidate: bool = True,
@@ -668,7 +665,6 @@ def build_initial_population(
         assert initial_evaluation is not None
         attempts.append(
             InitialPopulationAttempt(
-                random_seed=None,
                 draw_index=None,
                 status="READY",
                 fingerprint=initial.fingerprint,
@@ -686,7 +682,6 @@ def build_initial_population(
         perturbation_moves = generate_witness_perturbation_moves(
             witness_seed,
             customer_shift_by_id=contract.customer_shift_by_id,
-            random_seed=random_seed,
         )
     else:
         perturbation_moves = ()
@@ -720,13 +715,11 @@ def build_initial_population(
         if source == "perturb":
             move = perturbation_moves[perturbation_offset]
             perturbation_offset += 1
-            seed = None
             action_id = str(getattr(move, "action_id", "witness-perturbation"))
             reference = witness_seed or initial
         else:
             if max_random_attempts is not None and random_offset >= max_random_attempts:
                 break
-            seed = int(random_seed)
             draw_index = random_offset
             random_offset += 1
             action_id = None
@@ -748,7 +741,6 @@ def build_initial_population(
                 if not include_reference_candidate:
                     attempts.append(
                         InitialPopulationAttempt(
-                            random_seed=seed,
                             draw_index=draw_index,
                             status="REJECTED",
                             fingerprint=None,
@@ -772,7 +764,6 @@ def build_initial_population(
                     evaluations.append(duplicate_evaluation)
                 attempts.append(
                     InitialPopulationAttempt(
-                        random_seed=seed,
                         draw_index=draw_index,
                         status="READY",
                         fingerprint=initial.fingerprint,
@@ -835,7 +826,6 @@ def build_initial_population(
                 )
                 attempts.append(
                     InitialPopulationAttempt(
-                        random_seed=seed,
                         draw_index=draw_index,
                         status=charging_outcome.status.value,
                         fingerprint=candidate.fingerprint,
@@ -856,7 +846,6 @@ def build_initial_population(
         except (AssertionError, RuntimeError, TypeError, ValueError) as exc:
             attempts.append(
                 InitialPopulationAttempt(
-                    random_seed=seed,
                     draw_index=draw_index,
                     status="REJECTED",
                     fingerprint=(
@@ -886,7 +875,6 @@ def build_initial_population(
             evaluations[-1] = evaluation
         attempts.append(
             InitialPopulationAttempt(
-                random_seed=seed,
                 draw_index=draw_index,
                 status=(
                     "READY"

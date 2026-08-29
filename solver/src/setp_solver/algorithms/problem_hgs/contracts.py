@@ -37,7 +37,6 @@ class CandidateStatus(StrEnum):
     REJECTED_LOCK = "REJECTED_LOCK"
     REJECTED_REGISTRY = "REJECTED_REGISTRY"
     REPAIR_INCOMPLETE = "REPAIR_INCOMPLETE"
-    SENTINEL_MISMATCH = "SENTINEL_MISMATCH"
     INTERNAL_ERROR = "INTERNAL_ERROR"
     NO_FEASIBLE_SOLUTION = "NO_FEASIBLE_SOLUTION"
 
@@ -132,7 +131,6 @@ class SearchAccounting:
     full_evaluations: int = 0
     initialization_full_evaluations: int = 0
     incremental_evaluations: int = 0
-    sentinel_evaluations: int = 0
     cache_seedings: int = 0
     duty_slice_preparations: int = 0
     candidate_assemblies: int = 0
@@ -370,9 +368,6 @@ class SearchAccounting:
         self.incremental_evaluations += int(
             accounting.get("incremental_evaluations", 0)
         )
-        self.sentinel_evaluations += int(
-            accounting.get("sentinel_evaluations", 0)
-        )
         self.cache_seedings += int(accounting.get("cache_seedings", 0))
         self.duty_slice_preparations += int(
             accounting.get("duty_slice_preparations", 0)
@@ -414,10 +409,6 @@ class SearchAccounting:
                 self.initialization_full_evaluations
             ),
             "incremental_evaluations": int(self.incremental_evaluations),
-            "sentinel_evaluations": int(self.sentinel_evaluations),
-            "actual_full_model_evaluations": int(
-                self.full_evaluations + self.sentinel_evaluations
-            ),
             "cache_seedings": int(self.cache_seedings),
             "duty_slice_preparations": int(
                 self.duty_slice_preparations

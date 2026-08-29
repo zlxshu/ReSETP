@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from coalition_accounting_adapter import (
     TwoEnterpriseCoalitionCosts,
@@ -10,7 +13,7 @@ from coalition_accounting_adapter import (
 )
 
 
-def test_two_enterprise_rows_and_upstream_shapley_allocation() -> None:
+def test_two_enterprise_rows_and_stdlib_upstream_shapley_allocation() -> None:
     costs = TwoEnterpriseCoalitionCosts("ENT_A", "ENT_B", 80.0, 120.0, 150.0)
     rows = coalition_value_rows(costs)
 

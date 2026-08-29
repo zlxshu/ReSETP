@@ -105,7 +105,6 @@ class _FullEvaluator:
 
 class _RouteProposalEngine:
     source_id = "test-route-proposals"
-    identity_sha256 = "0" * 64
 
     def __init__(self) -> None:
         self.rng = _KernelRng()
@@ -126,10 +125,6 @@ class _Move:
 class _Provider:
     source_id: str
     moves: tuple[_Move, ...]
-
-    @property
-    def identity_sha256(self) -> str:
-        return self.source_id
 
     def propose(self, *args, **kwargs):
         return self.moves

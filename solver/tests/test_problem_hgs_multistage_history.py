@@ -23,7 +23,6 @@ def test_multistage_merge_keeps_earlier_and_current_committed_routes() -> None:
         ),
         cut=CertificateCut(
             trigger_second=10.0,
-            source_certificate_sha256="0" * 64,
             completed_route_ids=("CV_D0_1#T2",),
             in_progress_route_ids=(),
             editable_route_ids=("CV_D0_1#T3",),
@@ -59,7 +58,6 @@ def test_multistage_state_rejects_route_identity_overlap() -> None:
             source_solution=Solution(routes=[_route("CV_D0_1#T2", "C2")]),
             cut=CertificateCut(
                 trigger_second=10.0,
-                source_certificate_sha256="0" * 64,
                 completed_route_ids=(),
                 in_progress_route_ids=(),
                 editable_route_ids=("CV_D0_1#T2",),

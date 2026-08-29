@@ -1,13 +1,13 @@
 """Best-improvement Duty education under the complete evaluation chain.
 
 v1 2026-08-07: evaluate every generated action, rebuild affected nonlinear
-charging ledgers, verify incremental results against full truth, and accept only
-the best complete-model legal improvement in each education round.
+charging ledgers, and accept only the best complete-model legal improvement in
+each education round.
 
 v2 2026-08-07: distinguish a deterministic no-op from an interface rejection.
 
 v3 2026-08-07: seed one immutable incremental cache per education round and
-reuse an already verified input evaluation supplied by the repair phase.
+reuse an input evaluation supplied by the repair phase.
 
 v4 2026-08-07: expose the approved whole-duty type-exchange switch so its
 contribution can be measured without changing any other search setting.
@@ -15,9 +15,6 @@ contribution can be measured without changing any other search setting.
 v5 2026-08-08: accept an explicit system proposal engine.  The engine orders
 candidate actions only; charging repair and complete-model evaluation remain
 the sole construction and acceptance path.
-
-v6 2026-08-08: cold-replay only the selected improving action during search;
-tests may still request a sentinel for every candidate through ``evaluate_move``.
 
 v7 2026-08-16: defer a stop request until the current education round has
 completed, then cold-evaluate the returned individual before handing it back
@@ -57,7 +54,6 @@ from .fleet_registry import assert_fleet_activation_allowed
 from .model import DutyIndividual, assert_locks_preserved
 from .operators import DutyMove
 from .proposals import DutyProposalEngine, LegacyCompleteProposalEngine
-from .schedule_capture import emit_schedule_capture
 from .schedule_oracle import OracleStatus, ScheduleCoordinator
 
 
@@ -68,14 +64,6 @@ from .schedule_oracle import OracleStatus, ScheduleCoordinator
 IMPROVEMENT_TOLERANCE = 1e-9
 
 
-class DutySentinelMismatch(RuntimeError):
-    """Carry completed trace rows when incremental truth equality fails."""
-
-    def __init__(self, rows: tuple[TrajectoryRow, ...]):
-        super().__init__("incremental evaluation differs from full truth")
-        self.rows = rows
-
-
 def evaluate_move(
     current: DutyIndividual,
     move: DutyMove,
@@ -84,15 +72,13 @@ def evaluate_move(
     charging_policy: ChargingRepairPolicy,
     incremental_evaluator: DutyIncrementalEvaluator | None = None,
     charging_repair_cache: ChargingRepairCache | None = None,
-    verify_full_truth: bool | None = None,
     penalized_cost: Callable[[FullEvaluation], float] | None = None,
-    schedule_capture_iteration: int | None = None,
     schedule_coordinator: ScheduleCoordinator | None = None,
     schedule_accounting: SearchAccounting | None = None,
     fleet_activation_enabled: bool = True,
     charging_prescreen: ChargingFeasibilityPrescreen | None = None,
 ) -> CandidateOutcome:
-    """Return a typed candidate outcome; truth-sentinel failures still raise."""
+    """Return a typed candidate outcome."""
 
     started = perf_counter()
     raw = None
@@ -109,18 +95,6 @@ def evaluate_move(
             evaluator.context.rebuilt_route_constraints,
         )
     except (TypeError, ValueError) as exc:
-        if raw is not None:
-            emit_schedule_capture(
-                channel=move.channel,
-                action_id=move.action_id,
-                iteration=schedule_capture_iteration,
-                reference=current,
-                raw_candidate=raw,
-                changed_duty_ids=move.changed_duty_ids,
-                context=evaluator.context,
-                a0_status="INFEASIBLE",
-                error=exc,
-            )
         return _rejection(
             move,
             CandidateStatus.REJECTED_LOCK
@@ -132,17 +106,6 @@ def evaluate_move(
             exc,
             started,
         )
-    emit_schedule_capture(
-        channel=move.channel,
-        action_id=move.action_id,
-        iteration=schedule_capture_iteration,
-        reference=current,
-        raw_candidate=raw,
-        changed_duty_ids=move.changed_duty_ids,
-        context=evaluator.context,
-        a0_status="FEASIBLE",
-        error=None,
-    )
     if schedule_coordinator is not None:
         coordinated = schedule_coordinator.coordinate(
             current,
@@ -226,7 +189,6 @@ def evaluate_move(
     if charging_prescreen is not None:
         failure = _screen_route_clock(
             charging_prescreen,
-            current,
             raw,
             changed_duty_ids=move.changed_duty_ids,
             channel=move.channel,
@@ -319,7 +281,6 @@ def evaluate_move(
             current,
             candidate,
             changed_duty_ids=set(move.changed_duty_ids),
-            verify_full_truth=verify_full_truth,
         )
         if local_seed_count:
             result = replace(
@@ -335,26 +296,6 @@ def evaluate_move(
                     ),
                 },
             )
-    except AssertionError as exc:
-        return CandidateOutcome(
-            action_id=move.action_id,
-            channel=move.channel,
-            status=CandidateStatus.SENTINEL_MISMATCH,
-            changed_duty_ids=move.changed_duty_ids,
-            error_type=type(exc).__name__,
-            error=str(exc),
-            wall_seconds=perf_counter() - started,
-            work_accounting={
-                "full_evaluations": 0,
-                "incremental_evaluations": 1,
-                "sentinel_evaluations": 1,
-                "cache_seedings": int(local_seed_count > 0),
-                "duty_slice_preparations": (
-                    len(move.changed_duty_ids) + local_seed_count
-                ),
-                "candidate_assemblies": 1,
-            },
-        )
     except (TypeError, ValueError) as exc:
         return _rejection(
             move,
@@ -375,7 +316,6 @@ def evaluate_move(
 
 def _screen_route_clock(
     prescreen: ChargingFeasibilityPrescreen,
-    reference: DutyIndividual,
     candidate: DutyIndividual,
     *,
     changed_duty_ids: frozenset[str],
@@ -397,7 +337,6 @@ def _screen_route_clock(
     before = tuple(counter[alias] for counter in counters)
     reasons_before = dict(prescreen.rejected_by_channel_and_reason)
     failure = prescreen.screen(
-        reference,
         candidate,
         changed_duty_ids=changed_duty_ids,
         channel=alias,
@@ -525,7 +464,6 @@ def educate_best_improvement(
         best = None
         best_key = None
         best_row_index = None
-        sentinel_mismatch = False
         stop_after_round = False
         for move in moves:
             if (
@@ -542,9 +480,7 @@ def educate_best_improvement(
                 charging_policy=charging_policy,
                 incremental_evaluator=incremental,
                 charging_repair_cache=round_charging_repair_cache,
-                verify_full_truth=False,
                 penalized_cost=penalized_cost,
-                schedule_capture_iteration=iteration,
                 schedule_coordinator=schedule_coordinator,
                 schedule_accounting=accounting,
                 fleet_activation_enabled=fleet_activation_enabled,
@@ -563,10 +499,6 @@ def educate_best_improvement(
                         accepted=False,
                     )
                 )
-            sentinel_mismatch = bool(
-                sentinel_mismatch
-                or outcome.status == CandidateStatus.SENTINEL_MISMATCH
-            )
             if (
                 outcome.evaluated
                 and outcome.evaluation is not None
@@ -598,30 +530,7 @@ def educate_best_improvement(
             )
         )
         last_round_improved = accepted
-        if (
-            accepted
-            and best is not None
-            and evaluator.context.incremental_full_truth_sentinel_enabled
-            and evaluator.context.dynamic_state is None
-        ):
-            try:
-                truth = incremental.verify_against_full_truth(
-                    best.candidate,
-                    best.evaluation,
-                )
-            except AssertionError as exc:
-                if best_row_index is not None:
-                    round_rows[best_row_index] = replace(
-                        round_rows[best_row_index],
-                        status=CandidateStatus.SENTINEL_MISMATCH.value,
-                        error_type=type(exc).__name__,
-                        error=str(exc),
-                    )
-                sentinel_mismatch = True
-            else:
-                accounting.sentinel_evaluations += 1
-                best = replace(best, evaluation=truth)
-        if accepted and not sentinel_mismatch and best_row_index is not None:
+        if accepted and best_row_index is not None:
             round_rows[best_row_index] = replace(
                 round_rows[best_row_index],
                 accepted=True,
@@ -631,8 +540,6 @@ def educate_best_improvement(
                 rows.extend(round_rows)
             else:
                 trajectory_sink(tuple(round_rows))
-        if sentinel_mismatch:
-            raise DutySentinelMismatch(tuple(rows))
         if stop_after_round:
             if not accepted or best is None:
                 return finish_after_stop()

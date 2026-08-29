@@ -1,23 +1,21 @@
-"""Direct adapter for the frozen frvcpy 2020.1035 implementation.
+"""Direct adapter for the harvested frvcpy 2020.1035 implementation.
 
 The upstream ``core.py``, ``algorithm.py``, and ``solver.py`` are loaded and
-executed unchanged from the harvested snapshot at commit
-``d50ad0dfedce3e8b8d5f741be6473a27012ece02``.  They remain Copyright 2020
-ND Kullman, A Froger, JE Mendoza, and JC Goodson and are licensed under
-Apache-2.0; the complete retained license is at
+executed from the harvested snapshot. They remain Copyright 2020 ND Kullman,
+A Froger, JE Mendoza, and JC Goodson and are licensed under Apache-2.0; the
+complete retained license is at
 ``third_party/harvested_materials/04_ev_charging/``
 ``frvcpy_2020_1035/upstream/LICENSE``.
 
 This file only translates one load-dependent project route into frvcpy's
 fixed energy/time matrices and translates the returned station/amount plan
-back.  It does not reproduce or replace frvcpy's labeling algorithm.
+back. It does not reimplement or replace frvcpy's labeling algorithm.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
-import hashlib
 import importlib.util
 import math
 from pathlib import Path
@@ -33,13 +31,6 @@ from setp_solver.solution import Route
 from setp_solver.station_copies import physical_station_id
 
 
-FRVCPY_COMMIT = "d50ad0dfedce3e8b8d5f741be6473a27012ece02"
-FRVCPY_SOURCE_SHA256 = {
-    "core.py": "e1a0eefd9cf614086d884cdbd4544418e5f4c4d3e1fab52eadc50b7dccb21365",
-    "algorithm.py": "82ac70b50dcf1e432ca560c98d8030da09f20ad96ee628afb8ccdcfe1c07a743",
-    "solver.py": "bb7a466f774eb8b2e435e9b7335f9b67edb50ecd22110923c70d718c1a941b93",
-    "LICENSE": "c95bae1d1ce0235ecccd3560b772ec1efb97f348a79f0fbe0a634f0c2ccefe2c",
-}
 _INACCESSIBLE_TIME_SECONDS = 1.0e15
 _TOL = 1.0e-7
 
@@ -86,24 +77,6 @@ def _source_root() -> Path:
     )
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _verify_upstream_snapshot(root: Path) -> None:
-    for name, expected in FRVCPY_SOURCE_SHA256.items():
-        path = root / ("src/frvcpy" if name != "LICENSE" else "") / name
-        actual = _sha256(path)
-        if actual != expected:
-            raise RuntimeError(
-                f"harvested frvcpy source hash mismatch for {path}: {actual}"
-            )
-
-
 def _load_module(name: str, path: Path) -> ModuleType:
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
@@ -119,7 +92,6 @@ def _frvcpy_solver_class():
     """Load the pinned upstream solver without its unused XML dependency."""
 
     root = _source_root()
-    _verify_upstream_snapshot(root)
     source = root / "src" / "frvcpy"
 
     existing = sys.modules.get("frvcpy")

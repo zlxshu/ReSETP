@@ -4,7 +4,6 @@ import importlib.util
 import json
 import subprocess
 import sys
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -12,6 +11,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[2]
 SCRIPT = REPO / "solver/scripts/run_mixed_fleet_experiment.py"
+INSTANCE = "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd"
 SPEC = importlib.util.spec_from_file_location("mixed_fleet_harness", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 harness = importlib.util.module_from_spec(SPEC)
@@ -19,127 +19,64 @@ sys.modules[SPEC.name] = harness
 SPEC.loader.exec_module(harness)
 
 
-def test_pairing_accepts_only_arm_as_the_treatment_difference() -> None:
-    identities = harness._pair_identities(
-        ("endogenous", "fixed25", "same_total_cap"),
-        instance_id="cn-prd-50c-01-V2-LOCATIONS",
-        seed=11,
-        wall_clock_budget_seconds=1200.0,
-        objective_mode="bi_objective",
-        input_snapshot_sha256="a" * 64,
+def test_paper_protocol_has_four_levels_and_three_repeats() -> None:
+    assert harness.REPEAT_COUNT == 3
+    assert tuple(harness.ARM_DEFINITIONS) == (
+        "cv18_ev2",
+        "cv13_ev7",
+        "cv7_ev13",
+        "cv2_ev18",
     )
-    harness.validate_pairing(identities)
-    with pytest.raises(harness.PairingMismatchError, match="wall_clock"):
-        harness.validate_pairing(
-            (identities[0], replace(identities[1], wall_clock_budget_seconds=60.0))
+    for arm, caps in harness.FLEET_LEVEL_CAPS.items():
+        cv = sum(values[0] for values in caps.values())
+        ev = sum(values[1] for values in caps.values())
+        assert arm == f"cv{cv}_ev{ev}"
+        assert cv + ev == 20
+
+
+def test_real_level_setups_change_fleet_only_without_search() -> None:
+    for arm, requested in harness.FLEET_LEVEL_CAPS.items():
+        bundle, initial, context = harness._arm_setup(
+            REPO,
+            INSTANCE,
+            arm,
+            "literature_pwl",
         )
-
-
-def test_arm_definitions_cover_main_reference_control_and_endpoints() -> None:
-    assert harness.ARM_DEFINITIONS["endogenous"].role == "MAIN_TREATMENT"
-    assert harness.ARM_DEFINITIONS["fixed25"].role == "HISTORICAL_REFERENCE"
-    assert (
-        harness.ARM_DEFINITIONS["same_total_cap"].role
-        == "FLEET_SIZE_CONFOUND_CONTROL"
-    )
-    assert harness.ARM_DEFINITIONS["all_cv"].initial_witness_level == "0"
-    assert harness.ARM_DEFINITIONS["all_ev"].initial_witness_level == "100"
-
-
-def test_real_arm_bundles_apply_caps_without_changing_chargers() -> None:
-    instance = "cn-prd-50c-01-V2-LOCATIONS"
-    fixed = harness._arm_bundle(REPO, instance, "fixed25")
-    endogenous = harness._arm_bundle(REPO, instance, "endogenous")
-    matched = harness._arm_bundle(REPO, instance, "same_total_cap")
-    all_cv = harness._arm_bundle(REPO, instance, "all_cv")
-    all_ev = harness._arm_bundle(REPO, instance, "all_ev")
-
-    for depot_id in fixed.fleet_caps_by_depot:
-        fixed_caps = fixed.fleet_caps_by_depot[depot_id]
-        endogenous_caps = endogenous.fleet_caps_by_depot[depot_id]
-        matched_caps = matched.fleet_caps_by_depot[depot_id]
-        assert matched_caps["num_cv"] == endogenous_caps["num_cv"]
-        assert matched_caps["num_ev"] == endogenous_caps["num_ev"]
-        assert matched_caps["total_fleet_cap"] == fixed_caps["total_fleet_cap"]
-        assert all_cv.fleet_caps_by_depot[depot_id] == {
-            "num_cv": endogenous_caps["num_cv"],
-            "num_ev": 0,
-            "total_fleet_cap": endogenous_caps["num_cv"],
-        }
-        assert all_ev.fleet_caps_by_depot[depot_id] == {
-            "num_cv": 0,
-            "num_ev": endogenous_caps["num_ev"],
-            "total_fleet_cap": endogenous_caps["num_ev"],
-        }
-        for bundle in (fixed, endogenous, matched, all_cv, all_ev):
+        assert len(initial.duties) == 20
+        assert context.fairness_enabled is False
+        assert bundle.fleet_parameter_class_id == arm
+        for depot_id, (cv, ev) in requested.items():
+            assert dict(bundle.fleet_caps_by_depot[depot_id]) == {
+                "num_cv": cv,
+                "num_ev": ev,
+                "total_fleet_cap": cv + ev,
+            }
             charger = bundle.charger_scenario_by_node[depot_id]
             assert charger["charger_count"] == 2
-            assert charger["charge_power_kw"] == pytest.approx(22.0)
+            assert charger["charge_power_kw"] == pytest.approx(60.0)
 
 
-def test_all_real_arm_setups_materialise_without_search() -> None:
-    instance = "cn-prd-50c-01-V2-LOCATIONS"
-    expected_registered = {
-        "endogenous": 18,
-        "fixed25": 8,
-        "same_total_cap": 18,
-        "all_cv": 9,
-        "all_ev": 9,
-    }
-    for arm, expected_count in expected_registered.items():
-        bundle = harness._arm_bundle(REPO, instance, arm)
-        values = {depot_id: 1.0 for depot_id in bundle.fleet_caps_by_depot}
-        record = {
-            "values": values,
-            "value_sha256": harness._json_sha256(
-                [
-                    [key, float(value).hex()]
-                    for key, value in sorted(values.items())
-                ]
-            ),
-            "source_id": "SECONDS_ONLY_UNIT_WIRING_NOT_FORMAL",
-        }
-        checked_bundle, initial, context = harness._arm_setup(
-            REPO,
-            instance,
-            arm,
-            record,
-        )
-        assert checked_bundle.instance_id == instance
-        assert len(initial.duties) == expected_count
-        assert context.fairness_enabled is True
-
-
-def test_parser_rejects_more_than_p20_and_duplicate_seeds(tmp_path: Path) -> None:
+def test_removed_run_limits_and_random_track_cli_are_rejected(tmp_path: Path) -> None:
     common = [
         "--output-dir",
         str(tmp_path / "out"),
         "--instances",
-        "cn-prd-50c-01-V2-LOCATIONS",
-        "--arms",
-        "endogenous",
-        "fixed25",
-        "--seeds",
-        "11",
-        "--wall-clock-seconds",
+        INSTANCE,
+        "--dry-run",
     ]
-    with pytest.raises(SystemExit):
-        harness._parse_args([*common, "1200.001", "--dry-run"])
-    with pytest.raises(SystemExit):
-        harness._parse_args(
-            [
-                *common[:-3],
-                "--seeds",
-                "11",
-                "11",
-                "--wall-clock-seconds",
-                "1200",
-                "--dry-run",
-            ]
-        )
+    harness._parse_args(common)
+    for removed in (
+        ("--seeds", "11"),
+        ("--wall-clock-seconds", "1200"),
+        ("--iterations", "1000"),
+    ):
+        with pytest.raises(SystemExit):
+            harness._parse_args([*common, *removed])
 
 
-def test_dry_run_is_solver_free_and_does_not_create_output(tmp_path: Path) -> None:
+def test_dry_run_is_solver_free_and_plans_three_runs_per_level(
+    tmp_path: Path,
+) -> None:
     output = tmp_path / "must-not-exist"
     completed = subprocess.run(
         (
@@ -148,16 +85,7 @@ def test_dry_run_is_solver_free_and_does_not_create_output(tmp_path: Path) -> No
             "--output-dir",
             str(output),
             "--instances",
-            "cn-prd-50c-01-V2-LOCATIONS",
-            "--arms",
-            "endogenous",
-            "fixed25",
-            "same_total_cap",
-            "--seeds",
-            "11",
-            "29",
-            "--wall-clock-seconds",
-            "1200",
+            INSTANCE,
             "--dry-run",
         ),
         cwd=REPO,
@@ -166,18 +94,16 @@ def test_dry_run_is_solver_free_and_does_not_create_output(tmp_path: Path) -> No
         text=True,
     )
     payload = json.loads(completed.stdout)
-    assert payload["mode"] == "DRY_RUN"
     assert payload["solver_entered"] is False
     assert payload["output_directory_created"] is False
-    assert payload["serial_execution"] is True
-    assert payload["objective_mode"] == "single_objective"
-    assert payload["pair_validation"] == "PASSED"
-    assert payload["planned_run_count"] == 6
-    assert payload["formal_launch_ready"] is False
+    assert payload["repeat_count"] == 3
+    assert payload["planned_run_count"] == 12
+    assert payload["stop_rule"] == "500 consecutive iterations without improvement"
+    assert not ({"seeds", "wall_clock_budget_seconds_per_run"} & payload.keys())
     assert not output.exists()
 
 
-def test_report_fields_include_service_fleet_and_emissions() -> None:
+def test_report_fields_keep_service_fleet_emissions_and_real_failures() -> None:
     required = {
         "customers_served",
         "demand_served",
@@ -189,8 +115,12 @@ def test_report_fields_include_service_fleet_and_emissions() -> None:
         "direct_emissions_kg",
         "indirect_emissions_kg",
         "total_emissions_kg",
+        "feasible",
+        "error_type",
+        "error",
     }
-    assert required.issubset(set(harness._ordered_fields(({},))))
+    row = dict.fromkeys(required)
+    assert required.issubset(set(harness._ordered_fields((row,))))
 
 
 def test_cost_does_not_override_abnormal_or_incomplete_acceptance() -> None:

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass
 from pathlib import Path
+from random import SystemRandom
 
 from setp_hgs_kernel import ProblemData, RandomNumberGenerator, Solution, read
 from setp_hgs_kernel.crossover import ordered_crossover as ox
@@ -53,13 +53,14 @@ class IntegratedPublicHGSBundle:
 def build_integrated_public_hgs(
     data: ProblemData,
     *,
-    seed: int,
     solve_parameters: SolveParams | None = None,
 ) -> IntegratedPublicHGSBundle:
     """Build the one common HGS loop with public native evaluation."""
 
     parameters = solve_parameters or SolveParams()
-    rng = RandomNumberGenerator(seed=int(seed))
+    rng = RandomNumberGenerator(
+        seed=SystemRandom().randrange(1, 2**31)
+    )
 
     def make_local_search(search_rng: RandomNumberGenerator) -> LocalSearch:
         search = LocalSearch(
@@ -146,4 +147,4 @@ def _public_solution_fingerprint(solution: Solution) -> str:
         )
         for route in solution.routes()
     )
-    return hashlib.sha256(repr(routes).encode("utf-8")).hexdigest()
+    return repr(routes)

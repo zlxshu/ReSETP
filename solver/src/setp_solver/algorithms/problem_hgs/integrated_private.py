@@ -41,9 +41,9 @@ from .evaluation import (
     FullEvaluation,
     assert_candidate_routes_single_shift,
 )
-from .execution_identity import (
-    EffectiveExecutionBundle,
-    build_effective_execution_bundle,
+from .execution_settings import (
+    ExecutionSettings,
+    build_execution_settings,
 )
 from .fleet_registry import assert_fleet_activation_allowed
 from .kernel_proposals import IndependentKernelDutyRouteProposalEngine
@@ -107,7 +107,7 @@ class IntegratedPrivateHGSBundle:
     charging_prescreen: ChargingFeasibilityPrescreen | None
     charging_repair_cache: ChargingRepairCache
     complete_penalty_manager: SelfAdaptivePenalty
-    effective_execution: EffectiveExecutionBundle
+    effective_execution: ExecutionSettings
 
 def build_integrated_private_hgs(
     initial_candidates: tuple[DutyIndividual, ...],
@@ -124,12 +124,10 @@ def build_integrated_private_hgs(
     initial_evaluations: tuple[FullEvaluation, ...] | None = None,
     trajectory_sink: Callable[[tuple[TrajectoryRow, ...]], None] | None = None,
     arm: str = "integrated_private_hgs",
-    schedule_cross_repair_fallback: bool = False,
     schedule_all_changed_move_evaluation: bool = False,
     fleet_activation_enabled: bool = True,
     objective_mode: str = "single_objective",
     charging_prescreen_enabled: bool = False,
-    charging_prescreen_audit_limit: int = 0,
     cross_depot_enabled: bool = True,
     multi_trip_enabled: bool = True,
     type_exchange_enabled: bool = True,
@@ -168,10 +166,6 @@ def build_integrated_private_hgs(
             if full.individual_fingerprint != candidate.fingerprint:
                 raise ValueError(
                     "an initial evaluation belongs to another candidate"
-                )
-            if full.evaluation_context_sha256 != evaluator.context_sha256:
-                raise ValueError(
-                    "an initial evaluation belongs to another context"
                 )
 
     if objective_mode != "single_objective":
@@ -215,39 +209,22 @@ def build_integrated_private_hgs(
     )
     if kernel_population_parameters.min_pop_size < SelfAdaptivePenalty.minimum_reference_size:
         raise ValueError("self-adaptive penalty requires min_pop_size >= 4")
-    effective_execution = build_effective_execution_bundle(
+    effective_execution = build_execution_settings(
         policy=charging_policy,
         route_engine=route_engine,
         route_stage_engine=route_stage_engine,
         mechanism_stage_engine=mechanism_stage_engine,
-        context=evaluator.context,
-        population_parameters=kernel_population_parameters,
         repair_probability=copied_parameters.genetic.repair_probability,
         repair_booster=copied_parameters.penalty.repair_booster,
         num_iters_no_improvement=stagnation_patience,
-        live_switches={
-            "include_mechanism_refinement": bool(include_mechanism_refinement),
-            "include_whole_duty_type_exchange": bool(
-                include_whole_duty_type_exchange
-            ),
-            "include_charging_candidates": bool(include_charging_candidates),
-            "schedule_cross_repair_fallback": bool(
-                schedule_cross_repair_fallback
-            ),
-            "schedule_all_changed_move_evaluation": bool(
-                schedule_all_changed_move_evaluation
-            ),
-            "fleet_activation_enabled": bool(fleet_activation_enabled),
-            "objective_mode": str(objective_mode),
-            "charging_prescreen_enabled": bool(charging_prescreen_enabled),
-            "charging_prescreen_audit_limit": int(
-                charging_prescreen_audit_limit
-            ),
-            "cross_depot_enabled": bool(cross_depot_enabled),
-            "multi_trip_enabled": bool(multi_trip_enabled),
-            "type_exchange_enabled": bool(type_exchange_enabled),
-            "education_depth_limit": education_depth_limit,
-        },
+        include_whole_duty_type_exchange=include_whole_duty_type_exchange,
+        include_charging_candidates=include_charging_candidates,
+        schedule_all_changed_move_evaluation=(
+            schedule_all_changed_move_evaluation
+        ),
+        fleet_activation_enabled=fleet_activation_enabled,
+        charging_prescreen_enabled=charging_prescreen_enabled,
+        education_depth_limit=education_depth_limit,
     )
     charging_repair_cache = ChargingRepairCache(
         evaluator.context,
@@ -260,22 +237,20 @@ def build_integrated_private_hgs(
                 effective_execution.effective_charging_policy,
                 frvcpy_enabled=False,
             ),
-            audit_limit=effective_execution.charging_prescreen_audit_limit,
         )
         if effective_execution.charging_prescreen_enabled
         else None
     )
-    schedule_coordinator = None
-    if (
-        effective_execution.schedule_cross_repair_fallback
-        or effective_execution.schedule_all_changed_move_evaluation
-    ):
-        schedule_coordinator = ScheduleCoordinator(
+    schedule_coordinator = (
+        ScheduleCoordinator(
             ScheduleOracleContext.from_evaluation_context(evaluator.context),
             result_sink=accounting.mechanism.record_schedule_oracle_result,
         )
+        if effective_execution.schedule_all_changed_move_evaluation
+        else None
+    )
     education_cache: dict[
-        tuple[bool, str, str, int],
+        tuple[bool, int, str, int],
         EvaluatedSolution[
             DutyIndividual,
             PrivateIntegratedEvaluation,
@@ -620,7 +595,7 @@ def build_integrated_private_hgs(
     ]:
         cache_key = (
             bool(repair),
-            engine.identity_sha256,
+            id(engine),
             candidate.solution.fingerprint,
             complete_penalties.revision,
         )

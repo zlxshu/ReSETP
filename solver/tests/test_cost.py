@@ -7,7 +7,7 @@ import unittest
 from setp_solver.cost import charging_slot_breakdown, evaluate
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import PriceParameters, UK_2025_PRICES
-from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution
+from setp_solver.solution import ChargingAction, Route, Solution
 
 
 def _toy_instance() -> Instance:
@@ -51,7 +51,6 @@ def _toy_solution(charge_start_second: float = 0.0, energy_kwh: float = 20.0) ->
                 charge_start_second=charge_start_second,
             )
         ],
-        cross_site_services=[CrossSiteService(customer_id="C2", served_by_depot_id="D0")],
     )
 
 
@@ -114,8 +113,6 @@ class CostEvaluatorTests(unittest.TestCase):
             "cost_km": (expected_distance_total / 1000.0) * prices.c_km,
             "cost_fuel": cv_fuel * prices.diesel_price,
             "cost_elec": 20.0 * prices.electricity_price,
-            "cost_occ": 30.0 * prices.occupancy_fee,
-            "cost_transship": 1.0 * prices.cross_site_cost,
             "cost_carbon": (expected_cv_direct + expected_ev_indirect - 1.0) * prices.carbon_price,
             "E_cv_direct": expected_cv_direct,
             "E_ev_indirect": expected_ev_indirect,
@@ -136,8 +133,6 @@ class CostEvaluatorTests(unittest.TestCase):
                 "cost_km",
                 "cost_fuel",
                 "cost_elec",
-                "cost_occ",
-                "cost_transship",
                 "cost_carbon",
             ]
         )
@@ -278,7 +273,6 @@ class CostEvaluatorTests(unittest.TestCase):
 
         self.assertAlmostEqual(result["E_ev_indirect"], (5.0 * 100.0 + 5.0 * 300.0) / 1000.0, delta=1e-9)
         self.assertAlmostEqual(result["cost_elec"], 10.0 * prices.depot_electricity_price, delta=1e-9)
-        self.assertAlmostEqual(result["cost_occ"], 0.0, delta=1e-9)
 
     # v2026-06-12: S0 overnight depot charging wraps across the 48-slot day boundary.
     def test_depot_charging_cross_midnight_carbon_uses_cyclic_48_slot_split(self) -> None:

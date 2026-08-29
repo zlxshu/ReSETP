@@ -139,7 +139,7 @@ def test_dynamic_warm_start_keeps_looking_until_one_candidate_is_feasible(
     assert later_feasible in result.candidates
 
 
-def test_random_population_stays_bounded_but_keeps_looking_for_feasible_seed(
+def test_random_population_stays_bounded_but_keeps_looking_for_feasible_candidate(
     monkeypatch,
 ) -> None:
     initial = DutyIndividual(
@@ -197,7 +197,6 @@ def test_random_population_stays_bounded_but_keeps_looking_for_feasible_seed(
         charging_policy=SimpleNamespace(),
         route_engine=_RouteEngine(),
         requested_size=2,
-        random_seed=7,
         max_random_attempts=None,
         require_complete_feasible=True,
         stop_requested=lambda: False,

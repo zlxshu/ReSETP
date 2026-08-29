@@ -34,7 +34,7 @@ def _bundle(*customer_ids: str):
     )
 
 
-def test_c0_witness_adapter_preserves_legacy_route_fingerprint() -> None:
+def test_c0_witness_adapter_preserves_legacy_route_structure() -> None:
     bundle = _bundle("C1", "C2")
     rows = [
         {
@@ -72,7 +72,8 @@ def test_c0_witness_adapter_preserves_legacy_route_fingerprint() -> None:
         bundle,
     )
 
-    assert adapted.fingerprint == legacy.fingerprint
+    assert adapted.duties == legacy.duties
+    assert adapted.unserved_customers == legacy.unserved_customers
     assert adapted.to_solution().charging_actions == []
     assert [duty.physical_vehicle_id for duty in adapted.duties] == [
         "CV_D0_1",
@@ -128,7 +129,6 @@ def test_witness_perturbations_are_shift_safe_and_include_three_allowed_paths() 
     moves = generate_witness_perturbation_moves(
         witness,
         customer_shift_by_id=shifts,
-        random_seed=11,
     )
     channels = {move.channel for move in moves}
 
@@ -180,7 +180,6 @@ def _initialization_with_candidate(
         charging_policy=SimpleNamespace(),
         route_engine=_RouteEngine(),
         requested_size=2,
-        random_seed=11,
         max_random_attempts=1,
         mechanism_enabled=mechanism_enabled,
     )

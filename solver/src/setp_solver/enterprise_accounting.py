@@ -19,8 +19,6 @@ from .solution import Solution
 def build_enterprise_ledger(
     *,
     instance_id: str,
-    seed: int,
-    solution_fingerprint: str,
     solution: Solution,
     bundle: China81Bundle,
     prior_profit: Mapping[str, float],
@@ -29,7 +27,6 @@ def build_enterprise_ledger(
 ) -> dict[str, Any]:
     """Build one auditable ledger and require cost closure."""
 
-    _validate_fingerprint(solution_fingerprint)
     rows = calculate_depot_profits(
         solution,
         bundle.instance,
@@ -53,18 +50,8 @@ def build_enterprise_ledger(
     return {
         "schema": "resetp.enterprise_ledger.v1",
         "instance_id": str(instance_id),
-        "seed": int(seed),
-        "solution_sha256": solution_fingerprint,
         "rows": {
             depot_id: asdict(row)
             for depot_id, row in sorted(rows.items())
         },
     }
-
-
-def _validate_fingerprint(value: str) -> None:
-    normalized = str(value).lower()
-    if len(normalized) != 64 or any(
-        character not in "0123456789abcdef" for character in normalized
-    ):
-        raise ValueError("solution fingerprint must be a SHA-256 hex digest")

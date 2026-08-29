@@ -8,7 +8,6 @@ problem proposals.
 
 from __future__ import annotations
 
-import hashlib
 from collections import Counter
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
@@ -41,7 +40,6 @@ class DutyProposalEngine(Protocol):
     """Produce ordered Duty moves without accepting any of them."""
 
     source_id: str
-    identity_sha256: str
 
     def propose(
         self,
@@ -58,10 +56,6 @@ class LegacyCompleteProposalEngine:
     """Compatibility engine for the original exhaustive neighbourhood."""
 
     source_id: str = "problem-hgs-legacy-complete-neighbourhood-v1"
-
-    @property
-    def identity_sha256(self) -> str:
-        return hashlib.sha256(self.source_id.encode("utf-8")).hexdigest()
 
     def propose(
         self,
@@ -102,36 +96,6 @@ class MechanismProposalEngine:
         repr=False,
         compare=False,
     )
-
-    @property
-    def identity_sha256(self) -> str:
-        payload = (
-            self.source_id
-            + "\n"
-            + self.context.bundle.instance_id
-            + "\n"
-            + repr(self.charging_policy)
-            + "\n"
-            + repr(self.include_charging_candidates)
-            + "\n"
-            + repr(self.include_non_charging_candidates)
-            + "\n"
-            + repr(self.fairness_generation_prescreen_enabled)
-        )
-        if self.include_structural_channels:
-            payload += "\nstructural_channels=depot,fairness,multi_trip"
-        disabled = tuple(
-            name
-            for name, enabled in (
-                ("cross_depot", self.cross_depot_enabled),
-                ("multi_trip", self.multi_trip_enabled),
-                ("type_exchange", self.type_exchange_enabled),
-            )
-            if not enabled
-        )
-        if disabled:
-            payload += "\nmechanism_off=" + ",".join(disabled)
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     @property
     def generation_statistics(self) -> dict[str, object]:
@@ -237,24 +201,13 @@ class MechanismProposalEngine:
                             stop_requested=self.stop_requested,
                         )
                     )
-                for candidate in charging_candidates:
+                for candidate_index, candidate in enumerate(charging_candidates):
                     if self.stop_requested is not None and self.stop_requested():
                         return
-                    payload = repr(
-                        (
-                            candidate.charging_sessions,
-                            tuple(
-                                trip.effective_route_visits
-                                for trip in candidate.trips
-                            ),
-                        )
-                    )
                     yield ChargingScheduleMove(
                         action_id=(
                             f"charge-search:{duty.physical_vehicle_id}:"
-                            + hashlib.sha256(
-                                payload.encode("utf-8")
-                            ).hexdigest()[:16]
+                            f"{candidate_index}"
                         ),
                         channel="time_varying_carbon_charge",
                         duty_id=duty.physical_vehicle_id,
@@ -338,17 +291,6 @@ class ExactDynamicSuffixProposalEngine:
         if self.context.dynamic_state is None:
             raise ValueError("dynamic suffix proposals require a dynamic state")
 
-    @property
-    def identity_sha256(self) -> str:
-        state = self.context.dynamic_state
-        payload = (
-            self.source_id,
-            self.context.bundle.instance_id,
-            float(state.cut.trigger_second),
-            tuple(sorted(state.future_customer_ids)),
-        )
-        return hashlib.sha256(repr(payload).encode("utf-8")).hexdigest()
-
     def propose(
         self,
         individual: DutyIndividual,
@@ -377,17 +319,6 @@ class SequentialProposalEngine:
     def __post_init__(self) -> None:
         if not self.providers:
             raise ValueError("sequential proposal engine needs a provider")
-
-    @property
-    def identity_sha256(self) -> str:
-        payload = "\n".join(
-            (
-                self.source_id,
-                *(provider.source_id for provider in self.providers),
-                *(provider.identity_sha256 for provider in self.providers),
-            )
-        )
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def propose(
         self,
@@ -438,39 +369,6 @@ class InterleavedProposalEngine:
     def __post_init__(self) -> None:
         if not self.providers:
             raise ValueError("interleaved proposal engine needs a provider")
-
-    @property
-    def identity_sha256(self) -> str:
-        payload = "\n".join(
-            (
-                self.source_id,
-                *(provider.source_id for provider in self.providers),
-                *(provider.identity_sha256 for provider in self.providers),
-                *(
-                    ()
-                    if self.elite_route_engine is None
-                    else (
-                        "elite_route_engine",
-                        self.elite_route_engine.source_id,
-                        self.elite_route_engine.identity_sha256,
-                    )
-                ),
-                *(
-                    ()
-                    if self.post_mechanism_route_engine is None
-                    else (
-                        "post_mechanism_route_engine",
-                        self.post_mechanism_route_engine.source_id,
-                        self.post_mechanism_route_engine.identity_sha256,
-                    )
-                ),
-                (
-                    "mechanisms_on_final_incumbent_only="
-                    f"{self.mechanisms_on_final_incumbent_only}"
-                ),
-            )
-        )
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def propose(
         self,

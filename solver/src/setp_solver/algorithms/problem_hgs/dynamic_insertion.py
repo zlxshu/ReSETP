@@ -3,20 +3,14 @@
 The route skeleton is changed by the copied HGS local-search kernel.  Missing
 required clients are inserted by its cached ``insertCost`` path before one
 finite local-search descent.  Complete Duty evaluation remains the sole
-acceptance authority.  Optional standby charging is planned on a separately
-supplied public scenario; this module performs no file I/O and has no oracle
-input.
+acceptance authority. This module performs no file I/O.
 """
 
 from __future__ import annotations
 
-import hashlib
-import json
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, replace
+from dataclasses import dataclass, replace
 from time import perf_counter
-
-from setp_solver.solution import ChargingAction, physical_vehicle_id
 
 from .charging import ChargingRepairPolicy, repair_changed_duties
 from .contracts import CandidateStatus
@@ -44,73 +38,6 @@ class DynamicInsertionFailure(RuntimeError):
 
 
 @dataclass(frozen=True)
-class PublicStandbyScenario:
-    """In-memory, public-only future scenario used by the P34 decision.
-
-    The caller is responsible for constructing ``context`` and
-    ``initial_future`` from the five files named by the public 08:00 manifest.
-    Exact accepted names are recorded here so an event controller cannot pass
-    an oracle artifact through a generic path parameter.
-    """
-
-    context: object
-    initial_future: DutyIndividual
-    source_artifacts: tuple[str, ...]
-    decision_horizon_second: float
-
-    def __post_init__(self) -> None:
-        normalized = tuple(
-            str(name).replace("\\", "/").lstrip("./")
-            for name in self.source_artifacts
-        )
-        if not normalized:
-            raise ValueError("standby scenario must identify its public inputs")
-        allowed_exact = {
-            "public/algorithm_visible_at_0800.json",
-            "public/algorithm_scenario_trigger_batches.csv",
-            "public/initial_orders_at_0800.csv",
-            "public/order_attribute_prior.csv",
-            "public/potential_pool.csv",
-        }
-        for name in normalized:
-            allowed = name in allowed_exact or (
-                name.startswith("public/algorithm_scenario_seed_")
-                and name.endswith(".csv")
-            )
-            if not allowed:
-                raise ValueError(
-                    "standby scenario accepts only artifacts declared by the "
-                    "public 08:00 manifest"
-                )
-        if "public/algorithm_visible_at_0800.json" not in normalized:
-            raise ValueError("standby scenario is missing the public manifest")
-        if not any(
-            name.startswith("public/algorithm_scenario_seed_")
-            for name in normalized
-        ):
-            raise ValueError("standby scenario is missing its independent sample")
-        state = getattr(self.context, "dynamic_state", None)
-        if state is None:
-            raise ValueError("standby scenario requires an exact dynamic state")
-        if float(self.decision_horizon_second) < float(
-            state.cut.trigger_second
-        ):
-            raise ValueError("standby decision horizon precedes its trigger")
-        object.__setattr__(self, "source_artifacts", normalized)
-
-
-@dataclass(frozen=True)
-class StandbyChargingDecision:
-    """P34 choice for assets idle in the actually visible solution."""
-
-    charging_actions: tuple[ChargingAction, ...]
-    no_charge_selected: bool
-    scenario_evaluation: FullEvaluation
-    source_artifacts: tuple[str, ...]
-    decision_horizon_second: float
-
-
-@dataclass(frozen=True)
 class DynamicInsertionAccounting:
     wall_seconds: float
     newly_revealed_count: int
@@ -120,8 +47,6 @@ class DynamicInsertionAccounting:
     changed_duty_count: int
     complete_evaluations: int
     charging_candidates_evaluated: int
-    committed_sha256_before: str
-    committed_sha256_after: str
     candidate_attempt_count: int = 0
     candidate_feasible_count: int = 0
     candidate_failure_reasons: tuple[str, ...] = ()
@@ -143,7 +68,6 @@ class DynamicInsertionResult:
     individual: DutyIndividual
     evaluation: FullEvaluation | None
     accounting: DynamicInsertionAccounting
-    standby: StandbyChargingDecision | None = None
     status: str = INSERTED_AND_FULL_EVALUATION_FEASIBLE
     failure_reason: str = ""
     outsourced_customer_ids: tuple[str, ...] = ()
@@ -156,10 +80,8 @@ class DynamicInsertionOperator:
         self,
         *,
         enabled: bool = False,
-        random_seed: int = 1,
     ) -> None:
         self.enabled = bool(enabled)
-        self.random_seed = int(random_seed)
 
     def apply(
         self,
@@ -168,14 +90,12 @@ class DynamicInsertionOperator:
         evaluator: DutyFullEvaluator,
         charging_policy: ChargingRepairPolicy,
         newly_revealed_customer_ids: tuple[str, ...],
-        standby_scenario: PublicStandbyScenario | None = None,
         current_evaluation: FullEvaluation | None = None,
         stop_requested: Callable[[], bool] | None = None,
     ) -> DynamicInsertionResult:
         """Return the no-op exactly when disabled, otherwise one sealed result."""
 
         started = perf_counter()
-        before_sha = _committed_sha256(evaluator)
         if not self.enabled:
             return DynamicInsertionResult(
                 individual=initial_future,
@@ -189,8 +109,6 @@ class DynamicInsertionOperator:
                     changed_duty_count=0,
                     complete_evaluations=0,
                     charging_candidates_evaluated=0,
-                    committed_sha256_before=before_sha,
-                    committed_sha256_after=before_sha,
                 ),
                 status=INSERTION_DISABLED,
             )
@@ -204,43 +122,6 @@ class DynamicInsertionOperator:
             current_evaluation=current_evaluation,
             stop_requested=stop_requested,
         )
-        standby = None
-        if standby_scenario is not None and actual.status == INSERTED_AND_FULL_EVALUATION_FEASIBLE:
-            scenario_evaluator = DutyFullEvaluator(standby_scenario.context)
-            scenario_new = tuple(standby_scenario.initial_future.unserved_customers)
-            scenario, _scenario_accounting = self._apply_enabled(
-                standby_scenario.initial_future,
-                evaluator=scenario_evaluator,
-                charging_policy=charging_policy,
-                newly_revealed_customer_ids=scenario_new,
-                stream_role="p34_public_standby_scenario",
-                stop_requested=stop_requested,
-            )
-            assert scenario.evaluation is not None
-            idle_ev_ids = {
-                duty.physical_vehicle_id
-                for duty in actual.individual.duties
-                if duty.vehicle_type == "ev" and not duty.trips
-            }
-            trigger = float(
-                standby_scenario.context.dynamic_state.cut.trigger_second
-            )
-            horizon = float(standby_scenario.decision_horizon_second)
-            actions = tuple(
-                action
-                for action in scenario.evaluation.prepared_solution.charging_actions
-                if physical_vehicle_id(action.vehicle_id) in idle_ev_ids
-                and trigger - 1.0e-9
-                <= float(action.charge_start_second)
-                <= horizon + 1.0e-9
-            )
-            standby = StandbyChargingDecision(
-                charging_actions=actions,
-                no_charge_selected=not actions,
-                scenario_evaluation=scenario.evaluation,
-                source_artifacts=standby_scenario.source_artifacts,
-                decision_horizon_second=horizon,
-            )
         return DynamicInsertionResult(
             individual=actual.individual,
             evaluation=actual.evaluation,
@@ -248,7 +129,6 @@ class DynamicInsertionOperator:
                 accounting,
                 wall_seconds=perf_counter() - started,
             ),
-            standby=standby,
             status=actual.status,
             failure_reason=actual.failure_reason,
             outsourced_customer_ids=actual.outsourced_customer_ids,
@@ -290,7 +170,7 @@ class DynamicInsertionOperator:
             raise ValueError("dynamic insertion received an unrevealed customer")
 
         before_calls = evaluator.full_calls
-        before_sha = _committed_sha256(evaluator)
+        committed_before = _committed_snapshot(evaluator)
         pending = tuple(
             dict.fromkeys(map(str, initial_future.unserved_customers))
         )
@@ -380,10 +260,6 @@ class DynamicInsertionOperator:
                 else _insertion_failure_status(diagnostics)
             )
             reason = _insertion_failure_summary(status, diagnostics)
-            after_sha = _committed_sha256(
-                evaluator,
-                evaluation=current_evaluation,
-            )
             accounting = DynamicInsertionAccounting(
                 wall_seconds=perf_counter() - started,
                 newly_revealed_count=len(revealed),
@@ -395,8 +271,6 @@ class DynamicInsertionOperator:
                 changed_duty_count=0,
                 complete_evaluations=evaluator.full_calls - before_calls,
                 charging_candidates_evaluated=charging_evaluated,
-                committed_sha256_before=before_sha,
-                committed_sha256_after=after_sha,
                 candidate_attempt_count=len(diagnostics),
                 candidate_feasible_count=sum(
                     item.status == INSERTED_AND_FULL_EVALUATION_FEASIBLE
@@ -437,9 +311,9 @@ class DynamicInsertionOperator:
             move = DutySkeletonMove(
                 action_id=(
                     "dynamic-insertion:"
-                    + hashlib.sha256(
-                        repr(native_replacements).encode()
-                    ).hexdigest()[:16]
+                    + "+".join(
+                        duty_id for duty_id, _trips in native_replacements
+                    )
                 ),
                 channel="dynamic_revealed_insertion",
                 replacements=native_replacements,
@@ -459,7 +333,6 @@ class DynamicInsertionOperator:
         engine = IndependentKernelDutyRouteProposalEngine(
             evaluator.context,
             initial_future,
-            random_seed=self.random_seed,
             stream_role=stream_role,
             rebuilt_volume_capacity_enabled=(
                 evaluator.context.rebuilt_route_constraints is not None
@@ -561,8 +434,10 @@ class DynamicInsertionOperator:
                 reason,
             )
             charging_evaluated = 0
-        after_sha = _committed_sha256(evaluator, evaluation=evaluation)
-        if before_sha != after_sha:
+        if committed_before != _committed_snapshot(
+            evaluator,
+            evaluation=evaluation,
+        ):
             raise DynamicInsertionFailure("dynamic insertion changed committed history")
         accounting = DynamicInsertionAccounting(
             wall_seconds=perf_counter() - started,
@@ -575,8 +450,6 @@ class DynamicInsertionOperator:
             changed_duty_count=changed_duties,
             complete_evaluations=evaluator.full_calls - before_calls,
             charging_candidates_evaluated=charging_evaluated,
-            committed_sha256_before=before_sha,
-            committed_sha256_after=after_sha,
             candidate_attempt_count=len(diagnostics),
             candidate_feasible_count=sum(
                 item.status == INSERTED_AND_FULL_EVALUATION_FEASIBLE
@@ -813,7 +686,6 @@ def _refine_charging_once(
             move,
             evaluator=evaluator,
             charging_policy=charging_policy,
-            verify_full_truth=False,
             penalized_cost=lambda result: float(result.total_cost),
         )
         if outcome.status != CandidateStatus.EVALUATED:
@@ -830,14 +702,14 @@ def _refine_charging_once(
     return best, best_evaluation, evaluated
 
 
-def _committed_sha256(
+def _committed_snapshot(
     evaluator: DutyFullEvaluator,
     *,
     evaluation: FullEvaluation | None = None,
-) -> str:
+) -> tuple[object, ...]:
     state = evaluator.context.dynamic_state
     if state is None:
-        return hashlib.sha256(b"static-no-commitment").hexdigest()
+        return ()
     committed_ids = {
         *state.cut.completed_route_ids,
         *(route.vehicle_id for route in state.prior_committed_solution.routes),
@@ -890,44 +762,26 @@ def _committed_sha256(
             )
             in locked_action_keys
         )
-    payload = {
-        "routes": sorted(
-            (asdict(route) for route in routes_by_id.values()),
-            key=lambda row: row["vehicle_id"],
-        ),
-        "charging_actions": sorted(
-            (asdict(action) for action in source_actions),
-            key=lambda row: (
-                row["vehicle_id"],
-                row["charge_day_offset"],
-                row["charge_start_second"],
-                row["station_id"],
-            ),
-        ),
-        "frozen_arc_prefix_by_route_id": {
-            str(route_id): [list(arc) for arc in arcs]
-            for route_id, arcs in sorted(
-                state.cut.frozen_arc_prefix_by_route_id.items()
+    return (
+        tuple(sorted(routes_by_id.items())),
+        tuple(sorted(source_actions, key=lambda action: (
+            action.vehicle_id,
+            action.charge_day_offset,
+            action.charge_start_second,
+            action.station_id,
+        ))),
+        tuple(sorted(state.cut.frozen_arc_prefix_by_route_id.items())),
+        tuple(
+            (
+                asset_id,
+                asset.trigger_position_node_id,
+                asset.trigger_time,
+                asset.trigger_remaining_load_kg,
+                asset.trigger_remaining_battery_kwh,
+                asset.locked_arc,
+                asset.executed_prefix,
             )
-        },
-        "trigger_vehicle_state": {
-            str(asset_id): {
-                "position": asset.trigger_position_node_id,
-                "time": asset.trigger_time,
-                "remaining_load_kg": asset.trigger_remaining_load_kg,
-                "remaining_battery_kwh": asset.trigger_remaining_battery_kwh,
-                "locked_arc": list(asset.locked_arc or ()),
-                "executed_prefix": list(asset.executed_prefix),
-            }
             for asset_id, asset in sorted(state.cut.asset_states.items())
             if asset.continuation_route_id is not None
-        },
-    }
-    return hashlib.sha256(
-        json.dumps(
-            payload,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode()
-    ).hexdigest()
+        ),
+    )

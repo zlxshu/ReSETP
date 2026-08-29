@@ -207,21 +207,14 @@ def evaluate(
         for route, item in zip(solution.routes, route_energy)
         if item.vehicle_type == "cv"
     )
-    # v2026-06-12: Q2 depot precharge has depot electricity price and no public occupancy fee.
+    # v2026-06-12: Q2 depot precharge has its own electricity price.
     cost_elec = _charging_electricity_cost(
         solution,
         instance,
         carbon_profile,
         prices,
     )
-    cost_occ = _charging_occupancy_cost(solution, node_lookup, prices)
-    route_time_seconds = _e5_route_time_seconds(solution, instance, node_lookup, prices)
-    cost_time = (
-        route_time_seconds
-        / 3600.0
-        * _optional_price(prices, "route_time_cost_per_hour")
-    )
-    cost_transship = len(solution.cross_site_services) * _price(prices, "cross_site_cost")
+    route_time_seconds = _route_time_seconds(solution, instance, node_lookup, prices)
 
     e_cv_direct = fuel_liters * _price(prices, "diesel_ef")
     e_ev_indirect = _ev_indirect_emissions(
@@ -235,7 +228,7 @@ def evaluate(
     # and treats CE=inf as the no-quota baseline with a zero carbon-cost term.
     quota = float(carbon_quota_kg)
     cost_carbon = 0.0 if math.isinf(quota) else (e_total - quota) * _price(prices, "carbon_price")
-    total_cost = cost_fix + cost_km + cost_fuel + cost_elec + cost_occ + cost_time + cost_transship + cost_carbon
+    total_cost = cost_fix + cost_km + cost_fuel + cost_elec + cost_carbon
 
     return {
         "total_cost": total_cost,
@@ -243,9 +236,6 @@ def evaluate(
         "cost_km": cost_km,
         "cost_fuel": cost_fuel,
         "cost_elec": cost_elec,
-        "cost_occ": cost_occ,
-        "cost_time": cost_time,
-        "cost_transship": cost_transship,
         "cost_carbon": cost_carbon,
         "E_total": e_total,
         "E_cv_direct": e_cv_direct,
@@ -1262,21 +1252,7 @@ def charging_action_electricity_cost(
     return float(action.energy_kwh) * unit_price
 
 
-def _charging_occupancy_cost(
-    solution: Solution,
-    node_lookup: dict[str, Node],
-    prices: PriceParameters | dict[str, float] | Any,
-) -> float:
-    total = 0.0
-    for action in solution.charging_actions:
-        node = node_lookup.get(action.station_id)
-        if node and node.node_type == "d":
-            continue
-        total += float(action.occupancy_minutes) * _price(prices, "occupancy_fee")
-    return total
-
-
-def _e5_route_time_seconds(
+def _route_time_seconds(
     solution: Solution,
     instance: Instance,
     node_lookup: dict[str, Node],
@@ -1347,17 +1323,3 @@ def _price(prices: PriceParameters | dict[str, float] | Any, name: str) -> float
         except KeyError:
             pass
     return float(getattr(prices, name))
-
-
-def _optional_price(
-    prices: PriceParameters | dict[str, float] | Any,
-    name: str,
-) -> float:
-    if isinstance(prices, dict):
-        return float(prices.get(name, 0.0))
-    if isinstance(prices, PriceParameters):
-        try:
-            return float(prices.__dict__[name])
-        except KeyError:
-            pass
-    return float(getattr(prices, name, 0.0))

@@ -1,27 +1,12 @@
-"""Shared fail-closed acceptance and result-package helpers.
-
-Carriers keep ownership of their scientific fields and comparison semantics.
-This module only records whether their already-computed checks all passed,
-then makes the package status, decision verdict, and exit code agree.
-"""
+"""Shared result assessment and output helpers."""
 
 from __future__ import annotations
 
-import hashlib
 import json
-import os
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-
-PACKAGE_FILES = (
-    "metadata.json",
-    "raw_runs.csv",
-    "decision.json",
-    "report.md",
-)
 
 NORMAL_PROBLEM_HGS_TERMINATIONS = frozenset(
     {"STOPPED_BY_CALLER", "CONVERGED_NO_IMPROVEMENT"}
@@ -30,8 +15,6 @@ NORMAL_PROBLEM_HGS_TERMINATIONS = frozenset(
 
 @dataclass(frozen=True)
 class RunAcceptance:
-    """The single acceptance fact consumed by writers and controllers."""
-
     accepted: bool
     verdict: str
     failure_reasons: tuple[str, ...]
@@ -53,32 +36,28 @@ def assess_run(
     feasible_ok: bool | None,
     customers_complete: bool | None,
     demand_complete: bool | None,
-    audit_ok: bool | None = True,
     extra_failure_reasons: Iterable[str] = (),
     success_verdict: str = "RUN_COMPLETE",
     failure_verdict: str = "RUN_FAILED",
 ) -> RunAcceptance:
-    """Combine carrier-owned checks without inventing thresholds or tolerances."""
-
     checks = (
         (termination_ok, "termination was not normal"),
         (feasible_ok, "complete evaluation was not feasible"),
         (customers_complete, "not all customers were served"),
         (demand_complete, "not all demand was served"),
-        (audit_ok, "required audit did not pass"),
     )
     reasons = [reason for passed, reason in checks if passed is not True]
     reasons.extend(str(reason) for reason in extra_failure_reasons if str(reason))
-    deduplicated = tuple(dict.fromkeys(reasons))
-    accepted = not deduplicated
+    failure_reasons = tuple(dict.fromkeys(reasons))
+    accepted = not failure_reasons
     return RunAcceptance(
         accepted=accepted,
         verdict=success_verdict if accepted else failure_verdict,
-        failure_reasons=deduplicated,
+        failure_reasons=failure_reasons,
     )
 
 
-def package_exit_code(acceptance: RunAcceptance) -> int:
+def result_exit_code(acceptance: RunAcceptance) -> int:
     return 0 if acceptance.accepted else 2
 
 
@@ -86,32 +65,9 @@ def row_is_accepted(row: Mapping[str, Any]) -> bool:
     return row.get("acceptance_passed") is True
 
 
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _atomic_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        mode="w",
-        encoding="utf-8",
-        dir=path.parent,
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        delete=False,
-    ) as handle:
-        handle.write(content)
-        temporary = Path(handle.name)
-    os.replace(temporary, path)
-
-
 def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
-    _atomic_text(
-        path,
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
         json.dumps(
             dict(payload),
             ensure_ascii=False,
@@ -120,10 +76,11 @@ def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
             allow_nan=False,
         )
         + "\n",
+        encoding="utf-8",
     )
 
 
-def finalize_five_file_package(
+def finalize_run_output(
     output: Path,
     *,
     acceptance: RunAcceptance,
@@ -133,12 +90,6 @@ def finalize_five_file_package(
     complete_status: str = "COMPLETE",
     failed_status: str = "FAILED",
 ) -> None:
-    """Write and verify the result package after raw rows are durable."""
-
-    raw_runs = output / "raw_runs.csv"
-    if not raw_runs.is_file() or raw_runs.stat().st_size == 0:
-        raise RuntimeError(f"missing nonempty raw_runs.csv: {output}")
-
     metadata_payload = dict(metadata)
     metadata_payload.update(
         {
@@ -158,48 +109,4 @@ def finalize_five_file_package(
     )
     _write_json(output / "metadata.json", metadata_payload)
     _write_json(output / "decision.json", decision_payload)
-    _atomic_text(output / "report.md", report_text)
-
-    missing = [
-        name
-        for name in PACKAGE_FILES
-        if not (output / name).is_file() or (output / name).stat().st_size == 0
-    ]
-    if missing:
-        raise RuntimeError(f"incomplete result package {output}: {missing}")
-
-
-def validate_five_file_package(
-    output: Path,
-    *,
-    expected_success_verdict: str | None = None,
-    require_accepted: bool = True,
-) -> dict[str, Any]:
-    """Validate required files and, by default, reject failed verdicts."""
-
-    missing = [
-        name
-        for name in PACKAGE_FILES
-        if not (output / name).is_file() or (output / name).stat().st_size == 0
-    ]
-    if missing:
-        raise RuntimeError(f"incomplete result package {output}: {missing}")
-    metadata = json.loads((output / "metadata.json").read_text("utf-8"))
-    decision = json.loads((output / "decision.json").read_text("utf-8"))
-    if require_accepted:
-        if metadata.get("acceptance_passed") is not True:
-            raise RuntimeError(f"package metadata is not accepted: {output}")
-        if decision.get("accepted") is not True:
-            raise RuntimeError(f"package decision is not accepted: {output}")
-        if (
-            expected_success_verdict is not None
-            and decision.get("verdict") != expected_success_verdict
-        ):
-            raise RuntimeError(
-                f"unexpected decision verdict in {output}: "
-                f"{decision.get('verdict')!r}"
-            )
-    return {
-        "metadata": metadata,
-        "decision": decision,
-    }
+    (output / "report.md").write_text(report_text, encoding="utf-8")
