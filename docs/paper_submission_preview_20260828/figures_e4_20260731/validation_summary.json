@@ -1,0 +1,94 @@
+{
+  "schema": "resetp.e4-figure-table-validation.v1",
+  "source_mode": "sealed_data_only",
+  "new_experiments_run": 0,
+  "sources": {
+    "action_timing_audit_csv": "baselines/china_e3_e7/e4_carbon_timing_20260729/action_timing_audit.csv",
+    "raw_runs_csv": "baselines/china_e3_e7/e4_carbon_timing_20260729/raw_runs.csv",
+    "calendar_csv": "data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_hourly_calendar.csv",
+    "sha256": {
+      "action_timing_audit.csv": "a93cf85d31bcf11d3e37571379c50e488297eec5780be1087057b26d23269497",
+      "raw_runs.csv": "530f2b89f3a03ea10b6ac53b3945cc98ac75018ac5e37db74fa6fc82a46fd3f4",
+      "tariff_carbon_hourly_calendar.csv": "54acbdc757c8a3a3b097d1e39cd35294e795ca2c1711bd56b12bc3b9af9b1c0b"
+    }
+  },
+  "required_fields_complete": true,
+  "checks": {
+    "session_days": 44072,
+    "paired_solution_days": 11340,
+    "fixed_solutions": 405,
+    "calendar_days": 28,
+    "action_pair_keys": 11340,
+    "unique_action_keys": 44072,
+    "reconciliation_mismatches": 0,
+    "extra_action_pair_keys": 0,
+    "window_violations": 0,
+    "out_of_day_starts": 0,
+    "nonpositive_energy_rows": 0,
+    "total_energy_kwh": "1234753.935547482166",
+    "asap_binned_energy_kwh": "1234753.935547482166",
+    "carbon_binned_energy_kwh": "1234753.935547482166",
+    "metric_values": {
+      "charging_emissions_kg": {
+        "asap": "475317.334540161223",
+        "carbon": "214033.627568814244",
+        "relative_change_pct": "-54.970371998766"
+      },
+      "system_emissions_kg": {
+        "asap": "2680860.542424268422",
+        "carbon": "2419576.835452921443",
+        "relative_change_pct": "-9.746262546543"
+      },
+      "charging_electricity_cost_cny": {
+        "asap": "528422.792406114047",
+        "carbon": "1241158.274937080239",
+        "relative_change_pct": "134.879776719245"
+      },
+      "full_model_cost_cny": {
+        "asap": "37560607.872429307051",
+        "carbon": "38253741.851263282606",
+        "relative_change_pct": "1.845374763870"
+      }
+    }
+  },
+  "typical_day_selection": {
+    "date": "2025-02-12",
+    "rule": "固定日历位置：采用冻结日历中的2025-02-12；京津冀、珠三角、成渝分别固定读取北京、广州（Guangdong源列）、重庆的48个半小时时段，不依据E4结果筛选。",
+    "representative_grids": [
+      {
+        "region": "jjj",
+        "label": "京津冀（北京）",
+        "city": "beijing",
+        "carbon_source_column": "Beijing"
+      },
+      {
+        "region": "prd",
+        "label": "珠三角（广东）",
+        "city": "guangzhou",
+        "carbon_source_column": "Guangdong"
+      },
+      {
+        "region": "cy",
+        "label": "成渝（重庆）",
+        "city": "chongqing",
+        "carbon_source_column": "Chongqing"
+      }
+    ],
+    "slots_per_curve": 48
+  },
+  "figure": {
+    "pdf": "figure_e4_timing_migration.pdf",
+    "png": "figure_e4_timing_migration.png",
+    "png_requested_dpi": 300,
+    "strategy_styles": {
+      "ASAP": {
+        "color": "#666666",
+        "line": "dashed"
+      },
+      "CARBON": {
+        "color": "#D62728",
+        "line": "solid"
+      }
+    }
+  }
+}

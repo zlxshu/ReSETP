@@ -1,0 +1,34 @@
+% 算法流程图 - 占位文件
+% 待实验运行后由 Python 脚本自动生成真正的 TikZ 流程图
+% 当前为占位图, 编译论文时不报错
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    block/.style={rectangle,draw,minimum width=3.5cm,minimum height=0.8cm,align=center,font=\footnotesize},
+    arrow/.style={->,>=Stealth}
+]
+\node[block] (init) {初始方案生成};
+\node[block,below=of init] (destroy) {破坏操作\\(随机/最差/相关/整趟/车型交换)};
+\node[block,below=of destroy] (repair) {修复操作\\(贪婪/regret-2/regret-3)};
+\node[block,below=of repair] (cross) {跨场邻域\\(边界移除/双向交换)};
+\node[block,below=of cross] (check) {排班可行性检查};
+\node[block,below=of check] (accept) {模拟退火接受\\(UCB权重更新)};
+\node[block,below=of accept] (charge) {TVCI充电择时};
+\node[block,below=of charge] (term) {达到评价预算/时间上限?};
+
+\draw[arrow] (init) -- (destroy);
+\draw[arrow] (destroy) -- (repair);
+\draw[arrow] (repair) -- (cross);
+\draw[arrow] (cross) -- (check);
+\draw[arrow] (check) -- (accept);
+\draw[arrow] (accept) -- (charge);
+\draw[arrow] (charge) -- (term);
+
+\draw[arrow] (term.east) -- ++(1.5,0) |- node[right,font=\footnotesize]{否} (destroy.east);
+\node[block,right=2cm of term,draw=none] (end) {输出全局最好解};
+\draw[arrow] (term.south) -- ++(0,-0.8) -| node[below,font=\footnotesize]{是} (end);
+\end{tikzpicture}
+\caption{TVCI-ALNS算法流程}
+\label{fig:algorithm-flow}
+\end{figure}
