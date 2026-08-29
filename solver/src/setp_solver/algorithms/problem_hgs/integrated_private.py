@@ -115,7 +115,6 @@ def build_integrated_private_hgs(
     evaluator: DutyFullEvaluator,
     charging_policy: ChargingRepairPolicy,
     route_engine: IndependentKernelDutyRouteProposalEngine,
-    stagnation_patience: int,
     include_mechanism_refinement: bool = True,
     include_whole_duty_type_exchange: bool = True,
     include_charging_candidates: bool = True,
@@ -139,8 +138,6 @@ def build_integrated_private_hgs(
         raise ValueError("integrated private HGS requires initial candidates")
     if len(initial_candidates) < SelfAdaptivePenalty.minimum_reference_size:
         raise ValueError("self-adaptive penalty requires four initial candidates")
-    if stagnation_patience < 1:
-        raise ValueError("stagnation patience must be positive")
     if education_depth_limit is not None and education_depth_limit < 1:
         raise ValueError("education depth limit must be positive")
     if any(candidate.unserved_customers for candidate in initial_candidates):
@@ -216,7 +213,7 @@ def build_integrated_private_hgs(
         mechanism_stage_engine=mechanism_stage_engine,
         repair_probability=copied_parameters.genetic.repair_probability,
         repair_booster=copied_parameters.penalty.repair_booster,
-        num_iters_no_improvement=stagnation_patience,
+        num_iters_no_improvement=0,  # No-time HGS terminates without restart.
         include_whole_duty_type_exchange=include_whole_duty_type_exchange,
         include_charging_candidates=include_charging_candidates,
         schedule_all_changed_move_evaluation=(

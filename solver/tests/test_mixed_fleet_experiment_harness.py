@@ -98,7 +98,9 @@ def test_dry_run_is_solver_free_and_plans_three_runs_per_level(
     assert payload["output_directory_created"] is False
     assert payload["repeat_count"] == 3
     assert payload["planned_run_count"] == 12
-    assert payload["stop_rule"] == "500 consecutive iterations without improvement"
+    assert payload["stop_rule"] == (
+        "20,000 consecutive non-improving iterations; no restart"
+    )
     assert not ({"seeds", "wall_clock_budget_seconds_per_run"} & payload.keys())
     assert not output.exists()
 

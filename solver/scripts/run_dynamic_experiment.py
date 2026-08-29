@@ -655,7 +655,7 @@ def write_output_package(output_dir: Path, results: Mapping[str, Any]) -> bool:
         "contract_id": CONTRACT_ID,
         "repetition_count": 1,
         "event_source": "paper mixed-event table",
-        "stop_rule": "500 consecutive non-improving iterations",
+        "stop_rule": "20,000 consecutive non-improving iterations; no restart",
         "arms": [ARM_STATIC, ARM_MECHANICAL, ARM_DYNAMIC],
     }
     decision = {

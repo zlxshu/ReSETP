@@ -104,7 +104,7 @@ from setp_solver.solution import Route, Solution
 
 INSTANCE_ID = "cn-jjj-10c-01-V2-LOCATIONS"
 ARM = "one-cycle-real-input-wiring-trial"
-NO_IMPROVEMENT_LIMIT = 500
+NO_IMPROVEMENT_LIMIT = 20_000
 SUCCESS_VERDICT = "RUN_COMPLETE"
 FAILURE_VERDICT = "RUN_FAILED"
 ENTERPRISE_NATIVE_EXPECTATIONS = {
@@ -2139,8 +2139,6 @@ def main() -> int:
     if enterprise_slice is None and not initial_evaluation.feasible:
         failure_reasons.append("initial solution is infeasible")
     expected_termination_statuses = {"STOPPED_BY_CALLER"}
-    if parameters.stagnation_patience is not None:
-        expected_termination_statuses.add("CONVERGED_NO_IMPROVEMENT")
     if result.termination_status not in expected_termination_statuses:
         failure_reasons.append(f"unexpected termination: {result.termination_status}")
     if not result.best_evaluation.feasible:
@@ -2211,7 +2209,7 @@ def main() -> int:
         "enterprise_init_constructor": args.enterprise_init_constructor,
         "iterations": result.iterations,
         "stop_semantics": (
-            "500-iteration no-improvement stop"
+            "20,000 consecutive non-improving iterations; no restart"
         ),
         "stagnation_patience": parameters.stagnation_patience,
         "education_depth_limit": parameters.education_depth_limit,

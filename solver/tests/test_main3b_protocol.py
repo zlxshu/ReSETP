@@ -58,7 +58,7 @@ def test_full_information_static_uses_one_hgs_call(
         assert candidate.unserved_customers == individual.unserved_customers
         calls.append(arm)
         return individual, evaluation, SimpleNamespace(
-            termination_status="CONVERGED_NO_IMPROVEMENT"
+            termination_status="STOPPED_BY_CALLER"
         )
 
     monkeypatch.setattr(main3b_backend, "DutyFullEvaluator", _Evaluator)

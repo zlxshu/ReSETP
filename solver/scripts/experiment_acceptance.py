@@ -8,9 +8,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 
-NORMAL_PROBLEM_HGS_TERMINATIONS = frozenset(
-    {"STOPPED_BY_CALLER", "CONVERGED_NO_IMPROVEMENT"}
-)
+NORMAL_PROBLEM_HGS_TERMINATIONS = frozenset({"STOPPED_BY_CALLER"})
 
 
 @dataclass(frozen=True)

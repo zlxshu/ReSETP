@@ -652,7 +652,6 @@ def test_private_refinement_is_identity_when_mechanisms_are_disabled() -> None:
             carbon_profiles_by_day_offset=None,
         ),
         route_engine=_RouteProposalEngine(),
-        stagnation_patience=10,
         include_mechanism_refinement=False,
     )
     evaluated = bundle.algorithm._adapter.evaluate(initial)
@@ -700,7 +699,6 @@ def test_private_mechanism_stage_runs_during_refinement(
             carbon_profiles_by_day_offset=None,
         ),
         route_engine=_RouteProposalEngine(),
-        stagnation_patience=10,
     )
     evaluated = bundle.algorithm._adapter.evaluate(individual)
     assert evaluated is not None
@@ -730,7 +728,6 @@ def test_private_common_loop_rejects_incomplete_customer_service() -> None:
             carbon_profiles_by_day_offset=None,
         ),
         route_engine=_RouteProposalEngine(),
-        stagnation_patience=10,
         include_mechanism_refinement=False,
     )
     incomplete = DutyIndividual(

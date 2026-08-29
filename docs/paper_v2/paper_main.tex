@@ -753,7 +753,9 @@ Vidal等\cite{ref:76}将种群进化与局部搜索相结合，提出求解多�
 动态事件触发后，保留已执行任务及已发车路线，继承车辆位置、可用时刻、载重和电量，
 并从首个合法释放状态对尚未执行的任务重新执行步骤~2--步骤~6。
 
-\textbf{步骤~8：}终止与成本分配。达到终止条件后，输出所得最优可行方案。
+\textbf{步骤~8：}终止与成本分配。本文采用HGS-CVRP的无时限停止方式\cite{ref:hgs-cvrp-2022}：
+若全局最优目标函数值连续20\,000次完整迭代未改善，则终止搜索；每次严格改善后重新计数，
+不另设墙钟时限或总迭代次数上限。随后输出所得最优可行方案。
 协作路径求解完成后，再进行成员成本分配。令$C(A)$表示企业联盟$A\subseteq D$利用其车场和车辆完成全部客户配送任务时的最小成本，
 且$C(\varnothing)=0$。企业$d$的Shapley成本分摊额为\cite{ref:91}
 \begin{equation}
@@ -1340,6 +1342,8 @@ Qiu Y Y. Research on the vehicle routing problem of mixed-fleet considering dyna
 Gong L, Zheng S L, Xu D J, et al. Distribution routing optimization for oil-electric hybrid fleets from a low-carbon perspective[J]. Control and Decision, 2026, 41(5): 1338--1347.
 
 \bibitem{ref:76} Vidal T, Crainic T G, Gendreau M, Lahrichi N, Rei W. A hybrid genetic algorithm for multidepot and periodic vehicle routing problems[J]. Operations Research, 2012, 60(3): 611--624.
+
+\bibitem{ref:hgs-cvrp-2022} Vidal T. Hybrid genetic search for the CVRP: Open-source implementation and SWAP* neighborhood[J]. Computers \& Operations Research, 2022, 140: 105643.
 
 
 \bibitem{ref:77} Vidal T, Crainic T G, Gendreau M, Prins C. A unified solution framework for multi-attribute vehicle routing problems[J]. European Journal of Operational Research, 2014, 234(3): 658--673.

@@ -44,7 +44,7 @@ SINGLE_OBJECTIVE = "single_objective"
 @dataclass(frozen=True)
 class ProblemHGSSearchParameters:
     population: PopulationParameters
-    stagnation_patience: int = 500
+    stagnation_patience: int = 20_000
     include_whole_duty_type_exchange: bool = True
     objective_mode: str = SINGLE_OBJECTIVE
     education_depth_limit: int | None = None
@@ -205,7 +205,7 @@ def run_integrated_problem_hgs(
     )
     full_calls_before = evaluator.full_calls
     iterations = 0
-    no_improvement = 1
+    no_improvement = 0
     previous_best: float | None = None
     accounting: SearchAccounting | None = None
     bundle = None
@@ -294,7 +294,7 @@ def run_integrated_problem_hgs(
             current = float(best_cost)
             if previous_best is not None:
                 no_improvement = (
-                    1 if current < previous_best else no_improvement + 1
+                    0 if current < previous_best else no_improvement + 1
                 )
             previous_best = current
             if stop(current_state()):
@@ -307,7 +307,6 @@ def run_integrated_problem_hgs(
         evaluator=evaluator,
         charging_policy=charging_policy,
         route_engine=route_engine,
-        stagnation_patience=parameters.stagnation_patience,
         include_mechanism_refinement=include_mechanism_refinement,
         include_whole_duty_type_exchange=(
             parameters.include_whole_duty_type_exchange

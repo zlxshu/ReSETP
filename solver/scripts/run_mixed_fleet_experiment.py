@@ -123,7 +123,7 @@ def _dry_run_payload(
         "arms": {
             arm: asdict(ARM_DEFINITIONS[arm]) for arm in args.arms
         },
-        "stop_rule": "500 consecutive iterations without improvement",
+        "stop_rule": "20,000 consecutive non-improving iterations; no restart",
         "objective_mode": args.objective_mode,
         "charging_curve": args.charging_curve,
         "charge_timing_policy": args.charge_timing_policy,
@@ -612,7 +612,7 @@ def render_report(rows: Sequence[Mapping[str, Any]]) -> str:
     lines = [
         "# MAIN-2 混合车队实验运行报告",
         "",
-        "四个车队水平各独立运行 3 次，只按连续 500 次迭代无改善停止。每次运行自行产生内部随机性，不指定也不记录随机轨迹。",
+        "四个车队水平各独立运行 3 次，只按连续 20,000 次完整迭代无改善停止且不重启。每次运行自行产生内部随机性，不指定也不记录随机轨迹。",
         "",
         "## 各臂 Best / Avg",
         "",
@@ -788,7 +788,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             arm: asdict(ARM_DEFINITIONS[arm]) for arm in args.arms
         },
         "repeat_count": REPEAT_COUNT,
-        "stop_rule": "500 consecutive iterations without improvement",
+        "stop_rule": "20,000 consecutive non-improving iterations; no restart",
         "objective_mode": args.objective_mode,
         "charging_curve": args.charging_curve,
         "charge_timing_policy": args.charge_timing_policy,

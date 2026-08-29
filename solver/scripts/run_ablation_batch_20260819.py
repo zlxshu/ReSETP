@@ -182,7 +182,7 @@ def aggregate(units: list[Unit], rows: list[dict[str, object]]) -> None:
         "status": decision["verdict"],
         "instance_id": INSTANCE,
         "repeat_count_per_arm": 1,
-        "stop_rule": "private runner stops after 500 iterations without improvement",
+        "stop_rule": "20,000 consecutive non-improving iterations; no restart",
         "arms": [
             {"arm": arm, "label": label, "enabled": list(enabled)}
             for arm, label, enabled in ARMS
@@ -200,7 +200,7 @@ def aggregate(units: list[Unit], rows: list[dict[str, object]]) -> None:
     report = [
         "# 表5增量式消融与图3收敛数据",
         "",
-        "每个消融臂运行一次；停止由 private runner 的连续 500 次迭代无改善规则统一负责。",
+        "每个消融臂运行一次；停止由 private runner 的连续 20,000 次完整迭代无改善且不重启规则统一负责。",
         "",
         "| 臂 | 新增组件 | 成本 | 可行 | 客户服务 | 需求服务 | 结果 |",
         "|---|---|---:|---|---:|---:|---|",

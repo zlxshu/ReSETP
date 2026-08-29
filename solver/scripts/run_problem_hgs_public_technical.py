@@ -10,13 +10,13 @@ import traceback
 from pathlib import Path
 from random import SystemRandom
 
-from setp_hgs_kernel import read, solve
+from setp_hgs_kernel import GeneticAlgorithmParams, SolveParams, read, solve
 from setp_hgs_kernel.stop import NoImprovement
 
 
 PUBLIC_INSTANCE_ROUND_FUNC = "exact"
 PUBLIC_INSTANCE_SCALE = 1_000
-NO_IMPROVEMENT_LIMIT = 500
+NO_IMPROVEMENT_LIMIT = 20_000
 
 
 def _json(path: Path, value) -> None:
@@ -92,7 +92,9 @@ def main() -> int:
             },
             "round_func": PUBLIC_INSTANCE_ROUND_FUNC,
             "integer_scale": PUBLIC_INSTANCE_SCALE,
-            "stopping": "500-iteration no-improvement stop",
+            "stopping": (
+                "20,000 consecutive non-improving iterations; no restart"
+            ),
         },
     )
 
@@ -104,6 +106,9 @@ def main() -> int:
             seed=SystemRandom().randrange(2**32),
             collect_stats=False,
             display=False,
+            params=SolveParams(
+                genetic=GeneticAlgorithmParams(num_iters_no_improvement=0)
+            ),
         )
         visits = [
             int(client)
