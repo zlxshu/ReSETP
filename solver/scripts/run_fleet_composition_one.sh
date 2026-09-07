@@ -1,4 +1,5 @@
 #!/bin/zsh
+# 2026-09-05 运行协议：M1 4 性能核，交付批 ≤3 并行、不降优先级（speed_diagnosis_20260905.md §3e）
 # 表9（动力配置）全方案固定配比的单个子跑：run_fleet_composition_one.sh <OUT_ROOT> "<A_cv>/<A_ev>|<B_cv>/<B_ev>|<run>"
 #   一档＝全方案 k 油 / (N−k) 电（所有车场之和）；车场分法按枚举逐个跑，每档取全部分法里最好的。
 #   A＝D_OSM_WAY_1003511503，B＝D_OSM_WAY_1071205721；某车场可为 0/0。
@@ -31,8 +32,11 @@ COMMON=(
   --confirming-round
 )
 print "[$(date +%H:%M:%S)] 启动 $rung/$tag/run_$run"
-nice -n 5 "$PY" solver/scripts/run_problem_hgs_private_technical.py \
+"$PY" solver/scripts/run_problem_hgs_private_technical.py \
     "$dir" --data-repo-root . --arm "MTC-HGS" "${COMMON[@]}" \
     --fleet-mix-override "D_OSM_WAY_1003511503=${a_cv}/${a_ev},D_OSM_WAY_1071205721=${b_cv}/${b_ev}" \
     >> "$OUT_ROOT/$rung/$tag/run_$run.log" 2>&1
-print "[$(date +%H:%M:%S)] 完成 $rung/$tag/run_$run exit=$?"
+# `print "... exit=$?"` 里的 $? 会被同一 word 内的 $(date ...) 命令替换覆盖，取到的是
+# date 的退出码（见 comparison_n10/CONFIRM.md 的同类记录）。先存 rc 再打印。
+rc=$?
+print "[$(date +%H:%M:%S)] 完成 $rung/$tag/run_$run exit=$rc"

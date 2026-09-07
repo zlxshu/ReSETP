@@ -49,7 +49,7 @@ CHINA81_CARBON_PRICE_CNY_PER_KG = 0.07502
 CHINA81_CARBON_PRICE_LOW_CNY_PER_KG = 0.05632
 CHINA81_DIESEL_EF_KG_PER_L = 2.6419028944
 CV_FIXED_CNY_PER_DAY = 170.0
-EV_FIXED_CNY_PER_DAY = 220.0
+EV_FIXED_CNY_PER_DAY = 270.0
 EV_NON_ENERGY_CNY_PER_KM = 0.9145
 
 
@@ -126,14 +126,6 @@ _VEHICLE_COST_AUTHORITY_RELATIVE = Path(
 _RUNTIME_PARAMETER_AUTHORITY_RELATIVE = Path(
     "data/ChinaInstances/"
     "china81_runtime_parameter_authority_v4_20260723"
-)
-FLEET_AUTHORITY_V1_RELATIVE = Path(
-    "data/ChinaInstances/"
-    "china81_finite_fleet_authority_v1_20260723"
-)
-FLEET_AUTHORITY_V2_RELATIVE = Path(
-    "data/ChinaInstances/"
-    "china81_finite_fleet_authority_v2_20260731"
 )
 FLEET_AUTHORITY_V3_RELATIVE = Path(
     "data/ChinaInstances/"

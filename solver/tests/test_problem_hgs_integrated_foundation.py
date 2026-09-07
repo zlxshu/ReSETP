@@ -79,6 +79,7 @@ class _FullEvaluation:
     violations: tuple = ()
     violation_magnitudes: tuple[float, ...] = ()
     violation_axes: tuple[str, ...] = ()
+    charging_candidate_status: object = None
 
     @property
     def feasible(self) -> bool:
@@ -100,6 +101,16 @@ class _FullEvaluator:
         return _FullEvaluation(
             individual_fingerprint=individual.fingerprint,
             total_cost=10.0,
+        )
+
+    def _validate_customer_partition(self, individual: DutyIndividual) -> None:
+        return None
+
+    def prepare_duty_slice(self, duty):
+        return SimpleNamespace(
+            fingerprint=duty.fingerprint,
+            prepared_solution=SimpleNamespace(routes=(), charging_actions=()),
+            zero_quota_breakdown={},
         )
 
 
@@ -799,7 +810,7 @@ def test_ev_duty_charge_options_are_generated_only_when_consumed(
     )
     context = SimpleNamespace(
         bundle=SimpleNamespace(
-            instance=SimpleNamespace(nodes=()),
+            instance=SimpleNamespace(nodes=(), node_lookup={}),
             time_profile=(),
             prices=PriceParameters(),
         ),
@@ -877,3 +888,59 @@ def test_ev_duty_charge_options_are_generated_only_when_consumed(
         ("second", "first"),
         ("second", "second"),
     ]
+
+
+def test_mechanism_proposals_restrict_to_changed_duties() -> None:
+    """Whole-duty exchanges are only proposed on duties the crossover touched.
+
+    2026-09-02: HGS re-examines only routes modified since their last
+    evaluation; the mechanism education follows the same rule through
+    ``changed_duty_ids``.  ``None`` keeps the full pairing.
+    """
+
+    from types import SimpleNamespace
+
+    from setp_solver.algorithms.problem_hgs.proposals import (
+        MechanismProposalEngine,
+    )
+
+    duties = tuple(
+        PhysicalVehicleDuty(
+            f"{kind.upper()}_D0_{index}",
+            kind,
+            "D0",
+            trips=(DutyTrip(1, (f"C{index}",)),),
+        )
+        for index, kind in enumerate(("cv", "ev", "cv", "ev"), start=1)
+    )
+    individual = DutyIndividual(duties=duties)
+    context = SimpleNamespace(
+        dynamic_state=None,
+        rebuilt_route_constraints=None,
+        bundle=SimpleNamespace(instance=SimpleNamespace(nodes=())),
+    )
+    engine = MechanismProposalEngine(
+        context,
+        None,
+        include_charging_candidates=False,
+        cross_depot_enabled=False,
+    )
+    everything = list(
+        engine.propose(
+            individual, None, context.bundle.instance,
+            include_whole_duty_type_exchange=True,
+        )
+    )
+    restricted = list(
+        engine.propose(
+            individual, None, context.bundle.instance,
+            include_whole_duty_type_exchange=True,
+            changed_duty_ids=frozenset({"CV_D0_1"}),
+        )
+    )
+    assert len(everything) == 4  # two CVs x two EVs at one depot
+    assert len(restricted) == 2
+    assert all(
+        "CV_D0_1" in {move.left_duty_id, move.right_duty_id}
+        for move in restricted
+    )

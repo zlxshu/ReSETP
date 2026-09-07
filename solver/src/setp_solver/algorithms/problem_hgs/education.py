@@ -52,7 +52,7 @@ from .evaluation import (
 )
 from .fleet_registry import assert_fleet_activation_allowed
 from .model import DutyIndividual, assert_locks_preserved
-from .operators import DutyMove
+from .operators import DutyMove, RelocateMove, SwapMove
 from .proposals import DutyProposalEngine, LegacyCompleteProposalEngine
 from .schedule_oracle import OracleStatus, ScheduleCoordinator
 
@@ -62,6 +62,169 @@ from .schedule_oracle import OracleStatus, ScheduleCoordinator
 # accepting changes below that scale can make equivalent charging schedules
 # alternate forever.
 IMPROVEMENT_TOLERANCE = 1e-9
+
+
+def _pre_materialization_shift_error(
+    current: DutyIndividual,
+    move: DutyMove,
+    *,
+    contract: object | None,
+) -> ValueError | None:
+    """Return the exact mixed-shift error when no earlier rejection can win."""
+
+    if contract is None or not isinstance(move, (RelocateMove, SwapMove)):
+        return None
+    shift_by_customer = getattr(contract, "customer_shift_by_id", None)
+    if shift_by_customer is None:
+        return None
+
+    duties_by_id = {
+        duty.physical_vehicle_id: duty for duty in current.duties
+    }
+
+    def duty_trip(duty_id: str, trip_index: int):
+        duty = duties_by_id.get(duty_id)
+        if duty is None:
+            return None
+        trip = next(
+            (
+                item
+                for item in duty.trips
+                if int(item.trip_index) == int(trip_index)
+            ),
+            None,
+        )
+        return None if trip is None else (duty, trip)
+
+    if isinstance(move, RelocateMove):
+        source_row = duty_trip(move.source_duty_id, move.source_trip_index)
+        target_row = duty_trip(move.target_duty_id, move.target_trip_index)
+        if source_row is None or target_row is None:
+            return None
+        if (
+            move.source_duty_id,
+            int(move.source_trip_index),
+        ) == (
+            move.target_duty_id,
+            int(move.target_trip_index),
+        ):
+            return None
+        source_duty, source_trip = source_row
+        target_duty, target_trip = target_row
+        source_customers = list(source_trip.customer_ids)
+        target_customers = list(target_trip.customer_ids)
+        if (
+            source_customers.count(move.customer_id) != 1
+            or move.customer_id in target_customers
+            or move.target_position < 0
+            or move.target_position > len(target_customers)
+        ):
+            return None
+        if len(source_customers) == 1 and len(source_duty.trips) == 1:
+            return None
+        source_customers.remove(move.customer_id)
+        target_customers.insert(move.target_position, move.customer_id)
+        replacements = {
+            (move.source_duty_id, int(move.source_trip_index)): tuple(
+                source_customers
+            ),
+            (move.target_duty_id, int(move.target_trip_index)): tuple(
+                target_customers
+            ),
+        }
+        affected_ids = {move.source_duty_id, move.target_duty_id}
+    else:
+        left_row = duty_trip(move.left_duty_id, move.left_trip_index)
+        right_row = duty_trip(move.right_duty_id, move.right_trip_index)
+        if left_row is None or right_row is None:
+            return None
+        if (
+            move.left_duty_id,
+            int(move.left_trip_index),
+        ) == (
+            move.right_duty_id,
+            int(move.right_trip_index),
+        ):
+            return None
+        left_duty, left_trip = left_row
+        right_duty, right_trip = right_row
+        left_customers = list(left_trip.customer_ids)
+        right_customers = list(right_trip.customer_ids)
+        if (
+            left_customers.count(move.left_customer_id) != 1
+            or right_customers.count(move.right_customer_id) != 1
+            or move.left_customer_id in right_customers
+            or move.right_customer_id in left_customers
+        ):
+            return None
+        left_position = left_customers.index(move.left_customer_id)
+        right_position = right_customers.index(move.right_customer_id)
+        left_customers[left_position], right_customers[right_position] = (
+            right_customers[right_position],
+            left_customers[left_position],
+        )
+        replacements = {
+            (move.left_duty_id, int(move.left_trip_index)): tuple(
+                left_customers
+            ),
+            (move.right_duty_id, int(move.right_trip_index)): tuple(
+                right_customers
+            ),
+        }
+        affected_ids = {move.left_duty_id, move.right_duty_id}
+
+    affected_duties = [
+        duty for duty in current.duties
+        if duty.physical_vehicle_id in affected_ids
+    ]
+    if len(affected_duties) != len(affected_ids):
+        return None
+    if any(
+        duty.has_dynamic_commitment
+        or duty.locked_charging_trip_indices
+        or any(trip.locked_customer_prefix for trip in duty.trips)
+        for duty in affected_duties
+    ):
+        return None
+
+    for duty in affected_duties:
+        for trip in duty.trips:
+            try:
+                current_shifts = {
+                    str(shift_by_customer[customer_id])
+                    for customer_id in trip.customer_ids
+                }
+            except KeyError:
+                return None
+            if len(current_shifts) > 1:
+                return None
+
+    for duty in current.duties:
+        if duty.physical_vehicle_id not in affected_ids:
+            continue
+        projected_trip_index = 0
+        for trip in duty.trips:
+            customers = replacements.get(
+                (duty.physical_vehicle_id, int(trip.trip_index)),
+                trip.customer_ids,
+            )
+            if not customers:
+                continue
+            projected_trip_index += 1
+            try:
+                shifts = {
+                    str(shift_by_customer[customer_id])
+                    for customer_id in customers
+                }
+            except KeyError:
+                return None
+            if len(shifts) > 1:
+                return ValueError(
+                    f"rebuilt route {duty.route_id(projected_trip_index)} "
+                    "mixes customer shifts: "
+                    + ", ".join(sorted(shifts))
+                )
+    return None
 
 
 def evaluate_move(
@@ -81,6 +244,18 @@ def evaluate_move(
     """Return a typed candidate outcome."""
 
     started = perf_counter()
+    early_shift_error = _pre_materialization_shift_error(
+        current,
+        move,
+        contract=evaluator.context.rebuilt_route_constraints,
+    )
+    if early_shift_error is not None:
+        return _rejection(
+            move,
+            CandidateStatus.REJECTED_INTERFACE,
+            early_shift_error,
+            started,
+        )
     raw = None
     try:
         raw = move.apply(current)
@@ -387,8 +562,16 @@ def educate_best_improvement(
     charging_repair_cache: ChargingRepairCache | None = None,
     record_trajectory: bool = True,
     max_education_rounds: int | None = None,
+    changed_duty_ids: frozenset[str] | None = None,
 ) -> tuple[DutyIndividual, FullEvaluation, tuple[TrajectoryRow, ...]]:
-    """Run complete-cost best or first improvement education."""
+    """Run complete-cost best or first improvement education.
+
+    ``changed_duty_ids`` restricts proposals to moves touching those duties,
+    as the HGS local search only re-examines moves on routes modified since
+    they were last evaluated (Vidal 2022, ``whenLastModified``).  After an
+    accepted move the set becomes that move's duties; ``None`` proposes on
+    every duty.
+    """
 
     if selection_policy not in {"best", "first"}:
         raise ValueError("selection policy must be best or first")
@@ -421,6 +604,8 @@ def educate_best_improvement(
 
     completed_rounds = 0
     last_round_improved = False
+    incremental = DutyIncrementalEvaluator(evaluator)
+    accounting.record_cache_seed(incremental.seed(current))
     while True:
         if stop_requested is not None and stop_requested():
             return finish_after_stop()
@@ -443,6 +628,7 @@ def educate_best_improvement(
                 include_whole_duty_type_exchange=(
                     include_whole_duty_type_exchange
                 ),
+                changed_duty_ids=changed_duty_ids,
             )
         )
         try:
@@ -450,8 +636,6 @@ def educate_best_improvement(
         except StopIteration:
             return current, current_evaluation, tuple(rows)
         moves = chain((first_move,), proposed)
-        incremental = DutyIncrementalEvaluator(evaluator)
-        accounting.record_cache_seed(incremental.seed(current))
         round_charging_repair_cache = (
             charging_repair_cache
             if charging_repair_cache is not None
@@ -564,8 +748,16 @@ def educate_best_improvement(
             best.candidate,
             best.evaluation,
         )
+        incremental.evaluate_after_change(
+            current,
+            best.candidate,
+            changed_duty_ids=set(best.changed_duty_ids),
+            commit=True,
+        )
         current = best.candidate
         current_evaluation = best.evaluation
+        if changed_duty_ids is not None:
+            changed_duty_ids = frozenset(best.changed_duty_ids)
     return current, current_evaluation, tuple(rows)
 
 
@@ -656,6 +848,14 @@ def _rejection(
         error=str(error),
         charging_rejection_reason=(
             charging_rejection_reason(error)
+            if status == CandidateStatus.REJECTED_CHARGING
+            else None
+        ),
+        # A prescreen rejection stands in for the full repair's own
+        # REJECTED_CHARGING outcome; carry the same candidate status so the
+        # status ledger stays identical to a run without the prescreen.
+        charging_candidate_status=(
+            ChargingCandidateStatus.REJECTED_CHARGING
             if status == CandidateStatus.REJECTED_CHARGING
             else None
         ),

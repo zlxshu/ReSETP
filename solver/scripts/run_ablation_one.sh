@@ -1,4 +1,5 @@
 #!/bin/zsh
+# 2026-09-05 运行协议：M1 4 性能核，交付批 ≤3 并行、不降优先级（speed_diagnosis_20260905.md §3e）
 # 表8 交付批的单个任务：run_ablation_one.sh <OUT_ROOT> "<arm>|<run>"
 # 幂等：已有 best_solution.json 的跳过；求解器自己创建输出目录（已存在会拒绝）。
 # DRY_RUN=1 时只睡 2 秒，用于验证工人池并发上限。
@@ -37,7 +38,10 @@ case "$arm" in
 esac
 if [[ "${DRY_RUN:-0}" == "1" ]]; then print "[$(date +%H:%M:%S)] DRY $arm/run_$run"; sleep 2; exit 0; fi
 print "[$(date +%H:%M:%S)] 启动 $arm/run_$run"
-nice -n 5 "$PY" solver/scripts/run_problem_hgs_private_technical.py \
+"$PY" solver/scripts/run_problem_hgs_private_technical.py \
     "$dir" --data-repo-root . --arm "$arm" "${COMMON[@]}" "${flags[@]}" \
     >> "$OUT_ROOT/$arm/run_$run.log" 2>&1
-print "[$(date +%H:%M:%S)] 完成 $arm/run_$run exit=$?"
+# `print "... exit=$?"` 里的 $? 会被同一 word 内的 $(date ...) 命令替换覆盖，取到的是
+# date 的退出码（见 comparison_n10/CONFIRM.md 的同类记录）。先存 rc 再打印。
+rc=$?
+print "[$(date +%H:%M:%S)] 完成 $arm/run_$run exit=$rc"

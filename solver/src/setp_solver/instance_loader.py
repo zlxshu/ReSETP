@@ -219,8 +219,15 @@ class Instance:
         requested CV/EV profile exists with all three same-path matrices.
         """
 
-        left, right = self._indices(from_node_id, to_node_id)
-        if self.road_profiles is None:
+        index = self._node_index
+        if from_node_id not in index:
+            raise KeyError(f"Unknown node id: {from_node_id}")
+        if to_node_id not in index:
+            raise KeyError(f"Unknown node id: {to_node_id}")
+        left = index[from_node_id]
+        right = index[to_node_id]
+        road_profiles = self.road_profiles
+        if road_profiles is None:
             speed = float(fallback_speed_mps)
             if not math.isfinite(speed) or speed <= 0.0:
                 raise ValueError(
@@ -234,7 +241,7 @@ class Instance:
             )
         profile = str(vehicle_type).lower()
         try:
-            matrices = self.road_profiles[profile]
+            matrices = road_profiles[profile]
         except KeyError as exc:
             raise ValueError(
                 f"road profile {profile!r} is unavailable"

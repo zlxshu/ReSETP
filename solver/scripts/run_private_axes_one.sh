@@ -1,4 +1,5 @@
 #!/bin/zsh
+# 2026-09-05 运行协议：M1 4 性能核，交付批 ≤3 并行、不降优先级（speed_diagnosis_20260905.md §3e）
 # 私有算例两条轴的单个任务（方案 A3 正式入口）：run_private_axes_one.sh <OUT_ROOT> "<axis>|<level>|<run>"
 #   axis=carbon : level=碳价（元/kg），全机制臂，表11
 #   axis=mix    : level=每车场 油/电 车数（如 4/2），全机制臂，表9（两车场同构成，用户令对称梯度）
@@ -32,7 +33,10 @@ case "$axis" in
   *) print "未知轴 $axis"; exit 3 ;;
 esac
 print "[$(date +%H:%M:%S)] 启动 $axis/$tag/run_$run"
-nice -n 5 "$PY" solver/scripts/run_problem_hgs_private_technical.py \
+"$PY" solver/scripts/run_problem_hgs_private_technical.py \
     "$dir" --data-repo-root . --arm "MTC-HGS" "${COMMON[@]}" "${flags[@]}" \
     >> "$OUT_ROOT/$axis/$tag/run_$run.log" 2>&1
-print "[$(date +%H:%M:%S)] 完成 $axis/$tag/run_$run exit=$?"
+# `print "... exit=$?"` 里的 $? 会被同一 word 内的 $(date ...) 命令替换覆盖，取到的是
+# date 的退出码（见 comparison_n10/CONFIRM.md 的同类记录）。先存 rc 再打印。
+rc=$?
+print "[$(date +%H:%M:%S)] 完成 $axis/$tag/run_$run exit=$rc"

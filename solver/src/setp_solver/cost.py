@@ -20,8 +20,7 @@ from __future__ import annotations
 
 import math
 from bisect import bisect_right
-from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from dataclasses import dataclass
 from typing import Any
 
 from .charging_curve import (
@@ -36,12 +35,8 @@ from .instance_loader import IndexedTimeProfile, Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
 from .solution import ChargingAction, Route, Solution, physical_vehicle_id
 
-# v2026-06-11: fixed NESO experiment grid, 2025-11-13 08:00-17:00 UTC.
-CARBON_ORIGIN_UTC = datetime(2025, 11, 13, 8, 0, 0, tzinfo=timezone.utc)
-CARBON_ORIGIN_OFFSET_SECONDS = 0.0
 CARBON_SLOT_SECONDS = 1800.0
-CARBON_N_SLOTS = 18
-# v2026-06-11: make NESO gCO2/kWh -> kgCO2e/kWh conversion explicit.
+# Keep the gCO2/kWh -> kgCO2e/kWh conversion explicit.
 GCO2_PER_KGCO2 = 1000.0
 _CARBON_PROFILE_SORT_CACHE: dict[int, tuple[list[dict[str, Any]], list[dict[str, Any]], list[float]]] = {}
 # v2026-08-21: the time profile is static configuration, so its city grouping
@@ -78,20 +73,22 @@ class ChargingSlot:
     y_skt_kwh: float
 
 
-def carbon_slot_index(t_second: float, *, n_slots: int | None = None, cyclic: bool = False) -> int:
-    """Return the clamped NESO half-hour slot for a solver schedule time.
+_SlotBreakdownCache = dict[
+    tuple[ChargingAction, int, bool],
+    list[ChargingSlot],
+]
 
-    v2026-06-11: B_GATE anchor helper for the 2025-11-13 08:00-17:00 UTC
-    experiment grid. Solver schedule time ``t=0`` corresponds to
-    ``CARBON_ORIGIN_UTC``; slots are 1800 s wide and clamped to the 18-slot
-    generated carbon profile. Use this as the single source for time-to-slot
-    mapping in cost diagnostics and multi-period charging.
+
+def carbon_slot_index(t_second: float, *, n_slots: int, cyclic: bool = False) -> int:
+    """Return the half-hour slot for a time on the instance's own timeline.
+
+    Slots are 1800 s wide and clamped to the supplied profile length. Use this
+    as the single source for time-to-slot mapping in cost diagnostics and
+    multi-period charging.
     """
 
-    # v2026-06-12: Q1 24h bundles pass n_slots=48 while legacy smoke tests
-    # keep the previous 18-slot default.
-    slot_count = CARBON_N_SLOTS if n_slots is None else int(n_slots)
-    raw = math.floor((float(t_second) - CARBON_ORIGIN_OFFSET_SECONDS) / CARBON_SLOT_SECONDS)
+    slot_count = int(n_slots)
+    raw = math.floor(float(t_second) / CARBON_SLOT_SECONDS)
     if cyclic:
         # v2026-06-12: S0 overnight depot charging uses the 48-slot daily
         # carbon table cyclically when charging crosses midnight.
@@ -102,11 +99,11 @@ def carbon_slot_index(t_second: float, *, n_slots: int | None = None, cyclic: bo
 
 
 def carbon_profile_row_for_slot(carbon_profile: list[dict[str, Any]], slot_index: int) -> dict[str, Any]:
-    """Return the carbon-profile row for a clamped NESO slot index.
+    """Return the carbon-profile row for a clamped half-hour slot index.
 
     v2026-06-11: B_GATE gamma round-trip helper. The slot index is normalized
     through ``carbon_slot_index`` so cost, diagnostics, and tests share the
-    same 18-slot 2025-11-13 UTC grid before applying previous-hold lookup.
+    same instance-relative time grid before applying previous-hold lookup.
     """
 
     # v2026-06-12: canonicalize against the actual profile length so 48-slot
@@ -208,11 +205,13 @@ def evaluate(
         if item.vehicle_type == "cv"
     )
     # v2026-06-12: Q2 depot precharge has its own electricity price.
+    slot_breakdowns: _SlotBreakdownCache = {}
     cost_elec = _charging_electricity_cost(
         solution,
         instance,
         carbon_profile,
         prices,
+        slot_breakdowns,
     )
     route_time_seconds = _route_time_seconds(solution, instance, node_lookup, prices)
 
@@ -222,6 +221,7 @@ def evaluate(
         instance,
         carbon_profile,
         prices,
+        slot_breakdowns,
     )
     e_total = e_cv_direct + e_ev_indirect
     # v2026-06-12: Z0a keeps the buy/sell carbon-trading term for finite CE,
@@ -319,13 +319,18 @@ def _evaluate_route(
     distance_m = 0.0
     fuel_liters = 0.0
     ev_drive_kwh = 0.0
+    fallback_speed_mps = (
+        _price(prices, "v_speed_ms")
+        if instance.road_profiles is None
+        else 0.0
+    )
 
     for (from_node_id, to_node_id), load_kg in zip(zip(route.node_sequence, route.node_sequence[1:]), loads):
         leg_distance_m, time_s, sum_v2d = instance.arc_metrics(
             from_node_id,
             to_node_id,
             vehicle_type,
-            fallback_speed_mps=_price(prices, "v_speed_ms"),
+            fallback_speed_mps=fallback_speed_mps,
         )
         distance_m += leg_distance_m
         if instance.road_profiles is None:
@@ -419,6 +424,11 @@ def route_node_schedule(
             t_depart=first_depart,
         )
     ]
+    fallback_speed_mps = (
+        _price(prices, "v_speed_ms")
+        if instance.road_profiles is None
+        else 0.0
+    )
 
     for from_node_id, to_node_id in zip(route.node_sequence, route.node_sequence[1:]):
         to_node = node_lookup[to_node_id]
@@ -426,7 +436,7 @@ def route_node_schedule(
             from_node_id,
             to_node_id,
             route.vehicle_type,
-            fallback_speed_mps=_price(prices, "v_speed_ms"),
+            fallback_speed_mps=fallback_speed_mps,
         )
         arrive = schedule[-1].t_depart + travel_time
         # v2026-06-11: charging stations use the action's charge_start and occupancy to push downstream time.
@@ -448,7 +458,7 @@ def charging_slot_breakdown(
     energy_kwh: float,
     instance: Instance,
     *,
-    n_slots: int | None = None,
+    n_slots: int,
     cyclic: bool = False,
 ) -> list[ChargingSlot]:
     """Construct paper ``g_skt`` and ``y_skt`` values for one charging action.
@@ -456,8 +466,8 @@ def charging_slot_breakdown(
     v2026-06-11: This is the single source for B-full multi-period charging
     accounting. It implements the paper_main.tex charging interval statement
     at lines 428-438 and the charging-power constraint at lines 449-457:
-    split ``[charge_start, charge_start + occupancy]`` over the 18 half-hour
-    NESO slots, set ``g_skt`` to overlap seconds, and uniformly allocate
+    split ``[charge_start, charge_start + occupancy]`` over the instance's
+    1800-second slots, set ``g_skt`` to overlap seconds, and uniformly allocate
     ``y_skt = energy * g_skt / occupancy``. Use it from both cost and check;
     it does not enforce ``pi_s`` itself.
     """
@@ -475,7 +485,7 @@ def charging_slot_breakdown(
 
     end = start + duration
     rows: list[ChargingSlot] = []
-    slot_count = CARBON_N_SLOTS if n_slots is None else int(n_slots)
+    slot_count = int(n_slots)
     if cyclic:
         # v2026-06-12: S0 cyclic split preserves exact g_skt/y_skt across the
         # midnight boundary instead of clamping the final slot.
@@ -519,15 +529,24 @@ def charging_curve_for_action(
     would change both feasibility and time-slot carbon accounting.
     """
 
-    metadata = (
-        action.start_energy_kwh,
-        action.end_energy_kwh,
-        action.charging_curve_id,
+    start_metadata = action.start_energy_kwh
+    end_metadata = action.end_energy_kwh
+    curve_id = action.charging_curve_id
+    metadata_absent = (
+        start_metadata is None
+        and end_metadata is None
+        and curve_id is None
+    )
+    metadata_incomplete = (
+        start_metadata is None
+        or end_metadata is None
+        or curve_id is None
     )
     nodes = instance.node_lookup
     station = nodes.get(action.station_id)
-    if station is None or station.node_type not in {"d", "f"}:
-        if all(value is None for value in metadata):
+    station_type = None if station is None else station.node_type
+    if station_type not in {"d", "f"}:
+        if metadata_absent:
             try:
                 legacy_spec = spec_from_parameters(prices)
             except ChargingCurveError as exc:
@@ -543,20 +562,20 @@ def charging_curve_for_action(
     try:
         spec = spec_for_charging_node(
             prices,
-            node_type=station.node_type,
+            node_type=station_type,
         )
     except ChargingCurveError as exc:
         raise ValueError(f"invalid charging curve parameters: {exc}") from exc
-    if all(value is None for value in metadata):
+    if metadata_absent:
         if spec.curve_id != L100_CONTROL.curve_id:
             raise ValueError(
                 "nonlinear charging action is missing start/end energy "
                 "and curve id"
             )
         return None
-    if any(value is None for value in metadata):
+    if metadata_incomplete:
         raise ValueError("charging action has incomplete curve metadata")
-    if station.node_type == "d":
+    if station_type == "d":
         reference_power_kw = _price(prices, "depot_charge_power_kw")
     else:
         if station.charge_power_kw is None:
@@ -566,37 +585,43 @@ def charging_curve_for_action(
         reference_power_kw = float(station.charge_power_kw)
     curve = spec.scale(
         capacity_kwh=instance.battery_capacity_kwh(
-            fallback=_price(prices, "B_battery_kwh"),
+            fallback=(
+                _price(prices, "B_battery_kwh")
+                if instance.vehicle_parameters is None
+                else 0.0
+            ),
         ),
         reference_power_kw=reference_power_kw,
     )
-    if action.charging_curve_id != curve.curve_id:
+    if curve_id != curve.curve_id:
         raise ValueError(
-            f"charging action curve {action.charging_curve_id!r} disagrees "
+            f"charging action curve {curve_id!r} disagrees "
             f"with prices curve {curve.curve_id!r}"
         )
 
-    start_energy = float(action.start_energy_kwh)
-    end_energy = float(action.end_energy_kwh)
+    start_energy = float(start_metadata)
+    end_energy = float(end_metadata)
     tolerance = 1e-7
+    capacity = curve.capacity_kwh
     if (
         not math.isfinite(start_energy)
         or not math.isfinite(end_energy)
         or start_energy < -tolerance
-        or end_energy > curve.capacity_kwh + tolerance
+        or end_energy > capacity + tolerance
         or end_energy < start_energy - tolerance
     ):
         raise ValueError("charging action energy states violate battery bounds")
-    start_energy = min(curve.capacity_kwh, max(0.0, start_energy))
-    end_energy = min(curve.capacity_kwh, max(start_energy, end_energy))
+    start_energy = min(capacity, max(0.0, start_energy))
+    end_energy = min(capacity, max(start_energy, end_energy))
+    charged_energy = end_energy - start_energy
     recorded_energy = float(action.energy_kwh)
-    if abs((end_energy - start_energy) - recorded_energy) > tolerance:
+    if abs(charged_energy - recorded_energy) > tolerance:
         raise ValueError(
             "charging action energy disagrees with start/end energy states"
         )
     expected_duration = (
         0.0
-        if end_energy - start_energy <= tolerance
+        if charged_energy <= tolerance
         else curve.duration_seconds(start_energy, end_energy)
     )
     recorded_duration = float(action.occupancy_minutes) * 60.0
@@ -612,7 +637,7 @@ def charging_action_slot_breakdown(
     instance: Instance,
     prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
     *,
-    n_slots: int | None = None,
+    n_slots: int,
     cyclic: bool = False,
 ) -> list[ChargingSlot]:
     """Split one action using its exact curve, with L100 legacy compatibility."""
@@ -637,14 +662,15 @@ def charging_action_slot_breakdown(
             "charge_start_second is before the first carbon profile slot"
         )
     end = start + duration
-    first_absolute_slot = math.floor(start / CARBON_SLOT_SECONDS)
-    final_boundary_slot = math.ceil(end / CARBON_SLOT_SECONDS)
+    slot_seconds = CARBON_SLOT_SECONDS
+    first_absolute_slot = math.floor(start / slot_seconds)
+    final_boundary_slot = math.ceil(end / slot_seconds)
     if final_boundary_slot <= first_absolute_slot:
         final_boundary_slot = first_absolute_slot + 1
-    boundaries = tuple(
-        float(slot) * CARBON_SLOT_SECONDS
+    boundaries = [
+        float(slot) * slot_seconds
         for slot in range(first_absolute_slot, final_boundary_slot + 1)
-    )
+    ]
     energies = slot_energy_kwh(
         curve,
         start_energy_kwh=start_energy,
@@ -652,10 +678,11 @@ def charging_action_slot_breakdown(
         charging_start_seconds=start,
         slot_boundaries_seconds=boundaries,
     )
-    slot_count = CARBON_N_SLOTS if n_slots is None else int(n_slots)
+    slot_count = int(n_slots)
     if slot_count <= 0:
         raise ValueError("charging slot count must be positive")
     rows: list[ChargingSlot] = []
+    append_row = rows.append
     for offset, energy in enumerate(energies):
         absolute_slot = first_absolute_slot + offset
         left = boundaries[offset]
@@ -671,8 +698,9 @@ def charging_action_slot_breakdown(
                     "non-cyclic charging action exceeds the carbon horizon"
                 )
             slot_index = absolute_slot
-        rows.append(ChargingSlot(slot_index, overlap, float(energy)))
-    if abs(sum(row.y_skt_kwh for row in rows) - float(action.energy_kwh)) > 1e-7:
+        append_row(ChargingSlot(slot_index, overlap, float(energy)))
+    action_energy = float(action.energy_kwh)
+    if abs(sum(row.y_skt_kwh for row in rows) - action_energy) > 1e-7:
         raise ValueError("charging action slot energy does not close")
     return rows
 
@@ -720,7 +748,17 @@ def best_charging_action_start(
 
     def weighted_carbon(start: float) -> float:
         total = 0.0
-        shifted = replace(action, charge_start_second=float(start))
+        shifted = ChargingAction(
+            vehicle_id=action.vehicle_id,
+            station_id=action.station_id,
+            energy_kwh=action.energy_kwh,
+            occupancy_minutes=action.occupancy_minutes,
+            charge_start_second=float(start),
+            charge_day_offset=action.charge_day_offset,
+            start_energy_kwh=action.start_energy_kwh,
+            end_energy_kwh=action.end_energy_kwh,
+            charging_curve_id=action.charging_curve_id,
+        )
         for slot in charging_action_slot_breakdown(
             shifted,
             instance,
@@ -751,6 +789,8 @@ def charging_action_emissions_kg(
     instance: Instance,
     carbon_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
+    *,
+    _slot_cache: _SlotBreakdownCache | None = None,
 ) -> float:
     """Return exact indirect emissions for one validated charging action."""
 
@@ -760,13 +800,20 @@ def charging_action_emissions_kg(
         action.station_id,
         carbon_profile,
     )
-    for slot in charging_action_slot_breakdown(
-        action,
-        instance,
-        prices,
-        n_slots=len(node_profile),
-        cyclic=True,
-    ):
+    slot_count = len(node_profile)
+    cache_key = (action, slot_count, True)
+    slots = None if _slot_cache is None else _slot_cache.get(cache_key)
+    if slots is None:
+        slots = charging_action_slot_breakdown(
+            action,
+            instance,
+            prices,
+            n_slots=slot_count,
+            cyclic=True,
+        )
+        if _slot_cache is not None:
+            _slot_cache[cache_key] = slots
+    for slot in slots:
         row = carbon_profile_row_for_slot(
             node_profile,
             slot.slot_index,
@@ -810,7 +857,11 @@ def route_departure_second(
             route.node_sequence[0],
             successor_id,
             route.vehicle_type,
-            fallback_speed_mps=_price(prices, "v_speed_ms"),
+            fallback_speed_mps=(
+                _price(prices, "v_speed_ms")
+                if instance.road_profiles is None
+                else 0.0
+            ),
         )
         departure = max(departure, float(successor.ready_time) - travel)
     return max(0.0, departure)
@@ -927,49 +978,79 @@ def _profile_mechanical_energy_j(
     instance: Instance | None = None,
     vehicle_type: str | None = None,
 ) -> float:
+    price_values = (
+        prices
+        if isinstance(prices, dict)
+        else prices.__dict__
+        if isinstance(prices, PriceParameters)
+        else None
+    )
     vehicle = (
         None
         if instance is None or vehicle_type is None
         else instance.vehicle_profile(vehicle_type)
     )
     drag = (
-        _price(prices, "c_d")
+        float(price_values["c_d"])
+        if vehicle is None and price_values is not None
+        else float(getattr(prices, "c_d"))
         if vehicle is None
         else float(vehicle.drag_coefficient)
     )
     frontal_area = (
-        _price(prices, "A_frontal")
+        float(price_values["A_frontal"])
+        if vehicle is None and price_values is not None
+        else float(getattr(prices, "A_frontal"))
         if vehicle is None
         else float(vehicle.frontal_area_m2)
     )
     curb_mass = (
-        _price(prices, "m_curb")
+        float(price_values["m_curb"])
+        if vehicle is None and price_values is not None
+        else float(getattr(prices, "m_curb"))
         if vehicle is None
         else float(vehicle.curb_mass_kg)
     )
     rolling_resistance = (
-        _price(prices, "c_r")
+        float(price_values["c_r"])
+        if vehicle is None and price_values is not None
+        else float(getattr(prices, "c_r"))
         if vehicle is None
         else float(vehicle.rolling_resistance_coefficient)
     )
+    mass_per_unit = (
+        float(price_values["m_unit"])
+        if price_values is not None
+        else float(getattr(prices, "m_unit"))
+    )
     load_mass_kg = (
-        _price(prices, "m_unit") * float(load_kg)
+        mass_per_unit * float(load_kg)
         if instance is None
         else instance.load_mass_kg(
             load_kg,
-            fallback_mass_per_unit_kg=_price(prices, "m_unit"),
+            fallback_mass_per_unit_kg=mass_per_unit,
         )
+    )
+    air_density = (
+        float(price_values["rho_a"])
+        if price_values is not None
+        else float(getattr(prices, "rho_a"))
+    )
+    gravity = (
+        float(price_values["g0"])
+        if price_values is not None
+        else float(getattr(prices, "g0"))
     )
     drag_coefficient = (
         0.5
         * drag
-        * _price(prices, "rho_a")
+        * air_density
         * frontal_area
     )
     rolling_force = (
         curb_mass
         + load_mass_kg
-    ) * _price(prices, "g0") * rolling_resistance
+    ) * gravity * rolling_resistance
     return (
         drag_coefficient * float(sum_v2d_m3_s2)
         + rolling_force * float(distance_m)
@@ -986,23 +1067,36 @@ def _profile_arc_fuel_liters(
     instance: Instance | None = None,
     vehicle_type: str = "cv",
 ) -> float:
+    price_values = (
+        prices
+        if isinstance(prices, dict)
+        else prices.__dict__
+        if isinstance(prices, PriceParameters)
+        else None
+    )
     vehicle = (
         None
         if instance is None
         else instance.vehicle_profile(vehicle_type)
     )
     engine_friction = (
-        _price(prices, "k_engine")
+        float(price_values["k_engine"])
+        if vehicle is None and price_values is not None
+        else float(getattr(prices, "k_engine"))
         if vehicle is None
         else float(vehicle.engine_friction_kj_per_rev_l)
     )
     engine_speed = (
-        _price(prices, "N_engine")
+        float(price_values["N_engine"])
+        if vehicle is None and price_values is not None
+        else float(getattr(prices, "N_engine"))
         if vehicle is None
         else float(vehicle.engine_speed_rev_per_s)
     )
     engine_displacement = (
-        _price(prices, "D_displace")
+        float(price_values["D_displace"])
+        if vehicle is None and price_values is not None
+        else float(getattr(prices, "D_displace"))
         if vehicle is None
         else float(vehicle.engine_displacement_l)
     )
@@ -1017,9 +1111,34 @@ def _profile_arc_fuel_liters(
         )
         / 1000.0
     )
+    xi_fuel_air = (
+        float(price_values["xi_fuel_air"])
+        if price_values is not None
+        else float(getattr(prices, "xi_fuel_air"))
+    )
+    kappa_heat = (
+        float(price_values["kappa_heat"])
+        if price_values is not None
+        else float(getattr(prices, "kappa_heat"))
+    )
+    psi_conv = (
+        float(price_values["psi_conv"])
+        if price_values is not None
+        else float(getattr(prices, "psi_conv"))
+    )
+    eta_diesel = (
+        float(price_values["eta_diesel"])
+        if price_values is not None
+        else float(getattr(prices, "eta_diesel"))
+    )
+    eta_tf = (
+        float(price_values["eta_tf"])
+        if price_values is not None
+        else float(getattr(prices, "eta_tf"))
+    )
     fuel = (
-        _price(prices, "xi_fuel_air")
-        / (_price(prices, "kappa_heat") * _price(prices, "psi_conv"))
+        xi_fuel_air
+        / (kappa_heat * psi_conv)
         * (
             engine_friction
             * engine_speed
@@ -1027,8 +1146,8 @@ def _profile_arc_fuel_liters(
             * float(duration_s)
             + mechanical_energy_kj
             / (
-                _price(prices, "eta_diesel")
-                * _price(prices, "eta_tf")
+                eta_diesel
+                * eta_tf
             )
         )
     )
@@ -1118,18 +1237,50 @@ def ev_instance_arc_energy_kwh(
         from_node_id,
         to_node_id,
         "ev",
-        fallback_speed_mps=_price(prices, "v_speed_ms"),
+        fallback_speed_mps=0.0,
+    )
+    vehicle = instance.vehicle_profile("ev")
+    price_values = (
+        prices
+        if isinstance(prices, dict)
+        else prices.__dict__
+        if isinstance(prices, PriceParameters)
+        else None
+    )
+    alpha_e = (
+        float(price_values["alpha_e"])
+        if price_values is not None
+        else float(getattr(prices, "alpha_e"))
+    )
+    air_density = (
+        float(price_values["rho_a"])
+        if price_values is not None
+        else float(getattr(prices, "rho_a"))
+    )
+    gravity = (
+        float(price_values["g0"])
+        if price_values is not None
+        else float(getattr(prices, "g0"))
+    )
+    drag = float(vehicle.drag_coefficient)
+    frontal_area = float(vehicle.frontal_area_m2)
+    curb_mass = float(vehicle.curb_mass_kg)
+    rolling_resistance = float(vehicle.rolling_resistance_coefficient)
+    load_mass = instance.load_mass_kg(
+        load_kg,
+        fallback_mass_per_unit_kg=0.0,
+    )
+    drag_coefficient = 0.5 * drag * air_density * frontal_area
+    rolling_force = (
+        curb_mass + load_mass
+    ) * gravity * rolling_resistance
+    mechanical_energy_j = (
+        drag_coefficient * float(sum_v2d)
+        + rolling_force * float(distance)
     )
     return (
-        _price(prices, "alpha_e")
-        * _profile_mechanical_energy_j(
-            distance,
-            sum_v2d,
-            load_kg,
-            prices,
-            instance=instance,
-            vehicle_type="ev",
-        )
+        alpha_e
+        * mechanical_energy_j
         / 3_600_000.0
     )
 
@@ -1139,6 +1290,7 @@ def _ev_indirect_emissions(
     instance: Instance,
     carbon_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, Any] | Any,
+    slot_cache: _SlotBreakdownCache | None = None,
 ) -> float:
     total = 0.0
     for action in solution.charging_actions:
@@ -1147,6 +1299,7 @@ def _ev_indirect_emissions(
             instance,
             carbon_profile,
             prices,
+            _slot_cache=slot_cache,
         )
     return total
 
@@ -1156,6 +1309,7 @@ def _charging_electricity_cost(
     instance: Instance,
     time_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any,
+    slot_cache: _SlotBreakdownCache | None = None,
 ) -> float:
     return sum(
         charging_action_electricity_cost(
@@ -1163,6 +1317,7 @@ def _charging_electricity_cost(
             instance,
             time_profile,
             prices,
+            _slot_cache=slot_cache,
         )
         for action in solution.charging_actions
     )
@@ -1173,6 +1328,8 @@ def charging_action_electricity_cost(
     instance: Instance,
     time_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    _slot_cache: _SlotBreakdownCache | None = None,
 ) -> float:
     """Settle one charge against city-specific time-of-use prices."""
 
@@ -1228,6 +1385,19 @@ def charging_action_electricity_cost(
             if node is not None and node.node_type == "d"
             else "public_total_cny_per_kwh"
         )
+        slot_count = len(node_profile)
+        cache_key = (action, slot_count, True)
+        slots = None if _slot_cache is None else _slot_cache.get(cache_key)
+        if slots is None:
+            slots = charging_action_slot_breakdown(
+                action,
+                instance,
+                prices,
+                n_slots=slot_count,
+                cyclic=True,
+            )
+            if _slot_cache is not None:
+                _slot_cache[cache_key] = slots
         return sum(
             float(slot.y_skt_kwh)
             * float(
@@ -1236,13 +1406,7 @@ def charging_action_electricity_cost(
                     slot.slot_index,
                 )[price_field]
             )
-            for slot in charging_action_slot_breakdown(
-                action,
-                instance,
-                prices,
-                n_slots=len(node_profile),
-                cyclic=True,
-            )
+            for slot in slots
         )
     unit_price = (
         _price(prices, "depot_electricity_price")
@@ -1258,12 +1422,17 @@ def _route_time_seconds(
     node_lookup: dict[str, Node],
     prices: PriceParameters | dict[str, float] | Any,
 ) -> float:
+    fallback_speed_mps = (
+        _price(prices, "v_speed_ms")
+        if instance.road_profiles is None
+        else 0.0
+    )
     travel = sum(
         instance.arc_metrics(
             left,
             right,
             route.vehicle_type,
-            fallback_speed_mps=_price(prices, "v_speed_ms"),
+            fallback_speed_mps=fallback_speed_mps,
         )[1]
         for route in solution.routes
         for left, right in zip(route.node_sequence, route.node_sequence[1:])

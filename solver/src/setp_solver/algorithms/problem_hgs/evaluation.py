@@ -26,6 +26,10 @@ from setp_solver.check import (
     DynamicCheckContext,
     FairnessContext,
     Violation,
+    _check_customer_service,
+    _check_profit_fairness,
+    _check_station_capacity,
+    _check_vehicle_count,
     check_solution,
 )
 from setp_solver.china81 import China81Bundle
@@ -40,10 +44,18 @@ from setp_solver.cost import (
     evaluate,
 )
 from setp_solver.instance_loader import Instance
-from setp_solver.profit import calculate_depot_profits, depot_profit_values
+from setp_solver.profit import (
+    DepotProfitBreakdown,
+    _empty_row,
+    _finalize_row,
+    calculate_depot_profits,
+    depot_profit_values,
+)
 from setp_solver.search.multitrip_schedule import (
+    STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
     MultiTripCertificate,
     prepare_multitrip_solution,
+    validate_multitrip_certificate,
 )
 from setp_solver.solution import (
     ChargingAction,
@@ -154,6 +166,9 @@ class DutyEvaluationContext:
     rebuilt_route_constraints: RebuiltRouteConstraintContract | None = None
     shift_aware_departure_enabled: bool = False
     customer_depot_lock: Mapping[str, str] = field(default_factory=dict)
+    # Fleet-composition experiment (2026-09-03, user: "固定配比不是上限配比"):
+    # the plan must dispatch exactly the configured number of CVs and EVs.
+    fleet_exact_composition: bool = False
 
     def __post_init__(self) -> None:
         depots = {
@@ -242,9 +257,52 @@ class FullEvaluation:
 
 @dataclass(frozen=True)
 class _DutySlice:
+    """Everything the complete evaluation needs from one physical vehicle.
+
+    2026-09-02 (D1): besides the prepared one-duty solution and its
+    zero-quota cost, the slice now carries the duty's own certificate, the
+    violations that depend on this duty alone, and the additive depot-profit
+    rows.  Combining slices then only recomputes the cross-vehicle terms
+    (customer coverage, fleet counts, station capacity, fairness, carbon
+    allocation) instead of replaying the whole solution.
+    """
+
     fingerprint: str
     prepared_solution: Solution
     zero_quota_breakdown: Mapping[str, float]
+    certificate: MultiTripCertificate | None = None
+    local_violations: tuple[Violation, ...] = ()
+    profit_rows: Mapping[str, Mapping[str, float]] = field(
+        default_factory=dict
+    )
+
+
+# Violation types whose verdict depends on more than one physical vehicle.
+# They are dropped from per-duty checks and recomputed on the combined
+# solution; everything else in ``check_solution`` is route- or vehicle-local.
+_CROSS_DUTY_VIOLATION_TYPES = frozenset(
+    {CUSTOMER_COVERAGE, FLEET_SIZE, STATION_CAPACITY, PROFIT_FAIRNESS}
+)
+_ADDITIVE_PROFIT_FIELDS = (
+    "revenue",
+    "cost_fixed",
+    "cost_km",
+    "cost_fuel",
+    "cost_electricity",
+    "customers_served",
+    "demand_kg",
+    "cv_direct_emissions_kg",
+    "ev_indirect_emissions_kg",
+    "depot_charging_kwh",
+    "station_charging_kwh",
+)
+# One education round scores many candidates that differ only in where a
+# customer lands, so the *other* changed duty repeats verbatim across them.
+# ``prepare_duty_slice`` is a pure function of the duty and the fixed context,
+# so memoising it by duty fingerprint returns the identical object instead of
+# rebuilding the schedule (2026-09-02).  The memo lives on the full evaluator
+# so every incremental evaluator of one run shares it.
+_SLICE_MEMO_MAX_ENTRIES = 4096
 
 
 @dataclass(frozen=True)
@@ -381,6 +439,48 @@ def _shift_minimum_departure_second_by_customer(
     }
 
 
+def _fleet_composition_violations(
+    solution: Solution,
+    context: "DutyEvaluationContext",
+) -> list[Violation]:
+    """Require exactly the configured CV/EV counts when the experiment fixes them.
+
+    2026-09-03 (fleet-composition experiment): the rung is a fixed fleet, not
+    an upper bound; a plan that parks a configured vehicle is infeasible.
+    The instance carries the plan-wide counts (``num_cv``/``num_ev``).
+    """
+
+    if not context.fleet_exact_composition:
+        return []
+    instance = context.bundle.instance
+    used: dict[str, set[str]] = {"cv": set(), "ev": set()}
+    for route in solution.routes:
+        used.setdefault(route.vehicle_type.lower(), set()).add(
+            route.vehicle_id.split("#")[0]
+        )
+    violations: list[Violation] = []
+    for vehicle_type, required in (
+        ("cv", instance.num_cv),
+        ("ev", instance.num_ev),
+    ):
+        if required is None:
+            continue
+        count = len(used.get(vehicle_type, ()))
+        if count < int(required):
+            # Detail keeps "required, used" order so the penalty magnitude
+            # (first number minus second) is the shortfall.
+            violations.append(
+                Violation(
+                    FLEET_SIZE,
+                    "",
+                    vehicle_type,
+                    f"{vehicle_type.upper()} physical vehicles {int(required)} "
+                    f"required by the fixed composition but {count} dispatched",
+                )
+            )
+    return violations
+
+
 def _shift_minimum_departure_second_by_route(
     solution: Solution,
     context: DutyEvaluationContext,
@@ -413,19 +513,55 @@ class DutyFullEvaluator:
         self.full_calls = 0
         self.slice_preparation_calls = 0
         self.candidate_assembly_calls = 0
+        self.slice_memo: dict[str, _DutySlice] = {}
+        self.slice_memo_hits = 0
+        self.slice_memo_misses = 0
 
-    def evaluate(self, individual: DutyIndividual) -> FullEvaluation:
-        return self._evaluate_full(individual, source="full")
+    def memoised_duty_slice(self, duty: PhysicalVehicleDuty) -> _DutySlice:
+        key = _duty_fingerprint(duty)
+        cached = self.slice_memo.get(key)
+        if cached is not None:
+            self.slice_memo_hits += 1
+            return cached
+        self.slice_memo_misses += 1
+        prepared = self.prepare_duty_slice(duty)
+        if len(self.slice_memo) >= _SLICE_MEMO_MAX_ENTRIES:
+            self.slice_memo.clear()
+        self.slice_memo[key] = prepared
+        return prepared
+
+    def evaluate(
+        self,
+        individual: DutyIndividual,
+        *,
+        tolerate_infeasible: bool = False,
+    ) -> FullEvaluation:
+        """Evaluate one candidate.
+
+        ``tolerate_infeasible`` admits a static candidate whose charging could
+        not be repaired: late arrivals and battery deficits become penalised
+        violations (HGS time warp / load excess) instead of exceptions, and the
+        returned evaluation carries ``REJECTED_CHARGING`` so the loop keeps the
+        member as breeding material only.  The final answer never uses it.
+        """
+
+        return self._evaluate_full(
+            individual,
+            source="full",
+            tolerate_infeasible=tolerate_infeasible,
+        )
 
     def _evaluate_full(
         self,
         individual: DutyIndividual,
         *,
         source: str,
+        tolerate_infeasible: bool = False,
     ) -> FullEvaluation:
         self._validate_customer_partition(individual)
         dynamic_state = self.context.dynamic_state
         dynamic_prepared = None
+        tolerated = bool(tolerate_infeasible) and dynamic_state is None
         if dynamic_state is None:
             decoded = individual.to_solution()
             prepared, certificate = prepare_multitrip_solution(
@@ -441,8 +577,16 @@ class DutyFullEvaluator:
                         self.context,
                     )
                 ),
+                tolerate_infeasible=tolerated,
             )
-            _assert_no_hidden_repair(decoded, prepared)
+            if not tolerated:
+                _assert_no_hidden_repair(decoded, prepared)
+                validate_multitrip_certificate(
+                    certificate,
+                    list(prepared.routes),
+                    self.context.bundle.prices,
+                    instance=self.context.bundle.instance,
+                )
         else:
             dynamic = prepare_dynamic_candidate(
                 individual,
@@ -474,6 +618,11 @@ class DutyFullEvaluator:
                 "full_evaluations": 1,
                 "incremental_evaluations": 0,
             },
+            charging_candidate_status=(
+                ChargingCandidateStatus.REJECTED_CHARGING
+                if tolerated
+                else ChargingCandidateStatus.READY
+            ),
             evaluation_instance=(
                 None
                 if dynamic_prepared is None
@@ -508,7 +657,7 @@ class DutyFullEvaluator:
             )
         individual = DutyIndividual(duties=(duty,), source="incremental-slice")
         decoded = individual.to_solution()
-        prepared, _ = prepare_multitrip_solution(
+        prepared, certificate = prepare_multitrip_solution(
             decoded,
             self.context.bundle.instance,
             self.context.bundle.prices,
@@ -520,7 +669,6 @@ class DutyFullEvaluator:
                 )
             ),
         )
-        _assert_no_hidden_repair(decoded, prepared)
         annotated = annotate_cross_site_services(
             prepared,
             self.context.bundle.customer_home_depot,
@@ -535,7 +683,89 @@ class DutyFullEvaluator:
             fingerprint=_duty_fingerprint(duty),
             prepared_solution=annotated,
             zero_quota_breakdown=breakdown,
+            certificate=certificate,
+            local_violations=self._local_duty_violations(annotated, certificate),
+            profit_rows=self._duty_profit_rows(annotated),
         )
+
+    def _local_duty_violations(
+        self,
+        annotated: Solution,
+        certificate: MultiTripCertificate,
+    ) -> tuple[Violation, ...]:
+        """The part of ``_evaluate_prepared`` that one vehicle decides alone."""
+
+        bundle = self.context.bundle
+        violations = [
+            violation
+            for violation in check_solution(
+                annotated,
+                bundle.instance,
+                bundle.prices,
+                fairness_context=None,
+                fairness_enabled=False,
+            )
+            if violation.type not in _CROSS_DUTY_VIOLATION_TYPES
+        ]
+        for route in annotated.routes:
+            for customer_id in route.node_sequence[1:-1]:
+                locked_depot = self.context.customer_depot_lock.get(customer_id)
+                if locked_depot is not None and route.home_depot_id != locked_depot:
+                    violations.append(
+                        Violation(
+                            type=ROUTE_STRUCTURE,
+                            vehicle_id=route.vehicle_id,
+                            location=customer_id,
+                            detail=(
+                                "customer depot changed while cross-depot "
+                                f"service is disabled: {locked_depot} -> "
+                                f"{route.home_depot_id}"
+                            ),
+                        )
+                    )
+        if self.context.rebuilt_route_constraints is not None:
+            violations.extend(
+                _rebuilt_route_constraint_violations(
+                    annotated,
+                    certificate,
+                    self.context.rebuilt_route_constraints,
+                )
+            )
+        for route_id, seconds in certificate.time_warp_by_route:
+            violations.append(
+                Violation(
+                    TIME_WINDOW,
+                    route_id,
+                    "time_warp",
+                    f"late by {float(seconds):.3f} s (time warp)",
+                )
+            )
+        return tuple(violations)
+
+    def _duty_profit_rows(
+        self,
+        annotated: Solution,
+    ) -> dict[str, dict[str, float]]:
+        """Additive depot-profit fields of one vehicle (carbon allocated later)."""
+
+        bundle = self.context.bundle
+        rows = calculate_depot_profits(
+            annotated,
+            bundle.instance,
+            bundle.time_profile,
+            bundle.prices,
+            customer_home_depot=dict(bundle.customer_home_depot),
+            prior_profit={},
+            carbon_quota_kg=0.0,
+        )
+        return {
+            depot_id: {
+                name: float(getattr(row, name))
+                for name in _ADDITIVE_PROFIT_FIELDS
+            }
+            for depot_id, row in rows.items()
+            if any(float(getattr(row, name)) != 0.0 for name in _ADDITIVE_PROFIT_FIELDS)
+        }
 
     def _evaluate_prepared(
         self,
@@ -610,6 +840,7 @@ class DutyFullEvaluator:
                 )
             ),
         )
+        violations.extend(_fleet_composition_violations(prepared, self.context))
         for route in prepared.routes:
             for customer_id in route.node_sequence[1:-1]:
                 locked_depot = self.context.customer_depot_lock.get(customer_id)
@@ -693,6 +924,17 @@ class DutyFullEvaluator:
                 all_cv_reference=False,
             )
         )
+        # The checker times each route on its own; the lateness a forced
+        # multi-trip chain produces only exists as certificate time warp.
+        for route_id, seconds in certificate.time_warp_by_route:
+            violations.append(
+                Violation(
+                    TIME_WINDOW,
+                    route_id,
+                    "time_warp",
+                    f"late by {float(seconds):.3f} s (time warp)",
+                )
+            )
         exact_breakdown = dict(
             breakdown
             if breakdown is not None
@@ -767,12 +1009,28 @@ class DutyFullEvaluator:
 
 
 class DutyIncrementalEvaluator:
-    """Cache unchanged duty preparation and cost."""
+    """Cache unchanged duty preparation, cost, certificate and violations."""
 
     def __init__(self, full_evaluator: DutyFullEvaluator):
         self.full_evaluator = full_evaluator
         self._individual_fingerprint: str | None = None
         self._slices: dict[str, _DutySlice] = {}
+        self.slice_memo_hits = 0
+        self.slice_memo_misses = 0
+
+    def _prepare_duty_slice(self, duty: PhysicalVehicleDuty) -> _DutySlice:
+        memoised = getattr(self.full_evaluator, "memoised_duty_slice", None)
+        if memoised is None:
+            # Test doubles only expose ``prepare_duty_slice``.
+            self.slice_memo_misses += 1
+            return self.full_evaluator.prepare_duty_slice(duty)
+        before = self.full_evaluator.slice_memo_hits
+        prepared = memoised(duty)
+        if self.full_evaluator.slice_memo_hits != before:
+            self.slice_memo_hits += 1
+        else:
+            self.slice_memo_misses += 1
+        return prepared
 
     def seed(self, individual: DutyIndividual) -> int:
         self.full_evaluator._validate_customer_partition(individual)
@@ -781,7 +1039,7 @@ class DutyIncrementalEvaluator:
             self._individual_fingerprint = individual.fingerprint
             return 0
         self._slices = {
-            duty.physical_vehicle_id: self.full_evaluator.prepare_duty_slice(duty)
+            duty.physical_vehicle_id: self._prepare_duty_slice(duty)
             for duty in individual.duties
         }
         self._individual_fingerprint = individual.fingerprint
@@ -797,12 +1055,6 @@ class DutyIncrementalEvaluator:
     ) -> FullEvaluation:
         if self._individual_fingerprint != previous.fingerprint:
             raise ValueError("incremental cache is not seeded for previous individual")
-        actual_changed = _changed_duty_ids(previous, candidate)
-        if set(changed_duty_ids) != actual_changed:
-            raise ValueError(
-                "changed duty scope is incomplete or over-declared: "
-                f"actual={sorted(actual_changed)}, declared={sorted(changed_duty_ids)}"
-            )
         self.full_evaluator._validate_customer_partition(candidate)
         if self.full_evaluator.context.dynamic_state is not None:
             result = self.full_evaluator._evaluate_full(
@@ -819,7 +1071,7 @@ class DutyIncrementalEvaluator:
             cached = self._slices.get(duty.physical_vehicle_id)
             fingerprint = _duty_fingerprint(duty)
             if (
-                duty.physical_vehicle_id not in actual_changed
+                duty.physical_vehicle_id not in changed_duty_ids
                 and cached is not None
                 and cached.fingerprint == fingerprint
             ):
@@ -827,40 +1079,15 @@ class DutyIncrementalEvaluator:
                 reused += 1
             else:
                 next_slices[duty.physical_vehicle_id] = (
-                    self.full_evaluator.prepare_duty_slice(duty)
+                    self._prepare_duty_slice(duty)
                 )
                 recomputed += 1
 
-        unprepared = _combine_slices(next_slices)
         self.full_evaluator.candidate_assembly_calls += 1
-        combined, certificate = prepare_multitrip_solution(
-            unprepared,
-            self.full_evaluator.context.bundle.instance,
-            self.full_evaluator.context.bundle.prices,
-            depot_charge_window_mode=(
-                self.full_evaluator.context.depot_charge_window_mode
-            ),
-            minimum_departure_second_by_route=(
-                _shift_minimum_departure_second_by_route(
-                    unprepared,
-                    self.full_evaluator.context,
-                )
-            ),
-        )
-        _assert_no_hidden_repair(unprepared, combined)
-        combined = annotate_cross_site_services(
-            combined,
-            self.full_evaluator.context.bundle.customer_home_depot,
-        )
-        breakdown = _aggregate_breakdowns(
+        incremental = _combine_duty_slices(
             next_slices,
             self.full_evaluator.context,
-        )
-        incremental = self.full_evaluator._evaluate_prepared(
-            combined,
-            certificate,
             individual_fingerprint=candidate.fingerprint,
-            source="incremental",
             accounting={
                 "full_evaluations": 0,
                 "incremental_evaluations": 1,
@@ -869,12 +1096,209 @@ class DutyIncrementalEvaluator:
                 "recomputed_duties": recomputed,
                 "reused_duties": reused,
             },
-            breakdown=breakdown,
         )
         if commit:
             self._slices = next_slices
             self._individual_fingerprint = candidate.fingerprint
         return incremental
+
+
+def _combine_duty_slices(
+    slices: Mapping[str, _DutySlice],
+    context: DutyEvaluationContext,
+    *,
+    individual_fingerprint: str,
+    accounting: Mapping[str, int],
+) -> FullEvaluation:
+    """Assemble one complete evaluation from per-vehicle slices.
+
+    Per-vehicle verdicts, certificates and cost rows come from the slices;
+    only the terms that depend on several vehicles are computed here, on the
+    combined solution.  The result must equal ``DutyFullEvaluator.evaluate``
+    on the same individual (cost, breakdown, violation multiset, profits);
+    ``test_problem_hgs_incremental_equivalence`` pins that contract.
+    """
+
+    if any(item.certificate is None for item in slices.values()):
+        raise ValueError("incremental evaluation requires certified duty slices")
+    bundle = context.bundle
+    combined = annotate_cross_site_services(
+        _combine_slices(slices),
+        bundle.customer_home_depot,
+    )
+    certificate = _combine_certificates(slices)
+    profit_breakdowns = _combine_profit_rows(slices, context)
+    profits = depot_profit_values(profit_breakdowns)
+    fairness_context = FairnessContext(
+        depot_profit=profits,
+        independent_profit=dict(context.independent_profit),
+        theta=float(context.theta),
+    )
+    node_lookup = bundle.instance.node_lookup
+    violations: list[Violation] = [
+        violation
+        for duty_id in sorted(slices)
+        for violation in slices[duty_id].local_violations
+    ]
+    violations.extend(_check_customer_service(combined, node_lookup))
+    violations.extend(_check_vehicle_count(combined, bundle.instance))
+    violations.extend(_fleet_composition_violations(combined, context))
+    violations.extend(
+        _check_station_capacity(
+            combined,
+            node_lookup,
+            bundle.instance,
+            bundle.prices,
+            None,
+        )
+    )
+    violations.extend(
+        _check_profit_fairness(
+            fairness_context,
+            bool(context.fairness_enabled),
+        )
+    )
+    violations.extend(
+        _depot_fleet_violations(
+            combined,
+            bundle,
+            all_cv_reference=False,
+        )
+    )
+    breakdown = _aggregate_breakdowns(slices, context)
+    margins = {
+        depot_id: float(profits.get(depot_id, 0.0))
+        - float(context.theta) * float(baseline)
+        for depot_id, baseline in context.independent_profit.items()
+    }
+    violation_magnitudes, violation_axes = _measure_violations(
+        tuple(violations),
+        margins,
+    )
+    return FullEvaluation(
+        total_cost=float(breakdown["total_cost"]),
+        breakdown=breakdown,
+        violations=tuple(violations),
+        violation_magnitudes=violation_magnitudes,
+        violation_axes=violation_axes,
+        depot_profit=profits,
+        participation_margin=margins,
+        prepared_solution=combined,
+        certificate=certificate,
+        individual_fingerprint=individual_fingerprint,
+        source="incremental",
+        accounting=dict(accounting),
+        charging_candidate_status=ChargingCandidateStatus.READY,
+    )
+
+
+def _combine_certificates(
+    slices: Mapping[str, _DutySlice],
+) -> MultiTripCertificate:
+    ordered = [slices[duty_id].certificate for duty_id in sorted(slices)]
+    assert all(item is not None for item in ordered)
+    base = ordered[0]
+    trips: tuple = ()
+    ledger: tuple = ()
+    warp: tuple = ()
+    counts: dict[str, int] = {}
+    # 2026-09-06: the merged certificate keeps every duty's own first-trip
+    # charge day (see MultiTripCertificate.first_trip_charge_day_offset_by_
+    # route).  Merging used to refuse a plan whose duties disagreed, which is
+    # exactly the normal case under the ``prev_return`` first-trip window --
+    # each vehicle's window opens at its own return the preceding evening.
+    offset_by_route: dict[str, int] = {}
+    for duty_id in sorted(slices):
+        item = slices[duty_id]
+        cert = item.certificate
+        assert cert is not None
+        trips += tuple(cert.trips)
+        ledger += tuple(cert.depot_charge_ledger)
+        warp += tuple(cert.time_warp_by_route)
+        for vehicle_type, count in cert.vehicle_counts.items():
+            counts[vehicle_type] = counts.get(vehicle_type, 0) + int(count)
+        for route in item.prepared_solution.routes:
+            if (
+                route.vehicle_type.lower() != "ev"
+                or not route.vehicle_id.endswith("#T1")
+            ):
+                continue
+            if not any(
+                action.station_id == route.home_depot_id
+                for action in item.prepared_solution.charging_actions
+                if action.vehicle_id == route.vehicle_id
+            ):
+                continue
+            offset_by_route[route.vehicle_id] = (
+                cert.first_trip_charge_day_offset_for(route.vehicle_id)
+            )
+    for vehicle_type in ("cv", "ev"):
+        counts.setdefault(vehicle_type, 0)
+    return replace(
+        base,
+        vehicle_counts=counts,
+        trips=trips,
+        depot_charge_ledger=ledger,
+        time_warp_by_route=warp,
+        # The earliest day the plan reaches; the same summary rule the
+        # multi-trip builders use.
+        first_trip_charge_day_offset=(
+            min(offset_by_route.values())
+            if offset_by_route
+            else STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET
+        ),
+        first_trip_charge_day_offset_by_route=tuple(
+            sorted(offset_by_route.items())
+        ),
+    )
+
+
+def _combine_profit_rows(
+    slices: Mapping[str, _DutySlice],
+    context: DutyEvaluationContext,
+) -> dict[str, DepotProfitBreakdown]:
+    """Replay ``calculate_depot_profits`` from additive per-vehicle rows."""
+
+    bundle = context.bundle
+    depot_ids = sorted(
+        node.node_id
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "d"
+    )
+    prior = dict(context.prior_profit)
+    data = {
+        depot_id: _empty_row(depot_id, prior.get(depot_id, 0.0))
+        for depot_id in depot_ids
+    }
+    for duty_id in sorted(slices):
+        for depot_id, row in slices[duty_id].profit_rows.items():
+            if depot_id not in data:
+                data[depot_id] = _empty_row(depot_id, prior.get(depot_id, 0.0))
+            target = data[depot_id]
+            for name, value in row.items():
+                target[name] += float(value)
+    total_emissions = sum(
+        row["cv_direct_emissions_kg"] + row["ev_indirect_emissions_kg"]
+        for row in data.values()
+    )
+    quota = float(context.carbon_quota_kg)
+    total_carbon_cost = (
+        0.0
+        if math.isinf(quota)
+        else (total_emissions - quota) * _price(bundle.prices, "carbon_price")
+    )
+    for row in data.values():
+        emissions = row["cv_direct_emissions_kg"] + row["ev_indirect_emissions_kg"]
+        row["emissions_kg"] = emissions
+        row["cost_carbon"] = (
+            0.0
+            if total_emissions <= 1e-12
+            else total_carbon_cost * emissions / total_emissions
+        )
+    return {
+        depot_id: _finalize_row(depot_id, row)
+        for depot_id, row in sorted(data.items())
+    }
 
 
 def _dynamic_prefix_accounting_by_route_id(
@@ -1020,7 +1444,7 @@ def _prefix_energy_at_terminal_load(
     return _evaluate_route(
         replace(route, node_sequence=list(prefix)),
         proxy_instance,
-        {node.node_id: node for node in proxy_instance.nodes},
+        proxy_instance.node_lookup,
         bundle.prices,
     )
 
@@ -1461,7 +1885,7 @@ def _optional_float_equivalent(
 
 
 def _duty_fingerprint(duty: PhysicalVehicleDuty) -> str:
-    return DutyIndividual(duties=(duty,), source="fingerprint").fingerprint
+    return duty.fingerprint
 
 
 def _changed_duty_ids(

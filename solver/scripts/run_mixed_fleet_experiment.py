@@ -268,7 +268,6 @@ def _prepare_population(
         route_engine = IndependentKernelDutyRouteProposalEngine(
             context,
             initial,
-            random_seed=random_source,
             stream_role="main2_initialization",
             depot_assignment_operator_enabled=True,
             rebuilt_volume_capacity_enabled=True,
@@ -417,7 +416,6 @@ def _run_one(
     route_engine = IndependentKernelDutyRouteProposalEngine(
         context,
         initial,
-        random_seed=random_source,
         stream_role="main2_main_route",
         depot_assignment_operator_enabled=True,
         rebuilt_volume_capacity_enabled=True,

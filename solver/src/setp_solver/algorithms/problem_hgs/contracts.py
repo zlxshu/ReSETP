@@ -148,7 +148,71 @@ class SearchAccounting:
     charging_repair_cache_misses: int = 0
     population_admission_attempts: int = 0
     population_admissions: int = 0
+    # 历史误名＝rounds：kernel_native 路径下这个数是外层轮数，不是遗传算法
+    # 的内部重启次数（内核以 num_iters_no_improvement=10**9 构建，从不重启）。
+    # 名字保留给已有的下游读者，同一个数另以 ``rounds`` 发布。
     restarts: int = 0
+    # 外层轮数的诚实命名。只有 kernel_native 路径赋值，其余路径保持 0。
+    rounds: int = 0
+    # 下面四项只由 kernel_native 路径记录（2026-09-05 新增）。
+    # ``None``／空列表一律读作"这条路径没有记录"，不是"记录下来的值为假／为空"：
+    # 整合路径（run_integrated_problem_hgs）确实采用外层 stop 回调的返回值，
+    # 若把默认值写成 False，就等于替它作了一个它从未作过的断言。
+    stop_semantics_actual: str | None = None
+    outer_stop_callback_effective: bool | None = None
+    # 内核每次刷新轮内最优时的一条记录：{round, iteration, kernel_best_cost}。
+    improvement_events: list[dict[str, float | int]] = field(default_factory=list)
+    # 每个外层轮一条：{round, iterations, runtime_seconds, improvements,
+    # kernel_best_cost}；该轮内核最优若始终是不可行哨兵，最后一项为 None。
+    kernel_round_summaries: list[dict[str, float | int | None]] = field(
+        default_factory=list
+    )
+    # Reload-gap proxy (fleet-composition experiment): the between-trip
+    # charging seconds the kernel reserved in each search round.
+    reload_gap_seconds_by_round: list[float] = field(default_factory=list)
+    # 每个外层轮一条（2026-09-05 新增，只有 kernel_native 路径记录）：投影进
+    # 内核的种子数，以及其中被内核判为不可行的份数。计数在随机补员之前，
+    # 所以它说的是"上一轮的精确解在本轮模型里还站不站得住"，不掺随机个体。
+    kernel_seed_infeasible_by_round: list[int] = field(default_factory=list)
+    kernel_seed_count_by_round: list[int] = field(default_factory=list)
+    # 每个外层轮一条（2026-09-05 新增，只有 kernel_native 路径记录）：这一轮
+    # 实际交给内核 NoImprovement 的耐心值。第 1 轮恒为 stagnation_patience；
+    # 后续轮在 ``adaptive`` 模式下由本次跑自己的改善间隔标定。
+    round_patience_by_round: list[int] = field(default_factory=list)
+    # "fixed"＝每轮都用 stagnation_patience（2026-09-05 前的历史行为）；
+    # "adaptive"＝后续轮按实测改善间隔定。None＝这条搜索路径没有记录。
+    round_patience_mode: str | None = None
+    # 第 1 轮里相邻两次内核改善之间等得最久的那一段，按内核圈数计；后续轮耐心
+    # 值的标定量。None＝没有记录；0 是合法值（该轮只有播种那一个事件）。
+    round1_max_improvement_gap: int | None = None
+    # 每个外层轮一条（2026-09-05 新增，只有 kernel_native 路径记录）：这一轮
+    # 有没有把精确最优往下压。停机规则读的就是这串标记的尾巴。
+    round_improved_by_round: list[bool] = field(default_factory=list)
+    # 每被推迟一次记一个轮号（2026-09-05 新增，只有 kernel_native 路径记录）：
+    # 该轮结束时精确最优不用电，但到那时为止还没有任何一轮压过见证解，于是
+    # "不用电"这个提前出口没有生效。空列表＝从未推迟（绝大多数跑）。
+    no_electricity_exit_deferred_rounds: list[int] = field(default_factory=list)
+    # 连续多少轮无改善才停（2026-09-05 新增）。1＝2026-09-05 之前的"任一轮无
+    # 改善即停"。None＝这条搜索路径没有记录（整合路径没有外层轮）。
+    stop_after_nonimproving_rounds: int | None = None
+    # 外层轮数硬上限。None＝没有记录。改动前确认轮分支根本没有上限。
+    max_outer_rounds: int | None = None
+    # 第 1 轮独立起跑几次（2026-09-08 新增，只有 kernel_native 路径记录）。
+    # 1＝2026-09-08 之前的行为：一次运算只有一个起点。None＝没有记录。
+    round_one_starts: int | None = None
+    # 第 1 轮每个起点一条：{start, iterations, runtime_seconds, improvements,
+    # kernel_best_cost, selected}。``kernel_best_cost`` 是内核自己的代理最优
+    # （轮内可行最优，单位 1/100 000 元），也是起点之间取优所用的判据——它每
+    # 轮本来就在记，按它选起点不额外付一次完整精确评价。起点数为 1 时这个列表
+    # 仍然记一条，读者不必分两种情形处理。
+    round_one_start_summaries: list[dict[str, float | int | bool | None]] = field(
+        default_factory=list
+    )
+    # 两个路由代理锚点被冻结成的值（2026-09-08 新增）。None＝没有冻结，即按
+    # 原行为每轮重估／每跑各估各的。冻结时这两个数在整次运算的每一轮相同，
+    # 也在同一批的每一次运算之间相同。
+    frozen_reload_gap_seconds: float | None = None
+    frozen_first_trip_window_open_second: float | None = None
     wall_seconds: float = 0.0
     run_wall_seconds: float = 0.0
     initialization_wall_seconds: float = 0.0
@@ -441,6 +505,108 @@ class SearchAccounting:
             ),
             "population_admissions": int(self.population_admissions),
             "restarts": int(self.restarts),
+            "rounds": int(self.rounds),
+            "stop_semantics_actual": (
+                None
+                if self.stop_semantics_actual is None
+                else str(self.stop_semantics_actual)
+            ),
+            "outer_stop_callback_effective": (
+                None
+                if self.outer_stop_callback_effective is None
+                else bool(self.outer_stop_callback_effective)
+            ),
+            "improvement_events": [
+                {
+                    "round": int(event["round"]),
+                    "iteration": int(event["iteration"]),
+                    "kernel_best_cost": float(event["kernel_best_cost"]),
+                }
+                for event in self.improvement_events
+            ],
+            "kernel_round_summaries": [
+                {
+                    "round": int(summary["round"]),
+                    "iterations": int(summary["iterations"]),
+                    "runtime_seconds": float(summary["runtime_seconds"]),
+                    "improvements": int(summary["improvements"]),
+                    # 该轮内核最优始终停在不可行哨兵时没有代价可报。
+                    "kernel_best_cost": (
+                        None
+                        if summary["kernel_best_cost"] is None
+                        else float(summary["kernel_best_cost"])
+                    ),
+                }
+                for summary in self.kernel_round_summaries
+            ],
+            "reload_gap_seconds_by_round": [
+                float(gap) for gap in self.reload_gap_seconds_by_round
+            ],
+            "kernel_seed_infeasible_by_round": [
+                int(count) for count in self.kernel_seed_infeasible_by_round
+            ],
+            "kernel_seed_count_by_round": [
+                int(count) for count in self.kernel_seed_count_by_round
+            ],
+            "round_patience_by_round": [
+                int(value) for value in self.round_patience_by_round
+            ],
+            "round_patience_mode": (
+                None
+                if self.round_patience_mode is None
+                else str(self.round_patience_mode)
+            ),
+            "round1_max_improvement_gap": (
+                None
+                if self.round1_max_improvement_gap is None
+                else int(self.round1_max_improvement_gap)
+            ),
+            "round_improved_by_round": [
+                bool(flag) for flag in self.round_improved_by_round
+            ],
+            "no_electricity_exit_deferred_rounds": [
+                int(index) for index in self.no_electricity_exit_deferred_rounds
+            ],
+            "stop_after_nonimproving_rounds": (
+                None
+                if self.stop_after_nonimproving_rounds is None
+                else int(self.stop_after_nonimproving_rounds)
+            ),
+            "max_outer_rounds": (
+                None
+                if self.max_outer_rounds is None
+                else int(self.max_outer_rounds)
+            ),
+            "round_one_starts": (
+                None
+                if self.round_one_starts is None
+                else int(self.round_one_starts)
+            ),
+            "round_one_start_summaries": [
+                {
+                    "start": int(summary["start"]),
+                    "iterations": int(summary["iterations"]),
+                    "runtime_seconds": float(summary["runtime_seconds"]),
+                    "improvements": int(summary["improvements"]),
+                    "kernel_best_cost": (
+                        None
+                        if summary["kernel_best_cost"] is None
+                        else float(summary["kernel_best_cost"])
+                    ),
+                    "selected": bool(summary["selected"]),
+                }
+                for summary in self.round_one_start_summaries
+            ],
+            "frozen_reload_gap_seconds": (
+                None
+                if self.frozen_reload_gap_seconds is None
+                else float(self.frozen_reload_gap_seconds)
+            ),
+            "frozen_first_trip_window_open_second": (
+                None
+                if self.frozen_first_trip_window_open_second is None
+                else float(self.frozen_first_trip_window_open_second)
+            ),
             "wall_seconds": float(self.wall_seconds),
             "run_wall_seconds": float(self.run_wall_seconds),
             "initialization_wall_seconds": float(

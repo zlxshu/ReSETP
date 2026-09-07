@@ -38,8 +38,8 @@ from setp_solver.china81 import (
 )
 from setp_solver.cost import evaluate as evaluate_cost
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import UK_2025_PRICES
 from setp_solver.solution import Solution
+from solver.tests.china_test_prices import CHINA_TEST_PRICES
 
 
 def _profile() -> list[dict[str, float]]:
@@ -56,10 +56,16 @@ def _profile() -> list[dict[str, float]]:
 
 def _linear_prices(**changes):
     return replace(
-        UK_2025_PRICES,
+        CHINA_TEST_PRICES,
         charging_curve_id="L100_control",
         charging_soc_breakpoints=(0.0, 1.0),
         charging_relative_powers=(1.0,),
+        depot_charging_curve_id=None,
+        depot_charging_soc_breakpoints=None,
+        depot_charging_relative_powers=None,
+        public_charging_curve_id=None,
+        public_charging_soc_breakpoints=None,
+        public_charging_relative_powers=None,
         **changes,
     )
 
@@ -304,14 +310,22 @@ def test_minimum_counterexample_reordering_and_charge_clock_remove_diesel() -> N
         ),
         source="minimum-reordered-all-ev",
     )
-    with pytest.raises(ChargingRepairFailure, match="no feasible depot charging window"):
-        repair_changed_duties(
-            distance_order,
-            reordered_all_ev,
-            changed_duty_ids={"EV_D_1", "CV_D_1"},
-            context=context,
-            policy=policy,
-        )
+    # 2026-09-03 (model alignment): the repair may now let a later trip wait
+    # at the depot for its charge to end (paper: t_ce <= tau at d^+, the
+    # departure is free), so the three-trip EV duty the schedule oracle
+    # already certified feasible below is repairable as well.  Before the
+    # alignment the repair bounded every window by the natural departure
+    # and raised "no feasible depot charging window" here.
+    repaired = repair_changed_duties(
+        distance_order,
+        reordered_all_ev,
+        changed_duty_ids={"EV_D_1", "CV_D_1"},
+        context=context,
+        policy=policy,
+    )
+    repaired_ev = next(duty for duty in repaired.duties if duty.physical_vehicle_id == "EV_D_1")
+    assert len(repaired_ev.trips) == 3
+    assert any(int(session.trip_index) >= 2 for session in repaired_ev.charging_sessions)
 
     compiled = ScheduleOracleContext.from_evaluation_context(context)
     oracle = SingleDutyScheduleOracle(compiled)

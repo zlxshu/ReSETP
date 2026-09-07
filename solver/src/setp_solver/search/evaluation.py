@@ -19,7 +19,7 @@ from ..profit import calculate_depot_profits, depot_profit_values
 from ..solution import Solution
 
 
-# v2026-06-11: much larger than any expected GBP route bill in generated tests.
+# v2026-06-11: much larger than any expected route bill in generated tests.
 BIG_M = 1_000_000_000.0
 
 
@@ -130,7 +130,7 @@ def cross_depot_violations(solution: Solution, context: EvaluationContext) -> li
 
     if context.allow_cross_depot or not context.customer_home_depot:
         return []
-    node_lookup = {node.node_id: node for node in context.instance.nodes}
+    node_lookup = context.instance.node_lookup
     violations: list[str] = []
     for route in solution.routes:
         for node_id in route.node_sequence[1:-1]:

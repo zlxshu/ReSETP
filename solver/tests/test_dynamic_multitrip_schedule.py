@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import replace
-import json
-from pathlib import Path
 
 import pytest
 
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.charging_curve import L100_CONTROL
 from setp_solver.cost import evaluate
-from setp_solver.prices import UK_2025_PRICES
-from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.dynamic_multitrip_schedule import (
     DYNAMIC_CONTRACT_ID,
     DynamicAssetState,
@@ -20,62 +16,26 @@ from setp_solver.search.dynamic_multitrip_schedule import (
     prepare_dynamic_multitrip_solution,
     reschedule_dynamic_charging,
 )
-from setp_solver.search.metaheuristic_baselines import solution_from_dict
 from setp_solver.search.multitrip_schedule import (
-    MultiTripCertificate,
-    ScheduledTrip,
     prepare_multitrip_solution,
     route_timing,
 )
 from setp_solver.solution import ChargingAction, Route, Solution, physical_vehicle_id
+from solver.tests.china_test_prices import CHINA_TEST_PRICES
 
 
-ROOT = Path(__file__).resolve().parents[2]
-E3 = ROOT / "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713"
-E6 = ROOT / "baselines/e6_fairness/e6_participation_formal_20260714"
-INSTANCE = "L-main-threeshift-100c-01"
-CASE = f"{INSTANCE}__geographic__seed1__no_loss"
-
-
-def _certificate_from_dict(payload: dict[str, object]) -> MultiTripCertificate:
-    return MultiTripCertificate(
-        contract_id=str(payload["contract_id"]),
-        status=str(payload["status"]),
-        vehicle_counts={
-            str(key): int(value)
-            for key, value in dict(payload["vehicle_counts"]).items()  # type: ignore[arg-type]
-        },
-        trips=tuple(
-            ScheduledTrip(**row)
-            for row in payload["trips"]  # type: ignore[union-attr]
-        ),
-        recharge_mode=str(payload["recharge_mode"]),
-        depot_charge_power_kw=float(payload["depot_charge_power_kw"]),
-        first_trip_charge_day_offset=int(payload["first_trip_charge_day_offset"]),
-    )
-
-
-def _formal_221_customer_case():
-    instance_path = E3 / "assets" / INSTANCE / "bundle" / "instance.json"
-    solution_path = E6 / "solutions" / f"{CASE}.json"
-    certificate_path = E6 / "certificates" / f"{CASE}.json"
-    bundle = load_search_bundle(instance_path.parent)
-    solution = solution_from_dict(
-        json.loads(solution_path.read_text(encoding="utf-8"))
-    )
-    certificate = _certificate_from_dict(
-        json.loads(certificate_path.read_text(encoding="utf-8"))
-    )
-    prices = replace(
-        UK_2025_PRICES,
-        B_battery_kwh=280.0,
-        initial_ev_battery_kwh=0.0,
-        carbon_price=0.0,
-    )
-    assert sum(node.node_type.lower() == "c" for node in bundle.instance.nodes) == 221
-    assert bundle.instance.num_cv == 10
-    assert bundle.instance.num_ev == 10
-    return solution, certificate, bundle, prices
+LINEAR_CHINA_TEST_PRICES = replace(
+    CHINA_TEST_PRICES,
+    charging_curve_id=L100_CONTROL.curve_id,
+    charging_soc_breakpoints=L100_CONTROL.soc_breakpoints,
+    charging_relative_powers=L100_CONTROL.relative_powers,
+    depot_charging_curve_id=None,
+    depot_charging_soc_breakpoints=None,
+    depot_charging_relative_powers=None,
+    public_charging_curve_id=None,
+    public_charging_soc_breakpoints=None,
+    public_charging_relative_powers=None,
+)
 
 
 def test_exact_asset_scheduler_reuses_inherited_id_and_trip_sequence() -> None:
@@ -101,7 +61,7 @@ def test_exact_asset_scheduler_reuses_inherited_id_and_trip_sequence() -> None:
         ]
     )
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=20.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -190,7 +150,7 @@ def test_dynamic_ev_route_keeps_public_station_charge_in_exact_ledger() -> None:
         charging_actions=[public],
     )
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=10.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -276,7 +236,7 @@ def test_explicit_duty_precedence_prevents_later_trip_from_running_first() -> No
     prepared, certificate = prepare_dynamic_multitrip_solution(
         source,
         instance,
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         asset_states={state.physical_vehicle_id: state},
         stage_start_second=0.0,
         ordered_route_ids=("open-first", "open-second"),
@@ -309,7 +269,7 @@ def test_dynamic_carbon_timing_stays_after_stage_start_and_survives_next_cut() -
         num_ev=1,
     )
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=20.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -477,7 +437,7 @@ def test_added_order_is_rejected_when_sole_in_progress_asset_returns_too_late() 
         prepare_dynamic_multitrip_solution(
             added_trip,
             instance,
-            UK_2025_PRICES,
+            LINEAR_CHINA_TEST_PRICES,
             asset_states={state.physical_vehicle_id: state},
             stage_start_second=1_000.0,
         )
@@ -510,7 +470,7 @@ def test_added_order_waits_for_sole_in_progress_asset_to_return_to_depot() -> No
     prepared, certificate = prepare_dynamic_multitrip_solution(
         added_trip,
         instance,
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         asset_states={state.physical_vehicle_id: state},
         stage_start_second=1_000.0,
     )
@@ -522,7 +482,7 @@ def test_added_order_waits_for_sole_in_progress_asset_to_return_to_depot() -> No
 
 def test_in_progress_cut_keeps_entered_arc_and_releases_editable_suffix() -> None:
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=100.0,
         initial_ev_battery_kwh=0.0,
     )
@@ -561,8 +521,8 @@ def test_in_progress_cut_keeps_entered_arc_and_releases_editable_suffix() -> Non
         depot_charge_ledger=(),
     )
     route = source.routes[0]
-    first_travel = 1_000.0 / UK_2025_PRICES.v_speed_ms
-    second_travel = 1_000.0 / UK_2025_PRICES.v_speed_ms
+    first_travel = 1_000.0 / LINEAR_CHINA_TEST_PRICES.v_speed_ms
+    second_travel = 1_000.0 / LINEAR_CHINA_TEST_PRICES.v_speed_ms
     trigger = trip.departure_second + first_travel + 60.0 + second_travel / 2.0
 
     cut = cut_certificate_at_trigger(
@@ -752,7 +712,7 @@ def test_dynamic_scheduler_counts_a_locked_charge_against_one_depot_charger() ->
         ]
     )
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=20.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,

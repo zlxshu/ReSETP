@@ -110,7 +110,7 @@ def _is_atomic_component(
             text == "premium"
             or "daily_fixed_premium" in text
             or "fixed_premium" in text
-            or 50.0 in numeric_values
+            or 100.0 in numeric_values
         )
     raise AssertionError(f"unknown component kind: {kind}")
 

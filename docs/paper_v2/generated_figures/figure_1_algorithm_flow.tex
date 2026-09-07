@@ -1,0 +1,86 @@
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage[UTF8,fontset=none]{ctex}
+\setCJKmainfont{Songti SC}
+\setmainfont{Times New Roman}
+\xeCJKsetup{CJKglue=\hskip 0pt}
+\usetikzlibrary{arrows.meta,calc,shapes.geometric,shapes.misc}
+
+\begin{document}
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  every node/.style={font=\fontsize{8pt}{9.6pt}\selectfont, align=center, text=black, fill=white, inner sep=0pt, outer sep=0pt},
+  box/.style={rectangle, draw=black, line width=0.5pt, minimum width=3.10cm, minimum height=0.90cm, inner xsep=1.2mm, inner ysep=0.9mm},
+  wide/.style={box, minimum width=3.90cm},
+  narrow/.style={box, minimum width=2.60cm},
+  terminal/.style={rounded rectangle, rounded rectangle arc length=180, draw=black, line width=0.5pt, minimum width=1.75cm, minimum height=0.62cm},
+  decision/.style={diamond, draw=black, line width=0.5pt, aspect=2.0, inner xsep=1.0mm, inner ysep=0.5mm},
+  side/.style={box, dashed, draw=black!70},
+  frame/.style={draw=black!60, fill=none, dash pattern=on 2.6mm off 1.3mm, line width=0.5pt, inner sep=0pt},
+  frametitle/.style={font=\fontsize{8pt}{9.6pt}\selectfont, fill=none, anchor=north west, inner xsep=0pt, inner ysep=0pt},
+  flow/.style={-{Stealth[length=1.7mm,width=1.3mm,fill=black]}, draw=black, line width=0.5pt, line join=miter, shorten >=0.5mm},
+  dashedflow/.style={flow, dashed, draw=black!70},
+  lab/.style={font=\fontsize{8pt}{9.6pt}\selectfont, fill=none, inner xsep=0.3mm, inner ysep=0.2mm}
+]
+
+% ============ layout constants ============
+% rows      : R1=5.90  R2=4.50  R3=3.10  R4=1.365
+% columns   : left 1.50 | frame1 6.395 | frame2 11.890 | right 15.870
+% channels  : proxy->init 3.40 | kernel return 4.07 | outer loop -0.55 / 17.70 / -0.45
+% frames    : F1 3.75..9.04   F2 9.79..13.99   both y 0.28..6.90
+
+% ---- left column ----
+\node[terminal] (start) at (1.50,5.90) {开始};
+\node[box]      (read)  at (1.50,4.50) {读取客户、车场、车辆\\分时电价与电网碳强度};
+\node[box]      (proxy) at (1.50,3.10) {构建路线层代理问题};
+\node[side]     (dyn)   at (1.50,1.365) {动态事件触发\\继承车辆状态与客户};
+\draw[flow] (start) -- (read);
+\draw[flow] (read) -- (proxy);
+\draw[dashedflow] (dyn) -- (proxy);
+
+% ---- stage 1: route search ----
+\node[box]      (init)  at (6.395,5.90) {生成初始种群};
+\node[box]      (cross) at (6.395,4.50) {选择父代\\选择性路线交换};
+\node[box]      (ls)    at (6.395,3.10) {局部搜索与罚系数更新};
+\node[decision] (stopk) at (6.395,1.365) {连续20\,000次\\未改善？};
+\draw[flow] (init) -- (cross);
+\draw[flow] (cross) -- (ls);
+\draw[flow] (ls) -- (stopk);
+\draw[flow] (proxy.east) -- (3.40,3.10) -- (3.40,5.90) -- (init.west);
+\draw[flow] (stopk.west) -- (4.07,1.365) -- (4.07,4.50) -- (cross.west);
+\node[lab,anchor=south] at (4.45,1.485) {否};
+
+% ---- stage 2: exact evaluation ----
+\node[box] (decode) at (11.890,1.365) {解码为实体车趟次序列};
+\node[box] (charge) at (11.890,3.10) {安排预充与趟间补电};
+\node[box] (exact)  at (11.890,4.50) {计算总成本并检验约束};
+\node[box] (educ)   at (11.890,5.90) {跨车场趟交换\\车型任务交换};
+\draw[flow] (stopk.east) -- (decode.west);
+\node[lab,anchor=south] at (9.415,1.485) {是};
+\draw[flow] (decode) -- (charge);
+\draw[flow] (charge) -- (exact);
+\draw[flow] (exact) -- (educ);
+
+% ---- right column ----
+\node[narrow]   (best)   at (15.970,5.90) {更新当前最优解};
+\node[decision] (stopr)  at (15.970,4.20) {本轮改善且\\使用电动车？};
+\node[narrow]   (output) at (15.970,2.30) {输出最优可行方案};
+\node[terminal] (end)    at (15.970,1.10) {结束};
+\draw[flow] (educ) -- (best);
+\draw[flow] (best) -- (stopr);
+\draw[flow] (stopr) -- (output);
+\node[lab,anchor=west] at (16.130,3.058) {否};
+\draw[flow] (output) -- (end);
+
+% ---- outer loop: realised electricity price fed back into the proxy problem ----
+\draw[flow] (stopr.east) -- (17.95,4.20) -- (17.95,-0.55) -- (-0.55,-0.55) -- (-0.55,3.10) -- (proxy.west);
+\node[lab,anchor=south] at (17.79,4.32) {是};
+\node[wide] (feed) at (8.870,-0.55) {回填实付电价，重建代理问题};
+
+% ---- stage frames ----
+\draw[frame] (3.75,0.18) rectangle (9.04,7.00);
+\node[frametitle] at (3.87,6.86) {路线搜索};
+\draw[frame] (9.79,0.18) rectangle (13.99,7.00);
+\node[frametitle] at (9.91,6.86) {精确评价};
+
+\end{tikzpicture}
+\end{document}

@@ -10,7 +10,6 @@ existing Problem-HGS components.
 from __future__ import annotations
 
 import json
-import secrets
 import sys
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
@@ -33,6 +32,9 @@ from run_problem_hgs_private_technical import (  # noqa: E402
     _build_context,
     _parameters,
     _policy,
+)
+from setp_solver.algorithms.problem_hgs.initialization import (  # noqa: E402
+    build_initial_population,
 )
 from setp_solver.algorithms.problem_hgs.dynamic import (  # noqa: E402
     DutyDynamicState,
@@ -351,12 +353,12 @@ class ProductionBackend:
                 },
             )
             return next_state, "rolling_attribute_or_cancellation_update"
+        # 2026-08-31: frvcpy 关闭，与静态正式配置对齐（剖析实证：逐候选整建实例=43分钟/教育轮）。
 
-        policy = _policy(frame.evaluator, frvcpy_enabled=True)
+        policy = _policy(frame.evaluator, frvcpy_enabled=False)
         try:
             insertion = DynamicInsertionOperator(
                 enabled=True,
-                random_seed=secrets.randbelow(2**31),
             ).apply(
                 frame.initial_future,
                 evaluator=frame.evaluator,
@@ -365,23 +367,32 @@ class ProductionBackend:
                 current_evaluation=stage_evaluation,
             )
         except (DynamicInsertionFailure, TypeError, ValueError) as error:
-            deferred = _deferred_state(
-                current,
-                frame,
-                stage_evaluation,
-                active_customer_ids=active,
-                deferred_customer_ids=tuple(
-                    dict.fromkeys((*current.deferred_customer_ids, *pending))
-                ),
-                stage_index=current.stage_index + 1,
-                diagnostic={
-                    "arm": "rolling_dynamic",
-                    "kind": "dynamic_insertion_exception",
-                    "error": f"{type(error).__name__}: {error}",
-                },
-            )
-            return deferred, "rolling_defer_dynamic_insertion_exception"
+            insertion = self._rolling_mechanical_fallback(frame, pending)
+            if insertion is None:
+                deferred = _deferred_state(
+                    current,
+                    frame,
+                    stage_evaluation,
+                    active_customer_ids=active,
+                    deferred_customer_ids=tuple(
+                        dict.fromkeys((*current.deferred_customer_ids, *pending))
+                    ),
+                    stage_index=current.stage_index + 1,
+                    diagnostic={
+                        "arm": "rolling_dynamic",
+                        "kind": "dynamic_insertion_exception",
+                        "error": f"{type(error).__name__}: {error}",
+                    },
+                )
+                return deferred, "rolling_defer_dynamic_insertion_exception"
 
+        if (
+            insertion.status != INSERTED_AND_FULL_EVALUATION_FEASIBLE
+            or insertion.evaluation is None
+        ):
+            fallback = self._rolling_mechanical_fallback(frame, pending)
+            if fallback is not None:
+                insertion = fallback
         if (
             insertion.status != INSERTED_AND_FULL_EVALUATION_FEASIBLE
             or insertion.evaluation is None
@@ -443,6 +454,40 @@ class ProductionBackend:
             },
         )
         return next_state, "rolling_dynamic_insertion_then_problem_hgs"
+
+    def _rolling_mechanical_fallback(self, frame, pending):
+        """Serve late arrivals with the three-class mechanical insertion.
+
+        The kernel insertion only searches inherited assets, so a late order
+        that needs a fresh vehicle finds no candidate there (observed: 68/68
+        candidates infeasible while the mechanical dispatch class succeeded).
+        Falling back keeps the rolling arm's insertion toolset a superset of
+        the sequential arm's."""
+        from types import SimpleNamespace
+
+        individual = frame.initial_future
+        evaluation = None
+        for customer_id in pending:
+            try:
+                result = insert_revealed_customer(
+                    individual,
+                    customer_id,
+                    frame.evaluator,
+                )
+            except (MechanicalInsertionFailure, TypeError, ValueError):
+                return None
+            individual = result.individual
+            evaluation = result.evaluation
+        if evaluation is None or not evaluation.feasible:
+            return None
+        return SimpleNamespace(
+            individual=individual,
+            evaluation=evaluation,
+            accounting=SimpleNamespace(
+                candidate_attempt_count=len(tuple(pending))
+            ),
+            status=INSERTED_AND_FULL_EVALUATION_FEASIBLE,
+        )
 
     def mechanical_dispatch(
         self,
@@ -974,7 +1019,10 @@ class ProductionBackend:
                 previous.planning_evaluation.dynamic_prefix_accounting_by_route_id
             )
             assets = MappingProxyType(dict(cut.asset_states))
-            prior = _advance_prior_history(previous.planning_dynamic_state)
+            prior = _advance_prior_history(
+                previous.planning_dynamic_state,
+                active_customer_ids,
+            )
             certified_history = frozenset(
                 {
                     *previous.planning_dynamic_state.certified_dynamic_route_ids,
@@ -1080,11 +1128,9 @@ class ProductionBackend:
                 f"complete candidate rejected before Problem-HGS in {arm}: "
                 + "; ".join(item.detail for item in initial_evaluation.violations)
             )
-        run_seed = secrets.randbelow(2**31)
         route_engine = IndependentKernelDutyRouteProposalEngine(
             context,
             candidate,
-            random_seed=run_seed,
             stream_role=f"main3b_{arm}_{stage_index}",
             depot_assignment_operator_enabled=True,
             rebuilt_volume_capacity_enabled=(
@@ -1097,24 +1143,65 @@ class ProductionBackend:
                 context.rebuilt_route_constraints is not None
             ),
         )
-        parameters = _parameters(population_mode="technical_two_parent")
-        result = run_integrated_problem_hgs(
-            (candidate,) * 4,
+        # 2026-08-31: four identical clones in a four-seat population made
+        # SREX a permanent no-op and the stage search relied on educating the
+        # same solution (measured: 6.5 core-hours with zero visible progress
+        # on the full-information solve).  Adopt the validated static formal
+        # recipe instead: the incumbent plan is the witness, perturbations
+        # plus the standard copied-HGS population fill the remaining seats.
+        parameters = _parameters(population_mode="copied_hgs_defaults")
+        built = build_initial_population(
+            candidate,
             evaluator=evaluator,
-            charging_policy=_policy(evaluator, frvcpy_enabled=True),
-            parameters=parameters,
-            stop=lambda state: (
+            charging_policy=_policy(evaluator, frvcpy_enabled=False),
+            route_engine=route_engine,
+            requested_size=parameters.population.min_pop_size,
+            max_random_attempts=None,
+            initialization_method="random",
+            include_reference_candidate=True,
+            require_complete_feasible=False,
+            stop_requested=lambda: False,
+            witness_seed=(
+                candidate if not candidate.unserved_customers else None
+            ),
+        )
+        _telemetry_last = [_now()]
+
+        def _stage_stop(state):
+            if _now() - _telemetry_last[0] >= 60.0:
+                _telemetry_last[0] = _now()
+                print(
+                    f"STAGE {arm}#{stage_index} cycle={state.iterations} "
+                    f"best={state.best_cost} "
+                    f"noimp={state.iterations_without_improvement}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            return (
                 state.iterations_without_improvement
                 >= parameters.stagnation_patience
-            ),
+            )
+
+        result = run_integrated_problem_hgs(
+            tuple(built.candidates),
+            evaluator=evaluator,
+            charging_policy=_policy(evaluator, frvcpy_enabled=False),
+            parameters=parameters,
+            stop=_stage_stop,
+            initial_evaluations=tuple(built.evaluations),
+            initialization_full_evaluation_count=built.full_evaluation_count,
             arm=arm,
             route_engine=route_engine,
-            initial_evaluations=(initial_evaluation,) * 4,
-            initialization_full_evaluation_count=1,
-            initialization_wall_seconds=initialization_wall,
+            initialization_wall_seconds=(
+                initialization_wall + built.wall_seconds
+            ),
             cross_depot_enabled=True,
             multi_trip_enabled=True,
             type_exchange_enabled=True,
+            # 2026-08-31: same channel cut as the static formal entry --
+            # 85% of incremental evaluations for 1 accept; the carbon
+            # mechanism acts through the charge-timing policy.
+            include_charging_candidates=False,
         )
         _require_normal_hgs_termination(result, arm=arm)
         return result.best, result.best_evaluation, result
@@ -1140,6 +1227,8 @@ def _require_normal_hgs_termination(result: Any, *, arm: str) -> None:
 def build_production_problem(
     repo: Path,
     stream_directory: Path,
+    *,
+    carbon_price_cny_per_kg: float | None = None,
 ) -> ProductionDynamicProblem:
     """Load the selected target and overlay the existing ten-event stream."""
 
@@ -1152,6 +1241,16 @@ def build_production_problem(
         DEPOT_SEARCH_INSTANCE_ID,
         fleet_parameters=ENDOGENOUS_FLEET_PARAMETERS,
     )
+    if carbon_price_cny_per_kg is not None:
+        bundle = replace(
+            bundle,
+            prices=replace(
+                bundle.prices,
+                carbon_price=float(carbon_price_cny_per_kg),
+            ),
+            carbon_price_cny_per_kg=float(carbon_price_cny_per_kg),
+        )
+        context = replace(context, bundle=bundle)
     base_context = replace(
         context,
         fairness_enabled=False,
@@ -1487,8 +1586,36 @@ def _executed_history_customers(
     return committed
 
 
-def _advance_prior_history(state: DutyDynamicState) -> Solution:
+def _advance_prior_history(
+    state: DutyDynamicState,
+    active_customer_ids: frozenset[str] | set[str],
+) -> Solution:
     prior = state.prior_committed_solution or Solution()
+    # 合法取消＝跳过未执行的站：已承诺历史里被取消的客户必须同步剔除，
+    # 否则每个候选重建的世界都与旧对照本不一致而被整臂拒绝。
+    # 被取消客户＝上一批活跃（出现在旧状态的出现时刻表）但本批不再活跃。
+    cancelled_ids = {
+        str(customer_id)
+        for customer_id in state.customer_appearance_second
+        if str(customer_id) not in active_customer_ids
+    }
+
+    def trim(route: Route) -> Route:
+        if not cancelled_ids or not any(
+            node_id in cancelled_ids for node_id in route.node_sequence
+        ):
+            return route
+        return Route(
+            vehicle_id=route.vehicle_id,
+            vehicle_type=route.vehicle_type,
+            home_depot_id=route.home_depot_id,
+            node_sequence=[
+                node_id
+                for node_id in route.node_sequence
+                if node_id not in cancelled_ids
+            ],
+        )
+
     committed_ids = {
         *state.cut.completed_route_ids,
         *(
@@ -1499,13 +1626,14 @@ def _advance_prior_history(state: DutyDynamicState) -> Solution:
             and not tuple(getattr(asset, "editable_suffix", ()))
         ),
     }
-    routes = {route.vehicle_id: route for route in prior.routes}
+    routes = {route.vehicle_id: trim(route) for route in prior.routes}
     history_source = (
         state.source_full_execution_solution or state.source_solution
     )
     for route in history_source.routes:
         if route.vehicle_id not in committed_ids:
             continue
+        route = trim(route)
         old = routes.get(route.vehicle_id)
         if old is not None and old != route:
             raise ProductionBackendHalt("committed route history changed between cuts")

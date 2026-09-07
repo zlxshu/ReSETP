@@ -183,18 +183,19 @@ def score_charge_option(
             charge_timing_policy=effective_timing_policy,
             timing_contexts=timing_contexts,
         )
+        placed_action = option.action_at(start)
         timing = ChargeTimingChoice(
             start_second=start,
             carbon_kg=(
                 charging_action_emissions_kg(
-                    option.action_at(start),
+                    placed_action,
                     instance,
                     carbon_profile,
                     prices,
                 )
                 if timing_contexts is None
                 else charge_timing_objective_value(
-                    option.action_at(start),
+                    placed_action,
                     instance,
                     carbon_profile,
                     prices,
@@ -215,6 +216,7 @@ def score_charge_option(
             charge_timing_policy=effective_timing_policy,
             timing_contexts=timing_contexts,
         )
+        placed_action = option.action_at(start)
         timing = ChargeTimingChoice(
             start_second=start,
             carbon_kg=integrated_charge_carbon_kg(
@@ -227,7 +229,6 @@ def score_charge_option(
             ),
             candidates_evaluated=-1,
         )
-    placed_action = option.action_at(timing.start_second)
     electricity_cost = (
         charging_action_electricity_cost(
             placed_action,

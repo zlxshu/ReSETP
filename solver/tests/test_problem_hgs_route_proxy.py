@@ -183,7 +183,7 @@ def test_route_proxy_reads_cv_170_ev_220_from_vehicle_authority() -> None:
     }
     assert fixed_costs == {
         "CV1": proxy_module._money_units(170.0),
-        "EV1": proxy_module._money_units(220.0),
+        "EV1": proxy_module._money_units(270.0),
     }
 
 
@@ -215,7 +215,7 @@ def test_problem_hgs_context_reports_premium_without_adding_it_twice() -> None:
     )
     context = SimpleNamespace(
         bundle=bundle,
-        ev_daily_fixed_premium_cny=50.0,
+        ev_daily_fixed_premium_cny=100.0,
     )
 
     direct = evaluate(
@@ -230,7 +230,7 @@ def test_problem_hgs_context_reports_premium_without_adding_it_twice() -> None:
         carbon_quota_kg=0.0,
     )
 
-    assert direct["cost_fix"] == 220.0
-    assert wrapped["cost_fix_ev_premium"] == 50.0
+    assert direct["cost_fix"] == 270.0
+    assert wrapped["cost_fix_ev_premium"] == 100.0
     assert wrapped["cost_fix"] == direct["cost_fix"]
     assert wrapped["total_cost"] == direct["total_cost"]

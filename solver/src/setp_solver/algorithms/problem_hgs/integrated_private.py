@@ -38,6 +38,7 @@ from .contracts import (
 from .education import _trajectory_row, educate_best_improvement
 from .evaluation import (
     DutyFullEvaluator,
+    DutyIncrementalEvaluator,
     FullEvaluation,
     assert_candidate_routes_single_shift,
 )
@@ -131,8 +132,23 @@ def build_integrated_private_hgs(
     multi_trip_enabled: bool = True,
     type_exchange_enabled: bool = True,
     education_depth_limit: int | None = None,
+    lazy_exact_evaluation: bool = False,
+    allow_incomplete_initial: bool = False,
 ) -> IntegratedPrivateHGSBundle:
-    """Build the shared HGS loop over complete private-problem candidates."""
+    """Build the shared HGS loop over complete private-problem candidates.
+
+    ``allow_incomplete_initial`` (2026-09-03): the kernel-native search only
+    borrows this bundle's exact machinery (penalty manager, education,
+    charging cache) and seeds the kernel itself, so an idle reference (a
+    written-down fleet the witness cannot seat) may stand in for complete
+    initial candidates there.
+
+    ``lazy_exact_evaluation`` (2026-09-03): a crossover child only goes through
+    charging repair and the exact model when its kernel penalised cost is no
+    worse than that of the worst member of the exact feasible subpopulation;
+    a child above that line would be purged on admission anyway.  The line is
+    read off the population, not set by hand.
+    """
 
     if not initial_candidates:
         raise ValueError("integrated private HGS requires initial candidates")
@@ -140,7 +156,9 @@ def build_integrated_private_hgs(
         raise ValueError("self-adaptive penalty requires four initial candidates")
     if education_depth_limit is not None and education_depth_limit < 1:
         raise ValueError("education depth limit must be positive")
-    if any(candidate.unserved_customers for candidate in initial_candidates):
+    if not allow_incomplete_initial and any(
+        candidate.unserved_customers for candidate in initial_candidates
+    ):
         raise ValueError(
             "integrated private HGS requires complete initial candidates"
         )
@@ -174,7 +192,12 @@ def build_integrated_private_hgs(
         evaluator.context,
         charging_policy,
         include_charging_candidates=include_charging_candidates,
-        include_structural_channels=True,
+        # 2026-09-02: routing, multi-trip and cross-depot moves are the
+        # kernel's job (reload depots, profiles, time warp).  The Python
+        # relocate/swap/open-trip enumeration spent 596k exact evaluations for
+        # 16% of the accepted improvement in e07; whole-duty type exchange and
+        # whole-trip exchange, which the proxy cannot price, stay.
+        include_structural_channels=False,
         cross_depot_enabled=cross_depot_enabled,
         multi_trip_enabled=multi_trip_enabled,
         type_exchange_enabled=type_exchange_enabled,
@@ -253,6 +276,7 @@ def build_integrated_private_hgs(
             PrivateIntegratedEvaluation,
         ],
     ] = {}
+    education_cache_revision = complete_penalties.revision
     rng = effective_execution.route_engine.rng
     initial_evaluation_by_fingerprint = dict(
         ()
@@ -310,6 +334,71 @@ def build_integrated_private_hgs(
             individual,
             PrivateIntegratedEvaluation(individual, full),
         )
+
+    child_incremental = DutyIncrementalEvaluator(evaluator)
+    # Kernel projection of every exact member, by fingerprint (lazy gate).
+    native_by_fingerprint: dict[str, object] = {}
+
+    def lazy_line(engine) -> float | None:
+        feasible = getattr(population, "_feasible", ())
+        if len(feasible) < kernel_population_parameters.min_pop_size:
+            return None
+        cost_evaluator = engine.penalty_manager.cost_evaluator()
+        worst = None
+        for item in feasible:
+            fingerprint = item.candidate.solution.fingerprint
+            native = native_by_fingerprint.get(fingerprint)
+            if native is None:
+                native = engine.project(item.candidate.solution)
+                native_by_fingerprint[fingerprint] = native
+            value = float(cost_evaluator.penalised_cost(native))
+            worst = value if worst is None else max(worst, value)
+        return worst
+    # Which duties the crossover touched, by child fingerprint; the mechanism
+    # education only proposes moves on those duties (HGS "last modified"
+    # rule), see educate_best_improvement.
+    changed_by_child: dict[str, frozenset[str]] = {}
+
+    def evaluate_child(
+        parent: EvaluatedSolution[DutyIndividual, PrivateIntegratedEvaluation],
+        completed: DutyIndividual,
+        changed_duty_ids: frozenset[str],
+    ) -> EvaluatedSolution[
+        DutyIndividual,
+        PrivateIntegratedEvaluation,
+    ] | None:
+        """Score a charging-complete child from its first parent's slices.
+
+        2026-09-02 (D4): the child differs from ``parent`` only in
+        ``changed_duty_ids``, so the per-vehicle slices of every other duty
+        are reused; the complete path stays the fallback whenever the parent
+        has no strict slices (admitted-infeasible member) or the incremental
+        assembly refuses the candidate.
+        """
+
+        if evaluator.context.dynamic_state is None:
+            try:
+                assert_candidate_routes_single_shift(
+                    completed,
+                    evaluator.context.rebuilt_route_constraints,
+                )
+                if completed.unserved_customers:
+                    raise ValueError("incomplete customer service")
+                child_incremental.seed(parent.solution)
+                full = child_incremental.evaluate_after_change(
+                    parent.solution,
+                    completed,
+                    changed_duty_ids=set(changed_duty_ids),
+                )
+            except (TypeError, ValueError):
+                full = None
+            if full is not None:
+                accounting.decoded_candidates += 1
+                return EvaluatedSolution(
+                    completed,
+                    PrivateIntegratedEvaluation(completed, full),
+                )
+        return evaluate(completed)
 
     def repair_search_candidate(
         reference: DutyIndividual,
@@ -380,6 +469,11 @@ def build_integrated_private_hgs(
                 engine.rng,
             )
         native_child = engine.local_search(native_child, cost_evaluator)
+        # Upstream GeneticAlgorithm._improve_offspring registers every educated
+        # child so the penalty manager keeps ~43% of children feasible; this
+        # copy never did (2026-09-02), leaving the kernel penalties frozen at
+        # their initial guess for the whole run.
+        engine.penalty_manager.register(native_child)
         if (
             not native_child.is_feasible()
             and engine.rng.rand() < effective_execution.repair_probability
@@ -388,6 +482,21 @@ def build_integrated_private_hgs(
                 native_child,
                 engine.penalty_manager.booster_cost_evaluator(),
             )
+            if native_child.is_feasible():
+                engine.penalty_manager.register(native_child)
+        if lazy_exact_evaluation:
+            line = lazy_line(engine)
+            if line is not None and float(
+                cost_evaluator.penalised_cost(native_child)
+            ) > line:
+                accounting.rejected_candidates += 1
+                accounting.rejection_reasons[
+                    "lazy: proxy cost above the exact feasible population"
+                ] += 1
+                accounting.mechanism.rejected_actions[
+                    "route_kernel_crossover:LAZY_PROXY"
+                ] += 1
+                return None
         replacements = engine.decode_replacements(
             first.solution,
             native_child,
@@ -426,6 +535,25 @@ def build_integrated_private_hgs(
                 )
             )
             return first
+        if not engine._mechanism_locks_preserved(first.solution, replacements):
+            # A disabled mechanism (depot / vehicle-type / multi-trip lock) is
+            # a hard contract of the arm, not a penalised constraint.
+            accounting.rejected_candidates += 1
+            accounting.rejection_reasons["crossover child breaks a mechanism lock"] += 1
+            record(
+                CandidateOutcome(
+                    action_id=action_id,
+                    channel=channel,
+                    status=CandidateStatus.REJECTED_INTERFACE,
+                    changed_duty_ids=frozenset(
+                        duty_id for duty_id, _trips in replacements
+                    ),
+                    candidate=None,
+                    error_type="MechanismLock",
+                    error="crossover child breaks a disabled-mechanism lock",
+                )
+            )
+            return None
 
         move = DutySkeletonMove(
             action_id=action_id,
@@ -516,11 +644,11 @@ def build_integrated_private_hgs(
 
         completed = charging_outcome.candidate
         if completed is None:
-            accounting.rejected_candidates += 1
             error = charging_outcome.error or ValueError(
                 charging_outcome.reason_code
                 or charging_outcome.status.value
             )
+            accounting.rejected_candidates += 1
             accounting.rejection_reasons[
                 f"{type(error).__name__}: {error}"
             ] += 1
@@ -544,7 +672,7 @@ def build_integrated_private_hgs(
             )
             return None
 
-        evaluated = evaluate(completed)
+        evaluated = evaluate_child(first, completed, move.changed_duty_ids)
         if evaluated is None:
             accounting.rejected_candidates += 1
             accounting.rejection_reasons[
@@ -576,6 +704,8 @@ def build_integrated_private_hgs(
                 evaluation=evaluated.evaluation.full,
             )
         )
+        changed_by_child[evaluated.solution.fingerprint] = move.changed_duty_ids
+        native_by_fingerprint[evaluated.solution.fingerprint] = native_child
         return evaluated
 
     def _educate(
@@ -586,10 +716,15 @@ def build_integrated_private_hgs(
         *,
         repair: bool,
         engine: DutyProposalEngine,
+        changed_duty_ids: frozenset[str] | None = None,
     ) -> EvaluatedSolution[
         DutyIndividual,
         PrivateIntegratedEvaluation,
     ]:
+        nonlocal education_cache_revision
+        if education_cache_revision != complete_penalties.revision:
+            education_cache.clear()
+            education_cache_revision = complete_penalties.revision
         cache_key = (
             bool(repair),
             id(engine),
@@ -645,6 +780,7 @@ def build_integrated_private_hgs(
             charging_repair_cache=charging_repair_cache,
             record_trajectory=trajectory_sink is not None,
             max_education_rounds=effective_execution.education_depth_limit,
+            changed_duty_ids=changed_duty_ids,
         )
         if individual.fingerprint == candidate.solution.fingerprint:
             result = candidate
@@ -678,6 +814,9 @@ def build_integrated_private_hgs(
             candidate,
             repair=False,
             engine=effective_execution.mechanism_stage_engine,
+            changed_duty_ids=changed_by_child.pop(
+                candidate.solution.fingerprint, None
+            ),
         )
 
     def repair(
@@ -708,7 +847,7 @@ def build_integrated_private_hgs(
     adapter = IntegratedProblemAdapter(
         evaluate=evaluate,
         refine=refine,
-        is_feasible=lambda evaluation: evaluation.feasible,
+        is_feasible=lambda evaluation: bool(evaluation.feasible),
         objective=lambda evaluation: float(evaluation.full.total_cost),
         penalised_cost=lambda evaluation: complete_penalties.cost(
             evaluation.full

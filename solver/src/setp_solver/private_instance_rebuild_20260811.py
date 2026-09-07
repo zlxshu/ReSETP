@@ -22,7 +22,6 @@ from typing import Any, Mapping
 
 from .charging_curve import (
     ChargingCurveSpec,
-    M17_22KW_NORMAL_PWL,
     M17_FAST_SHAPE_SCALED_60KW_PWL,
 )
 from .china81 import (
@@ -45,7 +44,7 @@ BUNDLE_RELATIVE = Path(
     "data/ChinaInstances/china81_private_rebuild_v1_20260811"
 )
 BATTERY_DEPRECIATION_CNY_PER_KM = 0.2445
-EV_DAILY_FIXED_PREMIUM_CNY = 50.0
+EV_DAILY_FIXED_PREMIUM_CNY = 100.0
 ATTENDANCE_START_SECOND = 8 * 60 * 60
 ATTENDANCE_END_SECOND = 19 * 60 * 60
 
@@ -59,18 +58,12 @@ class DepotChargingScenario:
     curve: ChargingCurveSpec
 
 
-DEPOT_CHARGING_22KW = DepotChargingScenario(
-    scenario_id="depot_22kw_montoya_normal",
-    power_kw=22.0,
-    curve=M17_22KW_NORMAL_PWL,
-)
 DEPOT_CHARGING_60KW = DepotChargingScenario(
     scenario_id="depot_60kw_p35_registered_fast_shape",
     power_kw=60.0,
     curve=M17_FAST_SHAPE_SCALED_60KW_PWL,
 )
 DEPOT_CHARGING_SCENARIOS = {
-    "22kw": DEPOT_CHARGING_22KW,
     "60kw": DEPOT_CHARGING_60KW,
 }
 
@@ -266,126 +259,6 @@ def load_private_instance_rebuild(
         vehicle_cost_contract=vehicle_cost_contract,
         contestability_contract=MappingProxyType(contestability_contract),
         depot_charging_scenario_id=depot_charging_scenario.scenario_id,
-    )
-
-
-def validate_shifted_solution(
-    solution: Solution,
-    bundle: PrivateInstanceRebuildBundle,
-    *,
-    departure_second_by_route: Mapping[str, float],
-) -> tuple[dict[str, float | str], ...]:
-    """Validate witnessed route clocks against the two-shift hard contract.
-
-    A route may only contain customers from one shift.  The caller supplies
-    its witnessed departure clock because legacy ``Solution`` routes do not
-    carry departure times.  The exact road timing recursion then proves the
-    route returns by the corresponding shift boundary.
-    """
-
-    rows: list[dict[str, float | str]] = []
-    for route in solution.routes:
-        customer_ids = [
-            node_id
-            for node_id in route.node_sequence[1:-1]
-            if node_id in bundle.orders_by_customer
-        ]
-        shifts = {
-            bundle.orders_by_customer[node_id]["shift_id"]
-            for node_id in customer_ids
-        }
-        if len(shifts) != 1:
-            raise ValueError(
-                f"route {route.vehicle_id} mixes shifts or has no customer: "
-                f"{sorted(shifts)}"
-            )
-        shift_id = next(iter(shifts))
-        shift = bundle.shift_contract["shifts"][shift_id]
-        route_volume = sum(
-            float(bundle.orders_by_customer[node_id]["source_volume_m3"])
-            for node_id in customer_ids
-        )
-        capacity = float(bundle.shift_contract["vehicle_volume_capacity_m3"])
-        if route_volume > capacity + 1.0e-9:
-            raise ValueError(
-                f"route {route.vehicle_id} exceeds volume capacity: "
-                f"{route_volume} > {capacity}"
-            )
-        departure = float(departure_second_by_route[route.vehicle_id])
-        start = float(shift["start_minute"]) * 60.0
-        end = float(shift["end_minute"]) * 60.0
-        if departure < start - 1.0e-6:
-            raise ValueError(
-                f"route {route.vehicle_id} departs before {shift_id}"
-            )
-        timing = route_timing(
-            route,
-            bundle.instance,
-            bundle.prices,
-            forced_departure_second=departure,
-        )
-        if float(timing.return_second) > end + 1.0e-6:
-            raise ValueError(
-                f"route {route.vehicle_id} returns after {shift_id} ends"
-            )
-        rows.append(
-            {
-                "vehicle_id": route.vehicle_id,
-                "shift_id": shift_id,
-                "departure_second": departure,
-                "return_second": float(timing.return_second),
-            }
-        )
-    return tuple(rows)
-
-
-def evaluate_rebuild_solution(
-    solution: Solution,
-    bundle: PrivateInstanceRebuildBundle,
-    *,
-    carbon_quota_kg: float = 0.0,
-) -> dict[str, float]:
-    """Evaluate cost with battery depreciation and EV daily premium active."""
-
-    breakdown = dict(
-        evaluate(
-            solution,
-            bundle.instance,
-            bundle.time_profile,
-            bundle.prices,
-            carbon_quota_kg=carbon_quota_kg,
-        )
-    )
-    cv_fixed = bundle.instance.vehicle_fixed_cost_per_day(
-        "cv",
-        fallback=float(bundle.prices.vehicle_fixed_cost),
-    )
-    ev_fixed = bundle.instance.vehicle_fixed_cost_per_day(
-        "ev",
-        fallback=float(bundle.prices.vehicle_fixed_cost),
-    )
-    premium = float(breakdown["n_veh_ev"]) * (ev_fixed - cv_fixed)
-    breakdown["cost_fix_ev_premium"] = premium
-    return breakdown
-
-
-def route_distance_m(
-    route: Route,
-    instance: Instance,
-    *,
-    profile: str | None = None,
-) -> float:
-    """Return an exact directed-road distance for one route."""
-
-    chosen = profile or route.vehicle_type.lower()
-    return sum(
-        instance.arc_metrics(
-            left,
-            right,
-            chosen,
-            fallback_speed_mps=1.0,
-        )[0]
-        for left, right in zip(route.node_sequence, route.node_sequence[1:])
     )
 
 

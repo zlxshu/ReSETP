@@ -19,7 +19,6 @@ from setp_solver.algorithms.problem_hgs.evaluation import (  # noqa: E402
 )
 from setp_solver.algorithms.problem_hgs.model import DutyChargingSession  # noqa: E402
 from setp_solver.charging_curve import (  # noqa: E402
-    M17_22KW_NORMAL_PWL,
     M17_FAST_SHAPE_SCALED_60KW_PWL,
     curve_for_charging_node,
     spec_for_charging_node,
@@ -27,7 +26,7 @@ from setp_solver.charging_curve import (  # noqa: E402
 from setp_solver.china81 import ENDOGENOUS_FLEET_PARAMETERS  # noqa: E402
 from setp_solver.cost import evaluate  # noqa: E402
 from setp_solver.private_instance_rebuild_20260811 import (  # noqa: E402
-    DEPOT_CHARGING_22KW,
+    DEPOT_CHARGING_60KW,
     load_private_instance_rebuild,
 )
 from setp_solver.solution import Route, Solution  # noqa: E402
@@ -51,12 +50,12 @@ def rebuilt_context():
 
 
 
-def test_rebuilt_depot_charging_defaults_to_registered_60kw_and_keeps_22kw() -> None:
+def test_rebuilt_depot_charging_defaults_to_and_accepts_registered_60kw() -> None:
     repo = Path(__file__).parents[2]
     default_bundle = load_private_instance_rebuild(repo)
-    legacy_scenario_bundle = load_private_instance_rebuild(
+    registered_scenario_bundle = load_private_instance_rebuild(
         repo,
-        depot_charging_scenario=DEPOT_CHARGING_22KW,
+        depot_charging_scenario=DEPOT_CHARGING_60KW,
     )
 
     assert default_bundle.prices.depot_charge_power_kw == pytest.approx(60.0)
@@ -73,13 +72,12 @@ def test_rebuilt_depot_charging_defaults_to_registered_60kw_and_keeps_22kw() -> 
         for node in default_bundle.instance.nodes
         if node.node_type.lower() == "d"
     } == {60.0}
-    assert legacy_scenario_bundle.prices.depot_charge_power_kw == pytest.approx(
-        22.0
+    assert registered_scenario_bundle.prices.depot_charge_power_kw == pytest.approx(
+        60.0
     )
-    assert legacy_scenario_bundle.prices.depot_charging_curve_id == (
-        M17_22KW_NORMAL_PWL.curve_id
+    assert registered_scenario_bundle.prices.depot_charging_curve_id == (
+        M17_FAST_SHAPE_SCALED_60KW_PWL.curve_id
     )
-
 
 
 

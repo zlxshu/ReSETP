@@ -86,6 +86,9 @@ class _IncrementalEvaluator:
     def seed(self, _individual) -> int:
         return 0
 
+    def evaluate_after_change(self, _previous, _candidate, **_kwargs):
+        return None
+
 
 def _run(monkeypatch, *, move_count: int, max_education_rounds: int | None):
     def fake_evaluate_move(current, move, **_kwargs):

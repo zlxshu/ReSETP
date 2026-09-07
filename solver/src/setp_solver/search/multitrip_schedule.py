@@ -36,6 +36,7 @@ from ..cost import (
     charging_curve_for_action,
     charging_slot_breakdown,
     ev_instance_arc_energy_kwh,
+    is_overnight_depot_charge,
     route_departure_second,
     time_profile_rows_for_node,
 )
@@ -56,6 +57,17 @@ E4_CONTINUOUS_SOC_CONTRACT_ID = "E4_SOC_60_20_80_NEXT_DAY_60_V1"
 CHARGE_MODE_FULL = "full"
 CHARGE_MODE_PARTIAL = "partial"
 CHARGE_MODE_ON_DEMAND = "on_demand"
+
+# Charging-function comparison arms flip this once at process start; every
+# certificate call that does not name a mode explicitly follows it.
+ACTIVE_RECHARGE_MODE: str = CHARGE_MODE_ON_DEMAND
+
+
+def set_active_recharge_mode(mode: str) -> None:
+    global ACTIVE_RECHARGE_MODE
+    if mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
+        raise ValueError(f"unknown recharge_mode={mode!r}")
+    ACTIVE_RECHARGE_MODE = mode
 STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET = -1
 STATIC_PREHORIZON_SECONDS = 86_400.0
 DEPOT_CHARGE_WINDOW_MODES = frozenset(
@@ -66,6 +78,7 @@ DEPOT_CHARGE_WINDOW_MODES = frozenset(
     }
 )
 DEFAULT_DEPOT_CHARGE_WINDOW_MODE = "same_day_predeparture"
+DEPOT_START_MEMO_MAX_ENTRIES = 100_000
 _TOL = 1e-6
 
 
@@ -79,6 +92,16 @@ class TripTiming:
     drive_energy_kwh: float
     public_charge_energy_kwh: float = 0.0
     required_departure_battery_kwh: float | None = None
+    # HGS time warp: total seconds the clock had to warp back to a customer's
+    # deadline.  Always 0.0 unless ``route_timing`` ran with tolerance.
+    time_warp_seconds: float = 0.0
+    # Latest origin departure that still meets every customer deadline
+    # (backward time-window recursion).  Only known for an unforced clock
+    # without public-station actions; None otherwise.  The charging repair
+    # uses it as the upper bound of a depot charging window: a later trip may
+    # wait at the depot to charge as long as its customers are still served
+    # in time (the chain ledger forces departure to the charge end).
+    latest_departure_second: float | None = None
 
 
 @dataclass(frozen=True)
@@ -157,9 +180,37 @@ class MultiTripCertificate:
     soc_max: float | None = None
     soc_final_minimum: float | None = None
     depot_charge_ledger: tuple[DepotChargeLedgerEntry, ...] = ()
+    # (route_id, seconds) for routes whose clock needed HGS time warp; empty
+    # for every strictly built certificate.
+    time_warp_by_route: tuple[tuple[str, float], ...] = ()
+    # 2026-09-06: the first-trip depot charge day offset of EVERY duty that
+    # has one, sorted by route id.  Until today the certificate carried only
+    # the scalar above, so a plan whose vehicles charged on different days was
+    # refused outright ("first-trip depot charges use inconsistent day
+    # offsets").  Under the ``prev_return`` first-trip window that is the
+    # normal case: each vehicle's window opens at its OWN return the preceding
+    # evening, so one vehicle may charge on the preceding day and another on
+    # the simulation day.  The scalar is kept and stays the sole authority for
+    # a uniform plan (and for every artefact written before today, which
+    # deserialises with an empty map), so nothing that predates this field
+    # changes; ``first_trip_charge_day_offset_for`` is the per-duty reader.
+    first_trip_charge_day_offset_by_route: tuple[tuple[str, int], ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    def first_trip_charge_day_offset_for(self, route_id: str) -> int:
+        """This duty's own first-trip depot charge day offset.
+
+        Falls back to the solution-wide scalar for a certificate written
+        before the per-duty map existed, and for a duty the map does not
+        mention (a duty with no first-trip depot charge at all).
+        """
+
+        for candidate, offset in self.first_trip_charge_day_offset_by_route:
+            if candidate == route_id:
+                return int(offset)
+        return int(self.first_trip_charge_day_offset)
 
 
 def multitrip_certificate_from_dict(
@@ -222,6 +273,12 @@ def multitrip_certificate_from_dict(
         depot_charge_ledger=tuple(
             DepotChargeLedgerEntry(**dict(row))
             for row in payload.get("depot_charge_ledger", ())
+        ),
+        first_trip_charge_day_offset_by_route=tuple(
+            (str(route_id), int(offset))
+            for route_id, offset in payload.get(
+                "first_trip_charge_day_offset_by_route", ()
+            )
         ),
     )
 
@@ -369,8 +426,14 @@ def route_timing(
     validate_battery: bool = True,
     forced_departure_second: float | None = None,
     minimum_departure_second: float | None = None,
+    tolerate_time_warp: bool = False,
 ) -> TripTiming:
     """Compute one legal route-to-trip interval without changing route schema.
+
+    ``tolerate_time_warp`` is HGS time warp: a route that cannot meet every
+    window still gets a clock (departing at its floor, arriving late where it
+    must) instead of an exception, so the checker can price the lateness as a
+    penalised violation.  Default off; only search-time admission uses it.
 
     The route representation has no departure-time field.  We therefore
     choose a feasible clock that removes avoidable customer waiting.  This is
@@ -378,17 +441,26 @@ def route_timing(
     clock could make a fixed route set use fewer physical vehicles.
     """
 
-    if len(route.node_sequence) < 2:
-        raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} has no trip")
-    if route.node_sequence[0] != route.home_depot_id or route.node_sequence[-1] != route.home_depot_id:
-        raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} does not return to its home depot")
+    sequence = route.node_sequence
+    vehicle_id = route.vehicle_id
+    route_vehicle_type = route.vehicle_type
+    home_depot_id = route.home_depot_id
+    if len(sequence) < 2:
+        raise ValueError(f"{CONTRACT_ID}: route {vehicle_id} has no trip")
+    if sequence[0] != home_depot_id or sequence[-1] != home_depot_id:
+        raise ValueError(f"{CONTRACT_ID}: route {vehicle_id} does not return to its home depot")
     nodes = instance.node_lookup
-    if any(node_id not in nodes for node_id in route.node_sequence):
-        raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} references an unknown node")
+    if any(node_id not in nodes for node_id in sequence):
+        raise ValueError(f"{CONTRACT_ID}: route {vehicle_id} references an unknown node")
+    route_nodes = [nodes[node_id] for node_id in sequence]
+    arcs = [
+        (sequence[index], sequence[index + 1])
+        for index in range(len(sequence) - 1)
+    ]
     route_actions = [
         action
-        for action in (charging_actions or [])
-        if action.vehicle_id == route.vehicle_id
+        for action in (charging_actions or ())
+        if action.vehicle_id == vehicle_id
     ]
     public_actions: dict[str, list[ChargingAction]] = {}
     for action in route_actions:
@@ -396,12 +468,12 @@ def route_timing(
         if (
             station is None
             or station.node_type.lower() != "f"
-            or action.station_id not in route.node_sequence
+            or action.station_id not in sequence
         ):
             continue
-        if route.node_sequence.count(action.station_id) != 1:
+        if sequence.count(action.station_id) != 1:
             raise ValueError(
-                f"{CONTRACT_ID}: route {route.vehicle_id} repeats public "
+                f"{CONTRACT_ID}: route {vehicle_id} repeats public "
                 "station without an occurrence index"
             )
         if int(action.charge_day_offset) != 0:
@@ -417,42 +489,58 @@ def route_timing(
             )
         )
 
-    origin = nodes[route.home_depot_id]
+    origin = route_nodes[0]
     departure_floor = float(origin.ready_time) + float(origin.service_time)
     if minimum_departure_second is not None:
         requested_floor = float(minimum_departure_second)
         if not math.isfinite(requested_floor):
             raise ValueError(
-                f"{CONTRACT_ID}: route {route.vehicle_id} has a non-finite "
+                f"{CONTRACT_ID}: route {vehicle_id} has a non-finite "
                 "minimum departure"
             )
         departure_floor = max(departure_floor, requested_floor)
+    # 2026-09-03 (model alignment): a same-day depot charge before departure
+    # must end before the trip leaves (paper: t_ce <= tau at d^+), and the
+    # departure itself is free to wait for it ("趟间间隔包括必要等待及相应
+    # 充电时间").  Actions after the route's own return belong to the
+    # overnight window and do not floor this trip.
+    predeparture_ends = [
+        float(action.charge_start_second)
+        + float(action.occupancy_minutes) * 60.0
+        for action in route_actions
+        if action.station_id == home_depot_id
+        and int(action.charge_day_offset) == 0
+        and not is_overnight_depot_charge(action, route, instance, prices)
+    ]
+    if predeparture_ends:
+        departure_floor = max(departure_floor, max(predeparture_ends))
     # A trip has no departure field in the frozen Route schema. Compute the
     # latest feasible origin service time by the standard backward time-window
     # recursion, then replay forward. The former "remove all waiting" shortcut
     # could push an early-due customer past its deadline on mixed-shift routes.
+    latest_feasible_departure: float | None = None
     if forced_departure_second is not None:
         depart = float(forced_departure_second)
         if not math.isfinite(depart):
             raise ValueError(
-                f"{CONTRACT_ID}: route {route.vehicle_id} has a non-finite "
+                f"{CONTRACT_ID}: route {vehicle_id} has a non-finite "
                 "forced departure"
             )
         if depart < departure_floor - _TOL:
             raise ValueError(
-                f"{CONTRACT_ID}: route {route.vehicle_id} departs before its "
+                f"{CONTRACT_ID}: route {vehicle_id} departs before its "
                 "minimum departure"
             )
         depot_charge_ends = [
             float(action.charge_start_second)
             + float(action.occupancy_minutes) * 60.0
             for action in route_actions
-            if action.station_id == route.home_depot_id
+            if action.station_id == home_depot_id
             and int(action.charge_day_offset) == 0
         ]
         if depot_charge_ends and max(depot_charge_ends) > depart + _TOL:
             raise ValueError(
-                f"{CONTRACT_ID}: route {route.vehicle_id} departs before its "
+                f"{CONTRACT_ID}: route {vehicle_id} departs before its "
                 "depot charge ends"
             )
     elif public_actions:
@@ -469,7 +557,7 @@ def route_timing(
             float(action.charge_start_second)
             + float(action.occupancy_minutes) * 60.0
             for action in route_actions
-            if action.station_id == route.home_depot_id
+            if action.station_id == home_depot_id
             and int(action.charge_day_offset) == 0
             and float(action.charge_start_second)
             + float(action.occupancy_minutes) * 60.0
@@ -484,70 +572,83 @@ def route_timing(
     else:
         elapsed = float(origin.service_time)
         departure_candidates = [departure_floor]
-        for from_id, to_id in zip(
-            route.node_sequence,
-            route.node_sequence[1:],
-        ):
+        fallback_speed_mps = _price(prices, "v_speed_ms")
+        travel_times: list[float] | None = []
+        for index, (from_id, to_id) in enumerate(arcs):
             _, travel, _ = instance.arc_metrics(
                 from_id,
                 to_id,
-                route.vehicle_type,
-                fallback_speed_mps=_price(prices, "v_speed_ms"),
+                route_vehicle_type,
+                fallback_speed_mps=fallback_speed_mps,
             )
+            travel_times.append(travel)
             elapsed += travel
             departure_candidates.append(
-                float(nodes[to_id].ready_time) - elapsed
+                float(route_nodes[index + 1].ready_time) - elapsed
             )
-            elapsed += float(nodes[to_id].service_time)
+            elapsed += float(route_nodes[index + 1].service_time)
         preferred_departure = max(departure_candidates)
 
-        latest_start = float(nodes[route.node_sequence[-1]].due_time)
-        for index in range(len(route.node_sequence) - 2, -1, -1):
-            node = nodes[route.node_sequence[index]]
-            next_id = route.node_sequence[index + 1]
-            _, travel, _ = instance.arc_metrics(
-                route.node_sequence[index],
-                next_id,
-                route.vehicle_type,
-                fallback_speed_mps=_price(prices, "v_speed_ms"),
-            )
+        latest_start = float(route_nodes[-1].due_time)
+        for index in range(len(sequence) - 2, -1, -1):
+            node = route_nodes[index]
+            travel = travel_times[index]
             latest_start = min(
                 float(node.due_time),
                 latest_start - float(node.service_time) - travel,
             )
         latest_departure = latest_start + float(origin.service_time)
         if latest_departure < departure_floor - _TOL:
-            raise ValueError(
-                f"{CONTRACT_ID}: route {route.vehicle_id} has no feasible "
-                "departure time"
-            )
+            if not tolerate_time_warp:
+                raise ValueError(
+                    f"{CONTRACT_ID}: route {vehicle_id} has no feasible "
+                    "departure time"
+                )
+            latest_departure = departure_floor
         depart = min(preferred_departure, latest_departure)
+        latest_feasible_departure = float(latest_departure)
     earliest_departure = depart
-    loads = _arc_loads(route.node_sequence, nodes)
+    time_warp = 0.0
+    loads = _arc_loads(sequence, nodes)
+    if forced_departure_second is not None or public_actions:
+        fallback_speed_mps = _price(prices, "v_speed_ms")
+        travel_times = None
     energy = 0.0
     public_energy = 0.0
     required_departure: float | None = None
-    for idx, (from_id, to_id) in enumerate(zip(route.node_sequence, route.node_sequence[1:])):
-        _, travel, _ = instance.arc_metrics(
-            from_id,
-            to_id,
-            route.vehicle_type,
-            fallback_speed_mps=_price(prices, "v_speed_ms"),
-        )
+    normalized_vehicle_type: str | None = None
+    leg_energies: list[float] = []
+    for idx, (from_id, to_id) in enumerate(arcs):
+        if travel_times is None:
+            _, travel, _ = instance.arc_metrics(
+                from_id,
+                to_id,
+                route_vehicle_type,
+                fallback_speed_mps=fallback_speed_mps,
+            )
+        else:
+            travel = travel_times[idx]
         arrive = depart + travel
-        node = nodes[to_id]
+        node = route_nodes[idx + 1]
         start = max(arrive, float(node.ready_time))
         if start > float(node.due_time) + 1e-6:
-            raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} misses {to_id}'s time window")
-        if route.vehicle_type.lower() == "ev":
-            energy += ev_instance_arc_energy_kwh(
+            if not tolerate_time_warp:
+                raise ValueError(f"{CONTRACT_ID}: route {vehicle_id} misses {to_id}'s time window")
+            time_warp += start - float(node.due_time)
+            start = float(node.due_time)
+        if normalized_vehicle_type is None:
+            normalized_vehicle_type = route_vehicle_type.lower()
+        if normalized_vehicle_type == "ev":
+            leg_energy = ev_instance_arc_energy_kwh(
                 instance,
                 from_id,
                 to_id,
                 loads[idx],
                 prices,
             )
-        station_actions = public_actions.get(to_id, [])
+            energy += leg_energy
+            leg_energies.append(leg_energy)
+        station_actions = public_actions.get(to_id, ())
         if station_actions:
             previous_end = start
             for action in station_actions:
@@ -558,7 +659,7 @@ def route_timing(
                 )
                 if action_start < previous_end - _TOL:
                     raise ValueError(
-                        f"{CONTRACT_ID}: public charge for {route.vehicle_id} "
+                        f"{CONTRACT_ID}: public charge for {vehicle_id} "
                         f"starts before arrival or a prior session ends"
                     )
                 curve_state = charging_curve_for_action(
@@ -590,22 +691,24 @@ def route_timing(
     battery = instance.battery_capacity_kwh(
         fallback=_price(prices, "B_battery_kwh"),
     )
-    if route.vehicle_type.lower() == "ev":
+    if normalized_vehicle_type == "ev":
         if not validate_battery:
             return TripTiming(
-                route.vehicle_id,
-                route.vehicle_type.lower(),
-                route.home_depot_id,
+                vehicle_id,
+                normalized_vehicle_type,
+                home_depot_id,
                 earliest_departure,
                 depart,
                 energy,
                 public_energy,
                 required_departure,
+                time_warp,
+                latest_departure_second=latest_feasible_departure,
             )
         if required_departure is None:
             if energy > battery + 1e-6:
                 raise ValueError(
-                    f"{CONTRACT_ID}: route {route.vehicle_id} exceeds one "
+                    f"{CONTRACT_ID}: route {vehicle_id} exceeds one "
                     "full battery"
                 )
         else:
@@ -614,26 +717,18 @@ def route_timing(
                 or required_departure > battery + _TOL
             ):
                 raise ValueError(
-                    f"{CONTRACT_ID}: route {route.vehicle_id} has an invalid "
+                    f"{CONTRACT_ID}: route {vehicle_id} has an invalid "
                     "public-charge departure battery"
                 )
             route_battery = required_departure
-            for idx, (from_id, to_id) in enumerate(
-                zip(route.node_sequence, route.node_sequence[1:])
-            ):
-                route_battery -= ev_instance_arc_energy_kwh(
-                    instance,
-                    from_id,
-                    to_id,
-                    loads[idx],
-                    prices,
-                )
+            for idx, (_from_id, to_id) in enumerate(arcs):
+                route_battery -= leg_energies[idx]
                 if route_battery < -_TOL:
                     raise ValueError(
-                        f"{CONTRACT_ID}: route {route.vehicle_id} runs out "
+                        f"{CONTRACT_ID}: route {vehicle_id} runs out "
                         f"of battery before {to_id}"
                     )
-                for action in public_actions.get(to_id, []):
+                for action in public_actions.get(to_id, ()):
                     if (
                         action.start_energy_kwh is None
                         or action.end_energy_kwh is None
@@ -666,14 +761,16 @@ def route_timing(
                     "close"
                 )
     return TripTiming(
-        route.vehicle_id,
-        route.vehicle_type.lower(),
-        route.home_depot_id,
+        vehicle_id,
+        normalized_vehicle_type,
+        home_depot_id,
         earliest_departure,
         depart,
         energy,
         public_energy,
         required_departure,
+        time_warp,
+        latest_departure_second=latest_feasible_departure,
     )
 
 
@@ -716,10 +813,16 @@ def certified_depot_charge_window(
         charging_actions=charging_actions,
         validate_battery=False,
     )
-    # The protected checker anchors depot charging to this same route clock.
-    # Keep route_timing for the return-side gap, but do not use its witness
-    # departure as the charging-window upper bound.
-    departure_second = float(route_departure_second(route, instance, prices))
+    # 2026-09-03 (model alignment): the charge may end at the latest departure
+    # that still meets every customer deadline; the trip waits at the depot
+    # for it.  Fall back to the natural departure when the clock was forced or
+    # carries public-station actions (no backward recursion available).
+    latest_departure = timing.latest_departure_second
+    departure_second = (
+        float(latest_departure)
+        if latest_departure is not None
+        else float(route_departure_second(route, instance, prices))
+    )
     occupancy = float(occupancy_seconds)
     if mode == "prev_night":
         return 0.0, STATIC_PREHORIZON_SECONDS - occupancy, -1
@@ -752,8 +855,14 @@ def select_certified_depot_charge_start(
     charge_timing_policy: str = DEFAULT_CHARGE_TIMING_POLICY,
     carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
     timing_contexts: ChargeTimingContexts | None = None,
+    feasibility_only: bool = False,
 ) -> tuple[float, int]:
     """Choose one actual-day slot inside a certified depot window.
+
+    ``feasibility_only`` keeps every window and calendar rejection but skips
+    choosing the cheapest slot.  The public-station screen discards the start
+    it gets back and reads only the action's energy, so scoring ~31 launch
+    targets per route repair was pure waste (2026-09-02).
 
     ``charge_start_second`` remains local to the selected calendar day and the
     returned offset records that day relative to the route day.  This is the
@@ -766,8 +875,43 @@ def select_certified_depot_charge_start(
     earliest = float(earliest_second)
     latest = float(latest_second)
     occupancy = float(action.occupancy_minutes) * 60.0
+    memo = None
+    memo_key: tuple[Any, ...] | None = None
+    if timing_contexts is not None:
+        memo = timing_contexts.depot_start_memo
+        memo_key = (
+            action.vehicle_id,
+            action.station_id,
+            action.energy_kwh,
+            action.occupancy_minutes,
+            action.charge_day_offset,
+            action.start_energy_kwh,
+            action.end_energy_kwh,
+            action.charging_curve_id,
+            earliest,
+            latest,
+            mode,
+            strategy,
+            float(carbon_weight),
+            charge_timing_policy,
+            bool(feasibility_only),
+            id(base_profile),
+            None
+            if carbon_profiles_by_day_offset is None
+            else id(carbon_profiles_by_day_offset),
+        )
+        stored = memo.get(memo_key)
+        if stored is not None:
+            if stored[0] == "ok":
+                return stored[1], stored[2]
+            raise ValueError(stored[1])
     if latest + _TOL < earliest:
-        raise ValueError("no feasible depot charging window")
+        error = ValueError("no feasible depot charging window")
+        if memo is not None and memo_key is not None:
+            if len(memo) >= DEPOT_START_MEMO_MAX_ENTRIES:
+                memo.clear()
+            memo[memo_key] = ("err", str(error))
+        raise error
 
     if mode == "prev_night":
         offsets = (-1,)
@@ -815,7 +959,9 @@ def select_certified_depot_charge_start(
             )
             station_profile = timing_context.profile_for(action.station_id).rows
 
-        if charge_timing_policy == "carbon_min" and strategy == "legacy":
+        if feasibility_only:
+            local_start, score = local_earliest, 0.0
+        elif charge_timing_policy == "carbon_min" and strategy == "legacy":
             local_start, gamma = _lowest_profile_slot_start(
                 local_earliest,
                 local_latest,
@@ -854,7 +1000,14 @@ def select_certified_depot_charge_start(
         )
 
     if not candidates:
-        raise ValueError("no feasible depot charging window on registered calendar days")
+        error = ValueError(
+            "no feasible depot charging window on registered calendar days"
+        )
+        if memo is not None and memo_key is not None:
+            if len(memo) >= DEPOT_START_MEMO_MAX_ENTRIES:
+                memo.clear()
+            memo[memo_key] = ("err", str(error))
+        raise error
     if charge_timing_policy == "carbon_min":
         _, _, start, offset = min(
             candidates,
@@ -862,6 +1015,10 @@ def select_certified_depot_charge_start(
         )
     else:
         _, _, start, offset = min(candidates, key=lambda item: item)
+    if memo is not None and memo_key is not None:
+        if len(memo) >= DEPOT_START_MEMO_MAX_ENTRIES:
+            memo.clear()
+        memo[memo_key] = ("ok", start, offset)
     return start, offset
 
 
@@ -1189,7 +1346,7 @@ def build_multitrip_certificate(
     instance: Instance,
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
     *,
-    recharge_mode: str = CHARGE_MODE_ON_DEMAND,
+    recharge_mode: str | None = None,
     initial_departure_battery_by_route: dict[str, float] | None = None,
     charging_actions: list[ChargingAction] | None = None,
     continuous_soc_contract: ContinuousSOCContract | None = None,
@@ -1205,6 +1362,8 @@ def build_multitrip_certificate(
     ``full`` is retained only for replaying the historical V1 audit rule.
     """
 
+    if recharge_mode is None:
+        recharge_mode = ACTIVE_RECHARGE_MODE
     if recharge_mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
         raise ValueError(f"unknown recharge_mode={recharge_mode!r}")
     depot_charge_power_kw = _price(prices, "depot_charge_power_kw")
@@ -1234,12 +1393,15 @@ def build_multitrip_certificate(
             for route in routes
             if route.vehicle_type.lower() == "ev"
         }
+    actions_by_route: dict[str, list[ChargingAction]] = {}
+    for action in charging_actions or ():
+        actions_by_route.setdefault(action.vehicle_id, []).append(action)
     timings = [
         route_timing(
             route,
             instance,
             prices,
-            charging_actions=charging_actions,
+            charging_actions=actions_by_route.get(route.vehicle_id),
             minimum_departure_second=(
                 None
                 if minimum_departure_second_by_route is None
@@ -1337,12 +1499,6 @@ def build_multitrip_certificate(
             continuous_soc_contract,
             charging_curve,
         )
-    validate_multitrip_certificate(
-        certificate,
-        routes,
-        prices,
-        instance=instance,
-    )
     return certificate
 
 
@@ -1842,7 +1998,7 @@ def strict_multitrip_violations(
     instance: Instance,
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
     *,
-    recharge_mode: str = CHARGE_MODE_ON_DEMAND,
+    recharge_mode: str | None = None,
 ) -> list[str]:
     """Return new-contract failures without changing the legacy checker."""
 
@@ -1907,6 +2063,7 @@ def prepare_multitrip_solution(
     continuous_soc_contract: ContinuousSOCContract | None = None,
     depot_charge_window_mode: str = "prev_night",
     minimum_departure_second_by_route: Mapping[str, float] | None = None,
+    tolerate_infeasible: bool = False,
 ) -> tuple[Solution, MultiTripCertificate]:
     """Attach the V2 physical schedule and its real charging ledger.
 
@@ -1937,6 +2094,7 @@ def prepare_multitrip_solution(
             minimum_departure_second_by_route=(
                 minimum_departure_second_by_route
             ),
+            tolerate_infeasible=tolerate_infeasible,
         )
     else:
         certificate = None
@@ -1977,7 +2135,7 @@ def prepare_multitrip_solution(
             list(solution.routes),
             instance,
             prices,
-            recharge_mode=CHARGE_MODE_ON_DEMAND,
+            recharge_mode=None,
             initial_departure_battery_by_route=initial_departure,
             charging_actions=list(solution.charging_actions),
             continuous_soc_contract=continuous_soc_contract,
@@ -2012,7 +2170,7 @@ def prepare_multitrip_solution(
             continue
         prepared_actions.append(replace(action, vehicle_id=id_map[action.vehicle_id]))
 
-    prepared_first_trip_charge_day_offsets: set[int] = set()
+    prepared_first_trip_charge_day_offset_by_route: dict[str, int] = {}
     for trip in certificate.trips:
         if trip.vehicle_type != "ev" or trip.trip_index != 1:
             continue
@@ -2047,7 +2205,9 @@ def prepare_multitrip_solution(
         )
         if depot_charge_window_mode == "full_gap" and old_action is not None:
             first_trip_charge_day_offset = int(old_action.charge_day_offset)
-        prepared_first_trip_charge_day_offsets.add(first_trip_charge_day_offset)
+        prepared_first_trip_charge_day_offset_by_route[
+            id_map[trip.route_id]
+        ] = first_trip_charge_day_offset
         prepared_actions.append(
             ChargingAction(
                 vehicle_id=id_map[trip.route_id],
@@ -2078,19 +2238,31 @@ def prepare_multitrip_solution(
         )
         for entry in certificate.depot_charge_ledger
     )
-    if len(prepared_first_trip_charge_day_offsets) > 1:
-        raise ValueError(
-            f"{CONTRACT_ID}: first-trip depot charges use inconsistent day offsets"
-        )
-    prepared_first_trip_charge_day_offset = next(
-        iter(prepared_first_trip_charge_day_offsets),
-        certificate.first_trip_charge_day_offset,
+    # 2026-09-06: each duty keeps its OWN first-trip charge day offset (see
+    # ``MultiTripCertificate.first_trip_charge_day_offset_by_route``).  The
+    # scalar stays the plan-wide summary and takes the EARLIEST day in use, so
+    # a plan with any preceding-day charge still reads as ``-1`` for the gates
+    # that only ask "does this plan reach before the simulation day" (for
+    # example the dynamic contract, which refuses a pre-horizon day).  A plan
+    # whose duties agree -- every artefact written before today -- keeps the
+    # value it had, bit for bit.
+    prepared_first_trip_charge_day_offset = (
+        min(prepared_first_trip_charge_day_offset_by_route.values())
+        if prepared_first_trip_charge_day_offset_by_route
+        else certificate.first_trip_charge_day_offset
     )
     remapped_certificate = replace(
         certificate,
         trips=remapped_trips,
         depot_charge_ledger=remapped_ledger,
         first_trip_charge_day_offset=prepared_first_trip_charge_day_offset,
+        first_trip_charge_day_offset_by_route=tuple(
+            sorted(prepared_first_trip_charge_day_offset_by_route.items())
+        ),
+        time_warp_by_route=tuple(
+            (id_map[route_id], seconds)
+            for route_id, seconds in certificate.time_warp_by_route
+        ),
     )
     prepared_actions.extend(certificate_charging_actions(remapped_certificate))
     prepared_actions.sort(
@@ -2115,6 +2287,7 @@ def _certificate_from_prepared_solution(
     prices: PriceParameters | dict[str, float] | Any,
     *,
     minimum_departure_second_by_route: Mapping[str, float] | None = None,
+    tolerate_infeasible: bool = False,
 ) -> MultiTripCertificate:
     power = _price(prices, "depot_charge_power_kw")
     battery_cap = instance.battery_capacity_kwh(
@@ -2129,12 +2302,16 @@ def _certificate_from_prepared_solution(
     by_vehicle: dict[str, list[Route]] = {}
     for route in solution.routes:
         by_vehicle.setdefault(physical_vehicle_id(route.vehicle_id), []).append(route)
+    trip_index_by_route_id = {
+        route_trip_vehicle_id(physical_id, trip_index): trip_index
+        for physical_id, chain_routes in by_vehicle.items() for trip_index in range(1, len(chain_routes) + 1)
+    }
     timings: dict[str, TripTiming] = {}
     for chain_routes in by_vehicle.values():
         previous_return: float | None = None
         for route in sorted(
             chain_routes,
-            key=lambda item: int(item.vehicle_id.rsplit("#T", 1)[1]),
+            key=lambda item: trip_index_by_route_id[item.vehicle_id],
         ):
             departure_floor = (
                 None
@@ -2164,24 +2341,30 @@ def _certificate_from_prepared_solution(
                 route,
                 instance,
                 prices,
-                charging_actions=list(solution.charging_actions),
+                charging_actions=actions.get(route.vehicle_id, []),
+                validate_battery=not tolerate_infeasible,
                 forced_departure_second=(None if first_trip else max(floors)),
                 minimum_departure_second=(max(floors) if first_trip else None),
+                tolerate_time_warp=tolerate_infeasible,
             )
             timings[route.vehicle_id] = timing
             previous_return = timing.return_second
-    routes = {route.vehicle_id: route for route in solution.routes}
+    time_warp_by_route = tuple(
+        (route_id, float(timing.time_warp_seconds))
+        for route_id, timing in timings.items()
+        if timing.time_warp_seconds > 0.0
+    )
     scheduled: list[ScheduledTrip] = []
     counts = {"cv": 0, "ev": 0}
-    first_trip_charge_day_offsets: set[int] = set()
+    first_trip_charge_day_offset_by_route: dict[str, int] = {}
     for physical_id, chain_routes in sorted(by_vehicle.items()):
-        ordered = sorted(chain_routes, key=lambda route: int(route.vehicle_id.rsplit("#T", 1)[1]))
+        ordered = sorted(chain_routes, key=lambda route: trip_index_by_route_id[route.vehicle_id])
         vehicle_type = ordered[0].vehicle_type.lower()
         counts[vehicle_type] += 1
         previous_end: float | None = None
         chain: list[ScheduledTrip] = []
         for position, route in enumerate(ordered):
-            trip_index = int(route.vehicle_id.rsplit("#T", 1)[1])
+            trip_index = trip_index_by_route_id[route.vehicle_id]
             timing = timings[route.vehicle_id]
             depot_actions = [action for action in actions.get(route.vehicle_id, []) if action.station_id == route.home_depot_id]
             public_actions = [
@@ -2200,7 +2383,7 @@ def _certificate_from_prepared_solution(
                     start_battery > battery_cap + _TOL
                     or start_battery + public_energy + _TOL
                     < timing.drive_energy_kwh
-                ):
+                ) and not tolerate_infeasible:
                     raise ValueError(f"{CONTRACT_ID}: prepared route {route.vehicle_id} has a broken battery ledger")
                 if (
                     timing.required_departure_battery_kwh is not None
@@ -2221,10 +2404,19 @@ def _certificate_from_prepared_solution(
                 )
                 if depot_energy > _TOL:
                     if position == 0:
-                        first_trip_charge_day_offsets.update(
+                        offsets = {
                             int(action.charge_day_offset)
                             for action in depot_actions
-                        )
+                        }
+                        if len(offsets) > 1:
+                            raise ValueError(
+                                f"{CONTRACT_ID}: prepared route "
+                                f"{route.vehicle_id} splits its first-trip "
+                                "depot charge across days"
+                            )
+                        first_trip_charge_day_offset_by_route[
+                            route.vehicle_id
+                        ] = next(iter(offsets))
                     if require_explicit and len(depot_actions) != 1:
                         raise ValueError(
                             f"{NONLINEAR_CONTRACT_ID}: prepared route "
@@ -2273,14 +2465,12 @@ def _certificate_from_prepared_solution(
                 )
             previous_end = end_battery
         scheduled.extend(chain)
-    if len(first_trip_charge_day_offsets) > 1:
-        raise ValueError(
-            f"{CONTRACT_ID}: prepared first-trip depot charges use "
-            "inconsistent day offsets"
-        )
-    first_trip_charge_day_offset = next(
-        iter(first_trip_charge_day_offsets),
-        STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+    # Per-duty offsets; the scalar is the earliest day the plan reaches (see
+    # the prepare path above for why).
+    first_trip_charge_day_offset = (
+        min(first_trip_charge_day_offset_by_route.values())
+        if first_trip_charge_day_offset_by_route
+        else STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET
     )
     certificate = MultiTripCertificate(
         (
@@ -2297,12 +2487,10 @@ def _certificate_from_prepared_solution(
         charging_curve.curve_id,
         battery_cap,
         inherited,
-    )
-    validate_multitrip_certificate(
-        certificate,
-        list(routes.values()),
-        prices,
-        instance=instance,
+        time_warp_by_route=time_warp_by_route,
+        first_trip_charge_day_offset_by_route=tuple(
+            sorted(first_trip_charge_day_offset_by_route.items())
+        ),
     )
     return certificate
 

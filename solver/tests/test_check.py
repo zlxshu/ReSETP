@@ -382,8 +382,13 @@ class CheckSolutionTests(unittest.TestCase):
 
         violations = check_solution(solution, instance)
 
-        self.assertIn("CHARGING_START", _types(violations))
-        self.assertTrue(any(v.location == "D0" and "return" in v.detail for v in violations))
+        # 2026-09-03 (model alignment): a same-day depot charge that ends
+        # after the natural departure simply delays the departure (paper:
+        # t_ce <= tau at d^+, the departure itself is free); the checker
+        # then judges the later clock by the time windows.  Here C1 is due
+        # at 10,000 s, so leaving at 100 s is legal.
+        self.assertNotIn("CHARGING_START", _types(violations))
+        self.assertNotIn("TIME_WINDOW", _types(violations))
 
     def test_depot_charging_before_current_departure_is_valid(self) -> None:
         instance = Instance(

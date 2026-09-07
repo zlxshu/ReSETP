@@ -35,7 +35,10 @@ from setp_solver.cost import (
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import DEFAULT_PRICES, PriceParameters
 from setp_solver.charging_action import _curve_aware_action
-from setp_solver.charging_curve import spec_from_parameters
+from setp_solver.charging_curve import (
+    curve_for_charging_node,
+    spec_from_parameters,
+)
 from setp_solver.solution import ChargingAction, Route, Solution
 from setp_solver.station_copies import physical_station_id
 from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
@@ -62,8 +65,36 @@ CHARGE_AMOUNT_STRATEGIES = (
     "full",
 )
 CURVE_KNEE_STRATEGY_PREFIX = "curve_knee_"
-PUBLIC_STATION_CANDIDATE_MODES = frozenset({"fallback", "parallel"})
-DEFAULT_PUBLIC_STATION_CANDIDATE_MODE = "fallback"
+PUBLIC_STATION_CANDIDATE_MODES = frozenset({"fallback", "parallel", "split"})
+FALLBACK_PUBLIC_STATION_CANDIDATE_MODE = "fallback"
+DEFAULT_PUBLIC_STATION_CANDIDATE_MODE = FALLBACK_PUBLIC_STATION_CANDIDATE_MODE
+SPLIT_PUBLIC_STATION_CANDIDATE_MODE = "split"
+# Two depot launch levels closer than this are the same physical decision:
+# 1e-3 kWh is 1 Wh, below the resolution of any charging meter or tariff record
+# this model uses, so two levels that close cannot price, emit or schedule
+# differently.  The former 1e-6 kWh was float-exact deduplication (1.3e-8 of a
+# 77.28 kWh pack) with no physical meaning
+# (docs/handoff/station_split_review_20260908.md, H-1).  Measured effect of the
+# widening on its own is small -- on the two replayed run packages the level
+# count fell 19->18 and 27->24 -- because most of the wasted rebuilds come from
+# levels that rebuild into a plan ``add_public`` already holds, not from levels
+# less than 1 Wh apart.
+SPLIT_DEPOT_LEVEL_TOLERANCE_KWH = 1e-3
+# Smallest station top-up that counts as a charging process.  The model gives
+# every visited public-station node one charging process h, with its own
+# arrival/departure energies and its own start and end clock
+# (docs/paper_v2/paper_main.tex:420), so a station visit that buys ~0 kWh is
+# not a charging arrangement and must not enter the candidate set.  No
+# instance, calendar or price parameter in this repository fixes a metering or
+# billing minimum, so the value is set from observed magnitudes instead: the
+# one real split session in the replay bought 4.937 kWh, while the zero-energy
+# drive-by points bought 0.0045 kWh and 1e-6 kWh
+# (docs/handoff/station_split_review_20260908.md, section B).  0.5 kWh sits an
+# order below the real session and two or more orders above the drive-bys, so
+# it separates the two populations without touching either.  It is a screening
+# floor, not a curve or tariff property -- recalibrate it if a real instance
+# ever exposes a genuine sub-0.5 kWh top-up.
+SPLIT_MIN_STATION_ENERGY_KWH = 0.5
 
 
 @dataclass(frozen=True)
@@ -109,6 +140,7 @@ class ChargingRepairRuntime:
         self.prices = prices
         self.carbon_profiles_by_day_offset = carbon_profiles_by_day_offset
         self.timing_contexts = ChargeTimingContexts(instance, prices)
+        self.stations = [node for node in instance.node_lookup.values() if node.node_type.lower() == "f"]
         self._candidate_cache: dict[
             tuple[Any, ...],
             tuple[tuple[str, Route, tuple[ChargingAction, ...]], ...],
@@ -132,6 +164,7 @@ class ChargingRepairRuntime:
         self.station_candidates_after_dominance = 0
         self.station_candidate_rebuilds = 0
         self.station_candidate_evaluations = 0
+        self.station_split_levels = 0
 
     def assert_matches(
         self,
@@ -323,6 +356,7 @@ class ChargingRepairRuntime:
                 "candidate_evaluations": int(
                     self.station_candidate_evaluations
                 ),
+                "split_levels": int(self.station_split_levels),
             },
             "timing_context_count": len(self.timing_contexts._contexts),
         }
@@ -350,15 +384,38 @@ def charging_repair_runtime_diagnostics() -> dict[str, Any]:
         "after_dominance": 0,
         "candidate_rebuilds": 0,
         "candidate_evaluations": 0,
+        "split_levels": 0,
+    }
+    # 每个运行时都已在记缓存命中与三段耗时，此前只有站点筛选被汇总上来，
+    # 于是"一圈的时间花在哪"无从查证（2026-09-02 查表8 时发现）。这里一并汇总。
+    counters = {
+        "candidate_cache_hits": 0,
+        "candidate_cache_misses": 0,
+        "repaired_cache_hits": 0,
+        "repaired_cache_misses": 0,
+        "route_score_cache_hits": 0,
+        "route_score_cache_misses": 0,
+    }
+    seconds = {
+        "repair_seconds": 0.0,
+        "candidate_seconds": 0.0,
+        "route_score_seconds": 0.0,
     }
     runtimes = [entry[4] for entry in _CHARGING_REPAIR_RUNTIMES.values()]
     for runtime in runtimes:
-        station = runtime.diagnostics()["station_pruning"]
+        diagnostics = runtime.diagnostics()
+        station = diagnostics["station_pruning"]
         for name in totals:
             totals[name] += int(station[name])
+        for name in counters:
+            counters[name] += int(diagnostics[name])
+        for name in seconds:
+            seconds[name] += float(diagnostics[name])
     return {
         "runtime_count": len(runtimes),
         "station_pruning": totals,
+        **counters,
+        **seconds,
     }
 
 
@@ -472,7 +529,7 @@ def charge_amount_target_kwh(
 ) -> float:
     """Map one shared physical charge target to an end-of-charge energy."""
 
-    name = normalize_charge_amount_strategies((strategy,))[0]
+    name = strategy
     capacity = float(capacity_kwh)
     just_enough = min(capacity, float(just_enough_kwh))
     if name == "just_enough":
@@ -516,196 +573,6 @@ def solve_charging(
         carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
     )
     return actions
-
-
-def solve_charging_naive(
-    route: Route,
-    instance: Instance,
-    gamma_profile: list[dict[str, Any]],
-    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
-    *,
-    depot_charge_window_mode: str = "full_gap",
-    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
-) -> list[ChargingAction]:
-    """Return fixed-route actions using immediate return/arrival charging."""
-
-    # v2026-06-12: S0 charging-policy ablation baseline. This keeps the same
-    # power and energy construction as carbon-aware replay, but depot charging
-    # starts immediately at route return instead of minimizing carbon.
-    return solve_charging_fixed_route(
-        route,
-        instance,
-        gamma_profile,
-        prices,
-        strategy="naive",
-        depot_charge_window_mode=depot_charge_window_mode,
-        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
-    )
-
-
-def solve_charging_fixed_route(
-    route: Route,
-    instance: Instance,
-    gamma_profile: list[dict[str, Any]],
-    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
-    *,
-    strategy: str = "aware",
-    depot_charge_window_mode: str = "full_gap",
-    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
-) -> list[ChargingAction]:
-    """Construct charging actions for an existing route without changing nodes."""
-
-    if route.vehicle_type.lower() != "ev":
-        return []
-    node_lookup = instance.node_lookup
-    if not route.node_sequence:
-        return []
-
-    battery_cap = instance.battery_capacity_kwh(
-        fallback=_price(prices, "B_battery_kwh"),
-    )
-    battery = _price(prices, "initial_ev_battery_kwh")
-    validate_depot_charge_window_mode(depot_charge_window_mode)
-    time_s = float(node_lookup[route.node_sequence[0]].ready_time)
-    remaining_customers = [node_id for node_id in route.node_sequence if node_lookup[node_id].node_type.lower() == "c"]
-    actions: list[ChargingAction] = []
-
-    for idx, node_id in enumerate(route.node_sequence[:-1]):
-        node = node_lookup[node_id]
-        node_type = node.node_type.lower()
-        if node_type in {"d", "f"}:
-            segment_need = _energy_to_next_chargeable(idx, route.node_sequence, node_lookup, instance, prices, remaining_customers)
-            if segment_need > battery_cap + 1e-9:
-                raise ValueError(f"Fixed route segment from {node_id} requires {segment_need:.6f} kWh > B={battery_cap:.6f}")
-            energy_needed = max(0.0, segment_need - battery)
-            if energy_needed > 1e-9:
-                power_kw = _charge_power_kw(node, prices)
-                action = _curve_aware_action(
-                    vehicle_id=route.vehicle_id,
-                    station_id=node_id,
-                    start_energy_kwh=battery,
-                    energy_kwh=energy_needed,
-                    reference_power_kw=power_kw,
-                    prices=prices,
-                    instance=instance,
-                )
-                occupancy_sec = float(action.occupancy_minutes) * 60.0
-                node_profile = time_profile_rows_for_node(
-                    instance,
-                    node_id,
-                    gamma_profile,
-                )
-                earliest, latest = _fixed_charge_window(
-                    idx,
-                    route,
-                    node_lookup,
-                    instance,
-                    prices,
-                    occupancy_sec,
-                    time_s,
-                    len(node_profile),
-                    depot_charge_window_mode=depot_charge_window_mode,
-                    charging_actions=actions,
-                )
-                if latest + 1e-9 < earliest:
-                    raise ValueError(f"No feasible fixed-route charging window for {route.vehicle_id} at {node_id}")
-                if node_type == "d":
-                    charge_start, charge_day_offset = select_certified_depot_charge_start(
-                        action,
-                        earliest,
-                        latest,
-                        instance,
-                        prices,
-                        gamma_profile,
-                        mode=depot_charge_window_mode,
-                        strategy="integrated" if strategy == "aware" else "naive",
-                        charge_timing_policy=(
-                            "carbon_min" if strategy == "aware" else "asap"
-                        ),
-                        carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
-                    )
-                else:
-                    charge_start = (
-                        best_charging_action_start(
-                            action,
-                            earliest_start_second=earliest,
-                            latest_start_second=latest,
-                            instance=instance,
-                            carbon_profile=gamma_profile,
-                            prices=prices,
-                        )
-                        if strategy == "aware"
-                        else _select_charge_start(
-                            earliest,
-                            latest,
-                            node_profile,
-                            strategy,
-                            node_type=node_type,
-                        )
-                    )
-                    charge_day_offset = 0
-                actions.append(
-                    replace(
-                        action,
-                        charge_start_second=charge_start,
-                        charge_day_offset=charge_day_offset,
-                    )
-                )
-                battery += energy_needed
-                if node_type != "d":
-                    time_s = max(time_s, charge_start + occupancy_sec)
-
-        next_id = route.node_sequence[idx + 1]
-        load_kg = sum(float(node_lookup[customer_id].demand) for customer_id in remaining_customers)
-        battery -= _ev_energy(
-            instance,
-            node_id,
-            next_id,
-            load_kg,
-            prices,
-        )
-        if battery < -1e-7:
-            raise ValueError(f"Fixed route battery below zero after {node_id}->{next_id}: {battery:.6f} kWh")
-        travel = _ev_travel_time(
-            instance,
-            node_id,
-            next_id,
-            prices,
-        )
-        next_node = node_lookup[next_id]
-        time_s = max(time_s + travel, float(next_node.ready_time)) + float(next_node.service_time)
-        if next_node.node_type.lower() == "c":
-            remaining_customers.remove(next_id)
-
-    return actions
-
-
-def replay_fixed_route_charging(
-    solution: Solution,
-    instance: Instance,
-    gamma_profile: list[dict[str, Any]],
-    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
-    *,
-    strategy: str = "aware",
-    depot_charge_window_mode: str = "full_gap",
-    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
-) -> Solution:
-    """Strip charging actions and replay charging on unchanged route sequences."""
-
-    actions: list[ChargingAction] = []
-    for route in solution.routes:
-        actions.extend(
-            solve_charging_fixed_route(
-                route,
-                instance,
-                gamma_profile,
-                prices,
-                strategy=strategy,
-                depot_charge_window_mode=depot_charge_window_mode,
-                carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
-            )
-        )
-    return replace(solution, charging_actions=actions)
 
 
 def repair_route_charging(
@@ -790,12 +657,21 @@ def repair_route_charging_candidates(
     """Build the legacy depot path and, when enabled, a public-only path."""
 
     validate_public_station_candidate_mode(public_station_candidate_mode)
+    if strategy not in {"legacy", "integrated"}:
+        raise ValueError(f"unknown charging-repair strategy: {strategy}")
+    validate_depot_charge_window_mode(depot_charge_window_mode)
+    validate_charge_timing_policy(charge_timing_policy)
+    charge_amount_strategy = normalize_charge_amount_strategies((charge_amount_strategy,))[0]
+    if route.vehicle_type.lower() != "ev" or not route.node_sequence:
+        return [("depot_fallback", route, [])]
     runtime = _get_charging_repair_runtime(
         instance,
         gamma_profile,
         prices,
         carbon_profiles_by_day_offset,
     )
+    node_lookup = instance.node_lookup
+    stations = runtime.stations if runtime is not None else [node for node in node_lookup.values() if node.node_type.lower() == "f"]
     cache_key: tuple[Any, ...] | None = None
     timing_contexts: ChargeTimingContexts | None = None
     if runtime is not None:
@@ -829,6 +705,13 @@ def repair_route_charging_candidates(
     fallback_error: ValueError | None = None
     if runtime is not None:
         runtime.station_candidate_rebuilds += 1
+    initial_departure_second = route_timing(
+        route,
+        instance,
+        prices,
+        charging_actions=[],
+        validate_battery=False,
+    ).earliest_departure_second
     try:
         fallback_route, fallback_actions = _repair_route_charging_candidate(
             route,
@@ -842,33 +725,28 @@ def repair_route_charging_candidates(
             charge_amount_strategy=charge_amount_strategy,
             carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
             depot_precharge_target_kwh=None,
+            stations=stations,
             timing_contexts=timing_contexts,
+            initial_departure_second=initial_departure_second,
         )
     except ValueError as exc:
         fallback_error = exc
     else:
         candidates.append(("depot_fallback", fallback_route, fallback_actions))
-    if public_station_candidate_mode == DEFAULT_PUBLIC_STATION_CANDIDATE_MODE:
+    if public_station_candidate_mode == FALLBACK_PUBLIC_STATION_CANDIDATE_MODE:
         if fallback_error is not None:
             raise fallback_error
         return finish(candidates)
-    node_types = {node.node_id: node.node_type.lower() for node in instance.nodes}
-    if route.vehicle_type.lower() != "ev" or not route.node_sequence:
-        return finish(candidates)
-    node_lookup = instance.node_lookup
     remaining_customers = [
         node_id
         for node_id in route.node_sequence[1:]
-        if node_types.get(node_id) == "c"
+        if node_lookup[node_id].node_type.lower() == "c"
     ]
     load_kg = sum(float(node_lookup[node_id].demand) for node_id in remaining_customers)
     initial_battery = _price(prices, "initial_ev_battery_kwh")
     battery_cap = instance.battery_capacity_kwh(
         fallback=_price(prices, "B_battery_kwh"),
     )
-    stations = [
-        node for node in instance.nodes if node.node_type.lower() == "f"
-    ]
     start_node = route.node_sequence[0]
     if runtime is not None:
         runtime.station_candidates_enumerated += len(stations)
@@ -882,6 +760,8 @@ def repair_route_charging_candidates(
     # the former all-length permutation loop was factorial while producing the
     # exact same accepted candidate list.
     reachable: list[_ForcedStationScreen] = []
+    walk_profile = _RouteWalkProfile(route, instance, prices)
+    traces: dict[float, _ForcedScreenTrace | None] = {}
     for station in stations:
         launch_target = max(
             initial_battery,
@@ -895,6 +775,26 @@ def repair_route_charging_candidates(
         )
         if launch_target > battery_cap + 1e-9:
             continue
+        if launch_target in traces:
+            trace = traces[launch_target]
+        else:
+            trace = traces[launch_target] = _build_forced_screen_trace(
+                route,
+                instance,
+                gamma_profile,
+                prices,
+                walk=walk_profile,
+                strategy=strategy,
+                carbon_weight=carbon_weight,
+                depot_charge_window_mode=depot_charge_window_mode,
+                charge_timing_policy=charge_timing_policy,
+                charge_amount_strategy=charge_amount_strategy,
+                carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+                depot_precharge_target_kwh=launch_target,
+                timing_contexts=timing_contexts,
+            )
+        if trace is None or not trace.positions:
+            continue
         screen = _screen_forced_public_station(
             route,
             station,
@@ -903,12 +803,10 @@ def repair_route_charging_candidates(
             prices,
             strategy=strategy,
             carbon_weight=carbon_weight,
-            depot_charge_window_mode=depot_charge_window_mode,
             charge_timing_policy=charge_timing_policy,
             charge_amount_strategy=charge_amount_strategy,
-            carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
-            depot_precharge_target_kwh=launch_target,
             timing_contexts=timing_contexts,
+            trace=trace,
         )
         if screen is not None:
             reachable.append(screen)
@@ -928,6 +826,66 @@ def repair_route_charging_candidates(
     if runtime is not None:
         runtime.station_candidates_after_dominance += len(nondominated)
 
+    def build_forced(
+        depot_target_kwh: float,
+        station_path: tuple[str, ...],
+        screen: _ForcedStationScreen | None,
+    ) -> tuple[Route, list[ChargingAction]] | None:
+        """Build one forced-station path for a given depot launch level."""
+
+        if runtime is not None:
+            runtime.station_candidate_rebuilds += 1
+        try:
+            return _repair_route_charging_candidate(
+                route,
+                instance,
+                gamma_profile,
+                prices,
+                strategy=strategy,
+                carbon_weight=carbon_weight,
+                depot_charge_window_mode=depot_charge_window_mode,
+                charge_timing_policy=charge_timing_policy,
+                charge_amount_strategy=charge_amount_strategy,
+                carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
+                depot_precharge_target_kwh=depot_target_kwh,
+                forced_station_path=station_path,
+                stations=stations,
+                timing_contexts=timing_contexts,
+                precomputed_first_station=screen,
+                initial_departure_second=initial_departure_second,
+            )
+        except ValueError:
+            return None
+
+    def add_public(
+        built: tuple[Route, list[ChargingAction]],
+        label_suffix: str,
+    ) -> bool:
+        """Record one public-station candidate unless it is already present."""
+
+        public_route, public_actions = built
+        public_station_ids = [
+            action.station_id
+            for action in public_actions
+            if node_lookup[action.station_id].node_type.lower() == "f"
+        ]
+        if not public_station_ids:
+            return False
+        if any(
+            candidate_route == public_route
+            and candidate_actions == public_actions
+            for _, candidate_route, candidate_actions in candidates
+        ):
+            return False
+        candidates.append(
+            (
+                "public_path_" + "__".join(public_station_ids) + label_suffix,
+                public_route,
+                public_actions,
+            )
+        )
+        return True
+
     for screen in nondominated:
         station_path = (screen.station.node_id,)
         launch_target = max(
@@ -940,50 +898,184 @@ def repair_route_charging_candidates(
                 prices,
             ),
         )
-        if runtime is not None:
-            runtime.station_candidate_rebuilds += 1
-        try:
-            public_route, public_actions = _repair_route_charging_candidate(
-                route,
-                instance,
-                gamma_profile,
-                prices,
-                strategy=strategy,
-                carbon_weight=carbon_weight,
-                depot_charge_window_mode=depot_charge_window_mode,
-                charge_timing_policy=charge_timing_policy,
-                charge_amount_strategy=charge_amount_strategy,
-                carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
-                depot_precharge_target_kwh=launch_target,
-                forced_station_path=station_path,
-                timing_contexts=timing_contexts,
-                precomputed_first_station=screen,
-            )
-        except ValueError:
+        built = build_forced(launch_target, station_path, screen)
+        if built is None:
             continue
-        public_station_ids = [
-            action.station_id
-            for action in public_actions
-            if node_types.get(action.station_id) == "f"
-        ]
-        if not public_station_ids:
+        add_public(built, "")
+        if public_station_candidate_mode != SPLIT_PUBLIC_STATION_CANDIDATE_MODE:
             continue
-        if any(
-            candidate_route == public_route
-            and candidate_actions == public_actions
-            for _, candidate_route, candidate_actions in candidates
-        ):
-            continue
-        candidates.append(
-            (
-                "public_path_" + "__".join(public_station_ids),
-                public_route,
-                public_actions,
-            )
+        # Split mode keeps the launch-target endpoint above (the depot carries
+        # only enough to reach the station) and adds the interior levels where
+        # the depot/station division of the same trip energy can be optimal.
+        levels = _split_depot_launch_levels(
+            built[1],
+            launch_target_kwh=launch_target,
+            initial_battery_kwh=initial_battery,
+            battery_capacity_kwh=battery_cap,
+            instance=instance,
+            prices=prices,
         )
+        if runtime is not None:
+            runtime.station_split_levels += len(levels)
+        for order, level in enumerate(levels):
+            split_built = build_forced(level, station_path, None)
+            if split_built is not None:
+                add_public(split_built, f"__split{order:02d}")
     if not candidates and fallback_error is not None:
         raise fallback_error
     return finish(candidates)
+
+
+def _slot_boundaries_within(start_second: float, span_seconds: float) -> list[float]:
+    """Return the tariff/carbon slot boundaries a session of ``span`` crosses."""
+
+    if span_seconds <= 0.0:
+        return []
+    first = math.floor(float(start_second) / CARBON_SLOT_SECONDS) + 1
+    last = math.floor((float(start_second) + float(span_seconds)) / CARBON_SLOT_SECONDS)
+    return [
+        float(index) * CARBON_SLOT_SECONDS for index in range(first, last + 1)
+    ]
+
+
+def _split_depot_launch_levels(
+    actions: list[ChargingAction],
+    *,
+    launch_target_kwh: float,
+    initial_battery_kwh: float,
+    battery_capacity_kwh: float,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> list[float]:
+    """Return the interior depot launch levels a split trip can be optimal at.
+
+    ``actions`` is the launch-target build for one forced station: the depot
+    carries exactly enough to reach the station and the station covers the
+    rest.  Raising the depot level ``x`` moves energy from the station to the
+    depot one-for-one, because the station target is a fixed end-of-charge
+    level and its charged amount is that level minus the arrival energy.
+    Electricity price and carbon intensity are half-hour step functions and
+    the charging curve is piecewise linear in energy, so with both start times
+    held fixed the trip cost is piecewise linear in ``x``: it can only bend
+    where one session's end crosses a slot boundary or a curve breakpoint.
+    Those levels, plus the two endpoints, are therefore the whole candidate
+    set, and the curve's exact time/energy inverses give them in closed form
+    rather than on a percentage grid.
+
+    ``x`` is bounded above by the largest level that still leaves the station a
+    real charging process.  The model gives every visited public-station node
+    one charging process ``h`` with its own arrival and departure energies and
+    its own start and end clock (``docs/paper_v2/paper_main.tex:420``), so a
+    station visit buying ~0 kWh is not a charging arrangement and is not a
+    charging candidate.  The bound is therefore "station top-up at least
+    ``SPLIT_MIN_STATION_ENERGY_KWH``", not "the station charges nothing".
+
+    Do not restate that bound as "the top endpoint is the depot-only plan plus
+    a pointless detour, so it is dominated": that reasoning is false on this
+    instance.  The distance matrix stores fastest-path distances and 1.57% of
+    its triples violate the triangle inequality (worst case -7588 m), so going
+    via a station can be shorter than going direct.  On one replayed trip the
+    depot->station->customer detour was -1305 m and a level just under the top
+    endpoint beat the depot-only plan by 2.26 CNY while the station bought
+    1e-6 kWh (``docs/handoff/station_split_review_20260908.md``, section B).
+    That shortcut is a property of the road-network matrix, not of a charging
+    decision, and this function does not admit it as one.
+
+    A trip whose entire station share is below ``SPLIT_MIN_STATION_ENERGY_KWH``
+    leaves no room between the two bounds and yields no interior level.
+
+    Start times are read from this launch-target build.  The depot and station
+    timing selectors may move a start when ``x`` changes, in which case these
+    levels are a candidate set rather than a certificate of optimality.
+    """
+
+    node_lookup = instance.node_lookup
+    depot_action = next(
+        (
+            action
+            for action in actions
+            if node_lookup[action.station_id].node_type.lower() == "d"
+        ),
+        None,
+    )
+    station_action = next(
+        (
+            action
+            for action in actions
+            if node_lookup[action.station_id].node_type.lower() == "f"
+        ),
+        None,
+    )
+    if depot_action is None or station_action is None:
+        return []
+    # Energy spent reaching the station: the launch level minus what is left
+    # on arrival.  It is fixed for this insertion, so it converts a station
+    # arrival energy into the depot launch level that produces it.
+    energy_to_station = launch_target_kwh - float(station_action.start_energy_kwh)
+    station_target_kwh = float(station_action.end_energy_kwh)
+    upper = min(
+        battery_capacity_kwh,
+        station_target_kwh + energy_to_station - SPLIT_MIN_STATION_ENERGY_KWH,
+    )
+    if upper <= launch_target_kwh + SPLIT_DEPOT_LEVEL_TOLERANCE_KWH:
+        return []
+    station_node = node_lookup[station_action.station_id]
+    depot_curve = curve_for_charging_node(
+        prices,
+        node_type="d",
+        capacity_kwh=battery_capacity_kwh,
+        reference_power_kw=_price(prices, "depot_charge_power_kw"),
+    )
+    station_curve = curve_for_charging_node(
+        prices,
+        node_type=station_node.node_type,
+        capacity_kwh=battery_capacity_kwh,
+        reference_power_kw=_charge_power_kw(station_node, prices),
+    )
+
+    levels: list[float] = []
+    depot_start = float(depot_action.charge_start_second)
+    for boundary in _slot_boundaries_within(
+        depot_start,
+        depot_curve.duration_seconds(initial_battery_kwh, upper),
+    ):
+        levels.append(
+            depot_curve.reachable_energy_kwh(
+                initial_battery_kwh,
+                boundary - depot_start,
+            )
+        )
+    station_start = float(station_action.charge_start_second)
+    for boundary in _slot_boundaries_within(
+        station_start,
+        float(station_action.occupancy_minutes) * 60.0,
+    ):
+        levels.append(
+            station_curve.minimum_energy_before_gap_kwh(
+                station_target_kwh,
+                boundary - station_start,
+            )
+            + energy_to_station
+        )
+    levels.extend(
+        float(energy) for energy in depot_curve.energy_breakpoints_kwh
+    )
+    levels.extend(
+        float(energy) + energy_to_station
+        for energy in station_curve.energy_breakpoints_kwh
+    )
+
+    interior: list[float] = []
+    for level in sorted(levels):
+        if (
+            level <= launch_target_kwh + SPLIT_DEPOT_LEVEL_TOLERANCE_KWH
+            or level >= upper - SPLIT_DEPOT_LEVEL_TOLERANCE_KWH
+        ):
+            continue
+        if interior and level - interior[-1] <= SPLIT_DEPOT_LEVEL_TOLERANCE_KWH:
+            continue
+        interior.append(level)
+    return interior
 
 
 def _repair_route_charging_candidate(
@@ -999,38 +1091,32 @@ def _repair_route_charging_candidate(
     charge_amount_strategy: str,
     carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None,
     depot_precharge_target_kwh: float | None,
+    stations: list[Node],
     forced_station_path: tuple[str, ...] = (),
     timing_contexts: ChargeTimingContexts | None = None,
     precomputed_first_station: _ForcedStationScreen | None = None,
+    initial_departure_second: float | None = None,
 ) -> tuple[Route, list[ChargingAction]]:
     """Build one charging path without changing any feasibility rule."""
 
-    if strategy not in {"legacy", "integrated"}:
-        raise ValueError(f"unknown charging-repair strategy: {strategy}")
-    validate_depot_charge_window_mode(depot_charge_window_mode)
-    validate_charge_timing_policy(charge_timing_policy)
-    charge_amount_strategy = normalize_charge_amount_strategies(
-        (charge_amount_strategy,)
-    )[0]
-
-    if route.vehicle_type.lower() != "ev":
-        return route, []
     node_lookup = instance.node_lookup
-    stations = [node for node in instance.nodes if node.node_type.lower() == "f"]
-
     original_targets = [node_id for node_id in route.node_sequence[1:] if node_lookup[node_id].node_type.lower() != "f"]
     repaired = [route.node_sequence[0]]
     actions: list[ChargingAction] = []
     # v2026-06-12: Q2 starts EV routes from bbar and makes depot precharge a
     # first-class decision before preserving the existing en-route station logic.
     battery = _price(prices, "initial_ev_battery_kwh")
-    time_s = route_timing(
-        route,
-        instance,
-        prices,
-        charging_actions=[],
-        validate_battery=False,
-    ).earliest_departure_second
+    time_s = (
+        route_timing(
+            route,
+            instance,
+            prices,
+            charging_actions=[],
+            validate_battery=False,
+        ).earliest_departure_second
+        if initial_departure_second is None
+        else initial_departure_second
+    )
     remaining_customers = [node_id for node_id in original_targets if node_lookup[node_id].node_type.lower() == "c"]
     depot_action = _depot_precharge_action(
         route,
@@ -1082,8 +1168,6 @@ def _repair_route_charging_candidate(
                 future_targets
                 if depot_precharge_target_kwh is not None
                 else future_targets[: int(failure_offset) + 1]
-                if failure_offset is not None
-                else [target]
             )
             available_stations = _available_station_visits(stations, repaired)
             if not available_stations and battery + 1e-9 < needed_direct:
@@ -1196,35 +1280,6 @@ def _available_station_visits(
         physical_seen.add(physical)
         available.append(station)
     return available
-
-
-def _energy_to_next_chargeable(
-    start_idx: int,
-    node_sequence: list[str],
-    node_lookup: dict[str, Node],
-    instance: Instance,
-    prices: PriceParameters | dict[str, float] | Any,
-    remaining_customers: list[str],
-) -> float:
-    total = 0.0
-    local_remaining = list(remaining_customers)
-    for idx in range(start_idx, len(node_sequence) - 1):
-        from_node_id = node_sequence[idx]
-        to_node_id = node_sequence[idx + 1]
-        load_kg = sum(float(node_lookup[customer_id].demand) for customer_id in local_remaining)
-        total += _ev_energy(
-            instance,
-            from_node_id,
-            to_node_id,
-            load_kg,
-            prices,
-        )
-        to_node = node_lookup[to_node_id]
-        if to_node.node_type.lower() == "c":
-            local_remaining.remove(to_node_id)
-        elif idx + 1 > start_idx and to_node.node_type.lower() in {"d", "f"}:
-            break
-    return total
 
 
 def _first_direct_infeasible_offset(
@@ -1355,33 +1410,6 @@ def _fixed_charge_latest(
     return latest
 
 
-def _select_charge_start(
-    earliest: float,
-    latest: float,
-    gamma_profile: list[dict[str, Any]],
-    strategy: str,
-    *,
-    node_type: str,
-) -> float:
-    if strategy == "aware":
-        start, _ = _lowest_gamma_slot_start(earliest, latest, gamma_profile)
-        return start
-    if strategy == "naive":
-        if node_type == "d":
-            # v2026-06-12: S0 naive baseline is realistic return-to-depot
-            # immediate plug-in, not earliest half-hour boundary optimization.
-            return float(earliest)
-        return _earliest_slot_start(earliest, latest)
-    raise ValueError(f"Unsupported charging strategy: {strategy}")
-
-
-def _earliest_slot_start(earliest: float, latest: float) -> float:
-    slot = math.ceil(float(earliest) / CARBON_SLOT_SECONDS) * CARBON_SLOT_SECONDS
-    if slot <= latest + 1e-9:
-        return float(slot)
-    return float(earliest)
-
-
 def _depot_precharge_action(
     route: Route,
     original_targets: list[str],
@@ -1398,7 +1426,14 @@ def _depot_precharge_action(
     carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
     target_charge_level_kwh: float | None = None,
     timing_contexts: ChargeTimingContexts | None = None,
+    feasibility_only: bool = False,
 ) -> ChargingAction | None:
+    """Build the depot launch charge.
+
+    ``feasibility_only`` keeps the window and calendar rejections but skips
+    choosing the cheapest start; callers that only read ``energy_kwh`` pass it.
+    """
+
     depot_id = route.node_sequence[0]
     depot = node_lookup[depot_id]
     if depot.node_type.lower() != "d":
@@ -1407,8 +1442,8 @@ def _depot_precharge_action(
         fallback=_price(prices, "B_battery_kwh"),
     )
     initial_battery = _price(prices, "initial_ev_battery_kwh")
-    route_need = _direct_route_energy_need(depot_id, original_targets, node_lookup, instance, prices)
     if target_charge_level_kwh is None:
+        route_need = _direct_route_energy_need(depot_id, original_targets, node_lookup, instance, prices)
         target_charge_level = charge_amount_target_kwh(
             charge_amount_strategy,
             just_enough_kwh=route_need,
@@ -1467,6 +1502,7 @@ def _depot_precharge_action(
         charge_timing_policy=charge_timing_policy,
         carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
         timing_contexts=timing_contexts,
+        feasibility_only=feasibility_only,
     )
     return replace(
         action,
@@ -1647,13 +1683,138 @@ def _route_travel_lower_bound(
     return total
 
 
-def _screen_forced_public_station(
+class _RouteWalkProfile:
+    """Battery-independent walk data for one route, built once per repair.
+
+    Leg energies, travel times, load evolution, clock chain, and per-position
+    future/remaining snapshots do not depend on the launch battery or on the
+    screened station, so every forced-station trace replays these arrays with
+    the same floating-point values in the same order as the original walks.
+    """
+
+    __slots__ = (
+        "targets",
+        "currents",
+        "loads",
+        "leg_energy",
+        "leg_travel",
+        "futures",
+        "remaining_snapshots",
+        "time_chain",
+        "kinds",
+        "depart_second",
+        "initial_battery",
+    )
+
+    def __init__(
+        self,
+        route: Route,
+        instance: Instance,
+        prices: PriceParameters | dict[str, float] | Any,
+    ) -> None:
+        node_lookup = instance.node_lookup
+        targets = [
+            node_id
+            for node_id in route.node_sequence[1:]
+            if node_lookup[node_id].node_type.lower() != "f"
+        ]
+        remaining = [
+            node_id
+            for node_id in targets
+            if node_lookup[node_id].node_type.lower() == "c"
+        ]
+        self.targets = targets
+        self.initial_battery = _price(prices, "initial_ev_battery_kwh")
+        self.depart_second = route_timing(
+            route,
+            instance,
+            prices,
+            charging_actions=[],
+            validate_battery=False,
+        ).earliest_departure_second
+        currents: list[str] = []
+        loads: list[float] = []
+        leg_energy: list[float] = []
+        leg_travel: list[float] = []
+        futures: list[list[str]] = []
+        remaining_snapshots: list[list[str]] = []
+        time_chain: list[float] = []
+        kinds: list[str] = []
+        current = route.node_sequence[0]
+        time_s = self.depart_second
+        for target_idx, target in enumerate(targets):
+            load_kg = sum(
+                float(node_lookup[node_id].demand)
+                for node_id in remaining
+            )
+            currents.append(current)
+            loads.append(load_kg)
+            futures.append(targets[target_idx:])
+            remaining_snapshots.append(list(remaining))
+            time_chain.append(time_s)
+            kind = node_lookup[target].node_type.lower()
+            kinds.append(kind)
+            leg_energy.append(
+                _ev_energy(instance, current, target, load_kg, prices)
+            )
+            travel = _ev_travel_time(instance, current, target, prices)
+            leg_travel.append(travel)
+            time_s = max(
+                time_s + travel,
+                float(node_lookup[target].ready_time),
+            ) + float(node_lookup[target].service_time)
+            if kind == "c" and target in remaining:
+                remaining.remove(target)
+            current = target
+        self.currents = currents
+        self.loads = loads
+        self.leg_energy = leg_energy
+        self.leg_travel = leg_travel
+        self.futures = futures
+        self.remaining_snapshots = remaining_snapshots
+        self.time_chain = time_chain
+        self.kinds = kinds
+
+    def direct_infeasible_from(self, position: int, battery: float) -> bool:
+        """Sequentially replay ``_first_direct_infeasible_offset``.
+
+        Identical float values are subtracted in the identical order, so the
+        -1e-9 gate decides exactly as the original per-station walk did.
+        """
+
+        local_battery = float(battery)
+        leg_energy = self.leg_energy
+        kinds = self.kinds
+        for index in range(position, len(leg_energy)):
+            local_battery -= leg_energy[index]
+            if local_battery < -1e-9:
+                return True
+            if kinds[index] in ("d", "f"):
+                return False
+        return False
+
+
+class _ForcedScreenTrace:
+    """Fired positions of one launch-battery walk over a route profile."""
+
+    __slots__ = ("walk", "positions")
+
+    def __init__(
+        self,
+        walk: _RouteWalkProfile,
+        positions: tuple[tuple[int, float], ...],
+    ) -> None:
+        self.walk = walk
+        self.positions = positions
+
+
+def _build_forced_screen_trace(
     route: Route,
-    station: Node,
     instance: Instance,
     gamma_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any,
     *,
+    walk: _RouteWalkProfile,
     strategy: str,
     carbon_weight: float,
     depot_charge_window_mode: str,
@@ -1664,33 +1825,15 @@ def _screen_forced_public_station(
     ] | None,
     depot_precharge_target_kwh: float,
     timing_contexts: ChargeTimingContexts | None,
-) -> _ForcedStationScreen | None:
-    """Apply the existing exact first-insertion rules before route rebuild."""
+) -> _ForcedScreenTrace | None:
+    """Walk the route once per depot-precharge target on the shared profile."""
 
-    node_lookup = instance.node_lookup
-    original_targets = [
-        node_id
-        for node_id in route.node_sequence[1:]
-        if node_lookup[node_id].node_type.lower() != "f"
-    ]
-    remaining_customers = [
-        node_id
-        for node_id in original_targets
-        if node_lookup[node_id].node_type.lower() == "c"
-    ]
-    battery = _price(prices, "initial_ev_battery_kwh")
-    time_s = route_timing(
-        route,
-        instance,
-        prices,
-        charging_actions=[],
-        validate_battery=False,
-    ).earliest_departure_second
+    battery = walk.initial_battery
     try:
         depot_action = _depot_precharge_action(
             route,
-            original_targets,
-            node_lookup,
+            walk.targets,
+            instance.node_lookup,
             instance,
             gamma_profile,
             prices,
@@ -1702,93 +1845,91 @@ def _screen_forced_public_station(
             carbon_profiles_by_day_offset=carbon_profiles_by_day_offset,
             target_charge_level_kwh=depot_precharge_target_kwh,
             timing_contexts=timing_contexts,
+            # The screen below reads only ``energy_kwh``; the chosen start was
+            # optimised once per launch target and thrown away.
+            feasibility_only=True,
         )
     except ValueError:
         return None
     if depot_action is not None:
         battery += float(depot_action.energy_kwh)
 
-    current = route.node_sequence[0]
-    for target_idx, target in enumerate(original_targets):
-        load_kg = sum(
-            float(node_lookup[node_id].demand)
-            for node_id in remaining_customers
-        )
-        future_targets = original_targets[target_idx:]
-        if _first_direct_infeasible_offset(
-            current,
-            future_targets,
-            battery,
-            node_lookup,
-            instance,
-            prices,
-            remaining_customers,
-        ) is not None:
-            try:
-                insertion = _best_station_insert(
-                    current,
-                    target,
-                    future_targets,
-                    future_targets,
-                    remaining_customers,
-                    load_kg,
-                    battery,
-                    time_s,
-                    [station],
-                    node_lookup,
-                    instance,
-                    gamma_profile,
-                    prices,
-                    route.vehicle_id,
-                    strategy=strategy,
-                    carbon_weight=carbon_weight,
-                    charge_timing_policy=charge_timing_policy,
-                    charge_amount_strategy=charge_amount_strategy,
-                    forced_station_id=station.node_id,
-                    timing_contexts=timing_contexts,
-                )
-            except ValueError:
-                return None
-            if insertion is not None:
-                return _station_screen_profile(
-                    current,
-                    target,
-                    future_targets,
-                    station,
-                    insertion,
-                    load_kg,
-                    instance,
-                    gamma_profile,
-                    prices,
-                    strategy=strategy,
-                )
-            needed_direct = _ev_energy(
-                instance,
+    positions: list[tuple[int, float]] = []
+    leg_energy = walk.leg_energy
+    for index in range(len(leg_energy)):
+        if walk.direct_infeasible_from(index, battery):
+            positions.append((index, battery))
+            if battery + 1e-9 < leg_energy[index]:
+                break
+        battery -= leg_energy[index]
+    return _ForcedScreenTrace(walk, tuple(positions))
+
+
+def _screen_forced_public_station(
+    route: Route,
+    station: Node,
+    instance: Instance,
+    gamma_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, float] | Any,
+    *,
+    strategy: str,
+    carbon_weight: float,
+    charge_timing_policy: str,
+    charge_amount_strategy: str,
+    timing_contexts: ChargeTimingContexts | None,
+    trace: _ForcedScreenTrace,
+) -> _ForcedStationScreen | None:
+    """Apply the existing exact first-insertion rules on the shared trace."""
+
+    node_lookup = instance.node_lookup
+    walk = trace.walk
+    for index, battery in trace.positions:
+        current = walk.currents[index]
+        target = walk.targets[index]
+        future_targets = walk.futures[index]
+        remaining_customers = walk.remaining_snapshots[index]
+        load_kg = walk.loads[index]
+        time_s = walk.time_chain[index]
+        try:
+            insertion = _best_station_insert(
                 current,
                 target,
+                future_targets,
+                future_targets,
+                remaining_customers,
                 load_kg,
+                battery,
+                time_s,
+                [station],
+                node_lookup,
+                instance,
+                gamma_profile,
                 prices,
+                route.vehicle_id,
+                strategy=strategy,
+                carbon_weight=carbon_weight,
+                charge_timing_policy=charge_timing_policy,
+                charge_amount_strategy=charge_amount_strategy,
+                forced_station_id=station.node_id,
+                timing_contexts=timing_contexts,
             )
-            if battery + 1e-9 < needed_direct:
-                return None
-
-        battery -= _ev_energy(
-            instance,
-            current,
-            target,
-            load_kg,
-            prices,
-        )
-        time_s = max(
-            time_s + _ev_travel_time(instance, current, target, prices),
-            float(node_lookup[target].ready_time),
-        ) + float(node_lookup[target].service_time)
-        if (
-            node_lookup[target].node_type.lower() == "c"
-            and target in remaining_customers
-        ):
-            remaining_customers.remove(target)
-        current = target
+        except ValueError:
+            return None
+        if insertion is not None:
+            return _station_screen_profile(
+                current,
+                target,
+                future_targets,
+                station,
+                insertion,
+                load_kg,
+                instance,
+                gamma_profile,
+                prices,
+                strategy=strategy,
+            )
+        if battery + 1e-9 < walk.leg_energy[index]:
+            return None
     return None
 
 
@@ -1968,6 +2109,11 @@ def _best_station_insert(
 ) -> tuple[str, ChargingAction, float, float, float] | None:
     best: tuple[float, float, str, ChargingAction, float, float, float] | None = None
     refined: list[tuple[ChargeOption, float, float]] = []
+    battery_cap = instance.battery_capacity_kwh(fallback=_price(prices, "B_battery_kwh"))
+    curve_breakpoints = _curve_breakpoints_for_strategy(prices, charge_amount_strategy)
+    target_node = node_lookup[target]
+    direct_distance = _ev_distance(instance, current, target, prices)
+    direct_travel_time = _ev_travel_time(instance, current, target, prices)
     for station in stations:
         if (
             forced_station_id is not None
@@ -2015,9 +2161,6 @@ def _best_station_insert(
             load_kg,
             prices,
         )
-        battery_cap = instance.battery_capacity_kwh(
-            fallback=_price(prices, "B_battery_kwh"),
-        )
         if energy_to_target > battery_cap + 1e-9:
             continue
         segment_need_from_station = _direct_route_energy_need(
@@ -2030,23 +2173,18 @@ def _best_station_insert(
         )
         if segment_need_from_station > battery_cap + 1e-9:
             continue
-        max_coverage_need = _direct_route_energy_need(
-            station.node_id,
-            future_targets,
-            node_lookup,
-            instance,
-            prices,
-            remaining_customers=remaining_customers,
-        )
+        max_coverage_need = segment_need_from_station
+        if coverage_targets != future_targets:
+            max_coverage_need = _direct_route_energy_need(
+                station.node_id, future_targets, node_lookup, instance, prices,
+                remaining_customers=remaining_customers,
+            )
         target_charge_level = charge_amount_target_kwh(
             charge_amount_strategy,
             just_enough_kwh=segment_need_from_station,
             max_coverage_kwh=max_coverage_need,
             capacity_kwh=battery_cap,
-            curve_soc_breakpoints=_curve_breakpoints_for_strategy(
-                prices,
-                charge_amount_strategy,
-            ),
+            curve_soc_breakpoints=curve_breakpoints,
         )
         energy_needed = max(0.0, target_charge_level - battery_at_station)
         if energy_needed <= 1e-9:
@@ -2065,7 +2203,6 @@ def _best_station_insert(
         occupancy_sec = float(action.occupancy_minutes) * 60.0
         arrive = depart_current + time_to_station
         earliest = max(arrive, float(station.ready_time))
-        target_node = node_lookup[target]
         latest = min(
             float(station.due_time),
             float(target_node.due_time)
@@ -2089,12 +2226,12 @@ def _best_station_insert(
         detour = (
             to_station
             + station_to_target
-            - _ev_distance(instance, current, target, prices)
+            - direct_distance
         )
         detour_seconds = (
             time_to_station
             + time_station_to_target
-            - _ev_travel_time(instance, current, target, prices)
+            - direct_travel_time
         )
         if strategy == "integrated":
             refined.append(
@@ -2224,7 +2361,7 @@ def _lowest_gamma_slot_start(earliest: float, latest: float, gamma_profile: list
         slot = math.ceil(earliest / CARBON_SLOT_SECONDS) * CARBON_SLOT_SECONDS
         start = slot if slot <= latest + 1e-9 else earliest
         wrapped = start % period
-        gamma = min(gamma_profile, key=lambda row: abs(float(row["horizon_second_start"]) - wrapped))["actual_gco2_per_kwh"]
+        gamma = min(gamma_profile, key=lambda row: (wrapped - float(row["horizon_second_start"])) % period)["actual_gco2_per_kwh"]
         return float(start), float(gamma)
     gamma, start = min(candidates, key=lambda item: (item[0], item[1]))
     return start, gamma

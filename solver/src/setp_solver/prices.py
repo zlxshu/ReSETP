@@ -48,7 +48,6 @@ B_battery_kwh = 80.0  # kWh, EV 电池容量。Goeke(2015)Table 4 / Davis & Figl
 # 代理, 论文须如实表述为 proxy。
 # ---------------------------------------------------------------------------
 
-UK_2025_DIESEL_PRICE_GBP_PER_L = 1.4331  # £/L, 英国政府周度道路燃油价 ULSD 2025-11 真值。参考文献: 英国能源安全与净零部. 道路燃油周度价格[EB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/statistics/weekly-road-fuel-prices.
 electricity_price = 0.82  # £/kWh, 公共快充代理值, GRIDSERVE 2025-11 DC 充电 82-89p/kWh 取低端。参考文献: GRIDSERVE. Charging tariffs[EB/OL]. (2025)[2026-06-11]. https://www.gridserve.com/.
 # v2026-06-12: Q2 separates public-station and depot pre-departure charging prices.
 station_electricity_price = electricity_price  # £/kWh, public station charging price; kept equal to legacy electricity_price.
@@ -61,9 +60,6 @@ initial_ev_battery_kwh = 0.0  # kWh, paper bbar default for fresh static Q2/Q3 s
 charging_curve_id = L100_CONTROL.curve_id
 charging_soc_breakpoints = L100_CONTROL.soc_breakpoints
 charging_relative_powers = L100_CONTROL.relative_powers
-UK_2025_CARBON_PRICE_GBP_PER_KG = 0.05034  # £/kgCO2e, 主值, 折合 £50.34/tCO2e, UK ETS 2025 二级市场约 £50/t。参考文献: International Carbon Action Partnership. UK Emissions Trading System[EB/OL]. [2026-06-11]. https://icapcarbonaction.com/en/ets/uk-emissions-trading-scheme-uk-ets.
-UK_2025_CARBON_PRICE_LOW_GBP_PER_KG = 0.04184  # £/kgCO2e, 敏感性低值, 折合 £41.84/tCO2e, UK ETS 2025 民事处罚碳价官方真值。参考文献: 英国能源安全与净零部. UK ETS civil penalty carbon price 2025[EB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/participating-in-the-uk-ets/how-to-comply-with-the-uk-ets.
-UK_2025_DIESEL_EF_KG_PER_L = 2.57082  # kgCO2e/L, 英国 2025 温室气体转换因子, 零售柴油(含约 3% 生物柴油混合)真值。参考文献: 英国环境食品与乡村事务部, 能源安全与净零部. 2025 government greenhouse gas conversion factors for company reporting[DB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025.
 vehicle_fixed_cost = 80.0  # £/班次, 中型柴油货车单班次启用成本代理值, 英国货车日租代理。参考文献: 代理值说明, 研究情景参数, 需在论文中明确标为 proxy.
 # v2026-06-12: V0 profit-fairness revenue proxy. National Pallets lists a
 # 250 kg UK quarter-pallet shipment at £47.34 exc VAT, so rho=47.34/250.
@@ -96,8 +92,7 @@ class _ExplicitScenarioValueRequired:
     def __float__(self) -> float:
         raise ValueError(
             f"{self.field_name} requires an explicit scenario price set; "
-            "use UK_2025_PRICES for the historical UK case or pass the "
-            "active bundle prices"
+            "pass the active bundle prices"
         )
 
 
@@ -193,13 +188,6 @@ class PriceParameters:
         return self.c_km / 1000.0
 
 
-# No-context calls retain the historical name for API compatibility, but the
-# four scenario-sensitive UK fields above are fail-closed.  Historical UK
-# replay and UK-labelled reporting must opt into this named object explicitly.
+# No-context calls retain the historical name for API compatibility, while the
+# four scenario-sensitive fields remain fail-closed.
 DEFAULT_PRICES = PriceParameters()
-UK_2025_PRICES = PriceParameters(
-    diesel_price=UK_2025_DIESEL_PRICE_GBP_PER_L,
-    carbon_price=UK_2025_CARBON_PRICE_GBP_PER_KG,
-    carbon_price_low=UK_2025_CARBON_PRICE_LOW_GBP_PER_KG,
-    diesel_ef=UK_2025_DIESEL_EF_KG_PER_L,
-)

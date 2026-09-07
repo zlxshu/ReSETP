@@ -23,6 +23,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field, replace
+from types import SimpleNamespace
 from itertools import chain
 from typing import Any
 
@@ -39,10 +40,11 @@ from setp_solver.charging_action import _curve_aware_action
 from setp_solver.cost import route_departure_second, time_profile_rows_for_node
 from setp_solver.search.multitrip_schedule import (
     STATIC_PREHORIZON_SECONDS,
-    certified_depot_charge_window,
+    _curve_for_prices,
     prepare_multitrip_solution,
     route_timing,
     select_certified_depot_charge_start,
+    validate_multitrip_certificate,
 )
 from setp_solver.solution import ChargingAction, Route, Solution, physical_vehicle_id
 
@@ -65,10 +67,57 @@ from .model import (
 
 
 DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE = "dynamic_depot_only"
-PRESCREEN_CHANNELS = frozenset({"depot_collaboration", "multi_trip"})
+CHARGING_REPAIR_CACHE_MAX_ENTRIES = 2_000
+# 2026-09-02: the prescreen also guards the whole-duty type exchange and the
+# kernel skeleton proposals; all reach the same full repair (fresh per-trip
+# route_timing for EV, chained ledger replay for CV), so the exact standalone
+# and chained clock verdicts below apply unchanged.  The crossover child is
+# no longer screened: a child whose charging cannot be repaired is admitted as
+# a penalised infeasible member instead of being killed.
+PRESCREEN_CHANNELS = frozenset(
+    {
+        "depot_collaboration",
+        "multi_trip",
+        "whole_duty_type_exchange",
+        "route_kernel",
+    }
+)
 PRESCREEN_NO_DEPARTURE = "no_feasible_departure"
 PRESCREEN_TIME_WINDOW = "time_window"
+# Chained verdicts: every trip is standalone-feasible, but forcing trip k+1 to
+# depart no earlier than trip k's bare return already misses a window.  Full
+# repair only discovers this after the whole EV duty has been repaired and
+# anchored, in the final ledger replay (multi-trip certificate with
+# forced_departure = max(floors, previous_return)).
+PRESCREEN_CHAIN_TIME_WINDOW = "chain_time_window"
+PRESCREEN_CHAIN_NO_DEPARTURE = "chain_no_feasible_departure"
 PRESCREEN_UNCERTAIN = "uncertain"
+
+# 2026-09-06: how far back the first trip's pre-departure depot charge may
+# reach.  ``same_day`` is the historical window that opens at the simulation
+# day's own 00:00; ``prev_return`` opens it at the instant the vehicle came
+# back to the depot on the PRECEDING evening, which is when a real depot
+# charger first becomes available to that vehicle.  The window terminus is the
+# same in both: the latest departure that still meets every customer deadline
+# and keeps the trip inside its own shift.
+FIRST_TRIP_WINDOW_SAME_DAY = "same_day"
+FIRST_TRIP_WINDOW_PREV_RETURN = "prev_return"
+FIRST_TRIP_WINDOWS = (
+    FIRST_TRIP_WINDOW_SAME_DAY,
+    FIRST_TRIP_WINDOW_PREV_RETURN,
+)
+
+
+def validate_first_trip_window(window: str) -> str:
+    """Validate and return one of the registered first-trip window rules."""
+
+    if window not in FIRST_TRIP_WINDOWS:
+        raise ValueError(
+            "unknown first-trip charging window rule: "
+            f"{window!r}; expected one of {list(FIRST_TRIP_WINDOWS)}"
+        )
+    return window
+
 
 CHARGING_REASON_NO_FEASIBLE_WINDOW = "NO_FEASIBLE_WINDOW"
 CHARGING_REASON_INSUFFICIENT_ENERGY = "INSUFFICIENT_ENERGY"
@@ -201,6 +250,71 @@ class ChargingFeasibilityPrescreen:
         tuple[str, str, str, int, tuple[str, ...]],
         tuple[str, str] | None,
     ] = field(default_factory=dict)
+    chain_cache_hits: int = 0
+    chain_cache_misses: int = 0
+    # Chain replays whose forced departure carried the between-trip charge
+    # duration lower bound (2026-09-02 D2).
+    chain_charge_bound_applied: int = 0
+    # (vehicle_type, home depot, forced departure or None, node sequence) ->
+    # bare return second, or the exact failure classification.
+    _chain_cache: dict[
+        tuple[str, str, float | None, tuple[str, ...]],
+        float | tuple[str, str],
+    ] = field(default_factory=dict)
+    # (vehicle_type, home depot, node sequence) -> bare drive energy in kWh,
+    # recorded by the standalone trip screen so the chain screen can size the
+    # depot charge the full repair will have to fit into the gap.
+    _trip_energy_cache: dict[
+        tuple[str, str, tuple[str, ...]],
+        float,
+    ] = field(default_factory=dict)
+    _charging_curve: Any = field(default=None, repr=False)
+
+    def _between_trip_charge_seconds(
+        self,
+        duty: PhysicalVehicleDuty,
+        sequence: tuple[str, ...],
+    ) -> float | None:
+        """Lower bound of the depot charge the full repair fits before a trip.
+
+        ``_anchor_duty_depot_actions`` charges each later trip "just enough":
+        the vehicle returns with (numerically) zero surplus, so the gap before
+        trip ``k+1`` must hold the curve time from empty to that trip's own
+        drive energy.  The bound is skipped whenever the repair could take a
+        different path (public station inside the trip, energy above the
+        battery, non just-enough policy, frvcpy), so it stays a certain death.
+        """
+
+        if duty.vehicle_type != "ev":
+            return None
+        if (
+            self.policy.charge_amount_strategy != "just_enough"
+            or self.policy.frvcpy_enabled
+            or self.policy.public_station_candidate_mode
+            == DYNAMIC_DEPOT_ONLY_CANDIDATE_MODE
+        ):
+            return None
+        nodes = self.context.bundle.instance.node_lookup
+        if any(
+            nodes[node_id].node_type.lower() == "f"
+            for node_id in sequence
+            if node_id in nodes
+        ):
+            return None
+        energy = self._trip_energy_cache.get(
+            (duty.vehicle_type, duty.home_depot_id, sequence)
+        )
+        if energy is None:
+            return None
+        if self._charging_curve is None:
+            self._charging_curve = _curve_for_prices(
+                self.context.bundle.prices,
+                self.context.bundle.instance,
+            )
+        curve = self._charging_curve
+        if energy <= 1e-9 or energy > float(curve.capacity_kwh) + 1e-7:
+            return None
+        return float(curve.duration_seconds(0.0, float(energy)))
 
     def screen(
         self,
@@ -248,8 +362,111 @@ class ChargingFeasibilityPrescreen:
                     f"{channel}:{reason}"
                 ] += 1
                 return wrapped
+            failure = self._screen_duty_chain(duty)
+            if failure is None:
+                continue
+            reason, message = failure
+            if reason == PRESCREEN_UNCERTAIN:
+                self.passed_by_channel[channel] += 1
+                return None
+            wrapped = ChargingRepairFailure(
+                duty_id,
+                ValueError(message),
+                reason_code=CHARGING_REASON_PRESCREEN_REJECT,
+            )
+            self.rejected_by_channel[channel] += 1
+            self.rejected_by_channel_and_reason[f"{channel}:{reason}"] += 1
+            return wrapped
 
         self.passed_by_channel[channel] += 1
+        return None
+
+    def _screen_duty_chain(
+        self,
+        duty: PhysicalVehicleDuty,
+    ) -> tuple[str, str] | None:
+        """Replay the duty's trips as one bare chain; reject only certain deaths.
+
+        Full repair ends with ``_verify_prepared_ledger`` (and CV repair is
+        nothing but that replay), whose multi-trip certificate forces trip
+        ``k+1`` to depart at ``max(floors, previous_return)``.  The chain here
+        uses no charging at all and only the depot's own floor, so every
+        departure it forces is a lower bound of the one full repair will force
+        and every return it computes is a lower bound of the real return
+        (charging and public-station detours only add time).  A window missed
+        under these lower bounds is therefore missed under full repair too.
+        Locked EV trips keep sessions the bare chain cannot see, so the chain
+        restarts after them instead of guessing.  Any unexpected error text
+        means "uncertain" and the candidate goes to full repair unchanged.
+        """
+
+        instance = self.context.bundle.instance
+        prices = self.context.bundle.prices
+        origin = instance.node_lookup[duty.home_depot_id]
+        origin_floor = float(origin.ready_time) + float(origin.service_time)
+        previous_return: float | None = None
+        for trip in sorted(duty.trips, key=lambda item: int(item.trip_index)):
+            if (
+                duty.vehicle_type == "ev"
+                and trip.trip_index in duty.locked_charging_trip_indices
+            ):
+                previous_return = None
+                continue
+            sequence = (
+                duty.home_depot_id,
+                *trip.effective_route_visits,
+                duty.home_depot_id,
+            )
+            forced = (
+                None
+                if previous_return is None
+                else max(origin_floor, float(previous_return))
+            )
+            if previous_return is not None:
+                charge_seconds = self._between_trip_charge_seconds(
+                    duty,
+                    sequence,
+                )
+                if charge_seconds is not None:
+                    forced = max(
+                        float(forced),
+                        float(previous_return) + charge_seconds,
+                    )
+                    self.chain_charge_bound_applied += 1
+            key = (duty.vehicle_type, duty.home_depot_id, forced, sequence)
+            cached = self._chain_cache.get(key)
+            if cached is None and key not in self._chain_cache:
+                self.chain_cache_misses += 1
+                try:
+                    timing = route_timing(
+                        Route(
+                            vehicle_id=duty.route_id(trip.trip_index),
+                            vehicle_type=duty.vehicle_type,
+                            home_depot_id=duty.home_depot_id,
+                            node_sequence=list(sequence),
+                        ),
+                        instance,
+                        prices,
+                        charging_actions=[],
+                        validate_battery=False,
+                        forced_departure_second=forced,
+                    )
+                except ValueError as exc:
+                    message = str(exc)
+                    if " has no feasible departure time" in message:
+                        cached = (PRESCREEN_CHAIN_NO_DEPARTURE, message)
+                    elif " misses " in message and "'s time window" in message:
+                        cached = (PRESCREEN_CHAIN_TIME_WINDOW, message)
+                    else:
+                        cached = (PRESCREEN_UNCERTAIN, message)
+                else:
+                    cached = float(timing.return_second)
+                self._chain_cache[key] = cached
+            else:
+                self.chain_cache_hits += 1
+            if isinstance(cached, tuple):
+                return cached
+            previous_return = float(cached)
         return None
 
     def _screen_trip(
@@ -281,13 +498,16 @@ class ChargingFeasibilityPrescreen:
         self.route_cache_misses += 1
         failure: tuple[str, str] | None = None
         try:
-            route_timing(
+            timing = route_timing(
                 route,
                 self.context.bundle.instance,
                 self.context.bundle.prices,
                 charging_actions=[],
                 validate_battery=False,
             )
+            self._trip_energy_cache[
+                (duty.vehicle_type, duty.home_depot_id, tuple(route.node_sequence))
+            ] = float(timing.drive_energy_kwh)
         except ValueError as exc:
             message = str(exc)
             if " has no feasible departure time" in message:
@@ -318,6 +538,11 @@ class ChargingFeasibilityPrescreen:
                 0.0 if checked == 0 else float(rejected) / float(checked)
             ),
             "entered_full_repair": int(passed),
+            "route_cache_hits": int(self.route_cache_hits),
+            "route_cache_misses": int(self.route_cache_misses),
+            "chain_cache_hits": int(self.chain_cache_hits),
+            "chain_cache_misses": int(self.chain_cache_misses),
+            "chain_charge_bound_applied": int(self.chain_charge_bound_applied),
             "by_channel": {
                 channel: {
                     "eligible_candidates": int(
@@ -336,6 +561,8 @@ class ChargingFeasibilityPrescreen:
                         for reason in (
                             PRESCREEN_TIME_WINDOW,
                             PRESCREEN_NO_DEPARTURE,
+                            PRESCREEN_CHAIN_TIME_WINDOW,
+                            PRESCREEN_CHAIN_NO_DEPARTURE,
                         )
                     },
                 }
@@ -361,6 +588,18 @@ class ChargingRepairPolicy:
     ] | None
     first_trip_prev_night_enabled: bool = False
     frvcpy_enabled: bool = False
+    first_trip_window: str = FIRST_TRIP_WINDOW_SAME_DAY
+
+    def __post_init__(self) -> None:
+        validate_first_trip_window(self.first_trip_window)
+
+
+def _first_trip_dual_window_enabled(policy: ChargingRepairPolicy) -> bool:
+    """True when the first trip may also charge on the preceding day."""
+
+    return bool(policy.first_trip_prev_night_enabled) or (
+        policy.first_trip_window == FIRST_TRIP_WINDOW_PREV_RETURN
+    )
 
 
 def _route_repair_window_modes(
@@ -370,7 +609,7 @@ def _route_repair_window_modes(
 ) -> tuple[str, ...]:
     """Expose the preceding-day alternative only for an unlocked first trip."""
 
-    if policy.first_trip_prev_night_enabled and trip == duty.trips[0]:
+    if _first_trip_dual_window_enabled(policy) and trip == duty.trips[0]:
         return ("same_day_predeparture", "prev_night")
     return ("same_day_predeparture",)
 
@@ -441,9 +680,9 @@ class ChargingRepairCache:
 
     context: DutyEvaluationContext
     policy: ChargingRepairPolicy
-    repaired: dict[
-        tuple[PhysicalVehicleDuty, PhysicalVehicleDuty], PhysicalVehicleDuty
-    ] = field(default_factory=dict)
+    repaired: dict[tuple[object, ...], PhysicalVehicleDuty] = field(
+        default_factory=dict
+    )
     hits: int = 0
     misses: int = 0
 
@@ -459,7 +698,10 @@ class ChargingRepairCache:
             raise ValueError(
                 "charging repair cache was reused with another context or policy"
             )
-        key = (reference, candidate)
+        key = tuple(
+            (duty.physical_vehicle_id, tuple(trip.customer_ids for trip in duty.trips), duty.charging_sessions)
+            for duty in (reference, candidate)
+        )
         cached = self.repaired.get(key)
         if cached is not None:
             self.hits += 1
@@ -471,6 +713,8 @@ class ChargingRepairCache:
             context=context,
             policy=policy,
         )
+        if len(self.repaired) >= CHARGING_REPAIR_CACHE_MAX_ENTRIES:
+            self.repaired.clear()
         self.repaired[key] = result
         return result
 
@@ -893,7 +1137,7 @@ def build_dynamic_ev_duty_charging_candidates(
     ):
         return
     bundle = context.bundle
-    node_lookup = {node.node_id: node for node in bundle.instance.nodes}
+    node_lookup = bundle.instance.node_lookup
     trigger = float(context.dynamic_state.cut.trigger_second)
     amount_strategies = tuple(
         dict.fromkeys(
@@ -1026,7 +1270,7 @@ def _repair_one_ev_duty_candidates(
             return
         return
     bundle = context.bundle
-    node_lookup = {node.node_id: node for node in bundle.instance.nodes}
+    node_lookup = bundle.instance.node_lookup
     reference_sessions_by_trip: dict[int, list[DutyChargingSession]] = {}
     for session in reference.charging_sessions:
         reference_sessions_by_trip.setdefault(
@@ -1212,14 +1456,20 @@ def _static_timing_variants(
         duties=(duty,),
         source="charging-timing-candidates",
     ).to_solution()
+    trip_index_by_route_id = {duty.route_id(trip.trip_index): int(trip.trip_index) for trip in duty.trips}
     route_by_trip = {
-        int(route.vehicle_id.rsplit("#T", 1)[1]): route
+        trip_index_by_route_id[route.vehicle_id]: route
         for route in solution.routes
     }
     actions_by_trip: dict[int, list[ChargingAction]] = {}
     for action in solution.charging_actions:
-        trip_index = int(action.vehicle_id.rsplit("#T", 1)[1])
+        trip_index = trip_index_by_route_id[action.vehicle_id]
         actions_by_trip.setdefault(trip_index, []).append(action)
+    # 2026-09-05 (A6): the shift's closing instant, so a candidate clock may
+    # not push a trip's return past the end of its own shift.
+    shift_ceilings = (
+        _shift_maximum_return_second_by_route(solution, context) or {}
+    )
     start_options: list[tuple[int, tuple[float, ...]]] = []
     previous_return: float | None = None
     for trip in duty.trips:
@@ -1265,12 +1515,14 @@ def _static_timing_variants(
             duration = float(action.occupancy_minutes) * 60.0
             earliest = 0.0 if previous_return is None else previous_return
             latest = (
-                float(
-                    route_departure_second(
-                        route,
-                        context.bundle.instance,
-                        context.bundle.prices,
-                    )
+                _latest_trip_departure_second(
+                    timing,
+                    route,
+                    context.bundle.instance,
+                    context.bundle.prices,
+                    shift_return_ceiling_second=shift_ceilings.get(
+                        route.vehicle_id
+                    ),
                 )
                 - duration
             )
@@ -1301,6 +1553,84 @@ def _static_timing_variants(
         except (TypeError, ValueError):
             continue
         yield candidate
+
+
+def _shift_maximum_return_second_by_route(
+    solution,
+    context: DutyEvaluationContext,
+) -> dict[str, float] | None:
+    """Shift END per single-shift route: the mirror of the departure floor.
+
+    2026-09-05 (A6): ``_shift_minimum_departure_second_by_route`` gave the
+    charging repair the shift's opening instant but never its closing one, so
+    a depot charge could be pushed so late that the trip returned after its
+    own shift had ended.  Structurally identical to that function (same
+    single-shift guard, same contract) with ``[0]`` replaced by ``[1]``:
+    a trip spanning more than one shift gets no ceiling, exactly as it gets
+    no floor.
+    """
+
+    # `_static_timing_variants` is a new reader of this flag, so contexts that
+    # never needed it before (minimal stubs) may not carry it; the default
+    # mirrors `DutyEvaluationContext.shift_aware_departure_enabled = False`.
+    if not getattr(context, "shift_aware_departure_enabled", False):
+        return None
+    contract = context.rebuilt_route_constraints
+    if contract is None:
+        raise ValueError("shift-aware departure has no shift contract")
+    ceiling_by_route: dict[str, float] = {}
+    for route in solution.routes:
+        shifts = {
+            str(contract.customer_shift_by_id[node_id])
+            for node_id in route.node_sequence[1:-1]
+            if node_id in contract.customer_shift_by_id
+        }
+        if len(shifts) == 1:
+            shift_id = next(iter(shifts))
+            ceiling_by_route[route.vehicle_id] = float(
+                contract.shift_window_second_by_id[shift_id][1]
+            )
+    return ceiling_by_route
+
+
+def _latest_trip_departure_second(
+    timing,
+    route,
+    instance,
+    prices,
+    *,
+    shift_return_ceiling_second: float | None = None,
+) -> float:
+    """Latest depot departure a pre-departure depot charge may end at.
+
+    2026-09-03 (model alignment): the paper only requires t_ce <= tau at the
+    origin depot and lets the trip wait ("趟间间隔包括必要等待及相应充电时
+    间"), so the charge may run until the latest departure that still meets
+    every customer deadline (``route_timing`` backward recursion).  Falls
+    back to the natural departure when the timing carries no latest
+    departure (forced clocks, public-station actions).
+
+    2026-09-05 (A6): the customer-deadline recursion says nothing about the
+    vehicle being back before its SHIFT closes, so ``shift_return_ceiling_
+    second`` narrows the window by that constraint too.  ``route_timing``
+    sets ``earliest_departure = depart`` and returns at
+    ``max(preferred, d) + span``, so ``d <= ceiling - span`` is exactly
+    "this trip returns inside its shift".  When d >= preferred the bound is
+    exact; when the latest departure precedes the preferred one the measured
+    span exceeds the minimal one and the bound is merely conservative.
+    """
+
+    latest = getattr(timing, "latest_departure_second", None)
+    if latest is None:
+        latest = float(route_departure_second(route, instance, prices))
+    if shift_return_ceiling_second is not None:
+        span = float(timing.return_second) - float(
+            timing.earliest_departure_second
+        )
+        latest = min(
+            float(latest), float(shift_return_ceiling_second) - span
+        )
+    return float(latest)
 
 
 def _coordinate_timing_variants(
@@ -1345,12 +1675,13 @@ def _repair_one_ev_duty(
         )
 
     bundle = context.bundle
-    node_lookup = {node.node_id: node for node in bundle.instance.nodes}
+    node_lookup = bundle.instance.node_lookup
     reference_sessions_by_trip: dict[int, list[DutyChargingSession]] = {}
     for session in reference.charging_sessions:
         reference_sessions_by_trip.setdefault(
             int(session.trip_index), []
         ).append(session)
+    reference_trip_by_index = {int(trip.trip_index): trip for trip in reference.trips}
     locked_trip_indices = reference.locked_charging_trip_indices
     for trip_index in locked_trip_indices:
         sessions = reference_sessions_by_trip.get(trip_index, [])
@@ -1366,13 +1697,15 @@ def _repair_one_ev_duty(
     # the approved first-trip or inter-trip calendar window.
     for trip in duty.trips:
         temporary_id = duty.route_id(trip.trip_index)
+        reference_trip = reference_trip_by_index.get(int(trip.trip_index))
+        reuse_reference = int(trip.trip_index) not in locked_trip_indices and reference_trip is not None and trip.customer_ids == reference_trip.customer_ids
         route = Route(
             vehicle_id=temporary_id,
             vehicle_type="ev",
             home_depot_id=duty.home_depot_id,
             node_sequence=[
                 duty.home_depot_id,
-                *trip.effective_route_visits,
+                *(reference_trip.effective_route_visits if reuse_reference else trip.effective_route_visits),
                 duty.home_depot_id,
             ],
         )
@@ -1381,6 +1714,13 @@ def _repair_one_ev_duty(
             actions.extend(
                 _session_to_action(session, temporary_id)
                 for session in reference_sessions_by_trip[trip.trip_index]
+            )
+            continue
+        if reuse_reference:
+            routes.append(route)
+            actions.extend(
+                _session_to_action(session, temporary_id)
+                for session in reference_sessions_by_trip.get(int(trip.trip_index), ())
             )
             continue
         repair_error: TypeError | ValueError | None = None
@@ -1455,7 +1795,7 @@ def _repair_one_ev_duty_with_frvcpy(
     """Use frvcpy for sites/amounts and existing code for charging clocks."""
 
     bundle = context.bundle
-    node_lookup = {node.node_id: node for node in bundle.instance.nodes}
+    node_lookup = bundle.instance.node_lookup
     reference_sessions_by_trip: dict[int, list[DutyChargingSession]] = {}
     for session in reference.charging_sessions:
         reference_sessions_by_trip.setdefault(
@@ -1723,10 +2063,12 @@ def _rebuild_ev_duty(
     """Close one route-option combination on the exact whole-day ledger."""
 
     bundle = context.bundle
-    node_lookup = {node.node_id: node for node in bundle.instance.nodes}
+    node_lookup = bundle.instance.node_lookup
+    trip_index_by_route_id = {duty.route_id(trip.trip_index): int(trip.trip_index) for trip in duty.trips}
     anchored = _anchor_duty_depot_actions(
         routes,
         actions,
+        trip_index_by_route_id=trip_index_by_route_id,
         locked_trip_indices=locked_trip_indices,
         context=context,
         policy=policy,
@@ -1741,6 +2083,14 @@ def _rebuild_ev_duty(
             _shift_minimum_departure_second_by_route(solution, context)
         ),
     )
+    # One-duty certificate audit: an invalid rebuilt ledger must reject the
+    # candidate here (ChargingRepairFailure), not crash the final evaluation.
+    validate_multitrip_certificate(
+        _certificate,
+        list(prepared.routes),
+        bundle.prices,
+        instance=bundle.instance,
+    )
     physical_ids = {
         physical_vehicle_id(route.vehicle_id) for route in prepared.routes
     }
@@ -1750,13 +2100,13 @@ def _rebuild_ev_duty(
         )
     prepared_routes = sorted(
         prepared.routes,
-        key=lambda route: int(route.vehicle_id.rsplit("#T", 1)[1]),
+        key=lambda route: trip_index_by_route_id[route.vehicle_id],
     )
     if len(prepared_routes) != len(duty.trips):
         raise ValueError("charging repair changed the number of duty trips")
     rebuilt_trips: list[DutyTrip] = []
     for expected, route in zip(duty.trips, prepared_routes, strict=True):
-        trip_index = int(route.vehicle_id.rsplit("#T", 1)[1])
+        trip_index = trip_index_by_route_id[route.vehicle_id]
         if trip_index != int(expected.trip_index):
             raise ValueError("charging repair reordered the duty trip chain")
         customers = tuple(
@@ -1778,7 +2128,7 @@ def _rebuild_ev_duty(
     rebuilt_sessions = tuple(
         sorted(
             (
-                _action_to_session(action, reference)
+                _action_to_session(action, trip_index_by_route_id[action.vehicle_id], reference)
                 for action in prepared.charging_actions
             ),
             key=lambda session: (
@@ -1799,22 +2149,124 @@ def _rebuild_ev_duty(
     return rebuilt
 
 
+def _last_shift_end_second(context: DutyEvaluationContext) -> float:
+    """The closing instant of the day's last shift (this instance: 19:00).
+
+    2026-09-06: the registered fallback for "when did this vehicle come back
+    last night" when the duty has a single trip, or when the chained pass that
+    measures the actual last return could not be completed.  The shift
+    contract is the only route-independent statement of when the working day
+    ends, so it is the only admissible fallback.
+    """
+
+    contract = context.rebuilt_route_constraints
+    if contract is None:
+        raise ValueError(
+            "the previous-return first-trip window needs the shift contract "
+            "to fall back on the day's last shift end"
+        )
+    windows = contract.shift_window_second_by_id
+    if not windows:
+        raise ValueError("the shift contract registers no shift window")
+    return float(max(float(window[1]) for window in windows.values()))
+
+
+def _previous_night_return_local_second(
+    routes: list[Route],
+    actions: list[ChargingAction],
+    *,
+    trip_index_by_route_id: Mapping[str, int],
+    locked_trip_indices: frozenset[int],
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+) -> float:
+    """When this vehicle was back at the depot on the preceding evening.
+
+    The schedule is one repeating working day, so "last night's return" is the
+    duty's own last-trip return read on the previous day.  That return is only
+    known after the whole chain has been anchored, so it is measured by one
+    extra anchoring pass under the historical same-day window; if that pass
+    fails, or the duty has a single trip, the day's last shift end is used.
+    """
+
+    if len(routes) > 1:
+        try:
+            _anchored, last_return = _anchor_duty_depot_actions_once(
+                routes,
+                actions,
+                trip_index_by_route_id=trip_index_by_route_id,
+                locked_trip_indices=locked_trip_indices,
+                context=context,
+                policy=replace(
+                    policy,
+                    first_trip_window=FIRST_TRIP_WINDOW_SAME_DAY,
+                    first_trip_prev_night_enabled=False,
+                ),
+                first_trip_prev_night_earliest_local=None,
+            )
+        except (TypeError, ValueError):
+            last_return = None
+        if last_return is not None:
+            return float(last_return) % STATIC_PREHORIZON_SECONDS
+    return float(_last_shift_end_second(context)) % STATIC_PREHORIZON_SECONDS
+
+
 def _anchor_duty_depot_actions(
     routes: list[Route],
     actions: list[ChargingAction],
     *,
+    trip_index_by_route_id: Mapping[str, int],
     locked_trip_indices: frozenset[int],
     context: DutyEvaluationContext,
     policy: ChargingRepairPolicy,
 ) -> list[ChargingAction]:
     """Rebase provisional route actions onto one continuous vehicle ledger."""
 
+    earliest_local: float | None = None
+    if _first_trip_dual_window_enabled(policy):
+        earliest_local = (
+            _previous_night_return_local_second(
+                routes,
+                actions,
+                trip_index_by_route_id=trip_index_by_route_id,
+                locked_trip_indices=locked_trip_indices,
+                context=context,
+                policy=policy,
+            )
+            if policy.first_trip_window == FIRST_TRIP_WINDOW_PREV_RETURN
+            # Historical dual window: the preceding day opens at its own 00:00.
+            else 0.0
+        )
+    anchored, _last_return = _anchor_duty_depot_actions_once(
+        routes,
+        actions,
+        trip_index_by_route_id=trip_index_by_route_id,
+        locked_trip_indices=locked_trip_indices,
+        context=context,
+        policy=policy,
+        first_trip_prev_night_earliest_local=earliest_local,
+    )
+    return anchored
+
+
+def _anchor_duty_depot_actions_once(
+    routes: list[Route],
+    actions: list[ChargingAction],
+    *,
+    trip_index_by_route_id: Mapping[str, int],
+    locked_trip_indices: frozenset[int],
+    context: DutyEvaluationContext,
+    policy: ChargingRepairPolicy,
+    first_trip_prev_night_earliest_local: float | None,
+) -> tuple[list[ChargingAction], float | None]:
+    """One anchoring pass; also reports the duty's final return instant."""
+
     instance = context.bundle.instance
     prices = context.bundle.prices
     inherited = float(prices.initial_ev_battery_kwh)
     ordered_routes = sorted(
         routes,
-        key=lambda route: int(route.vehicle_id.rsplit("#T", 1)[1]),
+        key=lambda route: trip_index_by_route_id[route.vehicle_id],
     )
     by_route: dict[str, list[ChargingAction]] = {
         route.vehicle_id: [
@@ -1827,9 +2279,35 @@ def _anchor_duty_depot_actions(
     anchored: list[ChargingAction] = []
     previous_end = inherited
     previous_return: float | None = None
-
+    timings = {
+        route.vehicle_id: route_timing(
+            route,
+            instance,
+            prices,
+            charging_actions=by_route[route.vehicle_id],
+            validate_battery=False,
+        )
+        for route in ordered_routes
+    }
+    # Departure floors the chain ledger applies (multitrip_schedule: shift
+    # start, previous return, charge end); the repair re-times every trip
+    # with the same floors so each window opens at the trip's actual return.
+    shift_floors = (
+        _shift_minimum_departure_second_by_route(
+            SimpleNamespace(routes=ordered_routes), context
+        )
+        or {}
+    )
+    # 2026-09-05 (A6): the matching ceiling -- the shift's closing instant --
+    # so a depot charge cannot be deferred past the trip's own shift end.
+    shift_ceilings = (
+        _shift_maximum_return_second_by_route(
+            SimpleNamespace(routes=ordered_routes), context
+        )
+        or {}
+    )
     for position, route in enumerate(ordered_routes):
-        trip_index = int(route.vehicle_id.rsplit("#T", 1)[1])
+        trip_index = trip_index_by_route_id[route.vehicle_id]
         route_actions = by_route[route.vehicle_id]
         depot_actions = [
             action
@@ -1844,13 +2322,7 @@ def _anchor_duty_depot_actions(
         if len(depot_actions) > 1:
             raise ValueError("one duty trip has multiple depot charge actions")
 
-        timing = route_timing(
-            route,
-            instance,
-            prices,
-            charging_actions=route_actions,
-            validate_battery=False,
-        )
+        timing = timings[route.vehicle_id]
         depot_action = depot_actions[0] if depot_actions else None
         if trip_index in locked_trip_indices:
             selected_depot = depot_action
@@ -1893,28 +2365,46 @@ def _anchor_duty_depot_actions(
                     instance=instance,
                 )
                 duration = float(selected_depot.occupancy_minutes) * 60.0
-                if position == 0 and policy.first_trip_prev_night_enabled:
+                if (
+                    position == 0
+                    and first_trip_prev_night_earliest_local is not None
+                ):
+                    # 2026-09-06: both halves of the merged window now end at
+                    # the same terminus the single-window branch below uses --
+                    # the latest departure that still meets every customer
+                    # deadline AND returns inside the trip's own shift -- and
+                    # the preceding-day half opens at
+                    # ``first_trip_prev_night_earliest_local`` (00:00 under the
+                    # historical rule, last night's depot return under
+                    # ``prev_return``).
+                    same_day_latest = (
+                        _latest_trip_departure_second(
+                            timing,
+                            route,
+                            instance,
+                            prices,
+                            shift_return_ceiling_second=(
+                                shift_ceilings.get(route.vehicle_id)
+                            ),
+                        )
+                        - duration
+                    )
+                    prev_night_earliest = (
+                        -STATIC_PREHORIZON_SECONDS
+                        + float(first_trip_prev_night_earliest_local)
+                    )
                     windows: list[tuple[str, float, float]] = []
-                    for mode in ("same_day_predeparture", "prev_night"):
-                        local_earliest, local_latest, day_offset = (
-                            certified_depot_charge_window(
-                                route,
-                                instance,
-                                prices,
-                                occupancy_seconds=duration,
-                                mode=mode,
-                                charging_actions=route_actions,
-                            )
-                        )
-                        day_start = (
-                            float(day_offset) * STATIC_PREHORIZON_SECONDS
-                        )
+                    if prev_night_earliest <= -duration + 1e-9:
                         windows.append(
-                            (
-                                mode,
-                                day_start + float(local_earliest),
-                                day_start + float(local_latest),
-                            )
+                            ("prev_night", prev_night_earliest, -duration)
+                        )
+                    if same_day_latest >= -1e-9:
+                        windows.append(
+                            ("same_day_predeparture", 0.0, same_day_latest)
+                        )
+                    if not windows:
+                        raise ValueError(
+                            "no feasible first-trip depot charging window"
                         )
                     start, offset = _select_depot_charge_start_from_windows(
                         selected_depot,
@@ -1926,7 +2416,15 @@ def _anchor_duty_depot_actions(
                     if policy.depot_charge_window_mode == "same_day_predeparture":
                         earliest = 0.0
                         latest = (
-                            float(route_departure_second(route, instance, prices))
+                            _latest_trip_departure_second(
+                                timing,
+                                route,
+                                instance,
+                                prices,
+                                shift_return_ceiling_second=(
+                                    shift_ceilings.get(route.vehicle_id)
+                                ),
+                            )
                             - duration
                         )
                         mode = "same_day_predeparture"
@@ -1939,12 +2437,21 @@ def _anchor_duty_depot_actions(
                         raise AssertionError("missing preceding trip return")
                     earliest = previous_return
                     latest = (
-                        float(route_departure_second(route, instance, prices))
+                        _latest_trip_departure_second(
+                            timing,
+                            route,
+                            instance,
+                            prices,
+                            shift_return_ceiling_second=(
+                                shift_ceilings.get(route.vehicle_id)
+                            ),
+                        )
                         - duration
                     )
                     mode = "full_gap"
                 if not (
-                    position == 0 and policy.first_trip_prev_night_enabled
+                    position == 0
+                    and first_trip_prev_night_earliest_local is not None
                 ):
                     start, offset = select_certified_depot_charge_start(
                         selected_depot,
@@ -1970,6 +2477,39 @@ def _anchor_duty_depot_actions(
 
         if selected_depot is not None:
             anchored.append(selected_depot)
+        # Model alignment (2026-09-03): the trip departs no earlier than the
+        # shift start, the previous return and the end of its own depot
+        # charge, exactly as the chain ledger forces it; re-time it so the
+        # next window opens at the trip's actual return.
+        charge_end = (
+            float(selected_depot.charge_start_second)
+            + float(selected_depot.occupancy_minutes) * 60.0
+            if selected_depot is not None
+            and int(selected_depot.charge_day_offset) == 0
+            else None
+        )
+        floors = [
+            value
+            for value in (
+                shift_floors.get(route.vehicle_id),
+                previous_return,
+                charge_end,
+            )
+            if value is not None
+        ]
+        if floors:
+            timing = route_timing(
+                route,
+                instance,
+                prices,
+                charging_actions=[
+                    *public_actions,
+                    *([] if selected_depot is None else [selected_depot]),
+                ],
+                validate_battery=False,
+                forced_departure_second=(max(floors) if position > 0 else None),
+                minimum_departure_second=(max(floors) if position == 0 else None),
+            )
         anchored.extend(public_actions)
         previous_end = (
             departure_energy
@@ -1980,7 +2520,7 @@ def _anchor_duty_depot_actions(
             raise ValueError("continuous duty battery falls below zero")
         previous_return = float(timing.return_second)
 
-    return anchored
+    return anchored, previous_return
 
 
 def _verify_prepared_ledger(
@@ -2034,9 +2574,9 @@ def _session_to_action(
 
 def _action_to_session(
     action: ChargingAction,
+    trip_index: int,
     reference: PhysicalVehicleDuty,
 ) -> DutyChargingSession:
-    trip_index = int(action.vehicle_id.rsplit("#T", 1)[1])
     key = _action_value_key(action, trip_index)
     locked = any(
         session.locked and _session_value_key(session) == key

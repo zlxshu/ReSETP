@@ -145,7 +145,11 @@ class SelfAdaptivePenalty:
             if self.f_hat_up <= self.f_hat_down
             else self.f_hat_up
         )
-        self.scaling_factor = (f_round - denominator) / denominator
+        # An idle reference (no vehicle used) has objective 0; the kernel-
+        # native search seeds from it under fleet overrides (2026-09-03).
+        self.scaling_factor = (
+            (f_round - denominator) / denominator if denominator != 0.0 else 0.0
+        )
         if self.f_hat_up == f_round:
             self.scaling_factor = 0.0
         self.revision += 1
@@ -187,6 +191,30 @@ def constraint_vector(evaluation: FullEvaluation) -> tuple[float, ...]:
     return tuple(vector)
 
 
+_NEIGHBOUR_SIGNATURE_CACHE_MAX_ENTRIES = 2048
+_neighbour_signature_cache: dict[str, tuple[tuple[str, str, str], ...]] = {}
+
+
+def _cached_duty_neighbours(
+    individual: DutyIndividual,
+) -> tuple[tuple[str, str, str], ...]:
+    """Memoise the neighbour signature by fingerprint.
+
+    ``ExternalPopulation.add`` compares the newcomer with every member, so the
+    same individual's signature was rebuilt dozens of times per iteration
+    (2026-09-02).  The signature is a pure function of the individual.
+    """
+
+    key = individual.fingerprint
+    cached = _neighbour_signature_cache.get(key)
+    if cached is None:
+        if len(_neighbour_signature_cache) >= _NEIGHBOUR_SIGNATURE_CACHE_MAX_ENTRIES:
+            _neighbour_signature_cache.clear()
+        cached = _duty_neighbours(individual)
+        _neighbour_signature_cache[key] = cached
+    return cached
+
+
 def broken_pairs_distance(
     left: DutyIndividual,
     right: DutyIndividual,
@@ -194,8 +222,8 @@ def broken_pairs_distance(
     """Vidal broken-pairs distance over one complete discrete Duty assignment."""
 
     return _neighbour_distance(
-        _duty_neighbours(left),
-        _duty_neighbours(right),
+        _cached_duty_neighbours(left),
+        _cached_duty_neighbours(right),
     )
 
 

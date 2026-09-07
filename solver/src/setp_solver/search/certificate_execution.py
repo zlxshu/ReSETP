@@ -209,7 +209,7 @@ def _replay_trip(
     prices: PriceParameters | dict[str, float] | object,
     charging_actions: list[ChargingAction],
 ) -> TripExecution:
-    nodes = {node.node_id: node for node in instance.nodes}
+    nodes = instance.node_lookup
     unknown = [node_id for node_id in route.node_sequence if node_id not in nodes]
     if unknown:
         raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {route.vehicle_id} has unknown nodes {unknown}")
@@ -324,7 +324,7 @@ def _validated_trip_energy(
             raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: CV route {route.vehicle_id} has an EV ledger")
         return 0.0
 
-    nodes = {node.node_id: node for node in instance.nodes}
+    nodes = instance.node_lookup
     loads = _arc_loads(route.node_sequence, nodes)
     drive_energy = sum(
         ev_instance_arc_energy_kwh(
@@ -336,12 +336,11 @@ def _validated_trip_energy(
         )
         for index, (from_id, to_id) in enumerate(zip(route.node_sequence, route.node_sequence[1:]))
     )
-    node_lookup = {node.node_id: node for node in instance.nodes}
     public_energy = sum(
         float(action.energy_kwh)
         for action in charging_actions
-        if action.station_id in node_lookup
-        and node_lookup[action.station_id].node_type.lower() == "f"
+        if action.station_id in nodes
+        and nodes[action.station_id].node_type.lower() == "f"
     )
     if (
         abs(public_energy - float(trip.in_route_charge_energy_kwh))
@@ -450,7 +449,16 @@ def _validate_charging_ledger(
                 expected_action_start_energy = initial_battery
                 expected_start = None
                 expected_end = float(trip.departure_second)
-                expected_day_offset = int(certificate.first_trip_charge_day_offset)
+                # 2026-09-06: each duty's own first-trip charge day, not
+                # the plan-wide scalar -- under the ``prev_return``
+                # window two vehicles of one plan legitimately charge on
+                # different days.  Falls back to the scalar for a
+                # certificate that carries no per-duty map.
+                expected_day_offset = (
+                    certificate.first_trip_charge_day_offset_for(
+                        trip.route_id
+                    )
+                )
             else:
                 previous = ordered[index - 1]
                 expected_energy = float(previous.charge_energy_kwh or 0.0)
@@ -546,7 +554,7 @@ def _validate_public_charging_ledger(
     instance: Instance,
     prices: PriceParameters | dict[str, float] | object,
 ) -> None:
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     by_station: dict[str, list[ChargingAction]] = {}
     for action in actions:
         station = node_lookup.get(action.station_id)

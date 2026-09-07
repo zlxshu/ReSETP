@@ -246,6 +246,22 @@ class DynamicInsertionOperator:
                     reason,
                 )
                 return None
+            # A feasible insertion may still have rescheduled a locked prefix
+            # (for example resizing a committed recharge on the shared
+            # vehicle).  Rejecting only that candidate keeps the operator
+            # searching; the post-selection guard below stays as a backstop.
+            if committed_before != _committed_snapshot(
+                evaluator,
+                evaluation=evaluation,
+            ):
+                reason = "candidate disturbed committed history"
+                record(
+                    candidate_id,
+                    scope,
+                    _candidate_rejection_status(reason),
+                    reason,
+                )
+                return None
             record(
                 candidate_id,
                 scope,

@@ -293,7 +293,7 @@ def subset_c8_bundle(
     """Build one stage bundle after applying every event revealed so far."""
 
     active = set(map(str, active_customer_ids))
-    nodes = {node.node_id: node for node in bundle.instance.nodes}
+    nodes = dict(bundle.instance.node_lookup)
     for event in events:
         node = nodes[event.customer_id]
         if event.event_type == "demand_change":
@@ -339,6 +339,11 @@ def extend_route_contract(
             continue
         shifts[event.customer_id] = shifts[event.source_customer_id]
         volumes[event.customer_id] = volumes[event.source_customer_id]
+    # A rolling stage carries only customers that still need service; the
+    # stage bundle drops the rest, and the context validator requires the
+    # contract's customer set to match the stage bundle exactly.
+    shifts = {cid: value for cid, value in shifts.items() if cid in active}
+    volumes = {cid: value for cid, value in volumes.items() if cid in active}
     return replace(
         contract,
         source_id=f"{contract.source_id}+paper-mixed-events",

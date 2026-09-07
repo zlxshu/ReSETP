@@ -1,0 +1,290 @@
+\documentclass[tikz,border=5pt]{standalone}
+\usepackage[UTF8,fontset=none]{ctex}
+\setCJKmainfont{Songti SC}
+\setmainfont{Times New Roman}
+\xeCJKsetup{CJKglue=\hskip 0pt}
+\usetikzlibrary{arrows.meta,calc,shapes.geometric}
+
+\begin{document}
+\begin{tikzpicture}[
+  x=1cm,
+  y=1cm,
+  every node/.style={
+    font=\fontsize{8pt}{9.6pt}\selectfont,
+    align=center,
+    anchor=center,
+    text=black,
+    fill=none,
+    outer sep=0pt
+  },
+  process/.style={
+    rectangle,
+    draw=black,
+    line width=0.5pt,
+    minimum height=0.82cm,
+    inner xsep=2mm,
+    inner ysep=1.4mm
+  },
+  multiline/.style={
+    process,
+    inner ysep=1.6mm
+  },
+  decision/.style={
+    diamond,
+    draw=black,
+    line width=0.5pt,
+    aspect=1.05,
+    inner xsep=0.8mm,
+    inner ysep=0.8mm
+  },
+  stopdecision/.style={
+    decision,
+    aspect=1.90,
+    inner xsep=0.8mm,
+    inner ysep=0.8mm
+  },
+  phase/.style={
+    draw=none,
+    anchor=west,
+    font=\fontsize{8pt}{9.6pt}\selectfont\bfseries,
+    inner sep=0pt
+  },
+  feature/.style={
+    multiline,
+    draw=black!65,
+    dashed
+  },
+  stageborder/.style={
+    draw=black!45,
+    dash pattern=on 3.2mm off 1.6mm,
+    line width=0.5pt,
+    line join=miter
+  },
+  flowline/.style={
+    draw=black,
+    line width=0.5pt,
+    line join=miter
+  },
+  flow/.style={
+    -{Stealth[length=1.7mm,width=1.2mm,fill=black]},
+    flowline,
+    shorten >=0.9mm,
+    shorten <=1.0mm
+  },
+  auxiliary/.style={
+    -{Stealth[length=1.7mm,width=1.2mm,fill=black!55]},
+    draw=black!55,
+    dashed,
+    line width=0.5pt,
+    line join=miter,
+    shorten >=0.9mm,
+    shorten <=1.0mm
+  },
+  branchlabel/.style={
+    font=\fontsize{8pt}{9.6pt}\selectfont,
+    inner xsep=0.2mm,
+    inner ysep=0.1mm,
+    fill=none
+  },
+  celltext/.style={
+    draw=none,
+    inner sep=0pt
+  }
+]
+
+% Five semantic stage boundaries. Each cross-stage port is a real gap in the
+% dashed border, so no opaque text or white masking is needed.
+% Stage I: x=[0.00,15.55], y=[6.75,9.05]; top port x=12.20; bottom port x=2.10.
+\draw[stageborder] (0.00,6.75) -- (1.82,6.75);
+\draw[stageborder] (2.38,6.75) -- (15.55,6.75) -- (15.55,9.05)
+  -- (12.48,9.05);
+\draw[stageborder] (11.92,9.05) -- (0.00,9.05) -- (0.00,6.75);
+
+% Stage II: top port x=2.10; left return port y=5.15; right port y=5.15.
+\draw[stageborder] (0.00,4.25) -- (7.65,4.25) -- (7.65,4.87);
+\draw[stageborder] (7.65,5.43) -- (7.65,6.60) -- (2.38,6.60);
+\draw[stageborder] (1.82,6.60) -- (0.00,6.60) -- (0.00,5.43);
+\draw[stageborder] (0.00,4.87) -- (0.00,4.25);
+
+% Stage III: left port y=5.15; bottom port x=14.20.
+\draw[stageborder] (7.85,4.25) -- (13.92,4.25);
+\draw[stageborder] (14.48,4.25) -- (15.55,4.25) -- (15.55,6.60)
+  -- (7.85,6.60) -- (7.85,5.43);
+\draw[stageborder] (7.85,4.87) -- (7.85,4.25);
+
+% Stage IV occupies a full-width row.  Its lower edge has only the two
+% ports that are actually crossed: neighbourhood completion (x=4.00) and
+% the unrepaired-candidate stream (x=14.20).
+\draw[stageborder] (0.00,-2.35) -- (3.80,-2.35);
+\draw[stageborder] (4.20,-2.35) -- (14.00,-2.35);
+\draw[stageborder] (14.40,-2.35) -- (15.55,-2.35) -- (15.55,4.05)
+  -- (14.48,4.05);
+\draw[stageborder] (13.92,4.05) -- (0.00,4.05) -- (0.00,-2.35);
+
+% Stage V receives two distinct population-update streams at x=13.55 and
+% x=14.20.  The lower edge is deep enough to centre the stop-branch label
+% on its arrow rather than against the diamond or frame.
+\draw[stageborder] (0.00,-6.10) -- (5.42,-6.10);
+\draw[stageborder] (5.98,-6.10) -- (15.55,-6.10) -- (15.55,-2.65)
+  -- (14.40,-2.65);
+\draw[stageborder] (14.00,-2.65) -- (13.75,-2.65);
+\draw[stageborder] (13.35,-2.65) -- (0.00,-2.65) -- (0.00,-6.10);
+
+% Stage labels sit inside the frames, clear of borders and nodes.
+\node[phase] at (0.25,8.78)
+  {阶段 I\quad 问题状态构建与种群初始化};
+% Keep the Stage-II heading to the right of the x=2.10 entry lane so the
+% cross-stage arrow never enters the heading's reading envelope.
+\node[phase] at (2.65,6.33)
+  {阶段 II\quad 访问序列进化};
+\node[phase] at (8.10,6.33)
+  {阶段 III\quad 车辆任务链构造与评价};
+\node[phase] at (0.25,3.78)
+  {阶段 IV\quad 可行性判别与 MTC-HGS 问题特化改进};
+\node[phase] at (0.25,-2.95)
+  {阶段 V\quad 种群更新与终止};
+
+% External rolling-horizon trigger: it is not part of ordinary initialization.
+\node[feature,minimum width=5.00cm] (dynamic) at (12.20,9.82)
+  {动态事件：保留已执行任务与已发车路线\\
+   更新待服务客户并继承车辆状态};
+
+% Stage I: construct the decision state and initialize the two subpopulations.
+\node[multiline,minimum width=4.80cm] (state) at (12.20,7.55)
+  {读取客户、车场、车辆、分时电价与电网碳强度\\
+   构建第$m$次决策状态};
+\node[process,minimum width=3.35cm] (initial) at (6.45,7.55)
+  {生成覆盖全部待服务客户的\\访问序列候选};
+\node[process,minimum width=3.05cm] (subpops) at (2.10,7.55)
+  {完整评价并建立\\可行／不可行子种群};
+
+\draw[auxiliary] (dynamic.south) -- (state.north);
+\node[branchlabel,anchor=west] at
+  ($(dynamic.south)!0.5!(state.north)+(5.0mm,0)$) {事件触发};
+\draw[flow] (state.west) -- (initial.east);
+\draw[flow] (initial.west) -- (subpops.east);
+
+% Stages II and III: evolve an access sequence, then decode and evaluate it.
+\node[multiline,minimum width=2.75cm] (offspring) at (2.10,5.15)
+  {父代选择\\选择性路线交换\\生成路线子代};
+\node[multiline,minimum width=3.20cm,inner xsep=1.0mm] (route) at (5.85,5.15)
+  {五类路线邻域\\重定位、交换、反转\\路段重定位、尾段交换};
+\node[multiline,minimum width=3.40cm] (construct) at (10.05,5.15)
+  {\textbf{多趟任务链构造}\\按时序衔接配送趟\\生成基础充电安排};
+\node[multiline,minimum width=2.50cm] (evaluate) at (14.20,5.15)
+  {完整方案评价\\目标函数与\\全部约束};
+
+\draw[flow] (subpops.south) -- (offspring.north);
+\draw[flow] (offspring.east) -- (route.west);
+\draw[flow] (route.east) -- (construct.west);
+\draw[flow] (construct.east) -- (evaluate.west);
+
+% Stage IV entry: feasibility determines the admissible refinement path.
+\node[decision] (feasible) at (14.20,2.35)
+  {满足全部\\约束？};
+\draw[flow] (evaluate.south) -- (feasible.north);
+
+% The operator catalogue and the first-improvement control flow are separate:
+% one ordered candidate stream, one complete evaluation, and two explicit
+% decisions for acceptance and neighbourhood exhaustion.
+\node[multiline,minimum width=3.45cm,minimum height=2.95cm,
+      inner xsep=1.4mm,inner ysep=1.2mm] (operators) at (10.65,1.85)
+  {\textbf{MTC-HGS 特化邻域}\\
+   \textbf{候选序列}\\
+   跨车场配送趟交换\\
+   \textbf{M：}多趟结构调整\\
+   \textbf{T：}同车场燃油车与电动车\\完整任务链交换\\
+   \textbf{C：}按电价与碳强度调整\\充电时刻};
+\node[process,minimum width=2.10cm,inner xsep=1.0mm]
+  (candidate) at (6.90,2.00)
+  {取下一候选\\进行完整\\模型评价};
+\node[decision] (improves) at (4.00,2.00)
+  {可行且\\严格改善？};
+\node[process,minimum width=1.90cm,inner xsep=1.0mm]
+  (accept) at (1.15,2.00)
+  {接受候选\\邻域序列归零\\重新搜索};
+\node[multiline,minimum width=4.40cm,minimum height=1.05cm]
+  (continue) at (4.00,-0.45)
+  {未改善：继续评价下一候选\\邻域序列遍历完毕则结束本轮};
+
+\draw[flow] (feasible.west) -- (operators.east |- feasible);
+\node[branchlabel] at
+  ($(operators.east |- feasible)!0.5!(feasible.west)+(0,3.5mm)$) {是};
+\draw[flow] (operators.west |- candidate) -- (candidate.east);
+\draw[flow] (candidate.west) -- (improves.east);
+\draw[flow] (improves.west) -- (accept.east);
+\node[branchlabel] at
+  ($(accept.east)!0.5!(improves.west)+(0,3.5mm)$) {是};
+
+% Accepted candidates restart the sequence through a separate upper return.
+% Drawing this as one path removes both the former line crossing and splice gap.
+\coordinate (acceptreentry) at (8.20,2.75);
+\draw[flow] (accept.north) -- (1.15,3.38) -- (8.20,3.38)
+  -- (acceptreentry) -- (operators.west |- acceptreentry);
+
+\draw[flow] (improves.south) -- (continue.north);
+\node[branchlabel] at
+  ($(improves.south)!0.5!(continue.north)+(3.5mm,0)$) {否};
+\coordinate (continueentrylane) at (11.25,0.00);
+\draw[flow] (continue.east) -- (11.25,-0.45)
+  -- (operators.south -| continueentrylane);
+\node[branchlabel,anchor=north] at
+  ($(continue.east)!0.5!(11.25,-0.45)+(0,-2.0mm)$) {仍有候选};
+
+% Infeasible candidates are evaluated and probabilistically repaired.
+\node[process,minimum width=2.45cm] (violation) at (14.20,0.10)
+  {约束违反程度\\评价};
+\node[process,minimum width=2.20cm] (repair) at (14.20,-1.50)
+  {按概率修复\\重新完整评价};
+\draw[flow] (feasible.south) -- (violation.north);
+\node[branchlabel] at
+  ($(feasible.south)!0.5!(violation.north)+(3.5mm,0)$) {否};
+\draw[flow] (violation.south) -- (repair.north);
+\coordinate (repairentrylane) at (12.00,0.00);
+\draw[flow] (repair.west) -- (12.00,-1.50)
+  -- (operators.south -| repairentrylane);
+\node[branchlabel,anchor=west] at (12.30,-0.70) {修复可行};
+
+% Stage V receives the two semantically distinct Stage-IV exits through
+% aligned border gaps, then merges them only at the population update.
+\node[process,minimum width=2.00cm] (population) at (14.15,-4.20)
+  {更新相应\\子种群};
+\node[multiline,minimum width=3.50cm] (best) at (10.65,-4.20)
+  {仅以更优可行候选\\更新全局最优\\严格改善后重新计数};
+\node[stopdecision] (stop) at (5.70,-4.20)
+  {连续20\,000次完整迭代\\全局最优未严格改善？};
+\node[process,minimum width=2.00cm] (output) at (1.25,-4.20)
+  {输出最优\\可行方案};
+
+\coordinate (populationleftentry) at (13.55,0.00);
+\draw[flow] (continue.south) -- (4.00,-2.50) -- (13.55,-2.50)
+  -- (population.north -| populationleftentry);
+\node[branchlabel,anchor=west] at (4.35,-1.75) {邻域遍历完毕};
+
+\coordinate (populationrightentry) at (14.20,0.00);
+\coordinate (populationrightport) at (14.20,-2.65);
+\coordinate (populationrighttarget) at
+  (population.north -| populationrightentry);
+\draw[flow] (repair.south) -- (populationrighttarget);
+\node[branchlabel,anchor=west] at
+  ($(populationrightport)!0.5!(populationrighttarget)+(3.0mm,0)$)
+  {不可行};
+
+\draw[flow] (population.west) -- (best.east);
+\draw[flow] (best.west) -- (stop.east);
+\draw[flow] (stop.west) -- (output.east);
+\node[branchlabel] at
+  ($(output.east)!0.5!(stop.west)+(0,3.5mm)$) {是};
+
+% The only long return line stays outside all five stage boundaries.
+\coordinate (returnlabelend) at (5.70,-6.05);
+\coordinate (returnA) at (5.70,-6.40);
+\coordinate (returnB) at (-0.40,-6.40);
+\coordinate (returnC) at (-0.40,5.15);
+\draw[flow] (stop.south) -- (returnA) -- (returnB) -- (returnC)
+  -- (offspring.west);
+\node[branchlabel] at
+  ($(stop.south)!0.5!(returnlabelend)+(3.5mm,0)$) {否};
+
+\end{tikzpicture}
+\end{document}

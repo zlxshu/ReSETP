@@ -4,7 +4,6 @@ import argparse
 import json
 from pathlib import Path
 
-from .catalog import donor_instance_paths, migrate_goeke_instances, resolve_goeke_instance
 from .config import DynamicEventConfig, ScenarioConfig
 from .generator import generate_scenario
 from .io import ensure_data_roots, write_scenario_bundle
@@ -43,9 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--empirical-exact-base", action="store_true")
     generate.add_argument("--depot-due-time", type=float)
     generate.add_argument("--base-instance")
-    generate.add_argument("--data-root", default="data_bundle")
-    generate.add_argument("--base-id", "--instance", dest="base_id", help="Goeke instance id from data_root/catalog/goeke_instances.json, e.g. E-UK25_01.")
-    generate.add_argument("--synthetic-only", action="store_true", help="Do not switch empirical modes when using --base-id/--base-instance.")
+    generate.add_argument("--synthetic-only", action="store_true", help="Do not switch empirical modes when using --base-instance.")
     generate.add_argument("--carbon-profile-path")
     generate.add_argument("--carbon-alignment-mode", choices=["none", "fixed_utc_anchor", "daily_profile", "first_csv_record"], default="none")
     generate.add_argument("--carbon-time-anchor-utc")
@@ -55,36 +52,18 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--time-window-change-ratio", default="1,3,1", help="shrink,keep,extend ratio for time_window_change events.")
     generate.add_argument("--dynamic-reception-start", type=float)
     generate.add_argument("--dynamic-reception-end", type=float)
-    generate.add_argument("--donor-limit", type=int, default=80, help="Max migrated Goeke instances used as add-event donor pool.")
     generate.add_argument("--no-evrptwmf", action="store_true")
 
     catalog = sub.add_parser("catalog", help="Create standard portable data-root folders.")
     catalog.add_argument("data_root")
-
-    migrate = sub.add_parser("migrate-goeke", help="Copy Goeke E-UK*.txt instances into this project data bundle and write a catalog.")
-    migrate.add_argument("--source-dir", required=True)
-    migrate.add_argument("--data-root", default="data_bundle")
-    migrate.add_argument("--overwrite", action="store_true")
 
     args = parser.parse_args(argv)
     if args.command == "catalog":
         roots = ensure_data_roots(Path(args.data_root))
         print(json.dumps({k: str(v) for k, v in roots.items()}, ensure_ascii=False, indent=2))
         return 0
-    if args.command == "migrate-goeke":
-        catalog_payload = migrate_goeke_instances(args.source_dir, args.data_root, overwrite=args.overwrite)
-        print(json.dumps({
-            "data_root": catalog_payload["data_root"],
-            "catalog": str(Path(args.data_root) / "catalog" / "goeke_instances.json"),
-            "entry_count": catalog_payload["entry_count"],
-        }, ensure_ascii=False, indent=2))
-        return 0
-
     base_instance = args.base_instance
     add_event_sources: tuple[str, ...] = ()
-    if args.base_id:
-        base_instance = str(resolve_goeke_instance(args.data_root, args.base_id))
-        add_event_sources = donor_instance_paths(args.data_root, args.base_id, limit=args.donor_limit)
     coord_mode = args.coord_mode
     demand_mode = args.demand_mode
     time_window_mode = args.time_window_mode

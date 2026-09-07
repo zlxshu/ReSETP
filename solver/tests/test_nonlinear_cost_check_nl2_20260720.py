@@ -11,7 +11,7 @@ from setp_solver.cost import (
     evaluate,
 )
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters, UK_2025_PRICES
+from setp_solver.prices import PriceParameters
 from setp_solver.search.charging import (
     _curve_aware_action,
     solve_charging_fixed_route,
@@ -22,6 +22,7 @@ from setp_solver.search.multitrip_schedule import (
     route_timing,
 )
 from setp_solver.solution import ChargingAction, Route, Solution
+from solver.tests.china_test_prices import CHINA_TEST_PRICES
 
 
 def _prices(
@@ -31,13 +32,19 @@ def _prices(
     power_kw: float = 100.0,
 ) -> PriceParameters:
     return replace(
-        UK_2025_PRICES,
+        CHINA_TEST_PRICES,
         B_battery_kwh=capacity_kwh,
         initial_ev_battery_kwh=initial_kwh,
         depot_charge_power_kw=power_kw,
         charging_curve_id=NL90_MILD.curve_id,
         charging_soc_breakpoints=NL90_MILD.soc_breakpoints,
         charging_relative_powers=NL90_MILD.relative_powers,
+        depot_charging_curve_id=None,
+        depot_charging_soc_breakpoints=None,
+        depot_charging_relative_powers=None,
+        public_charging_curve_id=None,
+        public_charging_soc_breakpoints=None,
+        public_charging_relative_powers=None,
     )
 
 
@@ -257,15 +264,34 @@ def test_nonlinear_multitrip_carbon_retiming_uses_exact_actions() -> None:
 
 
 def test_fixed_route_charging_repair_emits_curve_bound_actions() -> None:
+    prices = _prices()
+    target_drive_kwh = (
+        prices.initial_ev_battery_kwh + prices.B_battery_kwh
+    ) / 2.0
+    force_n = (
+        0.5
+        * prices.c_d
+        * prices.rho_a
+        * prices.A_frontal
+        * prices.v_speed_ms**2
+        + prices.m_curb * prices.g0 * prices.c_r
+    )
+    one_way_distance_m = (
+        target_drive_kwh
+        * 3_600_000.0
+        / (2.0 * prices.alpha_e * force_n)
+    )
     instance = Instance(
         nodes=[
             Node("D0", "d", 0, 0, due_time=100_000),
             Node("C1", "c", 0, 0, due_time=100_000),
         ],
-        distance_matrix=[[0.0, 80_000.0], [80_000.0, 0.0]],
+        distance_matrix=[
+            [0.0, one_way_distance_m],
+            [one_way_distance_m, 0.0],
+        ],
     )
     route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
-    prices = _prices()
     actions = solve_charging_fixed_route(
         route,
         instance,

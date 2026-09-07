@@ -7,7 +7,7 @@ import pytest
 from setp_solver.charging_curve import NL90_MILD
 from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters, UK_2025_PRICES
+from setp_solver.prices import PriceParameters
 from setp_solver.search.dynamic_multitrip_schedule import (
     DynamicAssetState,
     cut_dynamic_certificate_at_trigger,
@@ -16,6 +16,7 @@ from setp_solver.search.dynamic_multitrip_schedule import (
     validate_dynamic_multitrip_certificate,
 )
 from setp_solver.solution import Route, Solution
+from solver.tests.china_test_prices import CHINA_TEST_PRICES
 
 
 def _instance() -> Instance:
@@ -61,13 +62,19 @@ def _instance() -> Instance:
 
 def _prices() -> PriceParameters:
     return replace(
-        UK_2025_PRICES,
+        CHINA_TEST_PRICES,
         B_battery_kwh=20.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
         charging_curve_id=NL90_MILD.curve_id,
         charging_soc_breakpoints=NL90_MILD.soc_breakpoints,
         charging_relative_powers=NL90_MILD.relative_powers,
+        depot_charging_curve_id=None,
+        depot_charging_soc_breakpoints=None,
+        depot_charging_relative_powers=None,
+        public_charging_curve_id=None,
+        public_charging_soc_breakpoints=None,
+        public_charging_relative_powers=None,
     )
 
 

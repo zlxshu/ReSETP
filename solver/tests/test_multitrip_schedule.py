@@ -5,8 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from setp_solver.charging_curve import L100_CONTROL
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters, UK_2025_PRICES
+from setp_solver.prices import PriceParameters
 from setp_solver.search.multitrip_schedule import (
     CHARGE_MODE_FULL,
     CHARGE_MODE_ON_DEMAND,
@@ -26,6 +27,21 @@ from setp_solver.search.multitrip_schedule import (
 )
 from setp_solver.solution import ChargingAction, Route, Solution
 from setp_solver.check import BATTERY, check_solution
+from solver.tests.china_test_prices import CHINA_TEST_PRICES
+
+
+LINEAR_CHINA_TEST_PRICES = replace(
+    CHINA_TEST_PRICES,
+    charging_curve_id=L100_CONTROL.curve_id,
+    charging_soc_breakpoints=L100_CONTROL.soc_breakpoints,
+    charging_relative_powers=L100_CONTROL.relative_powers,
+    depot_charging_curve_id=None,
+    depot_charging_soc_breakpoints=None,
+    depot_charging_relative_powers=None,
+    public_charging_curve_id=None,
+    public_charging_soc_breakpoints=None,
+    public_charging_relative_powers=None,
+)
 
 
 def _instance() -> Instance:
@@ -74,7 +90,7 @@ def test_ev_recharge_time_participates_in_reuse() -> None:
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=280.0,
     )
@@ -90,7 +106,7 @@ def test_certificate_reads_depot_power_from_the_shared_price_object() -> None:
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=280.0,
         depot_charge_power_kw=22.0,
@@ -111,7 +127,7 @@ def test_partial_mode_keeps_a_continuous_battery_ledger() -> None:
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=280.0,
         depot_charge_power_kw=22.0,
@@ -128,7 +144,7 @@ def test_partial_mode_keeps_a_continuous_battery_ledger() -> None:
 def test_full_mode_certificate_must_replenish_the_energy_it_used() -> None:
     routes = [Route("EV_A", "ev", "D0", ["D0", "C1", "D0"])]
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=280.0,
         depot_charge_power_kw=22.0,
@@ -150,7 +166,7 @@ def test_on_demand_mode_charges_only_what_the_next_trip_needs() -> None:
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=280.0,
         depot_charge_power_kw=22.0,
@@ -167,7 +183,7 @@ def test_between_trip_charge_is_exported_to_cost_and_carbon_ledger() -> None:
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
     base = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=280.0,
         depot_charge_power_kw=22.0,
@@ -186,7 +202,7 @@ def test_e4_continuous_soc_contract_retains_terminal_charge_in_trip_ledger() -> 
     route = Route("EV_A", "ev", "D0", ["D0", "C1", "D0"])
     instance = _instance()
     prices = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=10.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,
@@ -260,7 +276,7 @@ def test_complete_multitrip_checker_replaces_only_certified_residual_battery() -
     nodes = [
         source.nodes[0],
         source.nodes[2],
-        replace(source.nodes[3], ready_time=1_380.0, due_time=4_380.0),
+        source.nodes[3],
     ]
     matrix = [[0.0 if i == j else 1_000.0 for j in range(3)] for i in range(3)]
     instance = Instance(nodes, matrix, num_cv=2, num_ev=2)
@@ -268,17 +284,35 @@ def test_complete_multitrip_checker_replaces_only_certified_residual_battery() -
         Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
-    probe = replace(UK_2025_PRICES, B_battery_kwh=280.0)
+    probe = replace(LINEAR_CHINA_TEST_PRICES, B_battery_kwh=280.0)
     drive = route_timing(routes[0], instance, probe).drive_energy_kwh
+    battery_capacity = drive * 1.05
     prices = replace(
-        UK_2025_PRICES,
-        B_battery_kwh=drive * 1.05,
-        initial_ev_battery_kwh=0.0,
+        LINEAR_CHINA_TEST_PRICES,
+        B_battery_kwh=battery_capacity,
+        initial_ev_battery_kwh=battery_capacity,
         depot_charge_power_kw=22.0,
         charging_curve_id=NL90_MILD.curve_id,
         charging_soc_breakpoints=NL90_MILD.soc_breakpoints,
         charging_relative_powers=NL90_MILD.relative_powers,
     )
+    curve = NL90_MILD.scale(
+        capacity_kwh=prices.B_battery_kwh,
+        reference_power_kw=prices.depot_charge_power_kw,
+    )
+    residual = prices.B_battery_kwh - drive
+    residual_charge_seconds = curve.duration_seconds(residual, drive)
+    empty_charge_seconds = curve.duration_seconds(0.0, drive)
+    gap_seconds = (residual_charge_seconds + empty_charge_seconds) / 2.0
+    first_return = route_timing(routes[0], instance, prices).return_second
+    travel_to_second = matrix[0][2] / prices.v_speed_ms
+    second_ready = first_return + gap_seconds + travel_to_second
+    nodes[2] = replace(
+        nodes[2],
+        ready_time=second_ready,
+        due_time=second_ready + 3_000.0,
+    )
+    instance = Instance(nodes, matrix, num_cv=2, num_ev=2)
     prepared, certificate = prepare_multitrip_solution(
         Solution(routes=routes),
         instance,
@@ -297,7 +331,7 @@ def _two_trip_solution_and_prices() -> tuple[Solution, PriceParameters]:
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
     base = replace(
-        UK_2025_PRICES,
+        LINEAR_CHINA_TEST_PRICES,
         B_battery_kwh=280.0,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=22.0,

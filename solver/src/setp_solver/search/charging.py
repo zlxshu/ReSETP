@@ -80,7 +80,7 @@ def solve_charging_fixed_route(
 
     if route.vehicle_type.lower() != "ev":
         return []
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     if not route.node_sequence:
         return []
 
@@ -256,7 +256,7 @@ def repair_route_charging(
         return route, []
     validate_depot_charge_window_mode(depot_charge_window_mode)
     validate_charge_timing_policy(charge_timing_policy)
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     stations = [node for node in instance.nodes if node.node_type.lower() == "f"]
 
     original_targets = [node_id for node_id in route.node_sequence[1:] if node_lookup[node_id].node_type.lower() != "f"]
@@ -963,7 +963,7 @@ def _lowest_gamma_slot_start(earliest: float, latest: float, gamma_profile: list
         slot = math.ceil(earliest / CARBON_SLOT_SECONDS) * CARBON_SLOT_SECONDS
         start = slot if slot <= latest + 1e-9 else earliest
         wrapped = start % period
-        gamma = min(gamma_profile, key=lambda row: abs(float(row["horizon_second_start"]) - wrapped))["actual_gco2_per_kwh"]
+        gamma = min(gamma_profile, key=lambda row: (wrapped - float(row["horizon_second_start"])) % period)["actual_gco2_per_kwh"]
         return float(start), float(gamma)
     gamma, start = min(candidates, key=lambda item: (item[0], item[1]))
     return start, gamma

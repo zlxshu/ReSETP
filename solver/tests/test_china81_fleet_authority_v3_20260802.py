@@ -5,8 +5,6 @@ import json
 from pathlib import Path
 
 from setp_solver.china81 import (
-    FLEET_AUTHORITY_V1_RELATIVE,
-    FLEET_AUTHORITY_V2_RELATIVE,
     FLEET_AUTHORITY_V3_RELATIVE,
     load_china81_bundle,
 )
@@ -59,18 +57,9 @@ def test_v3_zero_search_certifies_all_405_units_without_violations() -> None:
     assert counts == {level: 81 for level in counts}
 
 
-def test_v3_manifest_preserves_prior_authority_references_and_scope() -> None:
-    manifest = json.loads((AUTHORITY / "manifest.json").read_text(encoding="utf-8"))
-    decision = json.loads((AUTHORITY / "decision.json").read_text(encoding="utf-8"))
+def test_v3_determinants_respect_endpoint_lower_bounds() -> None:
     determinants = read_csv(AUTHORITY / "fleet_determinants.csv")
 
-    assert len(manifest["historical_authorities_retained"]) == 2
-    assert all(
-        row["retained"]
-        for row in manifest["historical_authorities_retained"].values()
-    )
-    assert decision["old_formula_status"] == "SUPERSEDED_RETAINED_HISTORY_ONLY"
-    assert decision["old_formula"] == "num_ev=max(1,ceil(0.25*R_d))"
     assert len(determinants) == 144
     assert all(
         int(row["selected_Td"]) >= int(row["endpoint_lower_Td"])

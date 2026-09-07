@@ -7,6 +7,11 @@
 > `../../paper_gci_dmm_vrp_20260804/pending_decisions.md`。按当前总入口的证据地图定点展开本索引，
 > 不要求全文阅读。
 
+- 🟩 [2026-08-30 论文框架与文风收口](../CURRENT_PROJECT_CONTEXT.md) —
+  论文全文对齐陈雨蝶/陈婉茹（摘要压缩、卖点前置、约束两段式、新增4.2.2模型实验节、
+  实验节全部改逐条分析＋启示体）；用户十条拍板（占位数据/逐实验推进/理想方向写作/多趟大卖点等）
+  与挂账（10次重跑、算法名待定）登记在当前事实源2026-08-30首条；证据＝paper_main.tex 当日版本。
+
 - 🌉 [算法设计阶段章程（2026-08-15）](../algorithm_design_charter_20260815.md) —
   算法设计阶段唯一流程入口：五项奠基决定正文在 `pending_decisions.md` P66（企业归属进算例／
   动态设计一次到位／充电架构进辩论／探针≤20分钟授权／参与约束先软后硬）；
@@ -2301,3 +2306,55 @@ E7正式结果终验
 - [P133 论文—代码—实验统一口径及落实（2026-08-29）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — `paper_v2` 已复出并入当前分支，preview 为同一正式论文线的施工／排版副本；论文是五项目标、协同配送独立臂、Shapley 单例和 mixed events 的唯一语义源；现行入口已取消固定种子、复现身份与固定文件套件，次数按论文（公开1、私有明确项3、动态1、其余1），P133 当时沿用连续500次无改善停止且随后由P135覆盖；旧25/25、Pi0搜索接线、旧动态流、真值哨兵、预筛审计、诊断旁路及退役脚本已净删，短测试230项通过，本轮未长跑或回填新数字，代码与记录本地提交不推送
 - [P134 论文主稿唯一化（2026-08-29）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 20 页更新稿整体提升到 `docs/paper_v2/paper_main.tex` 与同目录 PDF；旧 18 页底座、施工副本、候选、快照、备份、旧草稿、退役投稿目录和历史正文副本移出工作树，只保留期刊模板、5 张直引图和 1 个直引表；临时 XeLaTeX 重编 20 页且正文一致，无长跑或正文语义改动
 - [P135 停止规则对齐 HGS-CVRP 2022（2026-08-29）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 无时限模式统一为连续20,000次完整迭代未改善后停止、改善清零且不重启；公开／私有／默认值、混合车队／动态／消融产物文字及论文算法步骤已同步，旧正常终态兼容删除；短测试74项通过，唯一PDF重编20页并目检，本轮未长跑或回填数字，本地提交不推送
+- [✅ 充电证书修复后消融正式续跑（08-30）](../../../solver/reports/ablation_formal_20260830/report.md) — M三次原样保留，MT旧run_1失败现场保留且修复后样本为run_2/3/4，MTC为run_1/2/3；九个正式样本全部50/50客户、13264/13264kg、可行0违规；平均排放320.652555>251.040892>182.329638kg，M无EV且MT/MTC有EV，预登记消融合格线全过
+- [⚠️ 碳价正式批全池一致性不达线（08-30）](../../../solver/reports/carbon_price_600_20260830/report.md) — 六价×三次18/18全服务可行；全池复价仅0.20与2.10自跑最好等于池最优，另四价缺口105.359050–219.764459元且均超过本价三次极差；车队变化线过、解质量一致性线不过，整体不回填表9；完整18解复价输入见同目录pool.csv
+- [2026-08-30 停止规则拍板与提速手术](../CURRENT_PROJECT_CONTEXT.md) — P139：600秒批全员未收敛作废降格；三刀逐位等价手术（行走档案/热循环重构/择时记忆化）；证据=等价探针×3+记忆比对17.5万次+micro_speed_20260830报告
+- [图1算法流程图正式替换（2026-08-30）](../CURRENT_PROJECT_CONTEXT.md) — 用户批准当前候选并入正式稿；旧内嵌图替换为可编辑TeX源生成的透明黑白灰矢量PDF，保留图题、标签和正文引用；正式稿24页，图1在第10页，XeLaTeX与逐页视觉检查通过
+- [清理七连刀证据链 20260831](../../../solver/reports/) — cleanup_knife1/uk_knife/uk_purge/china_legacy/interface_cut/uk_mopup(2)/ember 七份报告=英国设定归零与旧算例清仓的逐项证据；查"某文件/目录为什么没了"先来这里
+- [表9配置轴拍板与车辆经济账](../../docs/paper_gci_dmm_vrp_20260804/pending_decisions.md) — P149：曲线横轴是配置不是碳价（陈婉茹5.1）；50元差价出处=她表7；配置轴产物 solver/reports/fleet_config_20260831/
+- [P163 图表逐处审五裁定](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 09-01晚:动态"接收时段"设定作废须全天实时事件流重造;碳价轴必须出车队构成趋势不许撤图;表10/图5口径已修;表12企业行去留待决;动态+11.49%＝废批旧数已修待新跑
+- [P164 四题答复＋动力配置表逻辑重做](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 09-01晚:新事件流按订单最早服务前0.5-4h到达/动态v2已杀停并通报resetp-37/碳价轴按兵不动/表12企业行删;动力配置表删两列去重为四行、去掉自造梯度步进叙事、派遣数量图删除
+- [P165 4.3纠偏＋时变碳重设计](../../paper_gci_dmm_vrp_20260804/section_redesign_fleet_ratio_and_tvgci_20260901.md) — 09-01晚:节序已调(动力配置提前/碳价降为时变碳小节);比例甜点按陈婉茹5.1补五档;三难定量证据(价碳相关-0.563/谷段脏245%/58%客户窗压干净窗/37.5%电量落06:00谷段)与盈亏平衡碳价0.634-1.445
+- [P166 图表框架逐张定案](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 09-01晚:用户令以前图表审批一律不作依据、先定框架再跑实验;表9改回陈婉茹字段(勿自改字段名)＋行驶成本列＋八档梯度;删碳价派遣图;图4两格不混合但都要标作业时间;图6去"示意"字样;充电时刻图生成器在仓库缺失
+- [P167 表9上界梯度＋成本名统一＋充电图生成器](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 09-01晚:梯度须自油电两上界起不按算例车位总数;成本名按目标函数定义名全文统一;充电图生成器已补(solver/scripts/generate_carbon_charging_figure.py,两格均标作业时间带)
+- [P168 配比由实验设定＋探路批定车数](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 09-01晚:用户强介入不再让代理自主开跑;动力配置节算法不得自选车型;最少车数须探路批定;多趟经查未失效(纯电1.45趟/辆vs油车2.5,慢在趟间充电);中间档重复真因=配额是上限非强制
+- [P173 求解器三病灶与第一刀](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 09-02:增量评价整解重建/充电不可行子代处死(偏离HGS惩罚机制)/邻域无时间窗感知;单趟预判仅拦69%、串接后暴露的31%占时48%;已加整车裸串接预筛(96%死刑零误杀,228测试过);与P162否决冲突已明示
+- [P174 第四刀施工＋无时间墙更正](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 09-02:用户否定时间预算(只定过迭代数,原版HGS设计)并令尽量用原版HGS/开源代码;修复失败子代容错入群由pagmo2罚拉回;time warp贯通违规轴(检查器不串接,缺此则容错成员误判可行崩在教育);冒烟44/60子代由丢弃变入群;对照3×2按两万圈无改善已点火(solver/reports/cut4_admission_ab_20260902)
+- [P175 求解器三根子与改造设计](../solver_redesign_three_goals_20260902.md) — 09-02晚:内核代理弧时长无充电时间(NO_FEASIBLE_WINDOW+PRESCREEN=86%子代死因)/罚系数从未register/整解重评价地板;方案A电车弧时长加电耗÷59.8kW、B register、C不可行成员走booster修复、D真增量评价+预筛充电下界;母版速度锚1.33–2.07分钟
+- [表8 交付批（09-02 深夜点火）](../../../solver/reports/ablation_formal_10x_20260902/README.md) — 六项改造后的第一次交付长跑；frozen_src 为点火源码；watchdog.log 哨兵；验收三线=效应/时长/终值差距
+- [私有两轴尝试批 09-03](../../../solver/reports/private_axes_trial_20260903/README.md) — 碳价/动力配置各 3 次的 A3 结果与两处修正证据；坏跑在 `_invalid_*`；EV 重配置用车偏多待裁决（pending_decisions 09-03 06:30）
+- [表9 新口径验收与"车场等充电"口径不一 09-03](../../../solver/reports/fleet_composition_probe_20260903/README.md) — 回场副本预留（首趟不扣/趟间最长趟回填）与空闲起步免初始种群的证据；2499.72 验收；自由车队与纯电失败诊断；P176 待用户
+- [表9 正式批第一遍 09-03](../../../solver/reports/fleet_composition_formal_20260903/README.md) — N=6 七档×车场分法枚举 84 子跑；每档最好分法与不可行分法清单；纯电最优；两件待用户
+- [电车日固定溢价重标定 09-03](../ev_premium_recalibration_20260903.md) — 购置差/残值差/保险差三项 TCO 换算 80–111 元/日；现值 50 只在单趟前提下成立；对各表影响；待用户
+- [消融第三臂诊断 09-04](../ablation_third_arm_diagnosis_20260904.md) — 裁定非缺陷；同路线配对 20/20；谷电最脏、碳信号与价格反向；碳价门槛 0.56–0.70；表8 第3点须改、表10 应设计为同路线对照
+
+- [4.4 节扩容设计（2026-09-04）](../section_4_4_redesign_20260904.md) — 三小节框架与故事弧、展品与实验清单、冻结的选档规则；支撑：`policy_lever_inventory_20260904.md`（代码杠杆）、`hebei_tou_provenance_20260904.md`、`policy_lever_literature_20260904.md`、`carbon_price_provenance_20260904.md`、`section_4_4_blueprint_review_20260904.md`（对抗评审）、`code_review_charge_timing_20260904.md`；产物 `solver/reports/charge_timing_{comparison_v2,grid}_20260904/`
+- [路径效应病灶与设计评审（2026-09-04）](../route_effect_root_cause_20260904.md) — 路线层盲视回场时刻/三臂共享代理；评审 `route_effect_design_review_20260904.md`（15:00 为平段、上限 10.4 元、真杠杆车队替代）；warm-start `solver/reports/ideal_construction_20260904/P=0.2/WARMSTART.md`
+- [杠杆与文献（2026-09-04）](../ev_steering_instruments_survey_20260904.md) — 杠杆横评；`policy_bundle_literature_20260904.md`；`smart_charging_business_model_wu2022_20260904.md`；杠杆批 `solver/reports/lever_{subsidy,workwindow,green_window}_20260904/`
+- [策略感知代理施工规格（2026-09-04）](../policy_aware_proxy_spec_20260904.md) — 改动点 A(1)–(6) 到行号、三日历代理真值表、两臂偏差 0.310→0.087/0.154→0.055、验证 D.1–D.6 阈值与零假设通过率、四段提交回滚粒度
+- [第二病灶：趟间充电预留封死可行性（2026-09-05）](../second_root_cause_reload_gap_20260905.md) — 内核代理定价与精确账一致（证伪定价错）；预留取 max 使 25/33 可行解在第 2 轮不可行；D1 p75/D2 落盘；`speed_diagnosis_20260905.md` 速度体检
+- [速度体检与每圈成本设计（2026-09-05）](../speed_diagnosis_20260905.md) — 私有慢同刊母版 3.7–5.8×、60% 多轮尾巴；`per_iteration_cost_design_20260905.md` 车辆类型去重 −8%、profile 0%、max_reloads 0%（撤回 17%）；`valley_window_sweep_20260905.md` 13 省边界路径层上限 ≤0.35 元；`trip_repartition_probe_20260905.md` 三客户时间窗焊死 15:00
+- [二乘二试水（2026-09-05）](../grid2x2_pilot_20260905.md) — 时段对齐×碳价 1.0 构造情景三臂排序成立、电车 4.3 vs 2.6、排放 −54.5 kg 运营成本持平；停机规则 N=2 使 sd 13–17→5–7；`carbon_relevance_ladder_20260905.md` 条件（≥4 电车、绝对极差 ≥0.34、低碳时段在班次窗口）；`instance_param_provenance_20260905.md`（骨架按广州设计、选到北京，仅作 4.4.2 出处）
+- [4.4 展品继承规格（2026-09-05）](../exhibit_inheritance_spec_20260905.md) — 同刊六张原表逐页渲染读列名：表下无注、无 p 值、单位入列名；三方案命名来源（08 月已批列名＋陈婉茹表11 括注法）；表11 午谷块四行同值判删、北京块拆 Δ 分项；表12 套陈婉茹表11 壳；灰带压低无文献出处；三件代拍见 `pending_decisions.md` 末条
+- [搜索缺口根因诊断（2026-09-05）](../search_gap_root_cause_20260905.md) — 早退出口修复＋回放证明；"③够不着②"证伪（可行域 10/10、代理秩相关 0.818、②＝①搜索＋免费重排）；预留 p75 仍排除 4/20 可行解（独立缺陷）；策略感知代理对 MTC 空操作
+- [碳强度引入口子文献（2026-09-05）](../carbon_intensity_hook_literature_20260905.md) — 上海有序充电（已引）＋Miyabe 2025 JES 联合目标（16.6%/21.4%，不纳入目标反更高）＋数据口径须称模拟投影非实测
+- [B 口径验收批与 4.4 终稿（2026-09-06）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 即充＝前一晚回场即充；`grid2x2_v3_20260906/NUMBERS_FOR_TEXT_v3.md` 为正文数字唯一来源；`carbon_price_sweep_v3_20260906/summary.md` 翻转 1.24/1.52；`charge_timing_sweep_v3_20260906/` 固定路线门槛；`first_trip_window_probe_v2_20260906/` 投影验证
+- [表10 四列与表8 重做（2026-09-06 下午）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 用户亲审判倒置为错误；根因＝碳价 0.2 下碳感知择时≡只按电价、对照组设错；四列数据 `solver/reports/charging_arrangements_20260906/README.md`，表8 新批 `solver/reports/ablation_v6_20260906/README.md`；生成器 `build_charging_arrangements_table.py`
+- [固定路线方案清除（2026-09-06 16:00）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 用户裁定违反基础前提；删脚本清单在 CURRENT_PROJECT_CONTEXT 16:20 条；退役声明在 grid2x2_v3 与 charge_timing_sweep_v3 的 README
+- [充电窗口根因诊断（2026-09-06）](../charging_window_root_cause_20260906.md) — 只读、近似账与解内记录逐 run 零偏差；三问的证据：增排全在首趟前窗口（+24.3 kg，碳强度 0.366→0.618）；只看碳已取到窗口内最净（差 −0.07），离全天最净差 15.66 kg/次，首趟前窗口 0% 能碰到 13:00 最净槽；盈亏平衡碳价首趟前中位 4.09、午休 1.08 元/kg，碳价 0.2 一场都翻不动
+- [4.4.2 纯文字因果版与五条干预检验（2026-09-06）](../charging_window_root_cause_20260906.md) — §6 便宜∩干净＝∅／午休一致仅 35% 可达；§7 检验表；4.4.2 结构在 CURRENT_PROJECT_CONTEXT 18:10 条；用户方法论原话在 pending_decisions 同时段条
+- [4.4.2 图表版（2026-09-06 18:50）](../CURRENT_PROJECT_CONTEXT.md) — 新图 4 生成器 `generate_tariff_carbon_window_figure.py`（venv python）、新表 11 生成器 `build_charging_windows_table.py`（合计与表10 逐位一致）；设计依据在 pending_decisions 18:30 条
+- [4.4.2 定稿候选与整篇改写（2026-09-06 晚）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 机理图皮囊＝王强 2023《管理科学学报》图 5；图讲形状/表讲账/文做推理的分工；整篇 17 处改写清单在 pending_decisions 23:00 条；公共桩 97 个真实、基准 0 次使用、定稿只展示用到的
+- [4.4.3 对症下药与组合探针（2026-09-07）](../../solver/reports/policy_combos_20260907/README.md) — 成立组合＝午间谷段＋购置补贴（1/5×3，2534.50/114.94）；无效＝公共站免服务费、午休后移；决定册 21:00 条；充换电设施分时电价政策事实（1668 号、山东/浙江/江苏）
+- [4.4.3 定稿候选与验收批（2026-09-08）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 验收批结果条（23:50）：组合 10 次 −61.44 kg 与单独之和相当；三行口径重跑数；众数构型口径；产物 `solver/reports/policy_combos_20260907/README.md` 末节
+- [公共站顺路小补设计与上限探针（2026-09-07）](../station_topup_algorithm_design_20260907.md) — 零会话＝价格（站价＝车场价＋0.40 服务费、同桩同曲线）非算法；五格上限 0；方案 A split 一维精确枚举推荐；探针 `solver/reports/probe_station_topup_20260907/`；固定路线死引用清单在文内
+- [split 口径全批重跑与回填（2026-09-08）](../../solver/reports/rerun_split_20260908/README.md) — 清单/换名/验收记录；手册 `regen_runbook_split_20260908.md`；盘点 `rerun_inventory_split_20260908.md`；复审 `station_split_review_20260908.md`；新诊断 `charging_window_root_cause_20260908.md`；决定册 09-08 各条
+- [组合缩水原因与更优情形（2026-09-08）](../combo_margin_design_20260908.md) — 平价点摇摆非搜索劣解（`midday_subsidy_shrinkage_20260908.md`）；离线重新计价 183 解：只有碳价≥1.2 或补贴 46.97（含电池更换资本口径）能拉开 ≥40 元；两情形 10 次全 0/6
+- [公共站文献惯例调研（2026-09-08）](../public_station_benchmark_practice_survey_20260908.md) — 文献站/客户比 0.09–0.20、本文 1.94 离群；真正离群维度＝续航不紧（日需电/电池中位 0.253、最大 0.607）；陈婉茹 2023 站数 0；Hiermann 2016 站用不到 1/3 属正常；未核 10 条
+- [公共桩功率与曲线调研（2026-09-08）](../public_charger_power_curve_survey_20260908.md) — 曲线 id 非杠杆（20–80% 段同形），参考功率才是；60 kW 是中国公共直流桩偏低档（EVCIPA 2025-01 分布 31/38/31%）；120 kW 证据为整机双枪（≈60 kW/车）；任何分化都不改求解结果（时间通道本就松）；未核 13 条含 ES1 快充功率
+- [公共站 120 kW 尝试性短跑（2026-09-08）](../../../solver/reports/station_120kw_probe_20260908/README.md) — 开关 `--public-station-power-kw`（默认 None 逐位不变）；12 跑站会话仍 0，但已证开关到达评价链（同 kWh 占用 ×2.0000 减半 50 例、候选 63→83），零会话＝不划算非未接线；同趟差额 3.42→2.23 元，服务费压低站上取电（2.08→0.95 kWh）、余下约 2 km 绕行 1.9–2.1 元与功率无关；四通道上限脚本 `mechanism_bound.py`、接线验证 `evaluator_reaches_120kw.py`、结果表 `summarize.py`；这 12 份 metadata 无功率字段，出处见同目录 joblist.txt/launcher.log
+- [4.4.3 定稿候选与当日调查（2026-09-08）](../../paper_gci_dmm_vrp_20260804/pending_decisions.md) — 决定册 09-08 各条：故事线、组合方案行、口径裁决；证据文档 `charging_arrangement_emission_audit_20260908.md`、`public_station_modeling_audit_20260908.md`、`fleet_dispersion_diagnosis_20260908.md`、`fleet_dispersion_kernel_vs_python_20260908.md`、`section_45_47_audit_20260908.md`、`solver/reports/station_120kw_probe_20260908/README.md`
+- [4.4.3 四段版展品与综述分类（2026-09-09）](../policy_instrument_taxonomy_from_reviews_20260908.md) — 分类出处（Waltho 2019/陈婉茹 2023 表 1/Hardman 2017、2019/Albadi 2007）；生成器 `build_policy_table.py`（9 行）、`generate_policy_bar_figure.py`、`generate_policy_scatter_figure.py`、`figure_policy_taxonomy.tikz`；本文方案 `policy_combos_20260907/midday_subsidy47_P1.2` 10 次
+- [4.4.3 解＝两个条件同条件对照（2026-09-10）](../../../solver/reports/charging_arrangements_midday_P1.0_20260909/README.md) — 午谷×碳价1.0 四种安排各10次：本文安排总成本最低、较只看电价 −20.56/−27.47kg（首趟前补电5:00 vs 2:00）、只看碳排放最低但贵23元；两个条件单独无效、同时 −112/−51.5（`grid2x2_v3_20260906`，生成器 `build_two_conditions_table.py`）；补贴方案退役；决定见 `pending_decisions.md` 09-09 深夜三条
+- [平价推导与敏感性可行性（2026-09-09，另一会话）](../fleet_parity_carbon_price_20260909.md) — 换车平价碳价闭式、补贴×碳价分区；`sensitivity_feasibility_20260909.md`：成本对(补贴,碳价)仿射 536/536 吻合、网格不必跑、1/5 幽灵档＝搜索稳定偏向、青海无夜谷日历 −44.73 元（摆峰法 ±21）
+- [目标期刊句式与词汇清单](../style_guide_setp_20260910.md) — 09-10 从两陈原文抽取：实验小节骨架（设定→表→由表可知1)2)3)→综上）、只许用的连接词、禁用的 AI 味句式、表格规矩、篇幅参照；全文改写依据

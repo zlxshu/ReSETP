@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Mapping
 
 HOURLY_CALENDAR_FILENAME = "tariff_carbon_hourly_calendar.csv"
-LEGACY_CALENDAR_FILENAME = "tariff_carbon_48slot_calendar.csv"
 
 HOURLY_CALENDAR_ROW = "hourly_calendar_row"
 LEGACY_CALENDAR_ROW = "half_hour_slot"
@@ -19,22 +18,15 @@ LEGACY_CALENDAR_ROW = "half_hour_slot"
 CONFIGURED_DEPOT_GUN_COUNT_IF_FINITE = "configured_depot_gun_count_if_finite"
 LEGACY_CONFIGURED_DEPOT_GUN_COUNT_IF_FINITE = "depot_charger_count"
 
-DEPOT_SITE_POWER_KW_SHADOW = "depot_site_power_kw_shadow"
-LEGACY_DEPOT_SITE_POWER_KW_SHADOW = "depot_power_kw"
-
-
 def resolve_calendar_path(parameter_root: Path) -> Path:
-    """Return the new calendar path, with a read-only legacy fallback."""
+    """Return the active calendar path."""
 
     current = parameter_root / HOURLY_CALENDAR_FILENAME
     if current.is_file():
         return current
-    legacy = parameter_root / LEGACY_CALENDAR_FILENAME
-    if legacy.is_file():
-        return legacy
     raise FileNotFoundError(
         f"calendar is missing under {parameter_root}: "
-        f"{HOURLY_CALENDAR_FILENAME} or {LEGACY_CALENDAR_FILENAME}"
+        f"{HOURLY_CALENDAR_FILENAME}"
     )
 
 
@@ -63,12 +55,4 @@ def configured_depot_gun_count(row: Mapping[str, str]) -> int:
             CONFIGURED_DEPOT_GUN_COUNT_IF_FINITE,
             LEGACY_CONFIGURED_DEPOT_GUN_COUNT_IF_FINITE,
         )
-    )
-
-
-def depot_site_power_kw_shadow(row: Mapping[str, str]) -> str:
-    return renamed_value(
-        row,
-        DEPOT_SITE_POWER_KW_SHADOW,
-        LEGACY_DEPOT_SITE_POWER_KW_SHADOW,
     )

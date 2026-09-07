@@ -369,16 +369,26 @@ class PiecewiseChargingCurve:
 
     def cumulative_time_seconds(self, energy_kwh: float) -> float:
         energy = float(energy_kwh)
-        if not isfinite(energy) or not 0.0 <= energy <= self.capacity_kwh:
+        energies = self.energy_breakpoints_kwh
+        # Battery energy carried through long add/subtract chains (dynamic
+        # stage inheritance) accumulates float dust around the exact bounds;
+        # snap dust-level violations, keep real violations loud.
+        if -1e-6 < energy < 0.0:
+            energy = 0.0
+        elif energies[-1] < energy < energies[-1] + 1e-6:
+            energy = energies[-1]
+        if not isfinite(energy) or not 0.0 <= energy <= energies[-1]:
             raise ChargingCurveError("energy lies outside the charging curve")
-        for index, right in enumerate(self.energy_breakpoints_kwh[1:]):
+        cumulative_seconds = self.cumulative_seconds
+        powers = self.segment_powers_kw
+        for index, right in enumerate(energies[1:]):
             if energy <= right:
-                left = self.energy_breakpoints_kwh[index]
+                left = energies[index]
                 return (
-                    self.cumulative_seconds[index]
-                    + 3600.0 * (energy - left) / self.segment_powers_kw[index]
+                    cumulative_seconds[index]
+                    + 3600.0 * (energy - left) / powers[index]
                 )
-        return self.cumulative_seconds[-1]
+        return cumulative_seconds[-1]
 
     def inverse_cumulative_time_seconds(self, cumulative_seconds: float) -> float:
         value = float(cumulative_seconds)
@@ -405,10 +415,23 @@ class PiecewiseChargingCurve:
     def duration_seconds(
         self, start_energy_kwh: float, end_energy_kwh: float
     ) -> float:
-        _validate_energy_interval(self, start_energy_kwh, end_energy_kwh)
+        cap = self.energy_breakpoints_kwh[-1]
+        start = float(start_energy_kwh)
+        end = float(end_energy_kwh)
+        # Same float-dust rule as cumulative_time_seconds: SOC values carried
+        # through long arithmetic chains land a hair outside the exact
+        # domain; snap dust, keep real violations loud.
+        if -1e-6 < start < 0.0:
+            start = 0.0
+        if cap < end < cap + 1e-6:
+            end = cap
+        if start >= end:
+            if abs(end - start) < 1e-6:
+                return 0.0
+        _validate_energy_interval(self, start, end)
         return self.cumulative_time_seconds(
-            end_energy_kwh
-        ) - self.cumulative_time_seconds(start_energy_kwh)
+            end
+        ) - self.cumulative_time_seconds(start)
 
     def reachable_energy_kwh(
         self, start_energy_kwh: float, available_seconds: float
@@ -434,23 +457,27 @@ class PiecewiseChargingCurve:
         self, start_energy_kwh: float, end_energy_kwh: float
     ) -> tuple[ChargePhase, ...]:
         _validate_energy_interval(self, start_energy_kwh, end_energy_kwh)
-        origin = self.cumulative_time_seconds(start_energy_kwh)
+        start_energy = float(start_energy_kwh)
+        end_energy = float(end_energy_kwh)
+        energies = self.energy_breakpoints_kwh
+        powers = self.segment_powers_kw
+        origin = self.cumulative_time_seconds(start_energy)
         phases: list[ChargePhase] = []
         for index, (left, right) in enumerate(
             zip(
-                self.energy_breakpoints_kwh,
-                self.energy_breakpoints_kwh[1:],
+                energies,
+                energies[1:],
             )
         ):
-            phase_left = max(float(start_energy_kwh), left)
-            phase_right = min(float(end_energy_kwh), right)
+            phase_left = max(start_energy, left)
+            phase_right = min(end_energy, right)
             if phase_right <= phase_left:
                 continue
             phases.append(
                 ChargePhase(
                     self.cumulative_time_seconds(phase_left) - origin,
                     self.cumulative_time_seconds(phase_right) - origin,
-                    self.segment_powers_kw[index],
+                    powers[index],
                 )
             )
         if not phases:
@@ -549,23 +576,32 @@ def slot_energy_kwh(
     start_time = float(charging_start_seconds)
     if not isfinite(start_time):
         raise ChargingCurveError("charging start must be finite")
-    _validate_slot_boundaries(slot_boundaries_seconds)
+    boundaries = _validate_slot_boundaries(slot_boundaries_seconds)
     phases = curve.phases(start_energy_kwh, end_energy_kwh)
+    absolute_phases = [
+        (
+            start_time + phase.relative_start_seconds,
+            start_time + phase.relative_end_seconds,
+            phase.power_kw,
+        )
+        for phase in phases
+    ]
     output: list[float] = []
-    for slot_start, slot_end in zip(
-        slot_boundaries_seconds, slot_boundaries_seconds[1:]
-    ):
+    append_energy = output.append
+    for slot_index in range(len(boundaries) - 1):
+        slot_start = boundaries[slot_index]
+        slot_end = boundaries[slot_index + 1]
         energy = 0.0
-        for phase in phases:
-            absolute_start = start_time + phase.relative_start_seconds
-            absolute_end = start_time + phase.relative_end_seconds
+        for absolute_start, absolute_end, power_kw in absolute_phases:
+            if absolute_end <= slot_start or absolute_start >= slot_end:
+                continue
             overlap = max(
                 0.0,
-                min(float(slot_end), absolute_end)
-                - max(float(slot_start), absolute_start),
+                min(slot_end, absolute_end)
+                - max(slot_start, absolute_start),
             )
-            energy += phase.power_kw * overlap / 3600.0
-        output.append(energy)
+            energy += power_kw * overlap / 3600.0
+        append_energy(energy)
     expected = float(end_energy_kwh) - float(start_energy_kwh)
     if not _close(sum(output), expected, tolerance=1e-9):
         raise ChargingCurveError(
@@ -583,7 +619,7 @@ def candidate_start_times(
     latest_finish_seconds: float,
     slot_boundaries_seconds: Sequence[float],
 ) -> tuple[float, ...]:
-    _validate_slot_boundaries(slot_boundaries_seconds)
+    boundaries = _validate_slot_boundaries(slot_boundaries_seconds)
     duration = curve.duration_seconds(start_energy_kwh, end_energy_kwh)
     earliest = float(earliest_start_seconds)
     latest_start = float(latest_finish_seconds) - duration
@@ -596,7 +632,7 @@ def candidate_start_times(
         phase_boundaries.add(phase.relative_start_seconds)
         phase_boundaries.add(phase.relative_end_seconds)
     candidates = {earliest, latest_start}
-    for grid_boundary in slot_boundaries_seconds:
+    for grid_boundary in boundaries:
         for phase_boundary in phase_boundaries:
             candidate = float(grid_boundary) - phase_boundary
             if earliest - 1e-9 <= candidate <= latest_start + 1e-9:
@@ -714,7 +750,7 @@ def _validate_energy_interval(
 
 def _validate_slot_boundaries(
     slot_boundaries_seconds: Sequence[float],
-) -> None:
+) -> tuple[float, ...]:
     boundaries = tuple(float(value) for value in slot_boundaries_seconds)
     if len(boundaries) < 2:
         raise ChargingCurveError("at least one time slot is required")
@@ -725,6 +761,7 @@ def _validate_slot_boundaries(
         for left, right in zip(boundaries, boundaries[1:])
     ):
         raise ChargingCurveError("slot boundaries must be strictly increasing")
+    return boundaries
 
 
 def _nonnegative_finite(value: float, label: str) -> float:

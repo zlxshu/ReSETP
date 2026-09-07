@@ -1,0 +1,78 @@
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage[UTF8,fontset=none]{ctex}
+\setCJKmainfont{Songti SC}
+\setmainfont{Times New Roman}
+\xeCJKsetup{CJKglue=\hskip 0pt}
+\usetikzlibrary{arrows.meta,calc,shapes.geometric,fit}
+
+\begin{document}
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  every node/.style={font=\fontsize{8pt}{9.6pt}\selectfont, align=center, text=black, fill=white, inner sep=0pt, outer sep=0pt},
+  box/.style={rectangle, draw=black, line width=0.5pt, minimum width=3.30cm, minimum height=0.72cm, inner xsep=1.5mm, inner ysep=1.0mm},
+  terminal/.style={rectangle, rounded corners=3.6mm, draw=black, line width=0.5pt, minimum width=1.80cm, minimum height=0.60cm},
+  decision/.style={diamond, draw=black, line width=0.5pt, aspect=2.4, inner xsep=0.4mm, inner ysep=0.3mm},
+  side/.style={box, dashed, draw=black!70, minimum width=3.10cm},
+  frame/.style={draw=black!60, fill=none, dash pattern=on 2.6mm off 1.3mm, line width=0.5pt, inner sep=0pt},
+  frametitle/.style={font=\fontsize{8pt}{9.6pt}\selectfont, anchor=north west, inner xsep=0.8mm, inner ysep=0.5mm},
+  flow/.style={-{Stealth[length=1.6mm,width=1.2mm,fill=black]}, draw=black, line width=0.5pt, line join=miter, shorten >=0.5mm},
+  dashedflow/.style={flow, dashed, draw=black!70},
+  lab/.style={font=\fontsize{8pt}{9.6pt}\selectfont, inner xsep=0.4mm, inner ysep=0.2mm}
+]
+
+% ---- main column ----
+\node[terminal] (start) at (0,13.20) {开始};
+\node[box] (read)   at (0,12.20) {读取客户、车场、车辆\\分时电价与电网碳强度};
+\node[box] (proxy)  at (0,11.05) {构建路线层代理问题};
+\node[box] (init)   at (0,9.90)  {生成初始种群};
+\node[box] (cross)  at (0,8.85)  {选择父代与选择性路线交换};
+\node[box] (ls)     at (0,7.80)  {局部搜索与罚系数更新};
+\node[decision] (stopk) at (0,6.55) {连续20\,000次\\未改善？};
+\node[box] (decode) at (0,4.70)  {解码为各实体车趟次序列};
+\node[box] (charge) at (0,3.65)  {安排车场预充与趟间补电};
+\node[box] (exact)  at (0,2.60)  {计算总成本并检验约束};
+\node[box] (educ)   at (0,1.55)  {跨车场趟交换与车型任务交换};
+\node[box] (best)   at (0,0.50)  {更新当前最优解};
+\node[decision] (stopr) at (0,-0.80) {本轮改善且\\使用电动车？};
+\node[box] (output) at (0,-2.20) {输出最优可行方案};
+\node[terminal] (end) at (0,-3.20) {结束};
+
+\draw[flow] (start) -- (read);
+\draw[flow] (read) -- (proxy);
+\draw[flow] (proxy) -- (init);
+\draw[flow] (init) -- (cross);
+\draw[flow] (cross) -- (ls);
+\draw[flow] (ls) -- (stopk);
+\draw[flow] (stopk) -- (decode);
+\node[lab,anchor=west] at (0.10,5.72) {是};
+\draw[flow] (decode) -- (charge);
+\draw[flow] (charge) -- (exact);
+\draw[flow] (exact) -- (educ);
+\draw[flow] (educ) -- (best);
+\draw[flow] (best) -- (stopr);
+\draw[flow] (stopr) -- (output);
+\node[lab,anchor=west] at (0.10,-1.55) {否};
+\draw[flow] (output) -- (end);
+
+% ---- kernel loop: 否 -> back to crossover ----
+\draw[flow] (stopk.east) -- (2.55,6.55) -- (2.55,8.85) -- (cross.east);
+\node[lab,anchor=south west] at (1.35,6.60) {否};
+
+% ---- price feedback loop: 是 -> rebuild proxy ----
+\node[box,minimum width=2.60cm] (feed) at (-3.55,4.20) {回填实付电价\\重建代理问题};
+\draw[flow] (stopr.west) -- (-3.55,-0.80) -- (feed.south);
+\node[lab,anchor=south east] at (-1.35,-0.75) {是};
+\draw[flow] (feed.north) -- (-3.55,11.05) -- (proxy.west);
+
+% ---- dynamic events ----
+\node[side] (dyn) at (3.75,12.20) {动态事件触发\\继承车辆状态、更新客户};
+\draw[dashedflow] (dyn.west) -- (read.east);
+
+% ---- frames ----
+\draw[frame] (-2.05,5.90) rectangle (2.95,10.62);
+\node[frametitle] at (-2.05,10.62) {路线搜索};
+\draw[frame] (-2.05,-0.05) rectangle (2.95,5.50);
+\node[frametitle] at (-2.05,5.50) {精确评价};
+
+\end{tikzpicture}
+\end{document}

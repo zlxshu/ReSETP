@@ -22,7 +22,18 @@ from experiment_acceptance import (
     result_exit_code,
 )
 from setp_solver.algorithms.problem_hgs.charging import (
+    FIRST_TRIP_WINDOW_PREV_RETURN,
+    FIRST_TRIP_WINDOW_SAME_DAY,
+    FIRST_TRIP_WINDOWS,
     ChargingRepairPolicy,
+)
+from setp_solver.algorithms.problem_hgs.kernel_proposals import (
+    FIRST_TRIP_WINDOW_OPEN_QUANTILE,
+    RELOAD_GAP_FLOOR_SECONDS,
+    RELOAD_GAP_QUANTILE,
+    population_first_trip_window_open_second,
+    population_inter_trip_reload_seconds,
+    reference_trip_energy_kwh,
 )
 from setp_solver.algorithms.problem_hgs.c0_witness_adapter import (
     adapt_witness_rows_to_duty,
@@ -56,6 +67,8 @@ from setp_solver.algorithms.problem_hgs.population import (
     PopulationParameters,
 )
 from setp_solver.algorithms.resetp_alns.support.charging import (
+    PUBLIC_STATION_CANDIDATE_MODES,
+    SPLIT_PUBLIC_STATION_CANDIDATE_MODE,
     charging_repair_runtime_diagnostics,
 )
 from setp_solver.algorithms.problem_hgs.initialization import build_initial_population
@@ -63,9 +76,13 @@ from setp_solver.algorithms.problem_hgs.kernel_proposals import (
     IndependentKernelDutyRouteProposalEngine,
 )
 from setp_solver.algorithms.problem_hgs.runner import (
+    CONFIRMING_ROUND_PATIENCE_FLOOR,
+    MAX_OUTER_ROUNDS,
     SINGLE_OBJECTIVE,
+    STOP_AFTER_NONIMPROVING_ROUNDS,
     ProblemHGSSearchParameters,
     run_integrated_problem_hgs,
+    run_kernel_native_problem_hgs,
 )
 from setp_solver.charge_timing import CHARGE_TIMING_POLICIES
 from setp_solver.china81 import (
@@ -81,15 +98,14 @@ from setp_solver.china81 import (
     _city_runtime_binding_from_profile,
     _diesel_price_map_from_profile,
     _load_time_profile,
-    load_china81_bundle,
 )
-from setp_solver.china81_completion import complete_china81_route_skeleton
 from setp_solver.enterprise_accounting import build_enterprise_ledger
 from setp_solver.instance_loader import Instance, Node, RoadProfileMatrices
 from setp_solver.model_config import ModelConfig
 from setp_solver.search.multitrip_schedule import (
     DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
     prepare_multitrip_solution,
+    set_active_recharge_mode,
 )
 from setp_solver.field_rename_compat import (
     configured_depot_gun_count,
@@ -100,11 +116,46 @@ from setp_solver.search.dynamic_multitrip_schedule import (
     cut_certificate_at_trigger,
 )
 from setp_solver.search.metaheuristic_baselines import solution_from_dict, solution_to_dict
-from setp_solver.solution import Route, Solution
 
-INSTANCE_ID = "cn-jjj-10c-01-V2-LOCATIONS"
+INSTANCE_ID = "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd"
 ARM = "one-cycle-real-input-wiring-trial"
 NO_IMPROVEMENT_LIMIT = 20_000
+
+# 2026-09-08：路由代理的两个"路线无关锚点"在 --proxy-estimate-source reference
+# 下取的全批共用常数。
+#
+# 为什么不是"从共享的参照解上估"：本入口的参照解（_build_context 返回的见证解）
+# 实测是纯燃油的——8 辆燃油车、0 条充电会话、0 趟电动行程（2026-09-08 离线核
+# 验，只读，不开搜索）。两个估计器在这样的解上都返回 None：
+# ``population_inter_trip_reload_seconds`` 没有 trip_index>=2 的会话，
+# ``population_first_trip_window_open_second`` 没有电动行程。落到 None 就退回
+# 两个已知更差的旧值（预留退回见证解最大趟的 2031.67 s 过度预留；窗口退回契约
+# 末班结束 19:00，实测代理 1.243 对精确 0.873 元/kWh）。所以"参照"落在**一个
+# 全批共用的常数**上，而不是"参照解自己的统计量"，这与
+# docs/handoff/fleet_dispersion_kernel_vs_python_20260908.md 档 b2 的原话
+# （"取一个全批共用的常数"）一致。
+#
+# 常数取值＝现行估计器在四臂各 10 跑（共 40 跑）上实测值的中位数，规则在开跑前
+# 定死，不挑结果：
+#   预留   40 跑落在 1348.00–2117.39 s，中位数 1757.5422714695778
+#   窗口   40 跑落在 55618.62–58731.65 s，中位数 56808.17676999999
+# 产物：solver/reports/grid2x2_v3_20260906/beijing/P=0.2/{MT-HGS,MTC-HGS} 与
+# solver/reports/charging_arrangements_20260906/{cost_min,carbon_min} 的
+# metadata.json ``route_engine_wiring.reload_gap_round1.seconds`` 与
+# ``route_engine_wiring.first_trip_window_open_round1.second``。
+#
+# 预留这个数只进时长、不进弧成本，取大了会把可行解判成不可行（2026-09-05 实测：
+# 2614.1 s 把 33 个精确可行解里的 25 个判为内核不可行）。这里的 1757.54 s
+# **小于**四臂各自最优跑当时实际用的预留（1803.67 / 1961.77 / 1820.27 /
+# 2044.94 s）；预留只往时长上加，所以在更大预留下内核找得到的解，在更小的预留
+# 下必然仍旧可行——这就是"取这个常数不会缩小可行域"的证明，不需要再跑一遍。
+PROXY_REFERENCE_RELOAD_GAP_SECONDS = 1757.5422714695778
+PROXY_REFERENCE_FIRST_TRIP_WINDOW_OPEN_SECOND = 56808.17676999999
+PROXY_ESTIMATE_SOURCES = ("population", "reference")
+# 正式入口的默认档。库内／函数默认仍是"改动前的行为"（多起点 1、不冻结）：
+# 换默认的是这条命令行入口，不是算法库。
+ROUND_ONE_STARTS_DEFAULT = 3
+PROXY_ESTIMATE_SOURCE_DEFAULT = "reference"
 SUCCESS_VERDICT = "RUN_COMPLETE"
 FAILURE_VERDICT = "RUN_FAILED"
 ENTERPRISE_NATIVE_EXPECTATIONS = {
@@ -119,14 +170,57 @@ FLEET_PARAMETER_CLASSES = {
 MECHANISM_NAMES = frozenset(
     {"cross_depot", "multi_trip", "type_exchange", "charge_timing"}
 )
-DEPOT_SWAP_INSTANCE_ID = "cn-jjj-50c-01-V3-TWO-SHIFT-DEPOTSWAP"
-DEPOT_SWAP_PACKAGE = Path(
-    "data/ChinaInstances/china81_instance_depot_swap_jjj_v1_20260813"
-)
-DEPOT_SWAP_RUNTIME_PARAMETER_AUTHORITY = Path(
+DEPOT_SEARCH_INSTANCE_ID = "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd"
+# Work-window lever (2026-09-04): a byte-for-byte copy of the DEPOTSEARCH
+# instance directory whose PM shift and PM customer windows are shifted one
+# hour later (lunch 11:00-14:00, PM 14:00-20:00).  It reuses the same sealed
+# package, so its catalogue and fleet-cap rows are looked up under the base id.
+LUNCH_WINDOW_INSTANCE_ID = f"{DEPOT_SEARCH_INSTANCE_ID}-LUNCH1114"
+DEPOT_SEARCH_INSTANCE_IDS = (DEPOT_SEARCH_INSTANCE_ID, LUNCH_WINDOW_INSTANCE_ID)
+# Instance ids that share another instance's rows in ``instance_catalog.csv``
+# and ``fleet_caps.csv``; only those two package-level lookups are aliased, the
+# saved instance directory is always read under the real id.
+PACKAGE_CATALOG_ALIAS = {LUNCH_WINDOW_INSTANCE_ID: DEPOT_SEARCH_INSTANCE_ID}
+DEFAULT_TARIFF_CALENDAR_AUTHORITY = (
     "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723"
 )
-DEPOT_SEARCH_INSTANCE_ID = "cn-jjj-50c-01-DEPOTSEARCH-d996f755bd"
+# 碳限额与交易（2026-09-06）：算例的出厂配额。0 kg ＝ 无免费配额，全部排放按
+# 碳价买单，这是本项目此前所有已落盘结果的口径。
+DEFAULT_CARBON_QUOTA_KG = 0.0
+
+
+def _resolve_tariff_calendar_authority(
+    repo: Path,
+    authority: Path | str | None,
+) -> Path:
+    """Resolve the runtime tariff/carbon calendar directory inside the repo.
+
+    ``None`` keeps the approved default authority.  The directory must live
+    under the repository root because the bundle records every input path
+    relative to it (``relative_to(repo)`` below).
+    """
+
+    candidate = Path(
+        DEFAULT_TARIFF_CALENDAR_AUTHORITY if authority is None else authority
+    )
+    if ".." in candidate.parts:
+        raise ValueError(
+            "tariff calendar authority must not contain '..': "
+            f"{candidate}"
+        )
+    root = repo / candidate
+    try:
+        root.relative_to(repo)
+    except ValueError as error:
+        raise ValueError(
+            "tariff calendar authority must live under the repository root: "
+            f"{root}"
+        ) from error
+    if not root.is_dir():
+        raise FileNotFoundError(
+            f"tariff calendar authority directory is missing: {root}"
+        )
+    return root
 
 
 def _json(path: Path, payload: Any) -> None:
@@ -134,6 +228,109 @@ def _json(path: Path, payload: Any) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
+
+
+def _write_kernel_trace_csvs(output: Path, accounting: Any) -> tuple[Path, Path]:
+    """把内核轮内改善轨迹与每轮小结落盘（纯遥测，不改搜索行为）。
+
+    2026-09-05：``convergence.csv`` 每个外层轮只写一行，七分钟的跑只留下两到
+    四个点，轮内的改善曲线完全看不见。runner 现在把内核每次刷新轮内最优的
+    时刻记进 ``accounting.improvement_events``、把每轮小结记进
+    ``accounting.kernel_round_summaries``；这里按 ``convergence.csv`` 同样的
+    落点（运行输出目录）写成两份 CSV。
+
+    非 kernel_native 路径不记录这两条序列，此时只写表头。某轮内核最优若始终
+    停在不可行哨兵上，``kernel_best_cost`` 写空单元格而不是字符串 "None"。
+    """
+
+    trace_path = output / "improvement_trace.csv"
+    rounds_path = output / "kernel_rounds.csv"
+    output.mkdir(parents=True, exist_ok=True)
+    with trace_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=("round", "iteration", "kernel_best_cost"),
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        for event in getattr(accounting, "improvement_events", ()):
+            writer.writerow(
+                {
+                    "round": int(event["round"]),
+                    "iteration": int(event["iteration"]),
+                    "kernel_best_cost": (
+                        f"{float(event['kernel_best_cost']):.12f}"
+                    ),
+                }
+            )
+        handle.flush()
+    with rounds_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=(
+                "round",
+                "iterations",
+                "runtime_seconds",
+                "improvements",
+                "kernel_best_cost",
+            ),
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        for summary in getattr(accounting, "kernel_round_summaries", ()):
+            cost = summary["kernel_best_cost"]
+            writer.writerow(
+                {
+                    "round": int(summary["round"]),
+                    "iterations": int(summary["iterations"]),
+                    "runtime_seconds": f"{float(summary['runtime_seconds']):.9f}",
+                    "improvements": int(summary["improvements"]),
+                    "kernel_best_cost": (
+                        "" if cost is None else f"{float(cost):.12f}"
+                    ),
+                }
+            )
+        handle.flush()
+    return trace_path, rounds_path
+
+
+def _trip_clock_rows(evaluation) -> list[dict[str, Any]]:
+    """Per-trip departure / return / recharge-end clocks of the best solution.
+
+    2026-09-05 (A5): ``FullEvaluation.certificate.trips`` has carried these
+    instants all along, but ``best_solution.json`` never wrote them, so no
+    consumer could tell when a duty's trips actually ran.  Serialised at the
+    TOP level (never inside ``DutyTrip``, which is frozen and feeds the duty
+    fingerprint and the solution's identity), so ``asdict(result.best)`` and
+    every existing consumer stay bit-for-bit unchanged.
+
+    ``ScheduledTrip.charge_start_second`` is the depot charge that runs AFTER
+    its own trip and feeds the next departure, so the causal floor is that
+    same trip's ``return_second``: a vehicle cannot start charging before it
+    is back.  This mirrors ``charging.py`` ``earliest = previous_return``.
+    The check is deliberately SINGLE-SIDED -- under ``cost_plus_carbon`` a
+    charge may legitimately wait for a cheaper slot long after the return.
+    """
+
+    rows = [
+        asdict(trip)
+        for trip in sorted(
+            evaluation.certificate.trips,
+            key=lambda item: (item.physical_vehicle_id, item.trip_index),
+        )
+    ]
+    for row in rows:
+        start = row.get("charge_start_second")
+        if start is None:
+            continue
+        if float(start) < float(row["return_second"]) - 1e-6:
+            raise ValueError(
+                "depot charge starts before its own trip returns: "
+                f"{row['physical_vehicle_id']} trip {row['trip_index']} "
+                f"charge_start={float(start)!r} "
+                f"return={float(row['return_second'])!r}"
+            )
+    return rows
 
 
 def _load_registered_initial_solution(path: Path, bundle: China81Bundle) -> DutyIndividual:
@@ -165,6 +362,8 @@ def _policy(
     first_trip_prev_night_enabled: bool = False,
     charge_timing_policy: str = "cost_plus_carbon",
     frvcpy_enabled: bool = False,
+    first_trip_window: str = FIRST_TRIP_WINDOW_SAME_DAY,
+    public_station_candidate_mode: str = SPLIT_PUBLIC_STATION_CANDIDATE_MODE,
 ) -> ChargingRepairPolicy:
     return ChargingRepairPolicy(
         strategy="integrated",
@@ -172,10 +371,11 @@ def _policy(
         depot_charge_window_mode=evaluator.context.depot_charge_window_mode,
         charge_timing_policy=charge_timing_policy,
         charge_amount_strategy="just_enough",
-        public_station_candidate_mode="parallel",
+        public_station_candidate_mode=public_station_candidate_mode,
         carbon_profiles_by_day_offset=None,
         first_trip_prev_night_enabled=first_trip_prev_night_enabled,
         frvcpy_enabled=frvcpy_enabled,
+        first_trip_window=first_trip_window,
     )
 
 
@@ -234,28 +434,27 @@ def _build_context(
         FIXED_25_PERCENT_FLEET_PARAMETERS
     ),
     depot_charging_scenario_name: str = "60kw",
+    ev_cap_override: Mapping[str, int | tuple[int, int]] | None = None,
+    tariff_calendar_authority: Path | str | None = None,
+    ev_daily_premium_cny: float | None = None,
+    carbon_quota_kg: float | None = None,
 ):
-    if instance_id.endswith("-V3-TWO-SHIFT-DP"):
-        if depot_charging_scenario_name != "60kw":
-            raise ValueError("DP suite is frozen at the 60 kW depot scenario")
-        return _build_saved_suite_context(
-            repo,
-            instance_id,
-            package_root=repo / "data/ChinaInstances/china81_depotpair_rebuild_v1_20260812",
-            report_root=repo / "solver/reports/suite_depotpair_rebuild_20260812",
-            fleet_parameters=fleet_parameters,
-        )
     if instance_id.endswith("-V3-TWO-SHIFT-PRDFIX"):
         if depot_charging_scenario_name != "60kw":
             raise ValueError("PRDFIX suite is frozen at the 60 kW depot scenario")
+        if ev_cap_override:
+            raise ValueError("ev-cap override is only wired for the DEPOTSEARCH lane")
         return _build_saved_suite_context(
             repo,
             instance_id,
             package_root=repo / "data/ChinaInstances/china81_suite_prd_fix_v1_20260812",
             report_root=repo / "solver/reports/suite_prd_fix_20260812",
             fleet_parameters=fleet_parameters,
+            tariff_calendar_authority=tariff_calendar_authority,
+            ev_daily_premium_cny=ev_daily_premium_cny,
+            carbon_quota_kg=carbon_quota_kg,
         )
-    if instance_id == DEPOT_SEARCH_INSTANCE_ID:
+    if instance_id in DEPOT_SEARCH_INSTANCE_IDS:
         if depot_charging_scenario_name != "60kw":
             raise ValueError(
                 "DEPOTSEARCH instance is frozen at the 60 kW depot scenario"
@@ -266,95 +465,12 @@ def _build_context(
             package_root=repo / "data/ChinaInstances/china81_final_suite_v2_20260815",
             report_root=repo / "solver/reports/instance_build_only_d996f755bd_20260815",
             fleet_parameters=fleet_parameters,
+            ev_cap_override=ev_cap_override,
+            tariff_calendar_authority=tariff_calendar_authority,
+            ev_daily_premium_cny=ev_daily_premium_cny,
+            carbon_quota_kg=carbon_quota_kg,
         )
-
-    from setp_solver.private_instance_rebuild_20260811 import (
-        DEPOT_CHARGING_SCENARIOS,
-        EV_DAILY_FIXED_PREMIUM_CNY,
-        INSTANCE_ID as REBUILT_INSTANCE_ID,
-        load_private_instance_rebuild,
-    )
-
-    if instance_id == REBUILT_INSTANCE_ID:
-        rebuilt = load_private_instance_rebuild(
-            repo,
-            fleet_parameters=fleet_parameters,
-            depot_charging_scenario=DEPOT_CHARGING_SCENARIOS[
-                depot_charging_scenario_name
-            ],
-        )
-        bundle = rebuilt.china81
-        skeleton = _private_rebuild_health_witness_initial(repo, bundle)
-        individual = _with_registered_idle_duties(
-            DutyIndividual.from_solution(skeleton),
-            bundle,
-        )
-        neutral = {
-            node.node_id: 1.0
-            for node in bundle.instance.nodes
-            if node.node_type.lower() == "d"
-        }
-        shift_windows = {
-            shift_id: (
-                float(row["start_minute"]) * 60.0,
-                float(row["end_minute"]) * 60.0,
-            )
-            for shift_id, row in rebuilt.shift_contract["shifts"].items()
-        }
-        context = DutyEvaluationContext(
-            bundle=bundle,
-            independent_profit=neutral,
-            prior_profit={depot_id: 0.0 for depot_id in neutral},
-            theta=0.0,
-            carbon_quota_kg=0.0,
-            depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
-            fairness_enabled=False,
-            ev_daily_fixed_premium_cny=EV_DAILY_FIXED_PREMIUM_CNY,
-            shift_aware_departure_enabled=True,
-            rebuilt_route_constraints=RebuiltRouteConstraintContract(
-                source_id="china81_private_rebuild_v1_20260811/shift_contract.json",
-                customer_shift_by_id={
-                    customer_id: str(row["shift_id"])
-                    for customer_id, row in rebuilt.orders_by_customer.items()
-                },
-                customer_volume_m3_by_id={
-                    customer_id: float(row["source_volume_m3"])
-                    for customer_id, row in rebuilt.orders_by_customer.items()
-                },
-                shift_window_second_by_id=shift_windows,
-                vehicle_volume_capacity_m3=float(
-                    rebuilt.shift_contract["vehicle_volume_capacity_m3"]
-                ),
-            ),
-        )
-        return bundle, individual, neutral, context
-
-    bundle = load_china81_bundle(
-        repo,
-        instance_id,
-        fleet_parameters=fleet_parameters,
-    )
-    skeleton = _registered_finite_fleet_initial(repo, bundle)
-    completed = complete_china81_route_skeleton(skeleton, bundle).solution
-    individual = _with_registered_idle_duties(
-        DutyIndividual.from_solution(completed),
-        bundle,
-    )
-    neutral = {
-        node.node_id: 1.0
-        for node in bundle.instance.nodes
-        if node.node_type.lower() == "d"
-    }
-    context = DutyEvaluationContext(
-        bundle=bundle,
-        independent_profit=neutral,
-        prior_profit={depot_id: 0.0 for depot_id in neutral},
-        theta=0.0,
-        carbon_quota_kg=0.0,
-        depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
-        fairness_enabled=False,
-    )
-    return bundle, individual, neutral, context
+    raise ValueError(f"inactive private instance: {instance_id}")
 
 
 def _csv_rows(path: Path) -> list[dict[str, str]]:
@@ -386,12 +502,135 @@ def _suite_matrix_from_reference(
     )
 
 
+def _apply_ev_cap_override(
+    fleet_caps: Mapping[str, Mapping[str, int]],
+    ev_cap_override: Mapping[str, int | tuple[int, int]],
+) -> Mapping[str, Mapping[str, int]]:
+    """Reshape per-depot type caps for fleet-configuration sensitivity runs.
+
+    Two override shapes share this channel:
+
+    * ``int`` -- the original slot-redistribution form.  The depot keeps its
+      total slot cap; num_ev is set from the override and num_cv absorbs the
+      remainder, so pure-CV and pure-EV endpoints are expressible exactly like
+      the template's power-configuration ladder.
+    * ``(num_cv, num_ev)`` -- the explicit fleet-mix form.  Both type counts are
+      written as given and the redundant total becomes their sum, so a rung can
+      state a fleet composition that the depot's own slot total cannot express.
+    """
+    unknown = set(ev_cap_override) - set(fleet_caps)
+    if unknown:
+        raise ValueError(f"ev-cap override names unknown depots: {sorted(unknown)}")
+    adjusted = {}
+    for depot_id, caps in fleet_caps.items():
+        if depot_id in ev_cap_override:
+            override = ev_cap_override[depot_id]
+            if isinstance(override, tuple):
+                num_cv, num_ev = (int(value) for value in override)
+                if num_cv < 0 or num_ev < 0:
+                    raise ValueError(
+                        f"fleet-mix override for {depot_id} must be non-negative"
+                    )
+                # A depot may hold no vehicle at all (fleet-composition
+                # enumeration places the whole fleet at the other depot);
+                # only the plan-wide total must stay positive (checked below).
+                caps = MappingProxyType(
+                    {
+                        "num_cv": num_cv,
+                        "num_ev": num_ev,
+                        "total_fleet_cap": num_cv + num_ev,
+                    }
+                )
+            else:
+                total = int(caps["total_fleet_cap"])
+                num_ev = int(override)
+                if not 0 <= num_ev <= total:
+                    raise ValueError(
+                        f"ev-cap override for {depot_id} must lie in [0, {total}]"
+                    )
+                caps = MappingProxyType(
+                    {
+                        "num_cv": total - num_ev,
+                        "num_ev": num_ev,
+                        "total_fleet_cap": total,
+                    }
+                )
+        adjusted[depot_id] = caps
+    if sum(
+        int(caps["num_cv"]) + int(caps["num_ev"]) for caps in adjusted.values()
+    ) < 1:
+        raise ValueError("fleet-mix override leaves no vehicles in the plan")
+    return MappingProxyType(adjusted)
+
+
+def _with_public_station_power(
+    bundle: China81Bundle,
+    power_kw: float,
+) -> China81Bundle:
+    """Rescale every public charging station's rated power (node type ``f``).
+
+    2026-09-08 尝试性开关（``--public-station-power-kw``），默认不启用。
+
+    公共站的充电曲线**形状**仍旧取 ``prices.public_charging_*``，也就是
+    Montoya 等（2017）归一化快充形状；本函数只换
+    ``PiecewiseChargingCurve.from_spec`` 的参考功率。调研结论是换曲线 id
+    不改 20–80% 段的时长，参考功率才是唯一杠杆（见
+    ``docs/handoff/public_charger_power_curve_survey_20260908.md``）。
+    因此曲线 id 仍写着 ``M17_FAST_SHAPE_SCALED_60KW_PWL``——名字里的 60KW
+    指的是形状的出处，不是本轮生效的功率；生效功率见节点与
+    ``charger_scenario_by_node``。
+
+    车场功率（``prices.depot_charge_power_kw``）、站点电价、枪数一律不动。
+    评价、修复、检查三条链都从 ``node.charge_power_kw`` 读站功率
+    （``cost.py:585``、``search/charging.py:894``、``check.py:941``），
+    所以改节点即全链生效；内核代理只读车场曲线，不看站功率。
+    """
+
+    power = float(power_kw)
+    if not math.isfinite(power) or power <= 0.0:
+        raise ValueError("--public-station-power-kw must be finite and positive")
+    station_ids = {
+        node.node_id
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "f"
+    }
+    if not station_ids:
+        raise ValueError("instance carries no public station to rescale")
+    instance = replace(
+        bundle.instance,
+        nodes=[
+            replace(node, charge_power_kw=power)
+            if node.node_id in station_ids
+            else node
+            for node in bundle.instance.nodes
+        ],
+    )
+    charger_scenario = MappingProxyType(
+        {
+            node_id: (
+                MappingProxyType({**dict(values), "charge_power_kw": power})
+                if node_id in station_ids
+                else values
+            )
+            for node_id, values in bundle.charger_scenario_by_node.items()
+        }
+    )
+    return replace(
+        bundle,
+        instance=instance,
+        charger_scenario_by_node=charger_scenario,
+    )
+
+
 def _load_v3_suite_bundle(
     repo: Path,
     *,
     package_root: Path,
     instance_id: str,
     fleet_parameters: China81FleetParameterClass,
+    ev_cap_override: Mapping[str, int | tuple[int, int]] | None = None,
+    tariff_calendar_authority: Path | str | None = None,
+    ev_daily_premium_cny: float | None = None,
 ) -> tuple[China81Bundle, Mapping[str, Mapping[str, str]]]:
     """Load a V3 suite only from its sealed package and shared runtime authority.
 
@@ -405,10 +644,13 @@ def _load_v3_suite_bundle(
     from setp_solver.china81 import FLEET_CAP_SEMANTICS
 
     saved_root = package_root / "instances" / instance_id
+    # A derived instance (see PACKAGE_CATALOG_ALIAS) keeps its own directory but
+    # shares the base instance's package-level catalogue and fleet-cap rows.
+    package_row_id = PACKAGE_CATALOG_ALIAS.get(instance_id, instance_id)
     catalog_rows = [
         row
         for row in _csv_rows(package_root / "instance_catalog.csv")
-        if row["instance_id"] == instance_id
+        if row["instance_id"] == package_row_id
     ]
     if len(catalog_rows) != 1:
         raise ValueError(f"V3 suite catalog row is not unique for {instance_id}")
@@ -427,7 +669,7 @@ def _load_v3_suite_bundle(
     fleet_rows = [
         row
         for row in _csv_rows(package_root / "fleet_caps.csv")
-        if row["instance_id"] == instance_id
+        if row["instance_id"] == package_row_id
     ]
     if not fleet_rows:
         raise ValueError(f"V3 suite fleet rows are missing for {instance_id}")
@@ -439,6 +681,8 @@ def _load_v3_suite_bundle(
             for row in fleet_rows
         }
     )
+    if ev_cap_override:
+        fleet_caps = _apply_ev_cap_override(fleet_caps, ev_cap_override)
     if {row["fleet_parameter_class"] for row in fleet_rows} != {
         fleet_parameters.parameter_class_id
     }:
@@ -541,10 +785,6 @@ def _load_v3_suite_bundle(
         (saved_root / "matrix_reference.json").read_text(encoding="utf-8")
     )
     matrix_authority = repo / str(reference["source_authority"])
-    if not matrix_authority.is_dir():
-        # DP's reference was written against a temporary construction path;
-        # the sealed package contains the same frozen matrix under this path.
-        matrix_authority = package_root / "directed_matrices"
     matrix_instance_id = str(reference["source_instance_id"])
     matrix_root = matrix_authority / "instances" / matrix_instance_id
     profiles = {
@@ -588,6 +828,16 @@ def _load_v3_suite_bundle(
             "cv": float(cost_rows["cv"]["effective_daily_fixed_cost_cny"]),
             "ev": float(cost_rows["ev"]["effective_daily_fixed_cost_cny"]),
         }
+    if ev_daily_premium_cny is not None:
+        # EV subsidy lever (2026-09-04): the daily fixed premium an EV carries
+        # over a CV is the authority's ``ev - cv`` difference, so overriding the
+        # premium means rewriting the EV daily fixed cost.  The proxy
+        # (kernel_proposals.py) and the exact account (cost.py) both read this
+        # same ``vehicle_fixed_cost_per_day``, and
+        # ``problem_hgs/evaluation.py`` asserts the context premium equals this
+        # difference, so both must move together.
+        fixed_costs = dict(fixed_costs)
+        fixed_costs["ev"] = fixed_costs["cv"] + float(ev_daily_premium_cny)
     vehicle_parameters = _china_vehicle_parameters(fixed_costs)
     num_cv = sum(int(caps["num_cv"]) for caps in fleet_caps.values())
     num_ev = sum(int(caps["num_ev"]) for caps in fleet_caps.values())
@@ -605,7 +855,10 @@ def _load_v3_suite_bundle(
         for node in nodes
         if node.city is not None
     }
-    runtime_root = repo / "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723"
+    runtime_root = _resolve_tariff_calendar_authority(
+        repo,
+        tariff_calendar_authority,
+    )
     time_profile = _load_time_profile(
         resolve_calendar_path(runtime_root),
         cities=cities,
@@ -730,11 +983,29 @@ def _suite_context_from_built(
     template: Any,
     matrix_authority: str,
     fleet_parameters: China81FleetParameterClass,
+    ev_cap_override: Mapping[str, int | tuple[int, int]] | None = None,
+    ev_daily_premium_cny: float | None = None,
+    carbon_quota_kg: float | None = None,
 ):
     """Turn one saved V3 two-shift construction into a private context."""
 
     from setp_solver.private_instance_rebuild_20260811 import (
         EV_DAILY_FIXED_PREMIUM_CNY,
+    )
+
+    effective_ev_daily_premium_cny = (
+        EV_DAILY_FIXED_PREMIUM_CNY
+        if ev_daily_premium_cny is None
+        else float(ev_daily_premium_cny)
+    )
+    # 碳限额与交易杠杆（2026-09-06）：算例自带的配额是 0 kg，即"全部排放都要
+    # 买单"。把它调高就是发放免费配额，cost.py:230 的碳成本
+    # ``(E_total - Q) * carbon_price`` 线性且允许为负，负值即把富余配额卖出。
+    # 这里只改评价上下文里的 Q，不动车辆权威值，也不动受保护文件。
+    effective_carbon_quota_kg = (
+        DEFAULT_CARBON_QUOTA_KG
+        if carbon_quota_kg is None
+        else float(carbon_quota_kg)
     )
 
     saved_root = package_root / "instances" / instance_id
@@ -751,7 +1022,7 @@ def _suite_context_from_built(
     fleet_rows = [
         row
         for row in _csv_rows(package_root / "fleet_caps.csv")
-        if row["instance_id"] == instance_id
+        if row["instance_id"] == PACKAGE_CATALOG_ALIAS.get(instance_id, instance_id)
     ]
     if not fleet_rows:
         raise ValueError(f"suite fleet rows are missing for {instance_id}")
@@ -774,12 +1045,16 @@ def _suite_context_from_built(
             for row in fleet_rows
         }
     )
+    if ev_cap_override:
+        fleet_caps = _apply_ev_cap_override(fleet_caps, ev_cap_override)
     instance = replace(
         built.instance,
         num_cv=sum(caps["num_cv"] for caps in fleet_caps.values()),
         num_ev=sum(caps["num_ev"] for caps in fleet_caps.values()),
     )
-    if instance.num_cv < 1 or instance.num_ev < 1:
+    if instance.num_cv + instance.num_ev < 1:
+        raise ValueError(f"suite fleet caps leave no vehicles for {instance_id}")
+    if ev_cap_override is None and (instance.num_cv < 1 or instance.num_ev < 1):
         raise ValueError(f"suite fleet caps have no active mixed fleet for {instance_id}")
     depot_charger_scenario = {
             row["depot_id"]: MappingProxyType(
@@ -840,16 +1115,36 @@ def _suite_context_from_built(
         fleet_authority=str(package_root.relative_to(repo)),
         formal_search_allowed=False,
     )
-    individual = adapt_witness_rows_to_duty(
-        (
-            row
-            for row in _csv_rows(report_root / "health_witness_routes.csv")
-            if row["instance_id"] == instance_id
-        ),
-        instance_id=instance_id,
-        bundle=bundle,
-        register_idle_duties=_with_registered_idle_duties,
-    )
+    # A derived instance (see PACKAGE_CATALOG_ALIAS) shares the base instance's
+    # saved health witness: the witness is a route skeleton over the same
+    # customers, depots and shift ids, and its departure/return minutes are
+    # only validated as numbers, never carried into the individual.
+    witness_row_id = PACKAGE_CATALOG_ALIAS.get(instance_id, instance_id)
+    try:
+        individual = adapt_witness_rows_to_duty(
+            (
+                row
+                for row in _csv_rows(report_root / "health_witness_routes.csv")
+                if row["instance_id"] == witness_row_id
+            ),
+            instance_id=witness_row_id,
+            bundle=bundle,
+            register_idle_duties=_with_registered_idle_duties,
+        )
+    except RuntimeError:
+        if not ev_cap_override:
+            raise
+        # Fleet-configuration rungs can retire the CV slots the all-CV health
+        # witness occupies; those rungs start from registered idle slots with
+        # every customer unserved instead.
+        individual = register_all_vehicle_slots(
+            DutyIndividual(
+                duties=(),
+                unserved_customers=tuple(sorted(built.orders_by_customer)),
+                source="config-axis-idle-init",
+            ),
+            bundle,
+        )
     neutral = {
         node.node_id: 1.0
         for node in bundle.instance.nodes
@@ -860,10 +1155,10 @@ def _suite_context_from_built(
         independent_profit=neutral,
         prior_profit={depot_id: 0.0 for depot_id in neutral},
         theta=0.0,
-        carbon_quota_kg=0.0,
+        carbon_quota_kg=effective_carbon_quota_kg,
         depot_charge_window_mode=DEFAULT_DEPOT_CHARGE_WINDOW_MODE,
         fairness_enabled=False,
-        ev_daily_fixed_premium_cny=EV_DAILY_FIXED_PREMIUM_CNY,
+        ev_daily_fixed_premium_cny=effective_ev_daily_premium_cny,
         shift_aware_departure_enabled=True,
         rebuilt_route_constraints=RebuiltRouteConstraintContract(
             source_id=str((saved_root / "shift_contract.json").relative_to(repo)),
@@ -891,6 +1186,10 @@ def _build_saved_suite_context(
     package_root: Path,
     report_root: Path,
     fleet_parameters: China81FleetParameterClass,
+    ev_cap_override: Mapping[str, int | tuple[int, int]] | None = None,
+    tariff_calendar_authority: Path | str | None = None,
+    ev_daily_premium_cny: float | None = None,
+    carbon_quota_kg: float | None = None,
 ):
     """Load any sealed V3 two-shift suite through its package contract."""
 
@@ -899,6 +1198,9 @@ def _build_saved_suite_context(
         package_root=package_root,
         instance_id=instance_id,
         fleet_parameters=fleet_parameters,
+        ev_cap_override=ev_cap_override,
+        tariff_calendar_authority=tariff_calendar_authority,
+        ev_daily_premium_cny=ev_daily_premium_cny,
     )
     return _suite_context_from_built(
         repo,
@@ -917,99 +1219,11 @@ def _build_saved_suite_context(
         template=bundle,
         matrix_authority=bundle.road_matrix_authority,
         fleet_parameters=fleet_parameters,
+        ev_cap_override=ev_cap_override,
+        ev_daily_premium_cny=ev_daily_premium_cny,
+        carbon_quota_kg=carbon_quota_kg,
     )
 
-
-
-
-
-
-
-
-
-
-
-
-def _private_rebuild_health_witness_initial(repo: Path, bundle) -> Solution:
-    """Load the saved feasible health witness without invoking a solver."""
-
-    path = (
-        repo
-        / "solver/reports/instance_rebuild_20260811/health_witness_routes.csv"
-    )
-    with path.open(newline="", encoding="utf-8-sig") as handle:
-        rows = list(csv.DictReader(handle))
-    if not rows:
-        raise ValueError("rebuilt health witness is empty")
-    routes = [
-        Route(
-            vehicle_id=str(row["route_vehicle_id"]),
-            vehicle_type=(
-                "ev"
-                if str(row["physical_vehicle_id"]).startswith("EV_")
-                else "cv"
-            ),
-            home_depot_id=str(row["depot_id"]),
-            node_sequence=[
-                str(row["depot_id"]),
-                *str(row["customers"]).split("|"),
-                str(row["depot_id"]),
-            ],
-        )
-        for row in rows
-    ]
-    served = [node_id for route in routes for node_id in route.node_sequence[1:-1]]
-    expected = {
-        node.node_id
-        for node in bundle.instance.nodes
-        if node.node_type.lower() == "c"
-    }
-    if len(served) != len(set(served)) or set(served) != expected:
-        raise ValueError("rebuilt health witness does not cover customers exactly once")
-    return Solution(routes=routes)
-
-
-def _registered_finite_fleet_initial(repo: Path, bundle) -> Solution:
-    """Load the certified mixed-fleet route skeleton for one China81 input."""
-
-    witness_path = (
-        repo
-        / bundle.fleet_authority
-        / "witnesses"
-        / f"{bundle.instance_id}.json"
-    )
-    witness = json.loads(witness_path.read_text(encoding="utf-8"))
-    if str(witness.get("instance_id")) != bundle.instance_id:
-        raise RuntimeError("finite-fleet witness belongs to another instance")
-    level = witness.get("levels", {}).get("25")
-    if not isinstance(level, dict):
-        raise TypeError("finite-fleet witness has no registered level 25")
-    if level.get("status") != "CERTIFIED" or level.get("violations"):
-        raise RuntimeError("finite-fleet level 25 is not certified")
-
-    routes: list[Route] = []
-    for depot_id, depot in sorted(level["depots"].items()):
-        for vehicle_type in ("cv", "ev"):
-            for index, timed in enumerate(
-                depot[f"{vehicle_type}_routes"],
-                start=1,
-            ):
-                routes.append(
-                    Route(
-                        vehicle_id=(
-                            f"REGISTERED-INITIAL-{depot_id}-"
-                            f"{vehicle_type.upper()}-{index:03d}"
-                        ),
-                        vehicle_type=vehicle_type,
-                        home_depot_id=depot_id,
-                        node_sequence=[
-                            depot_id,
-                            *[str(customer) for customer in timed["customers"]],
-                            depot_id,
-                        ],
-                    )
-                )
-    return Solution(routes=routes)
 
 
 def _with_registered_idle_duties(
@@ -1376,6 +1590,43 @@ def main() -> int:
     parser.add_argument("--data-repo-root", type=Path)
     parser.add_argument("--instance-id", default=INSTANCE_ID)
     parser.add_argument(
+        "--tariff-calendar-authority",
+        type=Path,
+        default=Path(DEFAULT_TARIFF_CALENDAR_AUTHORITY),
+        help=(
+            "repository-relative directory holding "
+            "tariff_carbon_hourly_calendar.csv; the default is the approved "
+            "runtime parameter authority"
+        ),
+    )
+    parser.add_argument(
+        "--ev-daily-premium",
+        type=float,
+        default=None,
+        help=(
+            "EV daily fixed premium over a CV in CNY/day; the default keeps the "
+            "approved vehicle authority (EV_DAILY_FIXED_PREMIUM_CNY = 100). "
+            "Lowering it is the electric-vehicle subsidy lever: it rewrites the "
+            "EV daily fixed cost to CV + premium, so both the kernel proxy and "
+            "the exact account see it"
+        ),
+    )
+    parser.add_argument(
+        "--carbon-quota-kg",
+        type=float,
+        default=None,
+        help=(
+            "free carbon allowance in kgCO2e per day; the default keeps the "
+            f"instance value ({DEFAULT_CARBON_QUOTA_KG:g} kg = no free "
+            "allowance). The exact account charges "
+            "(E_total - quota) * carbon_price and allows a negative carbon "
+            "cost, so a quota above the plan's emissions is sold back. The "
+            "route proxy carries no quota term, which is consistent: the term "
+            "is a constant in the emissions, so its marginal effect on any "
+            "routing decision is zero"
+        ),
+    )
+    parser.add_argument(
         "--enterprise-id",
         help="run one enterprise's depot and fleet over the full shared market",
     )
@@ -1395,6 +1646,34 @@ def main() -> int:
         type=float,
         default=CHINA81_CARBON_PRICE_CNY_PER_KG,
         help="carbon price in CNY/kg; default preserves the China81 constant",
+    )
+    parser.add_argument(
+        "--ev-cap-override",
+        help=(
+            "fleet-configuration sensitivity: comma-joined DEPOT_ID=NUM_EV pairs; "
+            "each depot keeps its total slot cap and num_cv becomes total-num_ev"
+        ),
+    )
+    parser.add_argument(
+        "--fleet-mix-override",
+        help=(
+            "fleet-configuration sensitivity: comma-joined DEPOT_ID=NUM_CV/NUM_EV "
+            "triples; both type counts are written as given, so a rung can state a "
+            "fleet composition the depot's own slot total cannot express. "
+            "Mutually exclusive with --ev-cap-override."
+        ),
+    )
+    parser.add_argument(
+        "--recharge-mode",
+        choices=("on_demand", "full"),
+        default="on_demand",
+        help="charging-function arm: on_demand keeps the formal rule; full recharges to capacity after every trip",
+    )
+    parser.add_argument(
+        "--depot-curve",
+        choices=("registered", "linear"),
+        default="registered",
+        help="charging-function arm: linear swaps the depot curve for the constant-power L100 control",
     )
     parser.add_argument("--convergence-csv", type=Path)
     parser.add_argument(
@@ -1424,9 +1703,9 @@ def main() -> int:
     )
     parser.add_argument(
         "--depot-charging-scenario",
-        choices=("60kw", "22kw"),
+        choices=("60kw",),
         default="60kw",
-        help="rebuilt private-instance depot power/registered-curve pairing",
+        help="active private-suite depot power/registered-curve pairing",
     )
     parser.add_argument(
         "--first-trip-prev-night",
@@ -1437,10 +1716,260 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--first-trip-window",
+        choices=FIRST_TRIP_WINDOWS,
+        default=FIRST_TRIP_WINDOW_PREV_RETURN,
+        help=(
+            "when the first trip's pre-departure depot charge may start: "
+            "'prev_return' opens the window when the vehicle came back to the "
+            "depot the preceding evening -- the paper's formal setting since "
+            "2026-09-06 and the default here; 'same_day' opens it at the "
+            "simulation day's 00:00, the behaviour of every batch run before "
+            "that date, kept so those batches can be reproduced"
+        ),
+    )
+    parser.add_argument(
         "--charge-timing-policy",
         choices=tuple(sorted(CHARGE_TIMING_POLICIES)),
         default="cost_plus_carbon",
         help="charging-start policy used by both paired arms",
+    )
+    parser.add_argument(
+        "--lazy-exact",
+        action="store_true",
+        help=(
+            "only charge-repair and exactly evaluate a crossover child whose "
+            "kernel penalised cost is no worse than the worst exact feasible "
+            "member (integrated search mode)"
+        ),
+    )
+    parser.add_argument(
+        "--ev-departure-gap-proxy",
+        action="store_true",
+        help=(
+            "route kernel: every EV arc leaving a depot carries the charge "
+            "time of the largest reference trip, so kernel-feasible chains "
+            "always leave a gap the exact repair can fill"
+        ),
+    )
+    parser.add_argument(
+        "--ev-reload-gap-proxy",
+        action="store_true",
+        help=(
+            "route kernel (fleet-composition experiment only): every depot "
+            "gets a reload copy; EV arcs leaving the copy carry the "
+            "between-trip charging time, arcs leaving the real depot carry "
+            "none because the first trip charges before the day starts.  "
+            "Which charging time: in round one the --reload-gap-quantile "
+            "order statistic of the initial population's own pooled "
+            "between-trip sessions, and from round two on the same order "
+            "statistic of the exact best's sessions.  At --reload-gap-quantile "
+            "exactly 1.0 round one has no population statistic to fall back "
+            "on and reserves the charge time of the witness's largest trip "
+            "instead, which is the pre-2026-09-05 behaviour.  Exclusive with "
+            "--ev-departure-gap-proxy"
+        ),
+    )
+    parser.add_argument(
+        "--reload-gap-quantile",
+        type=float,
+        default=RELOAD_GAP_QUANTILE,
+        help=(
+            "route kernel, --ev-reload-gap-proxy only: which order statistic "
+            "of measured between-trip charging sessions a round reserves -- "
+            "the initial population's pooled sessions in round one, the "
+            "exact best's own sessions from round two on.  Exactly 1.0 is a "
+            "discontinuity, not a limit: it reproduces the pre-2026-09-05 "
+            "behaviour bit for bit, which means round one reserves the charge "
+            "time of the witness's largest trip (no population statistic) and "
+            "later rounds reserve the longest single session.  The 0.75 default is internal "
+            "calibration on this instance and machine, not a literature "
+            "value: the 101 real sessions of the P=0.2 midday-valley batch "
+            "have p50 1348 s, p75 1875 s, p90 2614 s, while reserving the "
+            "longest booked 2380-2642 s -- at 2614.1 s the kernel judged 25 "
+            "of 33 exactly-feasible solutions infeasible, at the 1875.3 s "
+            "this default feeds back it judges 4 (docs/handoff/"
+            "second_root_cause_reload_gap_20260905.md section 3.2)"
+        ),
+    )
+    parser.add_argument(
+        "--round-one-starts",
+        type=int,
+        default=ROUND_ONE_STARTS_DEFAULT,
+        help=(
+            "route kernel, --search-mode kernel_native only: how many "
+            "independent kernel searches round one runs before the exact "
+            "stage.  The start with the lowest kernel_best_cost (the "
+            "kernel's own in-round feasible proxy best, already recorded "
+            "every round) is kept and the run continues from it; the losers "
+            "are dropped without ever reaching a complete evaluation, which "
+            "is why K starts cost about K times round one's KERNEL time and "
+            "nothing else.  1 reproduces the pre-2026-09-08 behaviour bit "
+            "for bit (one start per run).  The default is 3, not 1, because "
+            "a run's outcome is settled in round one -- round-one exact best "
+            "against final cost has Spearman 0.748 -- and under one start "
+            "that round is a lottery worth 37-60 CNY of proxy cost on one "
+            "and the same cost table (docs/handoff/"
+            "fleet_dispersion_kernel_vs_python_20260908.md sections 2.4, 3.4)"
+        ),
+    )
+    parser.add_argument(
+        "--proxy-estimate-source",
+        choices=PROXY_ESTIMATE_SOURCES,
+        default=PROXY_ESTIMATE_SOURCE_DEFAULT,
+        help=(
+            "route kernel: where the two route-independent anchors of the EV "
+            "proxy come from -- the between-trip charging reservation and the "
+            "opening instant of the first shift's charging window.  "
+            "'population' is the pre-2026-09-08 behaviour: each run estimates "
+            "both from its OWN random initial population and re-estimates the "
+            "reservation every round, which made 40 measured runs spread "
+            "1348-2117 s and 55619-58732 s, i.e. ten runs of an arm were ten "
+            "different proxy problems.  'reference' (the default) takes both "
+            "from batch-wide constants and holds them for every round of the "
+            "run, so the ten runs of an arm face one and the same cost table "
+            "and the round-two reservation can no longer push the previous "
+            "round's own exact best into the kernel's infeasible "
+            "subpopulation.  The constants are the 40-run medians of the same "
+            "estimator, NOT statistics of the reference solution: that "
+            "solution is all-fuel and carries neither statistic (see "
+            "PROXY_REFERENCE_RELOAD_GAP_SECONDS).  It does not touch the "
+            "second-phase ev_unit_cost feedback, which still rescales the "
+            "price LEVEL each round"
+        ),
+    )
+    parser.add_argument(
+        "--max-reloads-per-vehicle",
+        default="8",
+        help=(
+            "route kernel: how many depot reload slots each vehicle gets in "
+            "the kernel model.  ``auto`` (or 0) restores the theoretical "
+            "bound of one trip per customer, 49 on the 50-customer instance, "
+            "which is what the kernel carried up to 2026-09-05.  The default "
+            "8 is internal calibration, not a literature value: the largest "
+            "duty in every dumped best_solution.json of the 2026-09-04/05 "
+            "batches runs 5 trips (4 reloads), so 8 leaves headroom of three "
+            "trips above anything the exact model has ever accepted"
+        ),
+    )
+    parser.add_argument(
+        "--kernel-vehicle-type-dedup",
+        choices=("on", "off"),
+        default="on",
+        help=(
+            "route kernel: give one kernel vehicle type to each distinct "
+            "parameter vector (``on``, the default) instead of one to each "
+            "physical vehicle (``off``, the pre-2026-09-05 model).  The "
+            "per-vehicle type only ever existed so a returned route could be "
+            "mapped back to its asset; the decoder now recovers that inside "
+            "the group.  The kernel probes empty routes once per vehicle type "
+            "for every customer and every step and 14-15 of the 20 routes sit "
+            "empty in every dumped plan, so the count is a real per-iteration "
+            "cost: 3.451 -> 3.140 ms/iteration measured on this instance "
+            "(docs/handoff/per_iteration_cost_design_20260905.md sections "
+            "1.2/2.1).  Merging is by full parameter vector -- it collapses "
+            "20 types to 4 and 4 profiles to 2 on the static batch and falls "
+            "back to one type per vehicle under a dynamic cut, where tw_early "
+            "differs per vehicle.  The solution space and every cost field are "
+            "unchanged (verified bit for bit on 48 dumped plans), but the "
+            "empty-route probe order is not, so the same seed walks a "
+            "different trajectory than an ``off`` run"
+        ),
+    )
+    parser.add_argument(
+        "--confirming-round",
+        action="store_true",
+        help=(
+            "kernel_native: keep repeating the priced search phase until a "
+            "round no longer improves the exact best (default: exactly one "
+            "priced phase)"
+        ),
+    )
+    parser.add_argument(
+        "--confirming-round-patience-mode",
+        choices=("fixed", "adaptive"),
+        default="adaptive",
+        help=(
+            "kernel_native: how many non-improving kernel iterations a round "
+            "from the second on is given.  ``fixed`` gives every round "
+            "--stagnation-patience and reproduces the pre-2026-09-05 "
+            "behaviour bit for bit.  ``adaptive`` (default) is internal "
+            "calibration on this run's own round one, not a literature "
+            "value: the round is given the widest wait between two "
+            "consecutive kernel improvements observed so far, clamped into "
+            "[--confirming-patience-floor, --stagnation-patience].  Round one "
+            "always keeps --stagnation-patience.  Evidence: across the 6 runs "
+            "/ 16 rounds of solver/reports/reload_fix_shortrun_20260905, 8 of "
+            "the 10 rounds after the first improved nothing and each burned "
+            "the full 20000 (43%% of total wall clock), while the two rounds "
+            "that did improve found it at in-round iteration 2720 and 13258 "
+            "-- both inside that run's own round-one widest wait of 15812.  "
+            "The rule reaches round two of an ordinary two-phase run too, not "
+            "only the repeated rounds of --confirming-round"
+        ),
+    )
+    parser.add_argument(
+        "--confirming-patience-floor",
+        type=int,
+        default=CONFIRMING_ROUND_PATIENCE_FLOOR,
+        help=(
+            "kernel_native, --confirming-round-patience-mode adaptive only: "
+            "the shortest patience a round from the second on may be given, "
+            "so a round one that converged fast does not turn the confirming "
+            "round into a formality.  --stagnation-patience still wins a "
+            "conflict: no round may run longer than the run's declared upper "
+            "bound"
+        ),
+    )
+    parser.add_argument(
+        "--stop-after-nonimproving-rounds",
+        type=int,
+        default=STOP_AFTER_NONIMPROVING_ROUNDS,
+        help=(
+            "kernel_native, --confirming-round only: how many outer rounds in "
+            "a row must fail to improve the exact best before the run stops.  "
+            "1 reproduces the pre-2026-09-05 rule (any single non-improving "
+            "round ends the run) bit for bit.  The default 2 is internal "
+            "calibration on this project's own runs, not a literature value: "
+            "docs/handoff/run_variance_diagnosis_20260905.md measures a run "
+            "that reached a third round at 18.47 CNY (B batch, 2CV/3EV, 4 vs "
+            "2 runs) and 19.19 CNY (A batch, same fleet, 1 vs 5) below one "
+            "that did not, while the charge-timing effect under test is 7-10 "
+            "CNY -- so whether a run got its third round was a coin flip, not "
+            "a convergence test.  Expect 40-70 percent more wall clock"
+        ),
+    )
+    parser.add_argument(
+        "--max-outer-rounds",
+        type=int,
+        default=MAX_OUTER_ROUNDS,
+        help=(
+            "kernel_native only: hard ceiling on the number of outer rounds.  "
+            "Before 2026-09-05 the --confirming-round loop had no ceiling at "
+            "all; with --stop-after-nonimproving-rounds above 1 an "
+            "improve/no-improve alternation would never terminate without "
+            "one.  Every run on record stopped within 4 rounds, so the "
+            "default 8 has never bound"
+        ),
+    )
+    parser.add_argument(
+        "--search-mode",
+        choices=("integrated", "kernel_native"),
+        default="integrated",
+        help=(
+            "integrated: one exact evaluation per child (current loop); "
+            "kernel_native: the kernel searches the route proxy to the "
+            "stopping rule, the exact model judges its population, realised "
+            "EV price feeds back (Montoya 2017 / Froger 2019 decomposition)"
+        ),
+    )
+    parser.add_argument(
+        "--no-ev-charge-time-proxy",
+        action="store_true",
+        help=(
+            "build the route kernel without EV charge-time amortisation "
+            "(2026-09-02 A: EV arc duration = travel + energy / P_eff)"
+        ),
     )
     parser.add_argument(
         "--frvcpy-charging",
@@ -1475,10 +2004,49 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--init-witness",
+        action="store_true",
+        help=(
+            "restore the witness-perturbation initial population for the "
+            "DEPOTSEARCH instance (default: reference + random construction)"
+        ),
+    )
+    parser.add_argument(
+        "--include-charging-candidates",
+        action="store_true",
+        help=(
+            "re-enable the pre-built charging-schedule candidate channel "
+            "(off in formal runs: 72,880 evaluations for 1 accept)"
+        ),
+    )
+    parser.add_argument(
         "--charging-prescreen",
         action=argparse.BooleanOptionalAction,
         default=None,
         help="enable the exact route-clock prescreen",
+    )
+    parser.add_argument(
+        "--public-station-candidate-mode",
+        choices=tuple(sorted(PUBLIC_STATION_CANDIDATE_MODES)),
+        default=SPLIT_PUBLIC_STATION_CANDIDATE_MODE,
+        help=(
+            "public-station charging candidates per trip: fallback keeps "
+            "stations as a range rescue only, parallel adds one candidate per "
+            "station that covers the whole remaining trip, split also divides "
+            "the trip energy between the depot and that station"
+        ),
+    )
+    parser.add_argument(
+        "--public-station-power-kw",
+        type=float,
+        default=None,
+        help=(
+            "exploratory 2026-09-08 switch: rated charging power of every "
+            "public station (node type f), in kW.  Unset (the default) keeps "
+            "the instance's own 60 kW and executes no override at all.  Only "
+            "the reference power the shared fast-charging shape is scaled by "
+            "moves; depot power, station tariffs and gun counts are untouched."
+        ),
     )
     args = parser.parse_args()
     if args.education_depth_limit is not None and args.education_depth_limit < 1:
@@ -1510,12 +2078,37 @@ def main() -> int:
     mechanism_enabled = {
         name: name not in mechanism_off for name in sorted(MECHANISM_NAMES)
     }
+    # Reload slots per vehicle in the kernel model (2026-09-05).  ``auto`` and
+    # any non-positive integer restore the historic ``len(customers) - 1``
+    # bound; a positive integer caps the dimension there.
+    _requested_max_reloads = str(args.max_reloads_per_vehicle).strip().lower()
+    if _requested_max_reloads == "auto":
+        max_reloads_per_vehicle: int | None = None
+    else:
+        try:
+            _parsed_max_reloads = int(_requested_max_reloads)
+        except ValueError as error:
+            raise ValueError(
+                "--max-reloads-per-vehicle expects an integer or 'auto'"
+            ) from error
+        max_reloads_per_vehicle = (
+            None if _parsed_max_reloads <= 0 else _parsed_max_reloads
+        )
     charging_prescreen_enabled = bool(args.charging_prescreen)
-    effective_first_trip_prev_night = bool(args.first_trip_prev_night)
+    effective_first_trip_window = str(args.first_trip_window)
+    # The preceding-day half of the first-trip window only survives the ledger
+    # replay under the ``full_gap`` depot-window mode: under
+    # ``same_day_predeparture`` ``prepare_multitrip_solution`` rewrites every
+    # first-trip depot charge onto day offset 0.  So the window rule and the
+    # depot-window mode are flipped together, exactly as ``--first-trip-prev-
+    # night`` already does below.
+    effective_first_trip_prev_night = bool(args.first_trip_prev_night) or (
+        effective_first_trip_window == FIRST_TRIP_WINDOW_PREV_RETURN
+    )
     effective_depot_assignment_operator = bool(
         args.depot_assignment_operator
         or (
-            args.instance_id == DEPOT_SEARCH_INSTANCE_ID
+            args.instance_id in DEPOT_SEARCH_INSTANCE_IDS
             and mechanism_enabled["cross_depot"]
         )
     )
@@ -1524,6 +2117,30 @@ def main() -> int:
         if mechanism_enabled["charge_timing"]
         else "asap"
     )
+    from setp_solver.private_instance_rebuild_20260811 import (
+        EV_DAILY_FIXED_PREMIUM_CNY,
+    )
+
+    effective_ev_daily_premium_cny = (
+        EV_DAILY_FIXED_PREMIUM_CNY
+        if args.ev_daily_premium is None
+        else float(args.ev_daily_premium)
+    )
+    if (
+        not math.isfinite(effective_ev_daily_premium_cny)
+        or effective_ev_daily_premium_cny < 0.0
+    ):
+        raise ValueError("--ev-daily-premium must be finite and non-negative")
+    effective_carbon_quota_kg = (
+        DEFAULT_CARBON_QUOTA_KG
+        if args.carbon_quota_kg is None
+        else float(args.carbon_quota_kg)
+    )
+    if (
+        not math.isfinite(effective_carbon_quota_kg)
+        or effective_carbon_quota_kg < 0.0
+    ):
+        raise ValueError("--carbon-quota-kg must be finite and non-negative")
     parameters = _parameters(
         population_mode=args.population_mode,
         objective_mode=args.objective_mode,
@@ -1557,14 +2174,53 @@ def main() -> int:
             "requested_depot_charging_scenario": (
                 args.depot_charging_scenario
             ),
+            "search_mode": args.search_mode,
+            "confirming_round": args.confirming_round,
+            "confirming_round_patience_mode": (
+                args.confirming_round_patience_mode
+            ),
+            "confirming_patience_floor": int(args.confirming_patience_floor),
+            "stop_after_nonimproving_rounds": int(
+                args.stop_after_nonimproving_rounds
+            ),
+            "max_outer_rounds": int(args.max_outer_rounds),
+            "lazy_exact": args.lazy_exact,
+            "ev_departure_gap_proxy": args.ev_departure_gap_proxy,
+            "ev_reload_gap_proxy": args.ev_reload_gap_proxy,
+            # 2026-09-05 内部标定，非文献值：本算例本机器本批 101 次真实趟间
+            # 充电 p50 1348 / p75 1875 / p90 2614 秒（证据见 docs/handoff/
+            # second_root_cause_reload_gap_20260905.md §3.2）。1.0 = 取最大值，
+            # 即 2026-09-05 之前的行为，此时第 1 轮取见证解最大趟。小于 1.0
+            # 时两轮都用这个分位：第 1 轮取初始种群自己的趟间充电会话分位并
+            # 压下限（见脚本内 round-one reload gap 段与
+            # route_engine_wiring.reload_gap_round1），第 2 轮起取精确最优自己
+            # 的会话分位。每轮实际预留见 accounting.reload_gap_seconds_by_round。
+            "reload_gap_quantile": float(args.reload_gap_quantile),
+            # 2026-09-05 内部标定，非文献值：所有已落盘 best_solution.json 里
+            # 最长的一条任务是 5 趟（4 次回场），默认 8 留三趟余量。None =
+            # 恢复历史的 len(customers)-1（本算例 49）。
+            "requested_max_reloads_per_vehicle": args.max_reloads_per_vehicle,
+            "effective_max_reloads_per_vehicle": max_reloads_per_vehicle,
+            # 2026-09-05：内核车辆类型按完整参数向量去重（除车牌名外全同才合
+            # 并），本静态批 20 类→4、4 份矩阵→2；动态切片下 tw_early 逐车不
+            # 同，会自动退回 20 类。实际生效的份数见 route_engine_wiring 的
+            # kernel_num_vehicle_types / kernel_num_profiles。
+            "kernel_vehicle_type_dedup": args.kernel_vehicle_type_dedup,
+            "fleet_exact_composition": bool(args.fleet_mix_override),
             "requested_charging_prescreen": args.charging_prescreen,
             "effective_charging_prescreen": charging_prescreen_enabled,
             "requested_first_trip_prev_night": args.first_trip_prev_night,
             "effective_first_trip_prev_night": (
                 effective_first_trip_prev_night
             ),
+            "requested_first_trip_window": args.first_trip_window,
+            "effective_first_trip_window": effective_first_trip_window,
             "requested_charge_timing_policy": args.charge_timing_policy,
             "effective_charge_timing_policy": effective_charge_timing_policy,
+            "requested_ev_daily_premium_cny": args.ev_daily_premium,
+            "effective_ev_daily_premium_cny": effective_ev_daily_premium_cny,
+            "requested_carbon_quota_kg": args.carbon_quota_kg,
+            "effective_carbon_quota_kg": effective_carbon_quota_kg,
             "requested_frvcpy_charging": args.frvcpy_charging,
             "requested_depot_assignment_operator": (
                 args.depot_assignment_operator
@@ -1575,9 +2231,53 @@ def main() -> int:
             "requested_dynamic_insertion_operator": (
                 args.dynamic_insertion_operator
             ),
+            # 2026-09-08 尝试性开关。None = 算例自带的 60 kW，不执行任何覆盖。
+            # 给值时全部 node_type=f 的公共站参考功率改为该值，曲线形状与
+            # 曲线 id 不变（id 里的 60KW 指形状出处，不是生效功率）。
+            "public_station_power_kw": args.public_station_power_kw,
         },
     )
 
+    if args.ev_cap_override and args.fleet_mix_override:
+        raise ValueError(
+            "--ev-cap-override and --fleet-mix-override are mutually exclusive"
+        )
+    # 2026-09-08：--reload-gap-quantile 1.0 的对外承诺是"逐位复现 2026-09-05
+    # 之前的第 1 轮"（预留＝见证解最大趟）；--proxy-estimate-source reference
+    # 的对外承诺是"预留＝全批共用常数"。两句话互斥，静默让其中一句赢会让谁都
+    # 读不出这一跑到底预留了多少，所以直接拦下来。
+    if (
+        args.ev_reload_gap_proxy
+        and args.proxy_estimate_source == "reference"
+        and float(args.reload_gap_quantile) >= 1.0
+    ):
+        raise ValueError(
+            "--reload-gap-quantile 1.0 (the pre-2026-09-05 witness-max round "
+            "one) and --proxy-estimate-source reference (the shared constant) "
+            "are mutually exclusive; pass --proxy-estimate-source population "
+            "to keep the quantile escape hatch"
+        )
+    ev_cap_override: dict[str, int | tuple[int, int]] | None = None
+    if args.ev_cap_override:
+        ev_cap_override = {}
+        for pair in args.ev_cap_override.split(","):
+            depot_id, _, count = pair.strip().partition("=")
+            if not depot_id or not count:
+                raise ValueError(
+                    "--ev-cap-override expects comma-joined DEPOT_ID=NUM_EV pairs"
+                )
+            ev_cap_override[depot_id] = int(count)
+    if args.fleet_mix_override:
+        ev_cap_override = {}
+        for pair in args.fleet_mix_override.split(","):
+            depot_id, _, mix = pair.strip().partition("=")
+            num_cv, _, num_ev = mix.partition("/")
+            if not depot_id or not num_cv or not num_ev:
+                raise ValueError(
+                    "--fleet-mix-override expects comma-joined "
+                    "DEPOT_ID=NUM_CV/NUM_EV pairs"
+                )
+            ev_cap_override[depot_id] = (int(num_cv), int(num_ev))
     bundle, initial, _neutral_profit, context = _build_context(
         data_repo,
         args.instance_id,
@@ -1585,12 +2285,35 @@ def main() -> int:
             args.fleet_parameter_class
         ],
         depot_charging_scenario_name=args.depot_charging_scenario,
+        ev_cap_override=ev_cap_override,
+        tariff_calendar_authority=args.tariff_calendar_authority,
+        ev_daily_premium_cny=args.ev_daily_premium,
+        carbon_quota_kg=args.carbon_quota_kg,
     )
     if args.carbon_price != CHINA81_CARBON_PRICE_CNY_PER_KG:
         bundle = replace(
             bundle,
             prices=replace(bundle.prices, carbon_price=args.carbon_price),
             carbon_price_cny_per_kg=args.carbon_price,
+        )
+        context = replace(context, bundle=bundle)
+    if args.public_station_power_kw is not None:
+        bundle = _with_public_station_power(
+            bundle,
+            args.public_station_power_kw,
+        )
+        context = replace(context, bundle=bundle)
+    if args.recharge_mode != "on_demand":
+        set_active_recharge_mode(args.recharge_mode)
+    if args.depot_curve == "linear":
+        bundle = replace(
+            bundle,
+            prices=replace(
+                bundle.prices,
+                depot_charging_curve_id="L100_control",
+                depot_charging_soc_breakpoints=(0.0, 1.0),
+                depot_charging_relative_powers=(1.0,),
+            ),
         )
         context = replace(context, bundle=bundle)
     enterprise_slice: EnterpriseProblemSlice | None = None
@@ -1641,7 +2364,6 @@ def main() -> int:
         )
     if not mechanism_enabled["multi_trip"]:
         initial = _single_trip_initial(initial)
-    metro_initial_clock_closure = None
     mechanism_reference = initial
     if not mechanism_enabled["cross_depot"]:
         reference_depot, _reference_type = _customer_structure(
@@ -1651,12 +2373,19 @@ def main() -> int:
             context,
             customer_depot_lock=MappingProxyType(reference_depot),
         )
+    if args.fleet_mix_override:
+        # Fleet-composition experiment: the rung is a fixed fleet, not an upper
+        # bound (user, 2026-09-03: "固定配比不是上限配比"); every configured
+        # vehicle must be dispatched and the plan-wide fixed cost is a constant.
+        context = replace(context, fleet_exact_composition=True)
     evaluator = DutyFullEvaluator(context)
     policy = _policy(
         evaluator,
         first_trip_prev_night_enabled=effective_first_trip_prev_night,
         charge_timing_policy=effective_charge_timing_policy,
         frvcpy_enabled=args.frvcpy_charging,
+        first_trip_window=effective_first_trip_window,
+        public_station_candidate_mode=args.public_station_candidate_mode,
     )
     dynamic_insertion_diagnostic = None
     if args.dynamic_insertion_operator:
@@ -1670,7 +2399,7 @@ def main() -> int:
         )
         initial = inserted.individual
         dynamic_insertion_diagnostic = asdict(inserted.accounting)
-    depotsearch_c1_requested = args.instance_id == DEPOT_SEARCH_INSTANCE_ID
+    depotsearch_c1_requested = args.instance_id in DEPOT_SEARCH_INSTANCE_IDS
     route_engine_options: dict[str, object] = {}
     if depotsearch_c1_requested:
         route_engine_options.update(
@@ -1684,15 +2413,95 @@ def main() -> int:
         route_engine_options["multi_trip_enabled"] = False
     if not mechanism_enabled["type_exchange"]:
         route_engine_options["type_exchange_enabled"] = False
-    route_engine = IndependentKernelDutyRouteProposalEngine(
-        evaluator.context,
-        initial,
-        stream_role="main_route",
-        depot_assignment_operator_enabled=(
-            effective_depot_assignment_operator
-        ),
-        **route_engine_options,
+    route_engine_options["ev_charge_time_proxy_enabled"] = (
+        not args.no_ev_charge_time_proxy
     )
+    # 2026-09-05 (A2): price the shift-aware EV proxy at what THIS arm's
+    # charge-timing policy will actually pay, so the route search of the
+    # timing-off arm (effective policy "asap") and the full-mechanism arm
+    # (cost_plus_carbon) no longer face an identical EV price.
+    route_engine_options["charge_timing_policy_for_proxy"] = (
+        effective_charge_timing_policy
+    )
+    # The route proxy must price the same first-trip window the exact repair
+    # will settle in, otherwise the search optimises against a window that no
+    # longer exists.
+    route_engine_options["first_trip_window"] = effective_first_trip_window
+    route_engine_options["ev_departure_gap_proxy_enabled"] = (
+        args.ev_departure_gap_proxy
+    )
+    if args.ev_departure_gap_proxy and not any(
+        trip.customer_ids for duty in initial.duties for trip in duty.trips
+    ):
+        # Fleet overrides that cannot seat the all-CV witness start from idle
+        # slots; the departure gap then takes its trip energy from the
+        # unconstrained witness so the proxy stays the same along the axis.
+        witness_bundle, witness_initial, _, _ = _build_context(
+            data_repo,
+            args.instance_id,
+            fleet_parameters=FLEET_PARAMETER_CLASSES[args.fleet_parameter_class],
+            depot_charging_scenario_name=args.depot_charging_scenario,
+            tariff_calendar_authority=args.tariff_calendar_authority,
+            ev_daily_premium_cny=args.ev_daily_premium,
+        )
+        route_engine_options["ev_departure_gap_reference_kwh"] = (
+            reference_trip_energy_kwh(
+                witness_bundle.instance,
+                witness_bundle.prices,
+                witness_initial.duties,
+            )
+        )
+    if args.ev_reload_gap_proxy and args.ev_departure_gap_proxy:
+        raise ValueError(
+            "--ev-reload-gap-proxy and --ev-departure-gap-proxy are exclusive"
+        )
+    route_engine_options["ev_reload_gap_proxy_enabled"] = args.ev_reload_gap_proxy
+    route_engine_options["max_reloads_per_vehicle"] = max_reloads_per_vehicle
+    route_engine_options["vehicle_type_dedup_enabled"] = (
+        args.kernel_vehicle_type_dedup == "on"
+    )
+    # Fixed composition: the kernel must not be rewarded for parking a vehicle.
+    route_engine_options["vehicle_fixed_cost_in_proxy"] = not args.fleet_mix_override
+    if args.ev_reload_gap_proxy:
+        # Fallback round-one reload gap = charging time of the *largest* trip
+        # of the unconstrained witness (the same value on every composition
+        # rung).  It is what the engine built here reserves, and it stays the
+        # reservation only when the initial population turns out to carry no
+        # between-trip charging session at all (the idle start) or when
+        # ``--reload-gap-quantile`` is exactly 1.0.  Otherwise the engine is
+        # rebuilt after initialization from the population's own sessions --
+        # see the ``round-one reload gap`` block below the population build.
+        # Later rounds feed back the exact best's own sessions at the same
+        # quantile (``runner.py``).
+        witness_bundle, witness_initial, _, _ = _build_context(
+            data_repo,
+            args.instance_id,
+            fleet_parameters=FLEET_PARAMETER_CLASSES[args.fleet_parameter_class],
+            depot_charging_scenario_name=args.depot_charging_scenario,
+            tariff_calendar_authority=args.tariff_calendar_authority,
+            ev_daily_premium_cny=args.ev_daily_premium,
+        )
+        route_engine_options["ev_reload_gap_reference_kwh"] = (
+            reference_trip_energy_kwh(
+                witness_bundle.instance,
+                witness_bundle.prices,
+                witness_initial.duties,
+                reference="max",
+            )
+        )
+    def make_route_engine(**extra):
+        return IndependentKernelDutyRouteProposalEngine(
+            evaluator.context,
+            initial,
+            stream_role="main_route",
+            depot_assignment_operator_enabled=(
+                effective_depot_assignment_operator
+            ),
+            **route_engine_options,
+            **extra,
+        )
+
+    route_engine = make_route_engine()
     route_contract = evaluator.context.rebuilt_route_constraints
     if depotsearch_c1_requested and route_contract is None:
         raise RuntimeError(
@@ -1713,6 +2522,24 @@ def main() -> int:
             ),
         },
         "route_engine_source_id": route_engine.source_id,
+        # What the kernel model actually compiled to, after the vehicle-type /
+        # profile dedup.  Recorded because the dedup is data-driven: the same
+        # switch gives 4 types on this static batch and 20 under a dynamic cut.
+        "kernel_vehicle_type_dedup_enabled": bool(
+            route_engine.vehicle_type_dedup_enabled
+        ),
+        "kernel_num_vehicle_types": int(route_engine.data.num_vehicle_types),
+        "kernel_num_profiles": int(route_engine.data.num_profiles),
+        "kernel_num_vehicles": int(route_engine.data.num_vehicles),
+        "ev_charge_time_proxy": route_engine.ev_charge_time_proxy,
+        # 2026-09-05 (A2): the per-shift EV prices the route search actually
+        # used, and the policy that picked them.  Metadata only -- without it
+        # the shift-aware proxy cannot be reconciled from the artefacts.
+        "first_trip_window": route_engine.first_trip_window,
+        "charge_timing_policy_for_proxy": (
+            route_engine.charge_timing_policy_for_proxy
+        ),
+        "shift_aware_ev_proxy": route_engine.shift_aware_ev_proxy,
         "route_contract": (
             None
             if route_contract is None
@@ -1750,6 +2577,12 @@ def main() -> int:
             )
     initialization_started = perf_counter()
     initialization_full_calls_before = evaluator.full_calls
+    # A fleet override that cannot seat the all-CV witness starts from idle
+    # slots with every customer unserved; that plan is not a reference
+    # candidate and its infeasibility is not a run failure.
+    reference_candidate_included = (
+        enterprise_slice is None and not initial.unserved_customers
+    )
     if args.population_mode == "technical_two_parent":
         (
             candidates,
@@ -1768,6 +2601,25 @@ def main() -> int:
             "actual_size": len(candidates),
             "attempts_exhausted": False,
         }
+    elif args.search_mode == "kernel_native" and initial.unserved_customers:
+        # Idle start (a written-down fleet the witness cannot seat): the
+        # kernel-native search seeds its own population, so no native
+        # construction here.  Rejection-sampling charge-repairable random
+        # draws needed 24,244 draws / 492 s on a six-vehicle fleet
+        # (2026-09-03), and the exact evaluator cannot score time-infeasible
+        # skeletons at all; the idle reference only anchors the registry.
+        # Four copies: the self-adaptive exact penalty manager wants four
+        # initial evaluations; the runner dedupes seeds by fingerprint.
+        candidates = (initial,) * 4
+        initial_evaluation = evaluator.evaluate(initial)
+        initial_evaluations = (initial_evaluation,) * 4
+        initialization_summary = {
+            "requested_size": 4,
+            "actual_size": 4,
+            "attempts_exhausted": False,
+            "reference_candidate_included": reference_candidate_included,
+            "mode": "idle_reference_only",
+        }
     else:
         built = build_initial_population(
             initial,
@@ -1781,14 +2633,22 @@ def main() -> int:
                 if enterprise_slice is not None
                 else "random"
             ),
-            include_reference_candidate=enterprise_slice is None,
+            include_reference_candidate=reference_candidate_included,
             require_complete_feasible=False,
             stop_requested=lambda: False,
+            # 2026-08-30: default initialization is the reference candidate
+            # plus native random construction (the witness-perturbation path
+            # filled every slot with one-step neighbours of one solution,
+            # evidence: solver/reports/design_debate_20260821 A.6).  The
+            # --init-witness flag restores the witness path for paired
+            # comparison runs.
             witness_seed=(
                 initial
                 if (
-                    args.instance_id == DEPOT_SEARCH_INSTANCE_ID
+                    args.init_witness
+                    and args.instance_id in DEPOT_SEARCH_INSTANCE_IDS
                     and enterprise_slice is None
+                    and not initial.unserved_customers
                 )
                 else None
             ),
@@ -1810,14 +2670,153 @@ def main() -> int:
             "requested_size": built.requested_size,
             "actual_size": len(candidates),
             "attempts_exhausted": built.attempts_exhausted,
-            "reference_candidate_included": (
-                enterprise_slice is None or legacy_enterprise_init
-            ),
+            "reference_candidate_included": reference_candidate_included,
+            "attempts": len(built.attempts),
         }
     initialization_wall_seconds = perf_counter() - initialization_started
     initialization_full_evaluations = (
         evaluator.full_calls - initialization_full_calls_before
     )
+    # Round-one reload gap, take two (2026-09-05, task A).  Until today round
+    # one converted the *largest trip energy* of the unconstrained witness and
+    # booked 2031.67 s on the P=0.2 midday-valley batch, where the batch's 101
+    # real between-trip sessions have a 1348 s median: an over-reservation of
+    # 51% on every EV return to depot, in a term that costs nothing in the
+    # kernel objective (``unit_duration_cost`` is 0) and only decides
+    # feasibility, so it prices EV-dense structures out of
+    # ``GeneticAlgorithm._best`` without buying any search direction
+    # (docs/handoff/second_root_cause_reload_gap_20260905.md section 3).
+    # The initial population is 25 plans that have already been charge-
+    # repaired and exactly evaluated, so their own between-trip sessions are
+    # available here -- 38 to 66 of them, against the witness's 16 trip
+    # energies -- and the same order statistic later rounds use now has a
+    # distribution fine enough to land in the admissible window.  The engine
+    # is rebuilt because the population could not exist before the engine
+    # that constructed it.
+    reload_gap_round1_seconds: float | None = None
+    reload_gap_round1_source = "witness_max"
+    if args.ev_reload_gap_proxy and args.proxy_estimate_source == "reference":
+        # 2026-09-08：全批共用常数，不看本跑的初始种群。见
+        # PROXY_REFERENCE_RELOAD_GAP_SECONDS 的推导与"不缩小可行域"的证明。
+        reload_gap_round1_seconds = float(PROXY_REFERENCE_RELOAD_GAP_SECONDS)
+        reload_gap_round1_source = "shared_constant_p50_of_40_runs"
+        route_engine = make_route_engine(
+            ev_reload_gap_seconds=reload_gap_round1_seconds
+        )
+        route_engine_wiring["route_engine_source_id"] = route_engine.source_id
+        route_engine_wiring["ev_charge_time_proxy"] = (
+            route_engine.ev_charge_time_proxy
+        )
+    elif args.ev_reload_gap_proxy and float(args.reload_gap_quantile) < 1.0:
+        # Exactly 1.0 keeps the pre-2026-09-05 round one bit for bit; see the
+        # --reload-gap-quantile help text.
+        measured_round1 = population_inter_trip_reload_seconds(
+            candidates, quantile=float(args.reload_gap_quantile)
+        )
+        if measured_round1 is not None:
+            reload_gap_round1_seconds = float(measured_round1)
+            reload_gap_round1_source = (
+                f"population_sessions_p{round(float(args.reload_gap_quantile) * 100)}"
+                f"_floor{RELOAD_GAP_FLOOR_SECONDS:g}"
+            )
+            route_engine = make_route_engine(
+                ev_reload_gap_seconds=reload_gap_round1_seconds
+            )
+            route_engine_wiring["route_engine_source_id"] = route_engine.source_id
+            route_engine_wiring["ev_charge_time_proxy"] = (
+                route_engine.ev_charge_time_proxy
+            )
+    # Round-one first-trip window opening (2026-09-06).  The shift-aware EV
+    # route proxy prices the FIRST shift's causal charging window, which under
+    # ``prev_return`` opens at the vehicle's own return the preceding evening.
+    # No route exists when the proxy is built, so round one used the
+    # contract's last shift end (19:00) -- and the exact settlement then
+    # actually charged at 15:30-16:30, where this calendar is far cleaner and
+    # cheaper, so the proxy told the route search that evening charging was
+    # expensive while the settlement found it cheap (measured on the
+    # 2026-09-06 projection: proxy 1.243 vs exact ~0.873 CNY/kWh at carbon
+    # price 0.2).  The initial population has been exactly evaluated, so its
+    # certificates carry every trip's return instant; the median of the
+    # duties' last returns is the route-independent anchor.  Computed for
+    # every ``prev_return`` run -- it is NOT tied to the reload-gap proxy.
+    first_trip_window_open_second: float | None = None
+    first_trip_window_open_source = "last_shift_end_fallback"
+    if not route_engine.shift_aware_ev_unit_cost_enabled:
+        # The opening is read by the shift-aware proxy's first window and by
+        # nothing else, so without that proxy there is nothing to rebuild.
+        first_trip_window_open_source = "not_applicable_no_shift_aware_proxy"
+    elif effective_first_trip_window == FIRST_TRIP_WINDOW_PREV_RETURN:
+        if args.proxy_estimate_source == "reference":
+            # 2026-09-08：全批共用常数，不看本跑的初始种群。
+            measured_open: float | None = float(
+                PROXY_REFERENCE_FIRST_TRIP_WINDOW_OPEN_SECOND
+            )
+            measured_open_source = "shared_constant_p50_of_40_runs"
+        else:
+            measured_open = population_first_trip_window_open_second(
+                initial_evaluations
+            )
+            measured_open_source = "population_last_returns_p50"
+        if measured_open is not None:
+            first_trip_window_open_second = float(measured_open)
+            first_trip_window_open_source = measured_open_source
+            route_engine = make_route_engine(
+                first_trip_window_open_second=first_trip_window_open_second,
+                **(
+                    {}
+                    if reload_gap_round1_seconds is None
+                    else {"ev_reload_gap_seconds": reload_gap_round1_seconds}
+                ),
+            )
+            route_engine_wiring["route_engine_source_id"] = (
+                route_engine.source_id
+            )
+            route_engine_wiring["ev_charge_time_proxy"] = (
+                route_engine.ev_charge_time_proxy
+            )
+            route_engine_wiring["shift_aware_ev_proxy"] = (
+                route_engine.shift_aware_ev_proxy
+            )
+    # 2026-09-08：两个路线无关锚点是"每跑各估各的"还是"全批共用常数"，以及
+    # 常数本身。冻结时这两个数在整次运算的每一轮、以及同一批的每一次运算之间
+    # 都逐位相同——这正是本批要检的那一条。
+    route_engine_wiring["proxy_estimate_source"] = str(
+        args.proxy_estimate_source
+    )
+    route_engine_wiring["proxy_reference_constants"] = {
+        "reload_gap_seconds": float(PROXY_REFERENCE_RELOAD_GAP_SECONDS),
+        "first_trip_window_open_second": float(
+            PROXY_REFERENCE_FIRST_TRIP_WINDOW_OPEN_SECOND
+        ),
+        "derivation": (
+            "median of the same estimator over the 40 runs of the four "
+            "charging-arrangement arms (2026-09-06 batches); NOT a statistic "
+            "of the reference solution, which is all-fuel and has neither"
+        ),
+        "applied": args.proxy_estimate_source == "reference",
+    }
+    route_engine_wiring["first_trip_window_open_round1"] = {
+        "second": (
+            None
+            if first_trip_window_open_second is None
+            else float(first_trip_window_open_second)
+        ),
+        "source": first_trip_window_open_source,
+        "quantile": float(FIRST_TRIP_WINDOW_OPEN_QUANTILE),
+        "population_size": len(candidates),
+        "first_trip_window": effective_first_trip_window,
+    }
+    route_engine_wiring["reload_gap_round1"] = {
+        "seconds": (
+            None
+            if reload_gap_round1_seconds is None
+            else float(reload_gap_round1_seconds)
+        ),
+        "source": reload_gap_round1_source,
+        "floor_seconds": float(RELOAD_GAP_FLOOR_SECONDS),
+        "quantile": float(args.reload_gap_quantile),
+        "population_size": len(candidates),
+    }
     convergence_path = (
         args.convergence_csv.resolve()
         if args.convergence_csv is not None
@@ -1913,6 +2912,12 @@ def main() -> int:
                 }
             )
             convergence_diagnostics_handle.flush()
+        # 2026-09-05 注：kernel_native 路径下 runner 丢弃这个返回值——每轮的
+        # 结束由内核自己的 NoImprovement 规则决定，外层循环靠轮次记账 break，
+        # 从不看这里返回什么（accounting.outer_stop_callback_effective=False）。
+        # 现在 state.iterations_without_improvement 已是真实值，因此这条判据在
+        # 未改善圈数累计到 NO_IMPROVEMENT_LIMIT 的那一轮会返回 True，但仍然
+        # 无人采纳。此处不改行为，只把这层落差写明。
         return (
             state.iterations_without_improvement
             >= NO_IMPROVEMENT_LIMIT
@@ -1920,27 +2925,87 @@ def main() -> int:
 
     station_pruning_before_search = charging_repair_runtime_diagnostics()
     try:
-        result = run_integrated_problem_hgs(
-            candidates,
-            evaluator=evaluator,
-            charging_policy=policy,
-            parameters=parameters,
-            stop=stop_and_record,
-            arm=args.arm,
-            route_engine=route_engine,
-            retain_trajectory=False,
-            initial_evaluations=initial_evaluations,
-            initialization_full_evaluation_count=(
-                initialization_full_evaluations
-            ),
-            initialization_wall_seconds=initialization_wall_seconds,
-            charging_prescreen_enabled=charging_prescreen_enabled,
-            cross_depot_enabled=mechanism_enabled["cross_depot"],
-            multi_trip_enabled=mechanism_enabled["multi_trip"],
-            type_exchange_enabled=mechanism_enabled["type_exchange"],
-            include_mechanism_refinement=True,
-            include_charging_candidates=mechanism_enabled["charge_timing"],
-        )
+        if args.search_mode == "kernel_native":
+            result = run_kernel_native_problem_hgs(
+                candidates,
+                evaluator=evaluator,
+                charging_policy=policy,
+                parameters=parameters,
+                stop=stop_and_record,
+                arm=args.arm,
+                route_engine=route_engine,
+                route_engine_factory=make_route_engine,
+                initial_evaluations=initial_evaluations,
+                initialization_full_evaluation_count=(
+                    initialization_full_evaluations
+                ),
+                initialization_wall_seconds=initialization_wall_seconds,
+                charging_prescreen_enabled=charging_prescreen_enabled,
+                cross_depot_enabled=mechanism_enabled["cross_depot"],
+                multi_trip_enabled=mechanism_enabled["multi_trip"],
+                type_exchange_enabled=mechanism_enabled["type_exchange"],
+                include_mechanism_refinement=True,
+                include_charging_candidates=(
+                    args.include_charging_candidates
+                    and mechanism_enabled["charge_timing"]
+                ),
+                confirming_round=args.confirming_round,
+                confirming_round_patience_mode=(
+                    args.confirming_round_patience_mode
+                ),
+                confirming_patience_floor=args.confirming_patience_floor,
+                stop_after_nonimproving_rounds=(
+                    args.stop_after_nonimproving_rounds
+                ),
+                max_outer_rounds=args.max_outer_rounds,
+                reload_gap_quantile=args.reload_gap_quantile,
+                round_one_starts=args.round_one_starts,
+                # 2026-09-08：冻结只在 reference 下生效，population 下两个参数
+                # 都传 None，轮循环因而逐位走改动前的老路。
+                frozen_reload_gap_seconds=(
+                    reload_gap_round1_seconds
+                    if args.proxy_estimate_source == "reference"
+                    else None
+                ),
+                frozen_first_trip_window_open_second=(
+                    first_trip_window_open_second
+                    if args.proxy_estimate_source == "reference"
+                    else None
+                ),
+            )
+        else:
+            result = run_integrated_problem_hgs(
+                candidates,
+                evaluator=evaluator,
+                charging_policy=policy,
+                parameters=parameters,
+                stop=stop_and_record,
+                arm=args.arm,
+                route_engine=route_engine,
+                retain_trajectory=False,
+                initial_evaluations=initial_evaluations,
+                initialization_full_evaluation_count=(
+                    initialization_full_evaluations
+                ),
+                initialization_wall_seconds=initialization_wall_seconds,
+                charging_prescreen_enabled=charging_prescreen_enabled,
+                cross_depot_enabled=mechanism_enabled["cross_depot"],
+                multi_trip_enabled=mechanism_enabled["multi_trip"],
+                type_exchange_enabled=mechanism_enabled["type_exchange"],
+                include_mechanism_refinement=True,
+                # 2026-08-31: the pre-built charging-schedule candidate channel
+                # consumed 85% of all incremental evaluations for 1 accept in the
+                # formal MTC sample (72,880 evaluated / 1 accepted; evidence:
+                # ablation_formal_20260830/MTC-HGS/run_3 accounting).  The carbon
+                # mechanism itself acts through the charge-timing policy, so the
+                # channel is off in formal runs; --include-charging-candidates
+                # restores it for dedicated studies.
+                include_charging_candidates=(
+                    args.include_charging_candidates
+                    and mechanism_enabled["charge_timing"]
+                ),
+                lazy_exact_evaluation=args.lazy_exact,
+                )
     finally:
         convergence_handle.close()
         convergence_diagnostics_handle.close()
@@ -1952,6 +3017,17 @@ def main() -> int:
             - station_pruning_before_search["station_pruning"][name]
         )
         for name in station_pruning_after_search["station_pruning"]
+    }
+    # 充电修复的缓存命中与耗时一直在运行时统计，却从未写进产物，
+    # 导致"每圈时间花在哪"只能靠猜（2026-09-02 查表8 时发现）。
+    # 这里把同一份诊断里的扁平计数与秒数一并做差后落盘；纯遥测，不改搜索行为。
+    charging_repair_cost = {
+        name: (
+            station_pruning_after_search[name]
+            - station_pruning_before_search[name]
+        )
+        for name, value in station_pruning_after_search.items()
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
     }
 
     terminal_wall_seconds = (
@@ -2136,7 +3212,7 @@ def main() -> int:
             failure_reasons.append(
                 "enterprise slice demand total differs from the registered contract"
             )
-    if enterprise_slice is None and not initial_evaluation.feasible:
+    if reference_candidate_included and not initial_evaluation.feasible:
         failure_reasons.append("initial solution is infeasible")
     expected_termination_statuses = {"STOPPED_BY_CALLER"}
     if result.termination_status not in expected_termination_statuses:
@@ -2164,7 +3240,7 @@ def main() -> int:
         termination_ok=result.termination_status in expected_termination_statuses,
         feasible_ok=bool(
             result.best_evaluation.feasible
-            and (enterprise_slice is not None or initial_evaluation.feasible)
+            and (not reference_candidate_included or initial_evaluation.feasible)
         ),
         customers_complete=(
             served == set(customer_nodes) and enterprise_customer_scope_ok
@@ -2178,6 +3254,12 @@ def main() -> int:
     )
     failure_reasons = list(acceptance.failure_reasons)
     verdict = acceptance.verdict
+
+    # 内核轮内改善轨迹与每轮小结（2026-09-05）：runner 负责记录，这里落盘。
+    # 放在搜索结束之后写，是为了避免中途崩溃留下空文件。
+    improvement_trace_path, kernel_rounds_path = _write_kernel_trace_csvs(
+        output, result.accounting
+    )
 
     metadata = {
         "status": "COMPLETE" if acceptance.accepted else "FAILED",
@@ -2206,11 +3288,71 @@ def main() -> int:
         ),
         "bundle_source_paths": dict(bundle.source_paths),
         "carbon_price_cny_per_kg": float(bundle.prices.carbon_price),
+        "requested_ev_daily_premium_cny": args.ev_daily_premium,
+        "effective_ev_daily_premium_cny": float(
+            context.ev_daily_fixed_premium_cny
+        ),
+        "requested_carbon_quota_kg": args.carbon_quota_kg,
+        # 生效值从评价上下文取，不从命令行回抄，这样落盘的是求解器真正用的那个数。
+        "effective_carbon_quota_kg": float(context.carbon_quota_kg),
+        "recharge_mode": args.recharge_mode,
+        # 生效值从策略取，这样落盘的是修复层真正用的候选口径。
+        "public_station_candidate_mode": policy.public_station_candidate_mode,
+        # 2026-09-08 尝试性开关。命令行请求值与实际落到节点上的生效值分开落盘：
+        # 生效值从 bundle 的公共站节点回读，不从命令行回抄，这样"这份产物到底
+        # 是几千瓦跑的"有出处，不必回头翻命令行。None/60 kW = 算例自带口径。
+        "public_station_power_kw": args.public_station_power_kw,
+        "effective_public_station_power_kw": sorted(
+            {
+                float(node.charge_power_kw)
+                for node in bundle.instance.nodes
+                if node.node_type == "f" and node.charge_power_kw is not None
+            }
+        ),
+        "depot_curve": args.depot_curve,
+        "depot_charging_curve_id": bundle.prices.depot_charging_curve_id,
         "enterprise_init_constructor": args.enterprise_init_constructor,
         "iterations": result.iterations,
+        # 2026-09-05：这行原本写死"20,000 圈无改善且不重启"，与实跑不符。
+        # kernel_native 路径的真实规则是"每个外层轮内核跑 NoImprovement(patience)，
+        # 外层再跑若干轮"，故由 parameters.stagnation_patience 与
+        # result.accounting.rounds 拼出。非 kernel_native 路径不给 rounds 赋值
+        # （恒为 0），所以那条分支不引用它。
+        # 2026-09-05 二改：adaptive 模式下第 2 轮起的耐心值不再等于
+        # stagnation_patience，故这句必须分模式写；每轮实际用的耐心值另见
+        # accounting.round_patience_by_round，标定量见
+        # accounting.round1_max_improvement_gap。
         "stop_semantics": (
-            "20,000 consecutive non-improving iterations; no restart"
+            (
+                f"round 1: NoImprovement({int(parameters.stagnation_patience)});"
+                " confirming rounds: adaptive patience = max improvement gap"
+                f" of round 1, floor {int(args.confirming_patience_floor)},"
+                f" cap {int(parameters.stagnation_patience)}"
+                f" x {int(result.accounting.rounds)} outer rounds"
+                if args.confirming_round_patience_mode == "adaptive"
+                else (
+                    f"per-round NoImprovement("
+                    f"{int(parameters.stagnation_patience)})"
+                    f" x {int(result.accounting.rounds)} outer rounds"
+                )
+            )
+            + (
+                # 2026-09-05 三改：确认轮由"任一轮无改善即停"改为"连续 N 轮无
+                # 改善才停"，并第一次给轮次循环加了硬上限。每轮有没有改善另见
+                # accounting.round_improved_by_round。
+                f"; stop after"
+                f" {int(args.stop_after_nonimproving_rounds)} consecutive"
+                " non-improving rounds, at most"
+                f" {int(args.max_outer_rounds)} rounds"
+                if args.confirming_round
+                else ""
+            )
+            if args.search_mode == "kernel_native"
+            else f"{int(parameters.stagnation_patience)} consecutive"
+            " non-improving iterations; no restart"
         ),
+        # runner 自报的停止语义；None＝该搜索路径没有记录。
+        "stop_semantics_actual": result.accounting.stop_semantics_actual,
         "stagnation_patience": parameters.stagnation_patience,
         "education_depth_limit": parameters.education_depth_limit,
         "objective_mode": result.objective_mode,
@@ -2218,11 +3360,26 @@ def main() -> int:
         "convergence_diagnostics_csv": str(
             convergence_diagnostics_path
         ),
+        "improvement_trace_csv": str(improvement_trace_path),
+        "kernel_rounds_csv": str(kernel_rounds_path),
         "charging_prescreen": (
             result.charging_prescreen_accounting
             if result.charging_prescreen_accounting is not None
             else {"enabled": False}
         ),
+        "charging_repair_cost": {
+            "scope": "search_only",
+            "completed_cycles": int(result.iterations),
+            "totals": charging_repair_cost,
+            "per_cycle": {
+                name: (
+                    float(value) / float(result.iterations)
+                    if result.iterations
+                    else None
+                )
+                for name, value in charging_repair_cost.items()
+            },
+        },
         "charging_station_pruning": {
             "scope": "search_only",
             "completed_cycles": int(result.iterations),
@@ -2248,7 +3405,6 @@ def main() -> int:
         "initialization_wall_seconds": initialization_wall_seconds,
         "initialization_full_evaluations": initialization_full_evaluations,
         "accounting": result.accounting.to_dict(),
-        "metro_initial_clock_closure": metro_initial_clock_closure,
         "route_engine_wiring": route_engine_wiring,
         "ev_observation": ev_observation,
         "mechanism_off": sorted(mechanism_off),
@@ -2307,7 +3463,12 @@ def main() -> int:
             "customers_served", "customers_total", "demand_served",
             "demand_total", "crossover_calls",
             "full_evaluations",
-            "best_evaluation_source", "run_wall_seconds", "verdict",
+            "best_evaluation_source", "run_wall_seconds",
+            # 2026-09-02：表8 曾把九个"喂了已知解再跑"的验证跑当成搜索结果报进
+            # Best/Avg/Gap。注入解此前只记在 metadata 深处，逐跑表里看不见，
+            # 于是冷启动跑与热启动跑在同一张表里无法分辨。此列把它摆到明面上。
+            "warm_started_from_solution",
+            "verdict",
         ]
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
@@ -2336,6 +3497,10 @@ def main() -> int:
                 "full_evaluations": result.accounting.full_evaluations,
                 "best_evaluation_source": result.best_evaluation.source,
                 "run_wall_seconds": result.accounting.run_wall_seconds,
+                "warm_started_from_solution": (
+                    "" if args.initial_solution is None
+                    else str(args.initial_solution)
+                ),
                 "verdict": verdict,
             }
         )
@@ -2347,6 +3512,7 @@ def main() -> int:
         output / "best_solution.json",
         {
             "individual": asdict(result.best),
+            "trip_clock": _trip_clock_rows(result.best_evaluation),
             "evaluation": {
                 "total_cost": result.best_evaluation.total_cost,
                 "breakdown": dict(result.best_evaluation.breakdown),

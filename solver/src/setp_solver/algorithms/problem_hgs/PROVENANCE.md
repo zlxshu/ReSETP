@@ -1,22 +1,18 @@
 # Provenance
 
-- DCREX method: Lei, Hao, and Wu (2026), Algorithm 3, Equation (4), and Figure
-  A1 in the author manuscript stored in the repository.
-- Five insertion actions and duplicate-removal precedent: Lei et al. (2026)
-  and the MIT-licensed MA-FIRD / ARIX implementation by the same first author.
-- Population, penalty, SREX, and compiled local-search modules used on public
-  benchmarks: the independently named source copy in
-  `third_party/setp_hgs_kernel`, copied from PyVRP 0.12.2 commit
+- Population, penalty, SREX/OX crossover, and compiled local-search modules:
+  the independently named source copy in `third_party/setp_hgs_kernel`,
+  copied from PyVRP 0.12.2 commit
   `ea0c4211819edac6fd920413ad7508cc9ad56e0e` under the MIT license.
-- The copied foundation is not claimed as a research contribution.  DCREX,
-  its control and attribution, and the complete problem adapters are kept in
-  this separate project-owned package.
+- The copied foundation is not claimed as a research contribution.  The
+  complete problem adapters, the Duty representation, charging repair, and
+  the full-model evaluation chain are kept in this separate project-owned
+  package.
 - Private complete evaluation and mechanism actions: project code migrated
-  from the isolated 2026-08-07 Problem-HGS prototype and then connected to the
-  formal DCREX core.  Its fast crossover moves one complete trip between
-  compatible physical-vehicle duties and is not represented as SREX.
+  from the isolated 2026-08-07 Problem-HGS prototype.
+- Fixed-route charging decisions use the harvested frvcpy implementation;
+  see `FRVCPY_LICENSE_NOTICE.md` and `frvcpy_adapter.py`.
 
-The DCREX paper does not publish implementation source.  Route-pair increments
-are reconstructed explicitly from Figure A1 and protected by a numerical
-regression test; this project does not claim line-for-line reproduction of an
-unavailable program.
+The DCREX crossover portfolio (Lei, Hao, and Wu 2026) was implemented,
+retired, and removed from this directory; its provenance record lives in
+version-control history only.

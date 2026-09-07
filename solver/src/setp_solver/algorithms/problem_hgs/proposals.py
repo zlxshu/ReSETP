@@ -48,6 +48,7 @@ class DutyProposalEngine(Protocol):
         instance: Instance,
         *,
         include_whole_duty_type_exchange: bool,
+        changed_duty_ids: frozenset[str] | None = None,
     ) -> Iterable[DutyMove]: ...
 
 
@@ -64,6 +65,7 @@ class LegacyCompleteProposalEngine:
         instance: Instance,
         *,
         include_whole_duty_type_exchange: bool,
+        changed_duty_ids: frozenset[str] | None = None,
     ) -> Iterable[DutyMove]:
         return generate_problem_moves(
             individual,
@@ -118,6 +120,7 @@ class MechanismProposalEngine:
         instance: Instance,
         *,
         include_whole_duty_type_exchange: bool,
+        changed_duty_ids: frozenset[str] | None = None,
     ) -> Iterable[DutyMove]:
         if self.stop_requested is not None and self.stop_requested():
             return
@@ -158,6 +161,11 @@ class MechanismProposalEngine:
         ):
             for left_index, left in enumerate(duties):
                 for right in duties[left_index + 1 :]:
+                    if changed_duty_ids is not None and not (
+                        left.physical_vehicle_id in changed_duty_ids
+                        or right.physical_vehicle_id in changed_duty_ids
+                    ):
+                        continue
                     if left.home_depot_id != right.home_depot_id:
                         continue
                     if {left.vehicle_type, right.vehicle_type} != {"ev", "cv"}:
@@ -229,6 +237,11 @@ class MechanismProposalEngine:
 
         for left_index, left in enumerate(duties):
             for right in duties[left_index + 1 :]:
+                if changed_duty_ids is not None and not (
+                    left.physical_vehicle_id in changed_duty_ids
+                    or right.physical_vehicle_id in changed_duty_ids
+                ):
+                    continue
                 if left.home_depot_id == right.home_depot_id:
                     continue
                 for left_trip in left.trips:
@@ -298,6 +311,7 @@ class ExactDynamicSuffixProposalEngine:
         instance: Instance,
         *,
         include_whole_duty_type_exchange: bool,
+        changed_duty_ids: frozenset[str] | None = None,
     ) -> Iterable[DutyMove]:
         return generate_problem_moves(
             individual,
@@ -327,6 +341,7 @@ class SequentialProposalEngine:
         instance: Instance,
         *,
         include_whole_duty_type_exchange: bool,
+        changed_duty_ids: frozenset[str] | None = None,
     ) -> Iterable[DutyMove]:
         streams = tuple(
             provider.propose(
@@ -336,6 +351,7 @@ class SequentialProposalEngine:
                 include_whole_duty_type_exchange=(
                     include_whole_duty_type_exchange
                 ),
+                changed_duty_ids=changed_duty_ids,
             )
             for provider in self.providers
         )
@@ -377,6 +393,7 @@ class InterleavedProposalEngine:
         instance: Instance,
         *,
         include_whole_duty_type_exchange: bool,
+        changed_duty_ids: frozenset[str] | None = None,
     ) -> Iterable[DutyMove]:
         streams = tuple(
             iter(
@@ -387,6 +404,7 @@ class InterleavedProposalEngine:
                     include_whole_duty_type_exchange=(
                         include_whole_duty_type_exchange
                     ),
+                    changed_duty_ids=changed_duty_ids,
                 )
             )
             for provider in self.providers

@@ -1,0 +1,91 @@
+% 图：减排措施分类与本文实测范围（4.4.3，2026-09-08）
+% 皮囊：Asghari M, Mirzapour Al-e-hashem S M J. IJPE, 2021, 231: 107899, 图 3
+%       （左侧类目带＋右侧打点矩阵；已按 docs/handoff/policy_instrument_taxonomy_from_reviews_20260908.md
+%        第六节做过同类判定：同为导航/覆盖度图、节点数同量级）。
+% 分类与二级措施名逐字取自各综述原文，出处见每行"代表文献"列：
+%   碳规制政策＝Waltho 等 2019 四分法，中文名取陈婉茹等 2023 表 1（p.3322）；
+%   购置端财政激励＝Hardman 等 2017 四分法；复发性与非财政激励＝Hardman 2019；
+%   需求响应政策＝Albadi 和 El-Saadany 2007 图 1（价格型/激励型）。
+% 虚线框＝该措施在上述综述分类中无对应节点（午间充电按谷价补贴）。
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize, inner sep=0pt},
+  band/.style={fill=black!8, draw=none},
+  bandname/.style={font=\scriptsize, rotate=90, anchor=center, align=center},
+  item/.style={anchor=west, align=left},
+  cell/.style={anchor=center},
+  cite/.style={anchor=west, align=left, font=\tiny},
+  head/.style={anchor=center, font=\scriptsize},
+  rule/.style={draw=black, line width=0.5pt},
+  thin rule/.style={draw=black!45, line width=0.3pt}
+]
+% ---- 几何参数（cm）
+\def\xL{0.00}      % 左边界
+\def\xBand{0.62}   % 类目带右边界
+\def\xItem{0.75}   % 措施名左端
+\def\xTest{7.20}   % “本文实测”列中心
+\def\xDim{9.70}    % “作用的决策维度”列中心
+\def\xCite{11.60}  % “代表文献”列左端
+\def\xR{15.40}     % 右边界
+\def\dy{0.372}     % 行距
+\def\yH{0.00}      % 表头基线
+
+% ---- 类目带（四支，行号从 1 开始）
+% #1 起始行  #2 行数  #3 类目名
+\foreach \s/\n/\name in {1/4/{碳规制政策}, 5/4/{购置端\\财政激励},
+                         9/5/{复发性与\\非财政激励}, 14/6/{需求响应政策}}{
+  \pgfmathsetmacro{\ytop}{-(\s-0.5)*\dy}
+  \pgfmathsetmacro{\ybot}{-(\s+\n-0.5)*\dy}
+  \fill[band] (\xL,\ytop) rectangle (\xBand,\ybot);
+  \pgfmathsetmacro{\ymid}{(\ytop+\ybot)/2}
+  \node[bandname] at ({(\xL+\xBand)/2},\ymid) {\name};
+}
+
+% ---- 表头
+\node[item] at (\xItem,\yH) {措施（二级）};
+\node[head] at (\xTest,\yH) {本文实测};
+\node[head] at (\xDim,\yH) {作用的决策维度};
+\node[cite, font=\scriptsize] at (\xCite,\yH) {代表文献};
+\draw[rule] (\xL,{\yH+0.26}) -- (\xR,{\yH+0.26});
+\draw[rule] (\xL,{\yH-0.20}) -- (\xR,{\yH-0.20});
+
+% ---- 逐行内容：行号/措施名/实测标记/决策维度/文献
+\foreach \i/\name/\m/\dcol/\src in {%
+  1/{碳税（单位碳价）}/{$\bullet$}/{车型}/{\cite{ref:waltho2019,ref:23,ref:qiu2024}},
+  2/{限额碳交易（碳配额与交易）}/{$\bullet$}/{不改变决策}/{\cite{ref:23,ref:lijin2014}},
+  3/{碳限额}/{$\circ$}/{车型}/{\cite{ref:waltho2019}},
+  4/{碳抵消}/{$\circ$}/{不改变决策}/{\cite{ref:waltho2019}},
+  5/{购车时点补助（购置补贴）}/{$\bullet$}/{车型}/{\cite{ref:hardman2017,ref:wilson2026}},
+  6/{增值税与购置税减免}/{$\circ$}/{车型}/{\cite{ref:hardman2017}},
+  7/{购后返款}/{$\circ$}/{车型}/{\cite{ref:hardman2017}},
+  8/{所得税抵免}/{$\circ$}/{车型}/{\cite{ref:hardman2017}},
+  9/{专用路权}/{$\circ$}/{车型}/{\cite{ref:hardman2019}},
+  10/{停车优惠}/{$\circ$}/{车型}/{\cite{ref:hardman2019}},
+  11/{通行费减免}/{$\circ$}/{车型}/{\cite{ref:hardman2019}},
+  12/{充电设施建设}/{$\circ$}/{充电时刻}/{\cite{ref:hardman2019}},
+  13/{牌照优惠}/{$\circ$}/{车型}/{\cite{ref:hardman2019}},
+  14/{分时电价（谷段设在午间）}/{$\bullet$}/{充电时刻}/{\cite{ref:albadi2007,ref:ndrc-tou,ref:hebei-tou}},
+  16/{尖峰电价}/{$\circ$}/{充电时刻}/{\cite{ref:albadi2007}},
+  17/{极端日电价}/{$\circ$}/{充电时刻}/{\cite{ref:albadi2007}},
+  18/{实时电价}/{$\circ$}/{充电时刻}/{\cite{ref:albadi2007}},
+  19/{激励型项目（直接负荷控制、需求竞价等）}/{$\circ$}/{充电时刻}/{\cite{ref:albadi2007}}%
+}{
+  \pgfmathsetmacro{\yy}{-\i*\dy}
+  \node[item] at (\xItem,\yy) {\name};
+  \node[cell] at (\xTest,\yy) {\m};
+  \node[cell] at (\xDim,\yy) {\dcol};
+  \node[cite] at (\xCite,\yy) {\src};
+}
+% 第 15 行单列：该措施在上述综述的分类中无对应节点，用虚线框标出
+\pgfmathsetmacro{\yf}{-15*\dy}
+\node[item, draw, dashed, line width=0.35pt, inner xsep=2pt, inner ysep=1.5pt]
+  at ({\xItem-0.02},\yf) {午间充电按谷价补贴};
+\node[cell] at (\xTest,\yf) {$\bullet$};
+\node[cell] at (\xDim,\yf) {充电时刻};
+\node[cite] at (\xCite,\yf) {\cite{ref:wu2022}};
+
+% ---- 底线与图内说明
+\pgfmathsetmacro{\ybottom}{-19.5*\dy}
+\draw[rule] (\xL,\ybottom) -- (\xR,\ybottom);
+\node[item, font=\tiny] at (\xItem,{\ybottom-0.26})
+  {$\bullet$ 本文4.4.3已实测\quad $\circ$ 本文未实测\quad 虚线框：该措施在上述综述的分类中无对应节点\quad 决策维度按本文模型中该措施的作用对象判定};
+\end{tikzpicture}

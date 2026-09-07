@@ -17,7 +17,7 @@ dynamic history even when that history is kept outside the future candidate.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass
 from functools import cached_property
 
 from setp_solver.solution import (
@@ -316,7 +316,7 @@ class PhysicalVehicleDuty:
     trips: tuple[DutyTrip, ...]
     charging_sessions: tuple[DutyChargingSession, ...] = ()
     has_dynamic_commitment: bool = False
-    schedule: ScheduledDuty | None = None
+    schedule: ScheduledDuty | None = field(default=None, compare=False)
 
     def __post_init__(self) -> None:
         vehicle_type = str(self.vehicle_type).lower()
@@ -406,6 +406,15 @@ class PhysicalVehicleDuty:
     def fingerprint_payload(self) -> dict[str, object]:
         return _dataclass_payload(self)
 
+    @cached_property
+    def fingerprint(self) -> str:
+        payload = dict(self.fingerprint_payload)
+        if self.schedule is None:
+            payload.pop("schedule", None)
+        else:
+            payload["schedule"] = _canonical_identity(payload["schedule"])
+        return repr(payload)
+
 
 @dataclass(frozen=True)
 class DutyIndividual:
@@ -426,41 +435,16 @@ class DutyIndividual:
         ids = [duty.physical_vehicle_id for duty in self.duties]
         if len(ids) != len(set(ids)):
             raise ValueError("physical_vehicle_id must be unique per individual")
-        served = [
-            customer
-            for duty in self.duties
-            for trip in duty.trips
-            for customer in trip.customer_ids
-        ]
-        if len(served) != len(set(served)):
-            raise ValueError("one customer cannot appear in two duty trips")
-        if len(self.unserved_customers) != len(set(self.unserved_customers)):
-            raise ValueError("unserved customer ids must be unique")
-        overlap = set(served).intersection(self.unserved_customers)
-        if overlap:
-            raise ValueError(
-                "served and unserved customer sets overlap: "
-                + ", ".join(sorted(overlap))
-            )
 
     @cached_property
     def fingerprint(self) -> str:
-        duty_payloads = []
-        for duty in self.duties:
-            payload = dict(duty.fingerprint_payload)
-            if duty.schedule is None:
-                # Preserve every legacy A0 fingerprint until the Oracle is
-                # explicitly attached in the later integration steps.
-                payload.pop("schedule", None)
-            else:
-                payload["schedule"] = _canonical_identity(payload["schedule"])
-            duty_payloads.append(payload)
-        payload = {
-            "version": int(self.version),
-            "duties": duty_payloads,
-            "unserved_customers": list(self.unserved_customers),
-        }
-        return repr(payload)
+        return repr(
+            (
+                int(self.version),
+                tuple(duty.fingerprint for duty in self.duties),
+                self.unserved_customers,
+            )
+        )
 
     def to_solution(self) -> Solution:
         routes: list[Route] = []

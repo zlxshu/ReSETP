@@ -89,6 +89,16 @@ class DynamicAssetState:
     trigger_remaining_load_kg: float | None = None
     trigger_remaining_battery_kwh: float | None = None
 
+    def __post_init__(self) -> None:
+        # Battery energy inherited across stage cuts accumulates float dust;
+        # an exactly-empty battery can land a few 1e-15 below zero and the
+        # charging curve's domain check is exact. Dust is snapped to zero,
+        # real negative energy still fails loudly.
+        for field_name in ("remaining_battery_kwh", "trigger_remaining_battery_kwh"):
+            value = getattr(self, field_name)
+            if value is not None and -_TOL < float(value) < 0.0:
+                object.__setattr__(self, field_name, 0.0)
+
 
 @dataclass(frozen=True)
 class CertificateCut:
@@ -659,7 +669,7 @@ def prepare_dynamic_multitrip_solution(
         for asset_id, state in normalized_states.items()
     }
     profiles = [
-        _route_profile(
+        _route_profile_cached(
             route,
             instance,
             prices,
@@ -1275,7 +1285,7 @@ def validate_dynamic_multitrip_certificate(
             )
             if abs(returned - float(trip.return_second)) > _TOL:
                 raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {trip.route_id} return clock drifted")
-            profile = _route_profile(
+            profile = _route_profile_cached(
                 route,
                 instance,
                 prices,
@@ -1686,7 +1696,7 @@ def instance_with_inherited_virtual_origins(
 ) -> Instance:
     """Add immutable zero-offset copies of legal continuation nodes."""
 
-    existing = {node.node_id: node for node in instance.nodes}
+    existing = instance.node_lookup
     additions = [
         state
         for state in asset_states.values()
@@ -1781,7 +1791,7 @@ def _in_progress_asset_state(
 ]:
     """Replay one active trip to its next legal dvrpsim release boundary."""
 
-    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_lookup = instance.node_lookup
     sequence = tuple(route.node_sequence)
     arcs = tuple(zip(sequence, sequence[1:]))
     planned_loads = _arc_loads(list(sequence), node_lookup)
@@ -2060,6 +2070,69 @@ def _battery_during_actions(
     return battery
 
 
+_ROUTE_PROFILE_CACHE_REFS: tuple[object, object] | None = None
+_ROUTE_PROFILE_CACHE: dict[tuple, tuple[bool, object]] = {}
+
+
+def _route_profile_cached(
+    route: Route,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any,
+    *,
+    public_charging_actions: tuple[ChargingAction, ...] = (),
+    minimum_departure_second: float | None = None,
+    allowed_open_start_node_ids: frozenset[str] = frozenset(),
+    inherited_load_kg: float | None = None,
+) -> _RouteProfile:
+    """Memoize `_route_profile`; identical inputs return the frozen profile.
+
+    The strong references pin the active instance/prices objects so their
+    ids cannot be reused by other objects while the cache is keyed on them;
+    swapping either object clears the cache.
+    """
+
+    global _ROUTE_PROFILE_CACHE_REFS
+    if _ROUTE_PROFILE_CACHE_REFS is None or (
+        _ROUTE_PROFILE_CACHE_REFS[0] is not instance
+        or _ROUTE_PROFILE_CACHE_REFS[1] is not prices
+    ):
+        _ROUTE_PROFILE_CACHE.clear()
+        _ROUTE_PROFILE_CACHE_REFS = (instance, prices)
+    key = (
+        route.vehicle_id,
+        route.vehicle_type,
+        route.home_depot_id,
+        tuple(route.node_sequence),
+        public_charging_actions,
+        minimum_departure_second,
+        allowed_open_start_node_ids,
+        inherited_load_kg,
+    )
+    hit = _ROUTE_PROFILE_CACHE.get(key)
+    if hit is not None:
+        ok, value = hit
+        if ok:
+            return value  # type: ignore[return-value]
+        raise ValueError(value)
+    if len(_ROUTE_PROFILE_CACHE) >= 65536:
+        _ROUTE_PROFILE_CACHE.clear()
+    try:
+        profile = _route_profile(
+            route,
+            instance,
+            prices,
+            public_charging_actions=public_charging_actions,
+            minimum_departure_second=minimum_departure_second,
+            allowed_open_start_node_ids=allowed_open_start_node_ids,
+            inherited_load_kg=inherited_load_kg,
+        )
+    except ValueError as exc:
+        _ROUTE_PROFILE_CACHE[key] = (False, str(exc))
+        raise
+    _ROUTE_PROFILE_CACHE[key] = (True, profile)
+    return profile
+
+
 def _route_profile(
     route: Route,
     instance: Instance,
@@ -2082,7 +2155,7 @@ def _route_profile(
         )
     ):
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} is not depot closed")
-    nodes = {node.node_id: node for node in instance.nodes}
+    nodes = instance.node_lookup
     unknown = [node_id for node_id in route.node_sequence if node_id not in nodes]
     if unknown:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has unknown nodes {unknown}")
@@ -2228,7 +2301,7 @@ def _return_at_departure(
     prices: PriceParameters | dict[str, float] | Any,
     departure_second: float,
 ) -> float:
-    nodes = {node.node_id: node for node in instance.nodes}
+    nodes = instance.node_lookup
     speed = _price(prices, "v_speed_ms")
     clock = float(departure_second)
     for from_id, to_id in zip(route.node_sequence, route.node_sequence[1:]):
@@ -2304,7 +2377,7 @@ def _validate_depot_charger_capacity(
 ) -> None:
     """Apply the same 48-slot charger-capacity contract as the paper checker."""
 
-    nodes = {node.node_id: node for node in instance.nodes}
+    nodes = instance.node_lookup
     customer_count = sum(node.node_type.lower() == "c" for node in instance.nodes)
     occupied: dict[tuple[str, int, int], set[str]] = {}
     for action in _deduplicated_actions(actions):

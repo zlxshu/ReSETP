@@ -285,12 +285,18 @@ def future_individual_from_cut(
             customers = tuple(
                 node_id for node_id in visits if node_id in customer_ids
             )
+            # A customer cancelled after the previous stage vanishes from the
+            # stage instance; a legal cancellation skips that stop, so the
+            # visit sequence must drop nodes the stage no longer knows.
+            visible_visits = tuple(
+                node_id for node_id in visits if node_id in node_types
+            )
             represented.update(customers)
             trips.append(
                 DutyTrip(
                     trip_index=future_index,
                     customer_ids=customers,
-                    route_visits=visits,
+                    route_visits=visible_visits,
                 )
             )
             sessions.extend(
@@ -351,6 +357,33 @@ def _validate_customer_visibility(
         )
 
 
+_EVAL_INSTANCE_CACHE: dict[tuple[int, int, float], "Instance"] = {}
+
+
+def _stage_evaluation_instance(bundle, state):
+    """Build the virtual-origin evaluation instance once per stage.
+
+    Both inputs are stage constants; rebuilding (and re-validating the full
+    road matrices) per candidate was measured at hours per batch under the
+    official stopping rule.
+    """
+    key = (id(bundle.instance), id(state), float(state.cut.trigger_second))
+    hit = _EVAL_INSTANCE_CACHE.get(key)
+    if hit is not None:
+        return hit
+    built = instance_with_inherited_virtual_origins(
+        _carry_forward_virtual_origins(
+            bundle.instance,
+            state.inherited_evaluation_instance,
+        ),
+        state.asset_states,
+    )
+    if len(_EVAL_INSTANCE_CACHE) >= 8:
+        _EVAL_INSTANCE_CACHE.clear()
+    _EVAL_INSTANCE_CACHE[key] = built
+    return built
+
+
 def prepare_dynamic_candidate(
     individual: DutyIndividual,
     state: DutyDynamicState,
@@ -361,13 +394,7 @@ def prepare_dynamic_candidate(
 ) -> PreparedDynamicCandidate:
     """Schedule exact Duty assignments and merge them with immutable history."""
 
-    evaluation_instance = instance_with_inherited_virtual_origins(
-        _carry_forward_virtual_origins(
-            bundle.instance,
-            state.inherited_evaluation_instance,
-        ),
-        state.asset_states,
-    )
+    evaluation_instance = _stage_evaluation_instance(bundle, state)
     duties = {
         duty.physical_vehicle_id: duty for duty in individual.duties
     }
@@ -808,7 +835,7 @@ def _carry_forward_virtual_origins(
     if inherited is None:
         return current
     current_ids = {node.node_id for node in current.nodes}
-    inherited_nodes = {node.node_id: node for node in inherited.nodes}
+    inherited_nodes = inherited.node_lookup
     inherited_real_ids = {
         node_id
         for node_id, node in inherited_nodes.items()

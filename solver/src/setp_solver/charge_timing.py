@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import math
 from typing import Any
 
@@ -31,6 +31,13 @@ CHARGE_TIMING_POLICIES = frozenset(
     }
 )
 DEFAULT_CHARGE_TIMING_POLICY = "carbon_min"
+GEOMETRY_CACHE_MAX_ENTRIES = 20_000
+SLOT_ENERGY_CACHE_MAX_ENTRIES = 50_000
+SELECTED_START_CACHE_MAX_ENTRIES = 100_000
+OBJECTIVE_VALUE_CACHE_MAX_ENTRIES = 100_000
+COST_VALUE_CACHE_MAX_ENTRIES = 100_000
+EMISSIONS_VALUE_CACHE_MAX_ENTRIES = 100_000
+WEIGHTED_VALUE_CACHE_MAX_ENTRIES = 100_000
 
 
 @dataclass(frozen=True)
@@ -133,14 +140,11 @@ class ChargeTimingContext:
             ],
             tuple[tuple[int, float], ...],
         ] = {}
-        self._selected_starts: dict[
-            tuple[ChargingAction, float, float, str, str],
-            float,
-        ] = {}
+        self._selected_starts: dict[tuple[Any, ...], float] = {}
         self._objective_values: dict[tuple[ChargingAction, str], float] = {}
-        self._cost_values: dict[ChargingAction, float] = {}
-        self._emissions_values: dict[ChargingAction, float] = {}
-        self._weighted_values: dict[tuple[ChargingAction, str], float] = {}
+        self._cost_values: dict[tuple[Any, ...], float] = {}
+        self._emissions_values: dict[tuple[Any, ...], float] = {}
+        self._weighted_values: dict[tuple[tuple[Any, ...], str], float] = {}
 
     def assert_matches(
         self,
@@ -181,6 +185,23 @@ class ChargeTimingContext:
             None
             if action.end_energy_kwh is None
             else float(action.end_energy_kwh),
+            action.charging_curve_id,
+        )
+
+    @staticmethod
+    def _action_key(
+        action: ChargingAction,
+        start_second: float,
+    ) -> tuple[Any, ...]:
+        return (
+            action.vehicle_id,
+            action.station_id,
+            action.energy_kwh,
+            action.occupancy_minutes,
+            float(start_second),
+            action.charge_day_offset,
+            action.start_energy_kwh,
+            action.end_energy_kwh,
             action.charging_curve_id,
         )
 
@@ -225,6 +246,8 @@ class ChargeTimingContext:
             phases=phases,
             phase_boundaries=phase_boundaries,
         )
+        if len(self._geometries) >= GEOMETRY_CACHE_MAX_ENTRIES:
+            self._geometries.clear()
         self._geometries[key] = geometry
         return geometry
 
@@ -273,6 +296,8 @@ class ChargeTimingContext:
         if duration < 0.0:
             raise ValueError("occupancy_sec must be non-negative")
         if duration <= 1.0e-12:
+            if len(self._slots) >= SLOT_ENERGY_CACHE_MAX_ENTRIES:
+                self._slots.clear()
             self._slots[cache_key] = ()
             return ()
         if not math.isfinite(start) or start < 0.0:
@@ -301,6 +326,8 @@ class ChargeTimingContext:
                     )
                 cursor = overlap_end
             result = tuple(rows)
+            if len(self._slots) >= SLOT_ENERGY_CACHE_MAX_ENTRIES:
+                self._slots.clear()
             self._slots[cache_key] = result
             return result
 
@@ -352,6 +379,8 @@ class ChargeTimingContext:
         if abs(sum(energy for _, energy in rows) - expected) > 1.0e-7:
             raise ValueError("charging action slot energy does not close")
         result = tuple(rows)
+        if len(self._slots) >= SLOT_ENERGY_CACHE_MAX_ENTRIES:
+            self._slots.clear()
         self._slots[cache_key] = result
         return result
 
@@ -359,16 +388,23 @@ class ChargeTimingContext:
         self,
         action: ChargingAction,
         *,
+        start_second: float | None = None,
         need_cost: bool,
         need_emissions: bool,
         intensity_field: str = "actual_gco2_per_kwh",
         weighted_carbon: bool = False,
     ) -> tuple[float, float, float]:
-        calculate_cost = need_cost and action not in self._cost_values
-        calculate_emissions = (
-            need_emissions and action not in self._emissions_values
+        start = float(
+            action.charge_start_second
+            if start_second is None
+            else start_second
         )
-        weighted_key = (action, intensity_field)
+        action_key = self._action_key(action, start)
+        calculate_cost = need_cost and action_key not in self._cost_values
+        calculate_emissions = (
+            need_emissions and action_key not in self._emissions_values
+        )
+        weighted_key = (action_key, intensity_field)
         calculate_weighted = (
             weighted_carbon and weighted_key not in self._weighted_values
         )
@@ -376,8 +412,8 @@ class ChargeTimingContext:
             calculate_cost or calculate_emissions or calculate_weighted
         ):
             return (
-                self._cost_values.get(action, 0.0),
-                self._emissions_values.get(action, 0.0),
+                self._cost_values.get(action_key, 0.0),
+                self._emissions_values.get(action_key, 0.0),
                 self._weighted_values.get(weighted_key, 0.0),
             )
         profile = self.profile_for(action.station_id)
@@ -387,14 +423,14 @@ class ChargeTimingContext:
             if price_field is not None
             else float(action.energy_kwh) * profile.fixed_unit_price
             if calculate_cost
-            else self._cost_values.get(action, 0.0)
+            else self._cost_values.get(action_key, 0.0)
         )
-        emissions = self._emissions_values.get(action, 0.0)
+        emissions = self._emissions_values.get(action_key, 0.0)
         carbon_weighted = self._weighted_values.get(weighted_key, 0.0)
         if calculate_emissions or calculate_weighted or price_field is not None:
             for slot_index, energy in self._slot_energies(
                 action,
-                float(action.charge_start_second),
+                start,
                 len(profile.rows),
             ):
                 row = profile.row_for_slot(slot_index)
@@ -416,10 +452,16 @@ class ChargeTimingContext:
                         row[intensity_field]
                     )
         if calculate_cost:
-            self._cost_values[action] = float(cost)
+            if len(self._cost_values) >= COST_VALUE_CACHE_MAX_ENTRIES:
+                self._cost_values.clear()
+            self._cost_values[action_key] = float(cost)
         if calculate_emissions:
-            self._emissions_values[action] = float(emissions)
+            if len(self._emissions_values) >= EMISSIONS_VALUE_CACHE_MAX_ENTRIES:
+                self._emissions_values.clear()
+            self._emissions_values[action_key] = float(emissions)
         if calculate_weighted:
+            if len(self._weighted_values) >= WEIGHTED_VALUE_CACHE_MAX_ENTRIES:
+                self._weighted_values.clear()
             self._weighted_values[weighted_key] = float(carbon_weighted)
         return float(cost), float(emissions), float(carbon_weighted)
 
@@ -456,6 +498,8 @@ class ChargeTimingContext:
                 )
                 value = cost + carbon_price * emissions
         value = float(value)
+        if len(self._objective_values) >= OBJECTIVE_VALUE_CACHE_MAX_ENTRIES:
+            self._objective_values.clear()
         self._objective_values[key] = value
         return value
 
@@ -474,7 +518,7 @@ class ChargeTimingContext:
         # key, otherwise re-timing the same action during repair misses the
         # cache and re-scores its whole candidate set.
         key = (
-            replace(action, charge_start_second=0.0),
+            self._action_key(action, 0.0),
             float(earliest),
             float(latest),
             policy,
@@ -492,9 +536,9 @@ class ChargeTimingContext:
             )
             scored = []
             for start in candidates:
-                shifted = replace(action, charge_start_second=float(start))
                 _, _, score = self._settle(
-                    shifted,
+                    action,
+                    start_second=float(start),
                     need_cost=False,
                     need_emissions=False,
                     intensity_field=intensity_field,
@@ -506,22 +550,25 @@ class ChargeTimingContext:
             carbon_price = _price(self.prices, "carbon_price")
             scored = []
             for start in candidates:
-                shifted = replace(action, charge_start_second=float(start))
                 if policy == "cost_min":
                     score, _, _ = self._settle(
-                        shifted,
+                        action,
+                        start_second=float(start),
                         need_cost=True,
                         need_emissions=False,
                     )
                 else:
                     cost, emissions, _ = self._settle(
-                        shifted,
+                        action,
+                        start_second=float(start),
                         need_cost=True,
                         need_emissions=True,
                     )
                     score = cost + carbon_price * emissions
                 scored.append((float(score), float(start)))
         selected = min(scored, key=lambda item: (item[0], item[1]))[1]
+        if len(self._selected_starts) >= SELECTED_START_CACHE_MAX_ENTRIES:
+            self._selected_starts.clear()
         self._selected_starts[key] = selected
         return selected
 
@@ -539,6 +586,11 @@ class ChargeTimingContexts:
         self._contexts: list[
             tuple[list[dict[str, Any]], ChargeTimingContext]
         ] = []
+        # Exact memo for certified depot start selection: the selection is a
+        # pure function of the keyed inputs and the profiles registered for
+        # this solve, so replaying a stored (start, offset) or the stored
+        # ValueError is bitwise-identical to recomputing it.
+        self.depot_start_memo: dict[tuple[Any, ...], tuple[Any, ...]] = {}
 
     def for_profile(
         self,
@@ -571,6 +623,23 @@ def _price(prices: Any, field: str) -> float:
     if isinstance(prices, dict):
         return float(prices[field])
     return float(getattr(prices, field))
+
+
+def _action_at_start(
+    action: ChargingAction,
+    start_second: float,
+) -> ChargingAction:
+    return ChargingAction(
+        vehicle_id=action.vehicle_id,
+        station_id=action.station_id,
+        energy_kwh=action.energy_kwh,
+        occupancy_minutes=action.occupancy_minutes,
+        charge_start_second=float(start_second),
+        charge_day_offset=action.charge_day_offset,
+        start_energy_kwh=action.start_energy_kwh,
+        end_energy_kwh=action.end_energy_kwh,
+        charging_curve_id=action.charging_curve_id,
+    )
 
 
 def _timing_candidates(
@@ -722,7 +791,7 @@ def select_charge_timing_start(
     )
     scored: list[tuple[float, float]] = []
     for start in candidates:
-        shifted = replace(action, charge_start_second=float(start))
+        shifted = _action_at_start(action, float(start))
         electricity_cost = charging_action_electricity_cost(
             shifted,
             instance,

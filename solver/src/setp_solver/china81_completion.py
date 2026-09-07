@@ -764,10 +764,7 @@ def _canonical_all_cv_solution(
     skeleton: Solution,
     bundle: China81Bundle,
 ) -> Solution:
-    node_lookup = {
-        node.node_id: node
-        for node in bundle.instance.nodes
-    }
+    node_lookup = bundle.instance.node_lookup
     depots = {
         node.node_id
         for node in bundle.instance.nodes

@@ -74,7 +74,7 @@ def _selected_nodes(
     depot_id: str,
     customer_ids: tuple[str, ...],
 ) -> tuple[tuple[Node, ...], tuple[str, ...]]:
-    nodes_by_id = {node.node_id: node for node in bundle.instance.nodes}
+    nodes_by_id = bundle.instance.node_lookup
     if depot_id not in nodes_by_id or nodes_by_id[depot_id].node_type.lower() != "d":
         raise ValueError("enterprise depot is absent from the sealed instance")
     public_stations = tuple(
@@ -204,7 +204,7 @@ def slice_enterprise_problem(
         fleet_caps_by_depot=MappingProxyType({depot_id: selected_caps}),
         charger_scenario_by_node=selected_chargers,
     )
-    nodes_by_id = {node.node_id: node for node in selected_nodes}
+    nodes_by_id = sliced_instance.node_lookup
     seed_input = EnterpriseSeedInput(
         instance=sliced_instance,
         orders_by_customer=MappingProxyType(

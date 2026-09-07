@@ -283,6 +283,15 @@ def run_paired_pipeline(
                     **dict(evaluation.details),
                 }
             )
+            print(
+                f"PROGRESS batch={batch.batch_index} arm={arm} "
+                f"served={evaluation.customers_served}/{customer_total} "
+                f"cost={evaluation.total_cost:.2f} "
+                f"feasible={evaluation.full_evaluation_feasible} "
+                f"wall={elapsed:.0f}s",
+                file=sys.stderr,
+                flush=True,
+            )
 
     final_events = tuple(event_by_id[event_id] for event_id in applied)
     final_customer_ids = tuple(
@@ -700,6 +709,12 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         ),
     )
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--carbon-price",
+        type=float,
+        default=None,
+        help="carbon price in CNY/kg; default keeps the China81 constant",
+    )
     return parser.parse_args(argv)
 
 
@@ -724,7 +739,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.dynamic_stream_dir.is_absolute()
             else repo / args.dynamic_stream_dir
         )
-        problem = build_production_problem(repo, stream)
+        problem = build_production_problem(
+            repo,
+            stream,
+            carbon_price_cny_per_kg=args.carbon_price,
+        )
         backend = ProductionBackend()
     results = run_paired_pipeline(problem=problem, backend=backend)
     accepted = write_output_package(args.output_dir, results)

@@ -876,10 +876,16 @@ def _check_charging_start_and_power(
                     day_offset * 86_400.0 + charge_start
                 )
                 absolute_completion = absolute_start + occupancy_sec
-                current_departure = route_departure_second(
-                    route,
-                    instance,
-                    prices,
+                # 2026-09-03 (model alignment): the route departs at the
+                # schedule's origin departure, which already waits for a
+                # same-day pre-departure charge to end (paper: t_ce <= tau at
+                # d^+, departure free); whether that later departure still
+                # meets every window is the time-window check's verdict.
+                origin_row = schedule.get(route.node_sequence[0])
+                current_departure = (
+                    float(origin_row.t_depart)
+                    if origin_row is not None
+                    else route_departure_second(route, instance, prices)
                 )
                 current_return = route_return_arrival_without_charging(
                     route,

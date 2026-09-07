@@ -170,7 +170,6 @@ depot_charging_kwh  # unused variable (solver/src/setp_solver/search/execution_a
 station_charging_kwh  # unused variable (solver/src/setp_solver/search/execution_accounting.py:86)
 E_cv_direct  # unused variable (solver/src/setp_solver/search/execution_accounting.py:89)
 E_ev_indirect  # unused variable (solver/src/setp_solver/search/execution_accounting.py:90)
-vehicle_type_semantics  # unused variable (solver/src/setp_solver/search/fleet.py:55)
 source_depot_ids  # unused variable (solver/src/setp_solver/search/gates.py:20)
 LMAIN_TO_E2_ALIAS  # unused variable (solver/src/setp_solver/search/instance_registry.py:28)
 LEGACY_CONTRACT_ID  # unused variable (solver/src/setp_solver/search/multitrip_schedule.py:52)
@@ -229,7 +228,6 @@ served_customer_ids
 generation_statistics
 make_shared_initial_solution
 charging_action_from_dict
-evaluate_rebuild_solution
 complete_china81_route_skeleton
 
 # P124: the protected evaluator and protected charging implementation retain
@@ -267,7 +265,6 @@ identity_repair  # unused function (solver/src/setp_solver/algorithms/resetp_aln
 run_design_templates  # unused function (solver/src/setp_solver/reporting/runner.py:90)
 _.wait  # unused method (solver/tests/test_solomon_external_strong_baseline_interface_20260717.py:350)
 _seed_route_limit  # unused function (solver/src/setp_solver/algorithms/resetp_alns/support/construction.py:521)
-depot_site_power_kw_shadow  # unused function (solver/src/setp_solver/field_rename_compat.py:69)
 _seed_route_limit  # unused function (solver/src/setp_solver/search/construction.py:538)
 _.wait  # unused method (solver/tests/test_solomon_sintef_formal_runner_20260717.py:160)
 _rotations  # unused function (solver/src/setp_solver/algorithms/problem_hgs/vidal_compound.py:518)
@@ -286,7 +283,6 @@ proposal_stages  # unused function (solver/src/setp_solver/algorithms/problem_hg
 _repair_route_delta_score  # unused function (solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py:1112)
 _first_number  # unused function (solver/src/setp_solver/algorithms/resetp_alns/support/fleet.py:305)
 run_build_samples  # unused function (solver/src/setp_solver/reporting/runner.py:78)
-_first_number  # unused function (solver/src/setp_solver/search/fleet.py:305)
 proposal_final_stages  # unused function (solver/src/setp_solver/algorithms/problem_hgs/proposals.py:493)
 proposal_elite_route  # unused function (solver/src/setp_solver/algorithms/problem_hgs/proposals.py:506)
 proposal_post_mechanism_route  # unused function (solver/src/setp_solver/algorithms/problem_hgs/proposals.py:519)
@@ -298,7 +294,6 @@ _.best_penalised  # unused method (solver/src/setp_solver/algorithms/problem_hgs
 _ranked_insert_positions  # unused function (solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py:1072)
 _.truth_boundary_statistics  # unused property (solver/src/setp_solver/algorithms/problem_hgs/kernel_proposals.py:371)
 ev_profile_arc_energy_kwh  # unused function (solver/src/setp_solver/cost.py:1078)
-route_distance_m  # unused function (solver/src/setp_solver/private_instance_rebuild_20260811.py:372)
 _.register_started_or_completed  # unused method (solver/src/setp_solver/search/execution_accounting.py:316)
 mutated_type_hints  # unused function (solver/src/setp_solver/algorithms/resetp_alns/support/order_decoder.py:84)
 mutated_type_hints  # unused function (solver/src/setp_solver/search/order_decoder.py:84)
@@ -323,7 +318,6 @@ _lowest_carbon_gap_start  # unused function (solver/src/setp_solver/search/multi
 selective_duty_exchange  # unused function (solver/src/setp_solver/algorithms/problem_hgs/crossover.py:205)
 build_production_problem  # unused function (solver/src/setp_solver/main3b_backend.py:953)
 write_c8_stream  # unused function (solver/src/setp_solver/c8_dynamic_stream.py:642)
-validate_shifted_solution  # unused function (solver/src/setp_solver/private_instance_rebuild_20260811.py:272)
 _route_travel_lower_bound  # unused function (solver/src/setp_solver/algorithms/resetp_alns/support/charging.py:1431)
 _route_travel_lower_bound  # unused function (solver/src/setp_solver/search/charging.py:760)
 _.fleet_snapshot  # unused method (solver/src/setp_solver/main3b_backend.py:649)

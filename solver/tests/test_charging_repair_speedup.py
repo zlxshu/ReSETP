@@ -16,14 +16,15 @@ from setp_solver.charge_timing import (
 from setp_solver.charging_action import _curve_aware_action
 from setp_solver.charging_curve import M17_FAST_SHAPE_SCALED_60KW_PWL
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.prices import PriceParameters, UK_2025_PRICES
+from setp_solver.prices import PriceParameters
 from setp_solver.solution import ChargingAction, Route
+from solver.tests.china_test_prices import CHINA_TEST_PRICES
 
 
 def _prices() -> PriceParameters:
     curve = M17_FAST_SHAPE_SCALED_60KW_PWL
     return replace(
-        UK_2025_PRICES,
+        CHINA_TEST_PRICES,
         B_battery_kwh=77.28,
         initial_ev_battery_kwh=0.0,
         depot_charge_power_kw=60.0,
