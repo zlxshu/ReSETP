@@ -22,12 +22,12 @@
 \node[box] (c2t) at (\dx,\ytop)  {补电靠近午后\\减排幅度有限};
 % ---- 列 3 趟间
 \node[box] (c3b) at (2*\dx,0)      {电价与碳强度变化平缓};
-\node[box] (c3m) at (2*\dx,\ymid)  {回场后即发车\\无可选时段};
+\node[box] (c3m) at (2*\dx,\ymid)  {回场后即发车\\受客户时间窗限制};
 \node[box] (c3t) at (2*\dx,\ytop)  {充电时刻不变};
 % ---- 列 4 全日
 \node[box] (c4b) at (3*\dx,0)      {碳价较低且未覆盖道路物流\\排放以燃油车直接排放为主};
-\node[box] (c4m) at (3*\dx,\ymid)  {电动车经济性不足\\车队构成不变};
-\node[box] (c4t) at (3*\dx,\ytop)  {组合方案与只考虑电价相同\\成本下降，排放与路线不变};
+\node[box] (c4m) at (3*\dx,\ymid)  {车队与路线\\按含碳总成本择优};
+\node[box] (c4t) at (3*\dx,\ytop)  {总成本低于即充\\总排放与之接近};
 % ---- 竖箭头与标注
 \foreach \i in {1,2,3,4}{
   \draw[arr] (c\i b.north) -- node[right, inner sep=1.5pt]{约束} (c\i m.south);

@@ -105,13 +105,13 @@
 \Title{双碳背景下复杂混合车队物流模型与求解算法}
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
 
-\Abstract{双碳目标下，城市物流配送面临降碳与控本的双重压力。本文研究时变电网碳强度下多企业协同多车场动态混合车队车辆路径问题，兼顾油电混合编组、多趟衔接、非线性充电、分时电价与动态需求，以启动、行驶、充电、油耗与碳排放总成本最小为目标，将充电的电量、费用与排放核算统一到同一时段体系，设计混合遗传搜索算法MTC-HGS求解。标准算例与仿真实验表明：本文算法在28个算例上平均优于对比算法；现行分时电价与基准碳价下，兼顾电价与碳强度的充电安排只降本不减排，因谷段与低碳时段不重合、车队处于油电平价点。将谷段设在午间并把碳价提高至1.0元/kgCO$_2$e，兼顾两种信号的充电安排较即充降本3.93\%、减排30.35\%，两条件缺一不可；联合配送经成本分摊后各企业均获成本节约，滚动重优化以更少的在线调整完成全部动态订单。结果可为物流企业低碳运营与政府碳价政策提供参考。}
+\Abstract{双碳目标下，城市物流配送面临降碳与控本的双重压力。本文研究时变电网碳强度下多企业协同多车场动态混合车队车辆路径问题，兼顾油电混合编组、多趟衔接、非线性充电、分时电价与动态需求，以启动、行驶、充电、油耗与碳排放总成本最小为目标，将充电的电量、费用与排放核算统一到同一时段体系，设计混合遗传搜索算法MTC-HGS求解。标准算例与仿真实验表明：本文算法在28个算例上平均优于对比算法；现行分时电价与基准碳价下，兼顾电价与碳强度的充电安排只降本不减排，因谷段与低碳时段不重合、车队处于油电平价点。将谷段设在午间并把碳价提高至1.0元/kgCO$_2$e，兼顾两种信号的充电安排较即充降本3.93\%、减排30.35\%，两条件单独成立时减排均不显著；联合配送经成本分摊后各企业均获成本节约，滚动重优化以更少的在线调整完成全部动态订单。结果可为物流企业低碳运营与政府碳价政策提供参考。}
 
 \Keywords{车辆路径问题; 多车场协同配送; 混合车队; 实体车多趟; 时变电网碳强度; 动态需求; 混合遗传搜索}
 
 \ETitle{Complex mixed-fleet logistics model and solution algorithm under the dual-carbon goals}
 \EAuthor{ZHOU Leixishu, GAN Hongcheng, QIU Yingying}{Business School, University of Shanghai for Science and Technology, Shanghai 200093, China}
-\EAbstract{Under the dual-carbon goals, urban logistics distribution faces the dual pressure of cutting emissions and controlling cost. This paper studies the multi-enterprise collaborative multi-depot dynamic mixed-fleet vehicle routing problem with time-varying grid carbon intensity (TVGCI-CMDMF-DVRP), considering mixed fleets of conventional and electric vehicles, multi-trip chaining, nonlinear charging, time-of-use electricity prices and dynamic demand; the model minimizes the total cost of vehicle activation, travel, charging, fuel and carbon emissions, unifies the energy, cost and emission accounting of charging within a single time-slot system, and is solved by a hybrid genetic search algorithm, MTC-HGS. Benchmark and simulation experiments show that the proposed algorithm outperforms the compared algorithms on average over 28 instances, and that under the prevailing time-of-use tariff and the baseline carbon price a charging schedule accounting for both prices and grid carbon intensity lowers cost but not emissions, because the off-peak period and the low-carbon period do not overlap and the fleet sits at the cost parity point between conventional and electric vehicles. With the off-peak period shifted to midday and the carbon price raised to 1.0 CNY/kgCO$_2$e, accounting for both signals cuts total cost by 3.93\% and emissions by 30.35\% versus charging on arrival, and neither condition alone suffices; after cost allocation every enterprise obtains cost savings, and rolling re-optimization fulfills all dynamic orders with fewer online adjustments. The results provide reference for low-carbon logistics operations and government carbon pricing policy.}
+\EAbstract{Under the dual-carbon goals, urban logistics distribution faces the dual pressure of cutting emissions and controlling cost. This paper studies the multi-enterprise collaborative multi-depot dynamic mixed-fleet vehicle routing problem with time-varying grid carbon intensity (TVGCI-CMDMF-DVRP), considering mixed fleets of conventional and electric vehicles, multi-trip chaining, nonlinear charging, time-of-use electricity prices and dynamic demand; the model minimizes the total cost of vehicle activation, travel, charging, fuel and carbon emissions, unifies the energy, cost and emission accounting of charging within a single time-slot system, and is solved by a hybrid genetic search algorithm, MTC-HGS. Benchmark and simulation experiments show that the proposed algorithm outperforms the compared algorithms on average over 28 instances, and that under the prevailing time-of-use tariff and the baseline carbon price a charging schedule accounting for both prices and grid carbon intensity lowers cost but not emissions, because the off-peak period and the low-carbon period do not overlap and the fleet sits at the cost parity point between conventional and electric vehicles. With the off-peak period shifted to midday and the carbon price raised to 1.0 CNY/kgCO$_2$e, accounting for both signals cuts total cost by 3.93\% and emissions by 30.35\% versus charging on arrival, while neither condition alone yields a significant reduction; after cost allocation every enterprise obtains cost savings, and rolling re-optimization fulfills all dynamic orders with fewer online adjustments. The results provide reference for low-carbon logistics operations and government carbon pricing policy.}
 \EKeywords{vehicle routing problem; collaborative multi-depot delivery; mixed fleet;
 multi-trip delivery; time-varying grid carbon intensity; dynamic demand; hybrid genetic search}
 
@@ -1042,7 +1042,7 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 有可用时段即充电指车辆一回场即补电、不考虑电价与碳强度，首趟出车前的补电自前一日回场时刻起尽早进行；
 考虑分时电价、考虑时变碳强度分别指在可行时段内按充电费用最小、按充电排放最小安排充电时刻；
 考虑时变碳强度与分时电价指按充电费用与碳排放成本之和最小安排充电时刻，即本文模型采用的安排。
-四种安排下车型、路线与充电时刻均重新优化，各运行10次取均值，碳排量分燃油车直接排放与电动车充电排放列出，结果如表\ref{tab:carbon-charging}所示。
+四种安排的总体方案均按含碳总成本择优，局部充电时刻分别按上述四条规则确定，各运行10次取均值，碳排量分燃油车直接排放与电动车充电排放列出，结果如表\ref{tab:carbon-charging}所示。
 
 \begin{table}[H]
   \centering
@@ -1054,13 +1054,13 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 
 由表\ref{tab:carbon-charging}可知：
 1）考虑时变碳强度与分时电价的方案总成本最低，较有可用时段即充电减少35.48元（1.33\%）；只考虑分时电价的方案总成本次低（减少27.09元）而碳排量最高，
-较低的电费使更多配送任务改由电动车承担，燃油车直接排放减少15.17 kgCO$_2$e，电动车充电排放增加22.33 kgCO$_2$e，碳排量净增7.16 kgCO$_2$e。
+该方案有更多配送任务由电动车承担，燃油车直接排放减少15.17 kgCO$_2$e，电动车充电排放增加22.33 kgCO$_2$e，碳排量净增7.16 kgCO$_2$e。
 2）只考虑时变碳强度的方案电动车充电排放最低（44.47 kgCO$_2$e），但燃油车直接排放最高（146.70 kgCO$_2$e），总排放较有可用时段即充电增加1.36 kgCO$_2$e。
 3）同时考虑两种信号的方案与只考虑分时电价的方案接近，总成本相差8.39元、充电排放相差6.11 kgCO$_2$e，碳成本仅占总成本的1.45\%。
-4）四种安排下车队均以2辆燃油车3辆电动车为主，取该构型下各方案的均值：较有可用时段即充电，只考虑分时电价使充电成本减少43.84元、碳排量增加23.82 kgCO$_2$e，
-只考虑时变碳强度使充电成本减少10.16元、碳排量减少2.54 kgCO$_2$e，同时考虑两种信号的结果与只考虑分时电价接近。
+4）四种安排下车队均以2辆燃油车3辆电动车为主，取该构型下各方案的均值：较有可用时段即充电，只考虑分时电价的充电成本低43.84元、碳排量高23.82 kgCO$_2$e，
+只考虑时变碳强度的充电成本低10.16元、碳排量低2.54 kgCO$_2$e，同时考虑两种信号的结果与只考虑分时电价接近。
 综上，在基准条件下，按电价安排充电降低了成本却增加了碳排量，按碳强度安排充电只降低了充电环节的排放，同时考虑两种信号时碳强度对决策的影响有限，
-考虑时变碳强度未能减少总碳排量。
+与有可用时段即充电相比，考虑时变碳强度未能减少总碳排量。
 
 \subsubsection{分时电价与电网碳强度时段分析}
 
@@ -1089,16 +1089,13 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 低谷时段为23:00--07:00；电网碳强度取决于电源结构\cite{ref:82}，夜间最高、正午最低。谷段恰好落在碳强度最高的时段，光伏出力最大的10:00--13:00处于高峰时段；
 山东、河北等省份已将谷段调整至午间\cite{ref:hebei-tou}。
 2）补电只能在班次允许的三个窗口内进行：首趟出车前（自前一晚回场至次日开工，约占全日充电量的36\%）、午休与趟间。
-碳强度最低的13:00为下午班开工时刻，首趟前窗口不含该时段，午休窗口仅36\%的补电能延至该时段，趟间补电受下午客户时间窗限制无法调整。
+碳强度最低的13:00为下午班开工时刻，首趟前窗口不含该时段，只考虑时变碳强度时午休窗口约36\%的补电可延至该时段，其余安排下该比例不同，趟间补电受下午客户时间窗限制。
 3）首趟前窗口内降低充电成本与减少碳排放相互牵制，碳价不足以改变企业的选择。该窗口内不存在电价与碳强度同时较低的时段，
-改在碳强度较低的时段充电每千瓦时须多支付0.585元电费、少排放0.143 kgCO$_2$e，17:00前回场的车辆须碳价达到0.76元/kgCO$_2$e改充才具有经济性，17:00后回场的车辆须达到4元/kgCO$_2$e以上；
-全国碳市场现行价格为0.075元/kgCO$_2$e且尚未覆盖道路物流\cite{ref:mee2025}，基准碳价0.20元/kgCO$_2$e亦低于上述门槛。
+电价差与减排差之比为0.585/0.143约4.09元/kgCO$_2$e。
+全国碳市场现行价格为0.075元/kgCO$_2$e且尚未覆盖道路物流\cite{ref:mee2025}，基准碳价为0.20元/kgCO$_2$e。
 由表\ref{tab:charging-windows}可知，只考虑分时电价的方案将首趟前补电由前一日傍晚推迟至凌晨谷段，该窗口充电成本减少28.73元而碳排量增加23.05 kgCO$_2$e，
-是表\ref{tab:carbon-charging}中碳排量增加的全部来源；有可用时段即充电的碳排量较低，是因为车辆返场时段的碳强度本身较低。
-4）两种信号一致的时段处于补电窗口之外，充电时刻的减排空间有限。13:00的电价与碳强度同时最低，三种考虑价格信号的安排均将午休补电推迟至接近该时段，
-即使全部充电电量均在13:00完成，每日碳排量也仅能再减少16.6 kgCO$_2$e（9\%）。
-充电排放仅占总排放的24.5\%，其余为燃油车直接排放；四种安排下车队均以2辆燃油车3辆电动车为主，由表\ref{tab:fleet-config}可知3辆与4辆燃油车两种配置的总成本仅相差4.00元，
-电动车的固定成本溢价与其能耗节省接近平价，基准碳价不足以促成车型置换。
+是表\ref{tab:carbon-charging}中碳排量增加的主要来源；有可用时段即充电的碳排量较低，与车辆返场时段的碳强度本身较低有关。
+4）补电窗口限制。本文安排的充电排放为68.28 kgCO$_2$e，占总排放190.33 kgCO$_2$e的35.9\%。若把固定充电电量203.62 kWh全部按全天最低碳强度0.1541 kgCO$_2$e/kWh假设计算，充电排放下界为31.38 kgCO$_2$e，剩余空间36.90 kgCO$_2$e。该值是放松充电窗口后的假算，不是可行减排量。
 
 \begin{figure}[H]
   \centering
@@ -1107,10 +1104,10 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
   \label{fig:mechanism}
 \end{figure}
 
-由图\ref{fig:mechanism}可知，在现行电价时段、碳价与作业班次的约束下，按电价安排充电并维持2辆燃油车3辆电动车的车队是企业的最优选择；
+由图\ref{fig:mechanism}可知，在现行电价时段、碳价与作业班次的约束下，企业按电价安排充电并维持2辆燃油车3辆电动车的车队；
 两种价格信号未经协调，谷段位于碳强度最高的夜间，碳价既未覆盖道路物流，又远低于改变企业选择所需的水平。
-因此，同时降低成本与碳排放须满足两个条件：一是使谷段与低碳时段在企业可用的补电窗口内重合；
-二是提高单位碳价使车队跨过油电平价点，增派电动车可缩短各车的日行程并使回场提前，首趟前补电随之进入碳强度较低的傍晚时段，通过车队与路线的改变同时作用于燃油排放与夜间充电排放。
+据此可提出两个待检验的改善方向：一是使谷段与低碳时段在企业可用的补电窗口内重合；
+二是提高单位碳价，缩小电动车与燃油车的成本差距；若车队据此增派电动车，各车日行程缩短、回场提前，首趟前补电有望进入碳强度较低的傍晚时段，从而同时作用于燃油排放与夜间充电排放。
 
 \subsubsection{时变碳强度与分时电价协同发挥作用的条件}
 
@@ -1118,7 +1115,7 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 两者分别取决于分时电价的时段划分与单位碳价，均可由政府调节。
 为检验条件改变后时变碳强度与分时电价能否协同发挥作用，将两个条件分别与同时改变：
 谷段设在午间参照河北的做法\cite{ref:hebei-tou}，电价数值不变，低谷时段为1:00--6:00与12:00--15:00；
-单位碳价取1.0元/kgCO$_2$e，高于首趟前补电改在低碳时段的门槛0.76元/kgCO$_2$e，此时车队仍为混合配置。
+单位碳价取1.0元/kgCO$_2$e，此时车队仍为混合配置。
 各条件下车型、路线与充电时刻均重新优化，每种安排运行10次，表\ref{tab:two-conditions}中各项均为10次均值，其中电动车数均值反映车队构成的变化。
 
 \begin{table}[H]
@@ -1150,14 +1147,13 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 1）考虑时变碳强度与分时电价的安排总成本最低，为2738.73元，较只考虑分时电价减少20.56元、总排放减少27.47 kgCO$_2$e；
 两种安排的首趟前补电均在凌晨谷段，只考虑分时电价定在2:00，考虑两种信号定在碳强度更低的5:00，该窗口的碳排量由49.90降至35.30 kgCO$_2$e；
 2）只考虑时变碳强度的安排派遣的电动车最多、总排放最低，为97.71 kgCO$_2$e，但首趟前补电在回场后的峰段进行，
-充电成本高出37.08元，总成本高出23.14元，较本文安排每多减排1 kgCO$_2$e多支出1.13元，高于单位碳价；
+充电成本高出37.08元，总成本高出23.14元；
 3）与基准条件下的表\ref{tab:carbon-charging}相比，考虑时变碳强度与分时电价的安排在总成本最低的同时，总排放低于两种不考虑碳强度的安排，
 考虑时变碳强度未能减少总排放的问题不再出现。
 
 综上所述，考虑时变碳强度与分时电价的充电安排在现行条件下未能减排，是因为两种价格信号错位且碳价不足以推动车队跨过平价点，两者均可由政府调节。
 谷段对齐到光伏出力时段不增加财政支出，但单独实施不能减排，须与提高单位碳价配合；
 两项措施同时到位时，企业同时考虑两种信号安排充电即可在降低总成本的同时减少碳排放，兼顾经济效益与社会责任。
-
 \subsection{不同配送模式对比分析}
 
 为分析多车场协作的作用，设置独立配送和联合配送两种模式。
@@ -1358,7 +1354,7 @@ Shapley值分给其200.09元节约，而核仁只分给136.51元，相对差异�
 车型结构优化与充电成本控制上发挥作用；
 3）在现行分时电价与基准碳价下，按电价安排充电只降本不减排，
 原因是谷段与电网碳强度低谷错位、碳价远低于改变车型选择所需的水平；
-谷段移至午间与碳价提高至1.0元/kgCO$_2$e两个条件单独成立时均不能减少总排放，
+谷段移至午间与碳价提高至1.0元/kgCO$_2$e两个条件单独成立时总排放的减少均不显著，
 两者同时成立时考虑时变碳强度的充电安排相较于有可用时段即充电总成本减少3.93\%、碳排放减少30.35\%，车队仍为油电混合；
 4）联合配送经成本分摊后各企业均获成本节约、节约率最低为7.49\%，
 协作联盟满足参与约束，动态需求下滚动重优化以更少的在线调整完成了全部动态订单。
