@@ -27,20 +27,21 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 GRID_DIR = REPO_ROOT / "solver/reports/grid2x2_v3_20260906"
 OUT_TEX = REPO_ROOT / "docs/paper_v2/generated_tables/two_conditions_table.tex"
 
-# (条件标签, 格目录)
+# 2026-09-10 用户令：主角改为碳强度引导有序充电（carbon_min），对照为无序充电（asap）。
+# (条件标签, 无序充电格目录, 碳强度引导有序充电目录)
 ROWS = [
-    (r"北京现行时段，碳价0.20（基准）", "beijing/P=0.2"),
-    (r"谷段设在午间，碳价0.20", "midday/P=0.2"),
-    (r"北京现行时段，碳价1.00", "beijing/P=1.0"),
-    (r"谷段设在午间，碳价1.00", "midday/P=1.0"),
+    (r"北京现行时段，碳价0.20（基准）", GRID_DIR / "beijing/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_20260906/carbon_min"),
+    (r"谷段设在午间，碳价0.20", GRID_DIR / "midday/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/carbon_min_two_conditions_20260910/midday_P0.2"),
+    (r"北京现行时段，碳价1.00", GRID_DIR / "beijing/P=1.0/MT-HGS", REPO_ROOT / "solver/reports/carbon_min_two_conditions_20260910/beijing_P1.0"),
+    (r"谷段设在午间，碳价1.00", GRID_DIR / "midday/P=1.0/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_midday_P1.0_20260909/carbon_min"),
 ]
-ARMS = (("MT-HGS", "asap"), ("MTC-HGS", "cost_plus_carbon"))
+ARMS = (("asap",), ("carbon_min",))
 METRICS = ("total_cost", "E_total", "E_cv_direct", "E_ev_indirect")
 
 
-def load_arm(cell: Path, arm: str, policy: str) -> list[dict]:
+def load_arm(arm_dir: Path, policy: str) -> list[dict]:
     rows = []
-    for run_dir in sorted(p for p in cell.glob(f"{arm}/run_*") if p.is_dir()):
+    for run_dir in sorted(p for p in arm_dir.glob("run_*") if p.is_dir()):
         sol_p = run_dir / "best_solution.json"
         if not sol_p.exists():
             continue
@@ -59,9 +60,11 @@ def load_arm(cell: Path, arm: str, policy: str) -> list[dict]:
         row = {k: float(b[k]) for k in METRICS}
         row["fleet"] = f"{int(b['n_veh_cv'])}油{int(b['n_veh_ev'])}电"
         row["n_ev"] = int(b["n_veh_ev"])
+        # 2026-09-10 用户：电动车数均值意义不大，改为电动车占比（%）＝该次运算电动车数/总车数，再取 10 次均值
+        row["ev_share"] = 100.0 * int(b["n_veh_ev"]) / (int(b["n_veh_ev"]) + int(b["n_veh_cv"]))
         rows.append(row)
     if len(rows) != 10:
-        raise SystemExit(f"{cell}/{arm}: 期望 10 次，实得 {len(rows)}")
+        raise SystemExit(f"{arm_dir}: 期望 10 次，实得 {len(rows)}")
     return rows
 
 
@@ -82,17 +85,17 @@ def main() -> int:
     lines = [
         r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccccccc@{}}",
         r"    \toprule",
-        r"    \multirow{2}{*}{条件} & \multicolumn{3}{c}{有可用时段即充电} & \multicolumn{3}{c}{考虑时变碳强度与分时电价}\\",
+        # "条件"上下左右居中：表头共三行文字（第一行一行、第二行两行），multirow 跨 3 行高度
+        r"    \multirow{3}{*}{条件} & \multicolumn{3}{c}{无序充电} & \multicolumn{3}{c}{碳强度引导有序充电}\\",
         r"    \cmidrule(lr){2-4}\cmidrule(lr){5-7}",
-        r"     & \makecell{电动车数均值\\（辆）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & "
-        r"\makecell{电动车数均值\\（辆）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）}\\",
+        r"     & \makecell{电动车占比\\（\%）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & "
+        r"\makecell{电动车占比\\（\%）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）}\\",
         r"    \midrule",
     ]
-    for label, rel in ROWS:
-        cell = GRID_DIR / rel
-        asap = load_arm(cell, *ARMS[0])
-        both = load_arm(cell, *ARMS[1])
-        ev = [st.mean(r["n_ev"] for r in asap), st.mean(r["n_ev"] for r in both)]
+    for label, asap_dir, carbon_dir in ROWS:
+        asap = load_arm(asap_dir, "asap")
+        both = load_arm(carbon_dir, "carbon_min")
+        ev = [st.mean(r["ev_share"] for r in asap), st.mean(r["ev_share"] for r in both)]
         tc = [st.mean(r["total_cost"] for r in asap), st.mean(r["total_cost"] for r in both)]
         em = [st.mean(r["E_total"] for r in asap), st.mean(r["E_total"] for r in both)]
         tcs = [f"{v:.2f}" for v in tc]; ems = [f"{v:.2f}" for v in em]

@@ -12,6 +12,8 @@ feasibility remain in Duty evaluation.
 
 from __future__ import annotations
 
+import bisect
+
 from dataclasses import replace
 from decimal import ROUND_HALF_UP, Decimal
 from math import ceil
@@ -96,6 +98,7 @@ class IndependentKernelDutyRouteProposalEngine:
         type_exchange_enabled: bool = True,
         shift_aware_ev_unit_cost_enabled: bool = False,
         charge_timing_policy_for_proxy: str | None = None,
+        proxy_feasible_slots_only: bool = False,
         first_trip_window: str = FIRST_TRIP_WINDOW_SAME_DAY,
         first_trip_window_open_second: float | None = None,
         ev_charge_time_proxy_enabled: bool = True,
@@ -145,6 +148,16 @@ class IndependentKernelDutyRouteProposalEngine:
                 str(charge_timing_policy_for_proxy)
             )
         )
+        # 2026-09-10: when True the shift-aware EV price may only be taken
+        # from calendar rows that can actually HOST the reference charge
+        # before the window closes (start + reference duration <= window
+        # end).  Off by default: every existing run is bit-for-bit unchanged.
+        # Measured 2026-09-10 (midday x 1.0, 40 runs): the historical key let
+        # ``carbon_min`` price its first-trip charge at the 08:00 row (the
+        # cleanest row of the merged window, which cannot fit a charge before
+        # the 08:00 departure), proxy 0.873 vs 1.355 CNY/kWh actually paid,
+        # so that arm dispatched the MOST EVs while paying the most.
+        self.proxy_feasible_slots_only = bool(proxy_feasible_slots_only)
         # 2026-09-06: the exact repair's first-trip window rule, so the
         # shift-aware EV price prices the SAME window the settlement will use.
         self.first_trip_window = validate_first_trip_window(
@@ -265,6 +278,7 @@ class IndependentKernelDutyRouteProposalEngine:
             charge_timing_policy_for_proxy=(
                 self.charge_timing_policy_for_proxy
             ),
+            proxy_feasible_slots_only=self.proxy_feasible_slots_only,
             first_trip_window=self.first_trip_window,
             first_trip_window_open_second=self.first_trip_window_open_second,
             ev_charge_time_proxy_enabled=self.ev_charge_time_proxy_enabled,
@@ -1144,6 +1158,7 @@ def _build_unique_asset_problem(
     type_exchange_enabled: bool = True,
     shift_aware_ev_unit_cost_enabled: bool = False,
     charge_timing_policy_for_proxy: str | None = None,
+    proxy_feasible_slots_only: bool = False,
     first_trip_window: str = FIRST_TRIP_WINDOW_SAME_DAY,
     first_trip_window_open_second: float | None = None,
     ev_charge_time_proxy_enabled: bool = True,
@@ -1328,6 +1343,28 @@ def _build_unique_asset_problem(
     )
     ev_unit_cost_by_depot: dict[str, float] = {}
     shift_aware_ev_proxy: dict[str, object] = {}
+    # 2026-09-10: reference charge duration for the feasible-slot filter of
+    # the shift-aware EV price (same reference the departure-gap proxy uses).
+    proxy_reference_seconds: float | None = None
+    if (
+        proxy_feasible_slots_only
+        and include_propulsion_proxy
+        and any(vehicle_type == "ev" for vehicle_type, _depot in profile_keys)
+    ):
+        _ref_curve = _curve_for_prices(bundle.prices, instance)
+        _ref_kwh = (
+            reference_trip_energy_kwh(
+                instance,
+                bundle.prices,
+                fleet_template.duties,
+                reference=ev_departure_gap_reference,
+            )
+            if ev_departure_gap_reference_kwh is None
+            else float(ev_departure_gap_reference_kwh)
+        )
+        _ref_kwh = min(_ref_kwh, float(_ref_curve.capacity_kwh))
+        proxy_reference_seconds = float(_ref_curve.duration_seconds(0.0, _ref_kwh))
+        shift_aware_ev_proxy["feasible_slots_reference_seconds"] = proxy_reference_seconds
     # 2026-09-05 (A3): how the scalar restart feedback was folded into the
     # per-shift prices, per depot.  Metadata only; keyed off the depot map so
     # it rides the existing ledger instead of opening a second channel.
@@ -1361,6 +1398,8 @@ def _build_unique_asset_problem(
                 charge_timing_policy=charge_timing_policy_for_proxy,
                 first_trip_window=first_trip_window,
                 first_trip_window_open_second=first_trip_window_open_second,
+                feasible_slots_only=proxy_feasible_slots_only,
+                reference_charge_seconds=proxy_reference_seconds,
             )
             for shift_id, row in rates.items():
                 ev_unit_cost_by_depot_and_shift[(depot_id, shift_id)] = (
@@ -1780,6 +1819,43 @@ def _money_units(value: float | Decimal) -> int:
     return max(0, int(scaled.to_integral_value(rounding=ROUND_HALF_UP)))
 
 
+def _calendar_span_pricer(rows, duration: float):
+    """Return ``start -> (electricity, gco2)`` averaged over ``[start, start +
+    duration]`` on the daily calendar ``rows`` (absolute starts may be
+    negative for the previous evening; each instant maps to its day row)."""
+
+    day_rows = sorted(rows, key=lambda row: float(row["horizon_second_start"]))
+    starts = [float(row["horizon_second_start"]) for row in day_rows]
+
+    def _price(start: float) -> tuple[float, float]:
+        remaining = float(duration)
+        instant = float(start)
+        electricity = 0.0
+        gco2 = 0.0
+        if remaining <= 0.0:
+            row = day_rows[max(bisect.bisect_right(starts, instant % STATIC_PREHORIZON_SECONDS) - 1, 0)]
+            return (
+                float(row["depot_energy_cny_per_kwh"]),
+                float(row["actual_gco2_per_kwh"]),
+            )
+        while remaining > 1e-9:
+            day_second = instant % STATIC_PREHORIZON_SECONDS
+            index = max(bisect.bisect_right(starts, day_second) - 1, 0)
+            row_end = (
+                starts[index + 1]
+                if index + 1 < len(starts)
+                else STATIC_PREHORIZON_SECONDS
+            )
+            segment = min(remaining, max(row_end - day_second, 1e-9))
+            electricity += segment * float(day_rows[index]["depot_energy_cny_per_kwh"])
+            gco2 += segment * float(day_rows[index]["actual_gco2_per_kwh"])
+            instant += segment
+            remaining -= segment
+        return electricity / float(duration), gco2 / float(duration)
+
+    return _price
+
+
 def _rebuilt_shift_aware_ev_unit_costs(
     context: DutyEvaluationContext,
     rows,
@@ -1787,6 +1863,8 @@ def _rebuilt_shift_aware_ev_unit_costs(
     charge_timing_policy: str | None = None,
     first_trip_window: str = FIRST_TRIP_WINDOW_SAME_DAY,
     first_trip_window_open_second: float | None = None,
+    feasible_slots_only: bool = False,
+    reference_charge_seconds: float | None = None,
 ) -> dict[str, dict[str, float | int]]:
     """Price each causal charging window at what THIS arm's policy would pay.
 
@@ -1841,8 +1919,13 @@ def _rebuilt_shift_aware_ev_unit_costs(
 
     def _selection_key(item):
         row, start = item
-        electricity = float(row["depot_energy_cny_per_kwh"])
-        gco2 = float(row["actual_gco2_per_kwh"])
+        return _key_values(
+            float(row["depot_energy_cny_per_kwh"]),
+            float(row["actual_gco2_per_kwh"]),
+            start,
+        )
+
+    def _key_values(electricity, gco2, start):
         if charge_timing_policy is None:
             return (gco2, electricity, -start)
         policy = charge_timing_policy
@@ -1928,9 +2011,39 @@ def _rebuilt_shift_aware_ev_unit_costs(
             raise ValueError(
                 f"shift {shift_id!r} has no causal depot charging slot"
             )
-        row, _absolute_start = min(available, key=_selection_key)
-        electricity = float(row["depot_energy_cny_per_kwh"])
-        carbon = float(row["actual_gco2_per_kwh"])
+        priced_start: float | None = None
+        if feasible_slots_only and reference_charge_seconds:
+            # 2026-09-10: price the window the way the exact timer settles it.
+            # A candidate start is a row's first instant inside the window
+            # (the opening itself for the row that contains it); it is kept
+            # only when the reference charge can finish before the shift
+            # departs, and it is priced by the time-weighted electricity and
+            # carbon over the whole charge span, not by the single row it
+            # starts in.  Measured 2026-09-10 (midday calendar, 1.0 CNY/kg):
+            # the single-row key priced ``carbon_min`` at the 15:30 row of the
+            # previous evening (182.5 g) although a charge opening at 15:47
+            # runs into the 16:00 row and later returns land in the 17:00
+            # peak, so that arm's route search saw the cheapest EV of the four
+            # arms while its settlement paid the most.
+            duration = float(reference_charge_seconds)
+            span = _calendar_span_pricer(rows, duration)
+            candidates = tuple(
+                (row, max(start, window_start))
+                for row, start in available
+                if max(start, window_start) + duration <= window_end
+            )
+            if candidates:
+                priced = tuple(
+                    (row, start, *span(start)) for row, start in candidates
+                )
+                row, priced_start, electricity, carbon = min(
+                    priced,
+                    key=lambda item: _key_values(item[2], item[3], item[1]),
+                )
+        if priced_start is None:
+            row, _absolute_start = min(available, key=_selection_key)
+            electricity = float(row["depot_energy_cny_per_kwh"])
+            carbon = float(row["actual_gco2_per_kwh"])
         selected[str(shift_id)] = {
             "window_start_second": float(window_start),
             "window_end_second": float(window_end),
@@ -1942,6 +2055,16 @@ def _rebuilt_shift_aware_ev_unit_costs(
             "actual_gco2_per_kwh": carbon,
             "proxy_cny_per_kwh": electricity
             + carbon / 1_000.0 * float(context.bundle.prices.carbon_price),
+            **(
+                {}
+                if priced_start is None
+                else {
+                    "priced_start_second": float(priced_start),
+                    "reference_charge_seconds": float(
+                        reference_charge_seconds
+                    ),
+                }
+            ),
         }
         previous_end = float(shift_end)
     return selected

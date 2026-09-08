@@ -27,10 +27,10 @@ CAL = REPO / "data/ChinaInstances/china81_runtime_parameter_authority_v4_2026072
 # 每行成本最低与碳排量最低各自加粗；合计行与表10 的充电成本、电动车充电排放逐位一致（脚本内断言）。
 SHIFT = REPO / "data/ChinaInstances/china81_final_suite_v2_20260815/instances/cn-jjj-50c-01-DEPOTSEARCH-d996f755bd/shift_contract.json"
 ARMS = [
-    ("有可用时段即充电", REPO / "solver/reports/grid2x2_v3_20260906/beijing/P=0.2/MT-HGS", "asap"),
-    ("考虑分时电价", REPO / "solver/reports/charging_arrangements_20260906/cost_min", "cost_min"),
-    ("考虑时变碳强度", REPO / "solver/reports/charging_arrangements_20260906/carbon_min", "carbon_min"),
-    (r"\makecell{考虑时变碳强度\\与分时电价}", REPO / "solver/reports/grid2x2_v3_20260906/beijing/P=0.2/MTC-HGS", "cost_plus_carbon"),
+    # 2026-09-10 用户令：删去第四种安排，名称改用文献用语
+    ("无序充电", REPO / "solver/reports/grid2x2_v3_20260906/beijing/P=0.2/MT-HGS", "asap"),
+    ("电价引导有序充电", REPO / "solver/reports/charging_arrangements_20260906/cost_min", "cost_min"),
+    ("碳强度引导有序充电", REPO / "solver/reports/charging_arrangements_20260906/carbon_min", "carbon_min"),
 ]
 WINDOWS = [("first", "首趟出车前"), ("lunch", "午休"), ("pm", "趟间")]
 DAY, SLOT = 86400.0, 1800.0
@@ -159,7 +159,7 @@ def main() -> int:
         tot_k = sum(v[0] for v in w.values()); tot_e = sum(v[1] for v in w.values())
         print(f"[{pol:16s}] n={n} " + " ".join(f"{lab} {fmt_time(v[3])} {v[0]:.2f}元/{v[1]:.2f}kg（{v[2]:.1f}kWh）" for (key, lab), v in zip(WINDOWS, w.values())) + f" 合计 {tot_k:.2f}元/{tot_e:.2f}kg", file=sys.stderr)
     # 竖排：窗口分块 × 方案逐行（13 列横排超宽 23.9 pt，2026-09-06 改为此式；块内成本最低与碳排量最低各自加粗）
-    names = ["有可用时段即充电", "考虑分时电价", "考虑时变碳强度", "考虑时变碳强度与分时电价"]
+    names = [h for h, _, _ in ARMS]
     lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llccc@{}}", r"    \toprule",
              r"    补电窗口 & 充电安排 & 充电开始时刻 & 充电成本（元） & 碳排量（kgCO$_2$e）\\",
              r"    \midrule"]
@@ -175,7 +175,7 @@ def main() -> int:
                 kk = r"\textbf{" + kk + "}"
             if abs(e - emin) < 1e-9:
                 ee = r"\textbf{" + ee + "}"
-            first = (r"\multirow{4}{*}{" + lab + "}") if ai == 0 else ""
+            first = (r"\multirow{" + str(len(ARMS)) + "}{*}{" + lab + "}") if ai == 0 else ""
             lines.append(f"    {first} & {names[ai]} & {tm} & {kk} & {ee}\\\\")
     lines += [r"    \bottomrule", r"  \end{tabular*}"]
     tex = "\n".join(lines) + "\n"

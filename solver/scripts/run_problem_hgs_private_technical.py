@@ -1972,6 +1972,15 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--proxy-feasible-slots",
+        action="store_true",
+        help=(
+            "shift-aware EV route proxy prices each charging window only from "
+            "calendar rows that can host the reference charge before departure "
+            "(2026-09-10); default off keeps every existing run bit-identical"
+        ),
+    )
+    parser.add_argument(
         "--frvcpy-charging",
         action="store_true",
         help=(
@@ -2427,6 +2436,7 @@ def main() -> int:
     # will settle in, otherwise the search optimises against a window that no
     # longer exists.
     route_engine_options["first_trip_window"] = effective_first_trip_window
+    route_engine_options["proxy_feasible_slots_only"] = bool(args.proxy_feasible_slots)
     route_engine_options["ev_departure_gap_proxy_enabled"] = (
         args.ev_departure_gap_proxy
     )
@@ -2540,6 +2550,7 @@ def main() -> int:
             route_engine.charge_timing_policy_for_proxy
         ),
         "shift_aware_ev_proxy": route_engine.shift_aware_ev_proxy,
+        "proxy_feasible_slots_only": route_engine.proxy_feasible_slots_only,
         "route_contract": (
             None
             if route_contract is None

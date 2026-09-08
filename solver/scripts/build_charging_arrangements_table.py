@@ -48,9 +48,10 @@ BOLD_KEYS = {"total_cost", "E_total"}
 
 COLUMNS = (
     # (列头 tex, 期望的实际充电时刻策略, 参数名)
-    ("有可用时段即充电", "asap", "asap_dir"),
-    ("考虑分时电价", "cost_min", "price_dir"),
-    ("考虑时变碳强度", "carbon_min", "carbon_dir"),
+    # 2026-09-10 用户令：安排名改用文献用语（无序充电 / 有序充电，Li 2024；Woody 2021 回场即充为基准）
+    ("无序充电", "asap", "asap_dir"),
+    ("电价引导有序充电", "cost_min", "price_dir"),
+    ("碳强度引导有序充电", "carbon_min", "carbon_dir"),
     (r"\makecell{考虑时变碳强度\\与分时电价}", "cost_plus_carbon", "both_dir"),
 )
 
@@ -95,9 +96,9 @@ def fmt(x: float) -> str:
     return f"{x:.2f}"
 
 
-def build_tex(means: list[dict], bold: bool, relative_rows: bool = False) -> str:
-    lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcccc@{}}", r"    \toprule"]
-    lines.append("    指标 & " + " & ".join(h for h, _, _ in COLUMNS) + r"\\")
+def build_tex(means: list[dict], bold: bool, relative_rows: bool = False, columns=COLUMNS) -> str:
+    lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l" + "c" * len(columns) + r"@{}}", r"    \toprule"]
+    lines.append("    指标 & " + " & ".join(h for h, _, _ in columns) + r"\\")
     lines.append(r"    \midrule")
     for label, key, _ in ROWS:
         vals = [m[key] for m in means]
@@ -127,6 +128,7 @@ def main() -> int:
     ap.add_argument("--both-dir", type=Path, default=grid / "MTC-HGS")
     ap.add_argument("--out", type=Path, default=REPO_ROOT / "docs/paper_v2/generated_tables/carbon_charging_table.tex")
     ap.add_argument("--no-bold", action="store_true", help="总成本/总排放行不加粗")
+    ap.add_argument("--no-both", action="store_true", help="2026-09-10 用户令：删去第四列（考虑时变碳强度与分时电价），三列版")
     ap.add_argument("--skip-policy-check", action="store_true", help="只用于脚本自测，正式出表不得使用")
     ap.add_argument("--dry-run", action="store_true", help="只打印，不写文件")
     ap.add_argument("--relative-rows", action="store_true", help="末尾追加两行：总成本/总排放较末列（本文安排）的变化率（%%）")
@@ -140,7 +142,8 @@ def main() -> int:
     args = ap.parse_args()
 
     means, shared_all = [], None
-    for header, policy, attr in COLUMNS:
+    columns = COLUMNS[:3] if args.no_both else COLUMNS
+    for header, policy, attr in columns:
         arm_dir = getattr(args, attr).resolve()
         runs, shared = load_arm(arm_dir, policy, args.skip_policy_check)
         if shared_all is None:
@@ -169,7 +172,7 @@ def main() -> int:
             m = {key: st.mean(r[key] for r in runs) for _, key, _ in ROWS}
         means.append(m)
     print(f"批次口径：{shared_all}", file=sys.stderr)
-    tex = build_tex(means, bold=not args.no_bold, relative_rows=args.relative_rows)
+    tex = build_tex(means, bold=not args.no_bold, relative_rows=args.relative_rows, columns=columns)
     if not args.dry_run:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(tex, encoding="utf-8")

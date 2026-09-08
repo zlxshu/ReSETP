@@ -14,8 +14,8 @@
 \def\ytop{3.20}
 % ---- 列 1 首趟出车前
 \node[box] (c1b) at (0,0)      {谷段电价时段碳强度最高\\低碳时段电价较高};
-\node[box] (c1m) at (0,\ymid)  {降低电费与减少排放相互牵制\\碳价过低，充电随电价安排};
-\node[box] (c1t) at (0,\ytop)  {补电移入夜间谷段\\电费降低，排放增加};
+\node[box] (c1m) at (0,\ymid)  {降低电费与减少排放相互牵制\\碳价过低，按碳强度充电须多付电费};
+\node[box] (c1t) at (0,\ytop)  {补电留在回场时刻\\排放与无序充电接近，电费较高};
 % ---- 列 2 午休
 \node[box] (c2b) at (\dx,0)      {午后电价与碳强度同时较低};
 \node[box] (c2m) at (\dx,\ymid)  {降费与减排方向一致\\受下午班开工时刻限制};
@@ -27,7 +27,7 @@
 % ---- 列 4 全日
 \node[box] (c4b) at (3*\dx,0)      {碳价较低且未覆盖道路物流\\排放以燃油车直接排放为主};
 \node[box] (c4m) at (3*\dx,\ymid)  {车队与路线\\按含碳总成本择优};
-\node[box] (c4t) at (3*\dx,\ytop)  {总成本低于即充\\总排放与之接近};
+\node[box] (c4t) at (3*\dx,\ytop)  {总成本与无序充电相当\\总排放未减少};
 % ---- 竖箭头与标注
 \foreach \i in {1,2,3,4}{
   \draw[arr] (c\i b.north) -- node[right, inner sep=1.5pt]{约束} (c\i m.south);
