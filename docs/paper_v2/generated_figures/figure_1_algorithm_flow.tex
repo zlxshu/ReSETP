@@ -31,7 +31,7 @@
 % ---- left column ----
 \node[terminal] (start) at (1.50,5.90) {开始};
 \node[box]      (read)  at (1.50,4.50) {读取客户、车场、车辆\\分时电价与电网碳强度};
-\node[box]      (proxy) at (1.50,3.10) {构建路线层代理问题};
+\node[box]      (proxy) at (1.50,3.10) {构建路线层近似问题};
 \node[side]     (dyn)   at (1.50,1.365) {动态事件触发\\继承车辆状态与客户};
 \draw[flow] (start) -- (read);
 \draw[flow] (read) -- (proxy);
@@ -50,7 +50,7 @@
 \node[lab,anchor=south] at (4.45,1.485) {否};
 
 % ---- stage 2: exact evaluation ----
-\node[box] (decode) at (11.890,1.365) {解码为实体车趟次序列};
+\node[box] (decode) at (11.890,1.365) {解码为各车辆趟次序列};
 \node[box] (charge) at (11.890,3.10) {安排预充与趟间补电};
 \node[box] (exact)  at (11.890,4.50) {计算总成本并检验约束};
 \node[box] (educ)   at (11.890,5.90) {跨车场趟交换\\车型任务交换};
@@ -74,7 +74,7 @@
 % ---- outer loop: realised electricity price fed back into the proxy problem ----
 \draw[flow] (stopr.east) -- (17.95,4.20) -- (17.95,-0.55) -- (-0.55,-0.55) -- (-0.55,3.10) -- (proxy.west);
 \node[lab,anchor=south] at (17.79,4.32) {否};
-\node[wide] (feed) at (8.870,-0.55) {回填实付电价，重建代理问题};
+\node[wide] (feed) at (8.870,-0.55) {回填实付电价，重建近似问题};
 
 % ---- stage frames ----
 \draw[frame] (3.75,0.18) rectangle (9.04,7.00);

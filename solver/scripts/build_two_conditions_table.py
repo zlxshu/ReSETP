@@ -91,8 +91,8 @@ def main() -> int:
         r"    \multirow{3}{*}{条件} & \multicolumn{4}{c}{无序充电} & \multicolumn{4}{c}{碳强度引导有序充电}\\",
         r"    \cmidrule(lr){2-5}\cmidrule(lr){6-9}",
         # 2026-09-09 用户令：正文引用的是"电动车 3.9→3.4 辆"这类辆数，表里必须有这一列
-        r"     & \makecell{电动车数\\（辆）} & \makecell{电动车\\占比（\%）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & "
-        r"\makecell{电动车数\\（辆）} & \makecell{电动车\\占比（\%）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）}\\",
+        r"     & \makecell{电动车数\\（辆）} & \makecell{电动车\\占比（\%）} & \makecell{总成本\\（元）} & \makecell{总排放\\（kgCO$_2$e）} & "
+        r"\makecell{电动车数\\（辆）} & \makecell{电动车\\占比（\%）} & \makecell{总成本\\（元）} & \makecell{总排放\\（kgCO$_2$e）}\\",
         r"    \midrule",
     ]
     for label, asap_dir, carbon_dir in ROWS:
