@@ -62,18 +62,18 @@
 
 % ---- right column ----
 \node[narrow]   (best)   at (15.970,5.90) {更新当前最优解};
-\node[decision] (stopr)  at (15.970,4.20) {本轮改善且\\使用电动车？};
+\node[decision] (stopr)  at (15.970,4.20) {连续两轮\\未改善？};
 \node[narrow]   (output) at (15.970,2.30) {输出最优可行方案};
 \node[terminal] (end)    at (15.970,1.10) {结束};
 \draw[flow] (educ) -- (best);
 \draw[flow] (best) -- (stopr);
 \draw[flow] (stopr) -- (output);
-\node[lab,anchor=west] at (16.130,3.058) {否};
+\node[lab,anchor=west] at (16.130,3.058) {是};
 \draw[flow] (output) -- (end);
 
 % ---- outer loop: realised electricity price fed back into the proxy problem ----
 \draw[flow] (stopr.east) -- (17.95,4.20) -- (17.95,-0.55) -- (-0.55,-0.55) -- (-0.55,3.10) -- (proxy.west);
-\node[lab,anchor=south] at (17.79,4.32) {是};
+\node[lab,anchor=south] at (17.79,4.32) {否};
 \node[wide] (feed) at (8.870,-0.55) {回填实付电价，重建代理问题};
 
 % ---- stage frames ----
