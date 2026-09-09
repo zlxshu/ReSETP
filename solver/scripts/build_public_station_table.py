@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """生成公共充电站信息表（用户 2026-09-06 指出表 3 缺 97 个公共充电站节点）。
 
-只读算例 nodes.csv（node_type=station），按 node_id 排序编为 S01–S97，输出三栏并排的 supertabular* 片段
+只读算例 nodes.csv（node_type=station），S1、S2 固定为表 3 所列两站，其余按 node_id 排序编为 S3–S97，输出三栏并排的 supertabular* 片段
 docs/paper_v2/generated_tables/public_station_table.tex，并写编号↔OSM 节点对照 public_station_mapping.csv。
 功率、桩数、服务费在表 5，不重复。
 """
@@ -14,7 +14,11 @@ OUT = REPO / "docs/paper_v2/generated_tables/public_station_table.tex"
 MAP = REPO / "docs/paper_v2/generated_tables/public_station_mapping.csv"
 rows = sorted((r for r in csv.DictReader(open(NODES, encoding="utf-8")) if r["node_type"] == "station"), key=lambda r: r["node_id"])
 assert len(rows) == 97, len(rows)
-labels = [(f"S{i+1:02d}", r) for i, r in enumerate(rows)]
+PIN = ["S_OSM_WAY_1347678396", "S_OSM_NODE_9974121427"]  # 表 3 中的 S1、S2
+by_id = {r["node_id"]: r for r in rows}
+assert all(p in by_id for p in PIN), PIN
+ordered = [by_id[p] for p in PIN] + [r for r in rows if r["node_id"] not in set(PIN)]
+labels = [(f"S{i+1}", r) for i, r in enumerate(ordered)]
 with open(MAP, "w", encoding="utf-8", newline="") as f:
     w = csv.writer(f); w.writerow(["label", "node_id", "source_identity", "longitude", "latitude"])
     for lab, r in labels: w.writerow([lab, r["node_id"], r["source_identity"], r["longitude"], r["latitude"]])

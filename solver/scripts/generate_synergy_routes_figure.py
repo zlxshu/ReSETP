@@ -247,36 +247,6 @@ def panel_caption(fig, ax, prefix: str, chinese: str, drop_in: float = 0.085) ->
     cn_text.set_position((start + en_width, y))
 
 
-def add_legend(fig, y: float, panels: int) -> None:
-    handles = [
-        Line2D([], [], linestyle="none", marker="s", markersize=DEPOT_A_MS,
-               markerfacecolor=INK, markeredgecolor=INK, label="企业A车场"),
-        Line2D([], [], linestyle="none", marker="^", markersize=DEPOT_B_MS,
-               markerfacecolor=INK, markeredgecolor=INK, label="企业B车场"),
-        Line2D([], [], linestyle="none", marker="o", markersize=CUST_MS,
-               markerfacecolor="white", markeredgecolor=INK, markeredgewidth=0.4,
-               label="客户"),
-        Line2D([], [], color=INK, linewidth=ROUTE_PT, label="企业A车场车辆路径"),
-        Line2D([], [], color=GRAY, linewidth=ROUTE_PT, label="企业B车场车辆路径"),
-    ]
-    if panels == 3:
-        # 只有第三格才有改派客户，两格版不列这一条，免得读者找不到对应物。
-        # 第三格里加粗的黑线仍是「企业A车场车辆路径」，只是加粗以示强调，不另立条目，
-        # 免得图例把「加粗」说成别的意思（改派本身是客户归属变了，不是某条线）。
-        handles.append(
-            Line2D([], [], linestyle="none", marker="o", markersize=MOVED_MS,
-                   markerfacecolor=INK, markeredgecolor=INK, label="改派客户")
-        )
-    # 三格版多一条图例，字号收到 7 pt 才排得下一行且不顶到版心边缘。
-    prop = CN_LEGEND if panels == 3 else CN
-    legend = fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, y),
-                        ncol=len(handles), frameon=False, handlelength=1.8,
-                        handletextpad=0.35, columnspacing=0.9, prop=prop,
-                        borderaxespad=0.0)
-    for text in legend.get_texts():
-        text.set_fontproperties(prop)
-
-
 def build(panels: int, out_pdf: Path) -> None:
     xy = load_nodes()
     independent = load_routes(INDEPENDENT)
@@ -305,14 +275,13 @@ def build(panels: int, out_pdf: Path) -> None:
 
     xlab_band = 0.30    # 框线以下留给横轴刻度数字与「x/km」的高度
     caption_band = 0.24
-    legend_band = 0.20
     bottom_pad = 0.04
     top_pad = 0.05
-    fig_height = (axes_height + xlab_band + caption_band + legend_band
+    fig_height = (axes_height + xlab_band + caption_band
                   + bottom_pad + top_pad)
 
     fig = plt.figure(figsize=(fig_width, fig_height))
-    axes_bottom = (bottom_pad + legend_band + caption_band + xlab_band) / fig_height
+    axes_bottom = (bottom_pad + caption_band + xlab_band) / fig_height
 
     made = []
     for index, (prefix, chinese, routes, mode) in enumerate(specs):
@@ -330,7 +299,6 @@ def build(panels: int, out_pdf: Path) -> None:
     fig.canvas.draw()
     for ax, prefix, chinese in made:
         panel_caption(fig, ax, prefix, chinese, drop_in=xlab_band - 0.02)
-    add_legend(fig, bottom_pad / fig_height, panels)
 
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_pdf, format="pdf", facecolor="white")

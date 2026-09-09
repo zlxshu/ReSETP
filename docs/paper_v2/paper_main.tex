@@ -46,6 +46,7 @@
 \usepackage{array}
 \usepackage{tabularx}
 \usepackage{longtable}
+\usepackage{xltabular}
 \usepackage{supertabular}
 \usepackage{makecell}
 \usepackage{multirow}
@@ -57,6 +58,10 @@
 \usepackage{url}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,backgrounds,fit,positioning,shapes.geometric}
+
+% longtable 版面：表格占满版心、标题宽度与版心一致
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\setlength\LTcapwidth{\linewidth}
 
 \newcommand{\setpsymtabsetup}{\small\renewcommand{\arraystretch}{0.95}\setlength{\tabcolsep}{2.0pt}\hbadness=10000}
 \newcommand{\setptabsetup}{\small\renewcommand{\arraystretch}{0.95}\setlength{\tabcolsep}{2.2pt}\hbadness=10000}
@@ -111,7 +116,7 @@
 
 \ETitle{Complex mixed-fleet logistics model and solution algorithm under the dual-carbon goals}
 \EAuthor{ZHOU Leixishu, GAN Hongcheng, QIU Yingying}{Business School, University of Shanghai for Science and Technology, Shanghai 200093, China}
-\EAbstract{Under the dual-carbon goals, urban logistics distribution faces the dual pressure of cutting emissions and controlling cost. This paper studies the multi-enterprise collaborative multi-depot dynamic mixed-fleet vehicle routing problem with time-varying grid carbon intensity (TVGCI-CMDMF-DVRP), considering mixed fleets of conventional and electric vehicles, multi-trip chaining, nonlinear charging, time-of-use electricity prices and dynamic demand; the model minimizes the total cost of vehicle activation, travel, charging, fuel and carbon emissions, unifies the energy, cost and emission accounting of charging within a single time-slot system, and is solved by a hybrid genetic search algorithm, MTC-HGS. Benchmark and simulation experiments show that the proposed algorithm outperforms the compared algorithms on average over 28 instances, and that under the prevailing time-of-use tariff and the baseline carbon price a charging schedule accounting for both prices and grid carbon intensity lowers cost but not emissions, because the off-peak period and the low-carbon period do not overlap and the fleet sits at the cost parity point between conventional and electric vehicles. With the off-peak period shifted to midday and the carbon price raised to 1.0 CNY/kgCO$_2$e, accounting for both signals cuts total cost by 3.12\% and emissions by 42.43\% versus charging on arrival, whereas shifting the off-peak period alone cuts cost by 2.01\% and emissions by 27.42 kgCO$_2$e and raising the carbon price alone does not reduce total emissions; after cost allocation every enterprise obtains cost savings, and rolling re-optimization fulfills all dynamic orders at lower cost and emissions. The results provide reference for low-carbon logistics operations and government carbon pricing policy.}
+\EAbstract{Under the dual-carbon goals, urban logistics distribution faces the dual pressure of cutting emissions and controlling cost. This paper studies the multi-enterprise collaborative multi-depot dynamic mixed-fleet vehicle routing problem with time-varying grid carbon intensity (TVGCI-CMDMF-DVRP), considering mixed fleets of conventional and electric vehicles, multi-trip chaining, nonlinear charging, time-of-use electricity prices and dynamic demand; the model minimizes the total cost of vehicle activation, travel, charging, fuel and carbon emissions, unifies the energy, cost and emission accounting of charging within a single time-slot system, and is solved by a hybrid genetic search algorithm, MTC-HGS. Benchmark and simulation experiments show that the proposed algorithm outperforms the compared algorithms on average over 28 instances, and that under the prevailing time-of-use tariff and the baseline carbon price, scheduling charging by grid carbon intensity lowers only the charging-stage emissions and leaves total emissions unchanged, because the off-peak period and the low-carbon period do not overlap and the fleet sits at the cost parity point between conventional and electric vehicles. With the off-peak period shifted to midday and the carbon price raised to 1.0 CNY/kgCO$_2$e, accounting for both signals cuts total cost by 3.12\% and emissions by 42.43\% versus charging on arrival, whereas shifting the off-peak period alone cuts cost by 2.01\% and emissions by 27.42 kgCO$_2$e and raising the carbon price alone does not reduce total emissions; after cost allocation every enterprise obtains cost savings, and rolling re-optimization fulfills all dynamic orders at lower cost and emissions. The results provide reference for low-carbon logistics operations and government carbon pricing policy.}
 \EKeywords{vehicle routing problem; collaborative multi-depot delivery; mixed fleet;
 multi-trip delivery; time-varying grid carbon intensity; dynamic demand; hybrid genetic search}
 
@@ -136,15 +141,22 @@ multi-trip delivery; time-varying grid carbon intensity; dynamic demand; hybrid 
 
 为直观反映相关研究对多车场、混合车队、动态需求、分时充电排放和成本分摊等问题特征的考虑情况，选取与本文关系较为密切的研究进行比较，结果见表\ref{tab:literature-comparison}。
 
-\begin{table}[H]
-\centering
-\caption{相关研究内容比较}
-\label{tab:literature-comparison}
+\begingroup
 \setptabsetup
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\caption{相关研究内容比较}\label{tab:literature-comparison}\\
 \toprule
 文献 & 多车场 & 混合车队 & 动态需求 & 分时充电排放 & 成本分摊\\
 \midrule
+\endfirsthead
+\multicolumn{6}{c}{\small\bfseries 表~\thetable\quad 相关研究内容比较（续）}\\
+\toprule
+文献 & 多车场 & 混合车队 & 动态需求 & 分时充电排放 & 成本分摊\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 Goeke和Schneider\cite{ref:27} & --- & $\checkmark$ & --- & --- & ---\\
 陈婉茹等\cite{ref:23} & $\checkmark$ & $\checkmark$ & --- & --- & ---\\
 Wang等\cite{ref:7} & $\checkmark$ & --- & --- & --- & ---\\
@@ -158,9 +170,8 @@ Shi等\cite{ref:shi2025} & --- & $\checkmark$ & --- & --- & ---\\
 Du等\cite{ref:du2025} & --- & --- & --- & $\checkmark$ & ---\\
 Shahbazian等\cite{ref:shahbazian2025} & $\checkmark$ & --- & $\checkmark$ & --- & ---\\
 本文 & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
-\bottomrule
-\end{tabular*}
-\end{table}
+\end{longtable}
+\endgroup
 
 由表\ref{tab:literature-comparison}可见，既有研究通常围绕其中一类或数类问题特征展开，多种运营特征在同一配送系统中的协同作用仍有进一步研究空间。
 
@@ -198,15 +209,22 @@ TVGCI-CMDMF-DVRP），建立以车辆启动、行驶、充电、油耗和碳排�
 7）协作路径确定后再进行成本分摊，分摊结果不改变路径模型。
 模型符号说明如表\ref{tab:unified-symbols}所示。
 
-\begin{table}[H]
-\centering
-\caption{符号说明}
-\label{tab:unified-symbols}
+\begingroup
 \setpsymtabsetup
-\begin{tabularx}{\linewidth}{@{}c>{\RaggedRight\arraybackslash}Xc>{\RaggedRight\arraybackslash}X@{}}
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{xltabular}{\linewidth}{@{}c>{\RaggedRight\arraybackslash}Xc>{\RaggedRight\arraybackslash}X@{}}
+\caption{符号说明}\label{tab:unified-symbols}\\
 \toprule
 符号 & 说明 & 符号 & 说明\\
 \midrule
+\endfirsthead
+\multicolumn{4}{c}{\small\bfseries 表~\thetable\quad 符号说明（续）}\\
+\toprule
+符号 & 说明 & 符号 & 说明\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 $D$ & 车场集合 & $N$ & 客户集合\\
 $S$ & 充电站集合 & $V$ & 车场、客户及充电站节点集合\\
 $K$ & 车辆集合 & $K^{g}$ & 燃油车集合\\
@@ -244,9 +262,8 @@ $M$ & 足够大的正数 & $N^{(m)}$ & 第$m$次重规划的待服务客户集�
 $\Omega_k^{(m)}$ & 第$m$次重规划的可行配送方案集合 & $u(m)$ & 第$m$个批事件处理时刻\\
 $u_q^{(m)}$ & 第$m$次定量触发时刻 & $T^{\mathrm{int}}$ & 动态需求处理间隔\\
 $q(t_1,t_2)$ & 时段$(t_1,t_2]$内尚未处理的新增需求量 & $\bar q$ & 动态需求累计上限\\
-\bottomrule
-\end{tabularx}
-\end{table}
+\end{xltabular}
+\endgroup
 
 \subsection{目标函数}
 
@@ -739,27 +756,109 @@ Vidal等\cite{ref:76}将种群进化与局部搜索相结合，提出求解多�
 
 本文选取北京TVGCI-CMDMF-DVRP算例开展仿真实验。
 该算例包含50个客户、2个车场和97个公共充电站。
-两个车场D1和D2分别属于两家企业，客户不预设所属企业，其服务车场由算法确定；
+初始客户点、车场和公共充电站的详细信息见表\ref{tab:initial-nodes}，两个车场D1和D2分别属于两家企业，S1和S2为公共充电站，客户不预设所属企业，其服务车场由算法确定；
 公共充电站取自开放街道地图\cite{ref:osm}，作为可选补电节点，电价与车场同价目并加收0.40元/kWh服务费。
 客户与车场的经纬度、时间窗、需求量和服务时间，以及公共充电站坐标等算例明细数据，
 公开于\url{https://github.com/PLACEHOLDER/ReSETP-instance}。
+
+\begingroup
+\small
+\renewcommand{\arraystretch}{0.88}
+\setlength{\tabcolsep}{1.2pt}
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}ccccccc@{}}
+\caption{初始客户点、车场和充电站详细信息表}\label{tab:initial-nodes}\\
+\toprule
+编号 & 经度（$^{\circ}$E） & 纬度（$^{\circ}$N） & \makecell{最早服务\\时刻} & \makecell{最迟服务\\时刻} & \makecell{需求量\\（kg）} & \makecell{服务时间\\（min）}\\
+\midrule
+\endfirsthead
+\multicolumn{7}{c}{\small\bfseries 表~\thetable\quad 初始客户点、车场和充电站详细信息表（续）}\\
+\toprule
+编号 & 经度（$^{\circ}$E） & 纬度（$^{\circ}$N） & \makecell{最早服务\\时刻} & \makecell{最迟服务\\时刻} & \makecell{需求量\\（kg）} & \makecell{服务时间\\（min）}\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+C001 & 116.3518 & 39.9075 & 08:38 & 09:18 & 347 & 15\\
+C002 & 116.6490 & 40.1170 & 08:43 & 09:24 & 347 & 15\\
+C003 & 116.3510 & 39.9517 & 15:44 & 16:15 & 278 & 12\\
+C004 & 116.3320 & 39.9491 & 14:26 & 15:22 & 347 & 15\\
+C005 & 116.3740 & 39.9978 & 14:20 & 15:18 & 208 & 9\\
+C006 & 116.3264 & 39.9101 & 15:41 & 16:13 & 139 & 6\\
+C007 & 116.3652 & 39.9450 & 16:08 & 16:54 & 417 & 18\\
+C008 & 116.3575 & 39.9412 & 13:06 & 13:44 & 139 & 6\\
+C009 & 116.3894 & 39.9323 & 15:09 & 16:03 & 139 & 6\\
+C010 & 116.5946 & 39.9075 & 08:19 & 09:05 & 278 & 12\\
+C011 & 116.6716 & 39.8489 & 09:26 & 10:09 & 417 & 18\\
+C012 & 116.6095 & 40.0553 & 08:48 & 09:46 & 417 & 18\\
+C013 & 116.4552 & 39.9774 & 09:09 & 09:48 & 139 & 6\\
+C014 & 116.3195 & 39.7459 & 13:04 & 13:42 & 139 & 6\\
+C015 & 116.4560 & 39.8843 & 08:22 & 08:59 & 278 & 12\\
+C016 & 116.3780 & 39.9195 & 10:03 & 10:33 & 208 & 9\\
+C017 & 116.0811 & 39.8683 & 13:13 & 13:48 & 278 & 12\\
+C018 & 116.3153 & 40.0007 & 16:30 & 17:28 & 208 & 9\\
+C019 & 116.3907 & 39.8585 & 14:43 & 15:14 & 347 & 15\\
+C020 & 116.3212 & 39.9584 & 17:16 & 18:11 & 208 & 9\\
+C021 & 116.3388 & 39.9809 & 14:31 & 15:24 & 347 & 15\\
+C022 & 115.9459 & 39.6796 & 08:05 & 08:46 & 278 & 12\\
+C023 & 116.4604 & 39.9063 & 14:27 & 15:07 & 347 & 15\\
+C024 & 116.4754 & 39.8927 & 13:56 & 14:28 & 139 & 6\\
+C025 & 116.4452 & 39.9244 & 08:12 & 09:08 & 208 & 9\\
+C026 & 116.2773 & 39.8562 & 16:29 & 17:12 & 278 & 12\\
+C027 & 116.3507 & 39.8775 & 08:29 & 09:06 & 417 & 18\\
+C028 & 116.3536 & 39.8818 & 14:05 & 15:03 & 347 & 15\\
+C029 & 116.4278 & 39.8539 & 15:00 & 15:45 & 139 & 6\\
+C030 & 116.4711 & 39.9301 & 13:42 & 14:16 & 208 & 9\\
+C031 & 116.1019 & 39.8939 & 13:03 & 13:50 & 208 & 9\\
+C032 & 116.3395 & 39.9573 & 14:38 & 15:24 & 208 & 9\\
+C033 & 116.2779 & 39.8945 & 08:04 & 08:58 & 278 & 12\\
+C034 & 116.5999 & 39.8904 & 13:41 & 14:35 & 417 & 18\\
+C035 & 116.1659 & 39.7364 & 08:00 & 08:54 & 139 & 6\\
+C036 & 116.4541 & 40.0067 & 13:00 & 13:54 & 278 & 12\\
+C037 & 116.3237 & 39.9671 & 18:01 & 18:50 & 417 & 18\\
+C038 & 116.3175 & 40.0060 & 09:42 & 10:33 & 278 & 12\\
+C039 & 116.3296 & 40.0790 & 17:11 & 17:54 & 208 & 9\\
+C040 & 116.4486 & 39.9330 & 08:58 & 09:50 & 347 & 15\\
+C041 & 116.4997 & 39.9139 & 13:47 & 14:41 & 347 & 15\\
+C042 & 116.3122 & 39.9691 & 13:37 & 14:33 & 139 & 6\\
+C043 & 116.1965 & 39.9913 & 08:41 & 09:35 & 278 & 12\\
+C044 & 116.5666 & 39.8536 & 08:34 & 09:31 & 278 & 12\\
+C045 & 116.3374 & 39.9997 & 14:44 & 15:22 & 347 & 15\\
+C046 & 116.3498 & 39.9525 & 14:41 & 15:33 & 139 & 6\\
+C047 & 116.7278 & 39.9032 & 14:16 & 15:15 & 139 & 6\\
+C048 & 116.3241 & 39.9657 & 16:13 & 17:06 & 139 & 6\\
+C049 & 116.7278 & 39.9035 & 14:07 & 14:53 & 347 & 15\\
+C050 & 116.3528 & 39.9350 & 13:08 & 13:54 & 347 & 15\\
+D1 & 116.1310 & 39.6730 & 08:00 & 19:00 & --- & ---\\
+D2 & 116.5163 & 40.0036 & 08:00 & 19:00 & --- & ---\\
+S1 & 116.4167 & 39.9908 & 08:00 & 19:00 & --- & ---\\
+S2 & 116.4314 & 39.9961 & 08:00 & 19:00 & --- & ---\\
+\end{longtable}
+\endgroup
 
 动态事件类型参照相关研究\cite{ref:71}，事件规模结合相关算例\cite{ref:51}。
 在08:00--10:00的订单接收时段内，从基础订单属性中随机抽取新增订单，并从最早服务时刻不早于10:00的订单中
 无放回抽取取消、需求变动和时间窗变动对象，共形成10个动态事件，包括5个新增订单、2个订单取消、
 1个需求增加、1个需求减少和1个时间窗变动，事件数量占初始客户数的20\%，具体信息见表\ref{tab:dynamic-nodes}。
 
-\begin{table}[H]
-\centering
-\caption{动态需求信息}
-\label{tab:dynamic-nodes}
+\begingroup
 \small
 \renewcommand{\arraystretch}{0.90}
 \setlength{\tabcolsep}{1.0pt}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}cccccccc@{}}
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}cccccccc@{}}
+\caption{动态需求信息}\label{tab:dynamic-nodes}\\
 \toprule
 编号 & 事件类型 & 经度（$^{\circ}$E） & 纬度（$^{\circ}$N） & 动态时刻 & 时间窗 & \makecell{需求量\\（kg）} & \makecell{服务时间\\（min）}\\
 \midrule
+\endfirsthead
+\multicolumn{8}{c}{\small\bfseries 表~\thetable\quad 动态需求信息（续）}\\
+\toprule
+编号 & 事件类型 & 经度（$^{\circ}$E） & 纬度（$^{\circ}$N） & 动态时刻 & 时间窗 & \makecell{需求量\\（kg）} & \makecell{服务时间\\（min）}\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 C051 & 新增订单 & 116.3195 & 39.7459 & 08:03 & 13:04--13:42 & 139 & 6\\
 C007 & 订单取消 & 116.3652 & 39.9450 & 08:42 & 16:08--16:54 & 417 & 18\\
 C017 & 订单取消 & 116.0811 & 39.8683 & 08:43 & 13:13--13:48 & 278 & 12\\
@@ -770,11 +869,10 @@ C053 & 新增订单 & 116.4278 & 39.8539 & 09:25 & 15:00--15:45 & 417 & 6\\
 C039 & 时间窗变动 & 116.3296 & 40.0790 & 09:35 & \makecell{17:11--17:54\\$\rightarrow$17:05--17:37} & 208 & 9\\
 C054 & 新增订单 & 116.3388 & 39.9809 & 09:38 & 14:31--15:24 & 347 & 15\\
 C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 6\\
-\bottomrule
-\end{tabular*}
+\end{longtable}
 \vspace{2pt}
-\parbox{\textwidth}{\footnotesize 注：新增订单列示其订单属性；取消事件列示取消前的订单属性；需求量和时间窗变动以箭头表示变动前后的取值。}
-\end{table}
+\noindent\parbox{\textwidth}{\footnotesize 注：新增订单列示其订单属性；取消事件列示取消前的订单属性；需求量和时间窗变动以箭头表示变动前后的取值。}
+\endgroup
 
 \section{数值实验}
 
@@ -793,15 +891,22 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 6\\
 车场与公共充电站为开放街道地图中的真实物流设施与充电站\cite{ref:osm}，行驶距离与时间由OSRM在该路网上计算\cite{ref:osrm}；
 逐时电网碳强度取自中国分省电力碳排放因子数据集\cite{ref:82}，与分时电价共用同一半小时时段体系。
 
-\begin{table}[H]
-  \centering
-  \caption{主要参数设置}
-  \label{tab:parameters}
-  \small
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lclc}
-    \toprule
+\begingroup
+\small
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}lclc}
+\caption{主要参数设置}\label{tab:parameters}\\
+\toprule
     参数 & 数值 & 参数 & 数值\\
-    \midrule
+\midrule
+\endfirsthead
+\multicolumn{4}{c}{\small\bfseries 表~\thetable\quad 主要参数设置（续）}\\
+\toprule
+    参数 & 数值 & 参数 & 数值\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
     燃油车载重（kg） & 1735 & 电动车载重（kg） & 1700\\
     车辆容积（m$^3$） & 7.2 & 电池容量（kWh） & 77.28\\
     燃油车日固定成本（元） & 170.00 & 电动车日固定成本（元） & 270.00\\
@@ -810,9 +915,8 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 6\\
     车场充电桩数（个/场） & 2 & 公共站充电桩数（个/站） & 1\\
     车场电价（谷/平/峰，元/kWh） & 0.5633/0.8364/1.1486 & 公共站服务费（元/kWh） & 0.4\\
     柴油价格（元/L） & 7.48 & 基准单位碳价（元/kgCO$_2$e） & 0.20\\
-    \bottomrule
-\end{tabular*}
-\end{table}
+\end{longtable}
+\endgroup
 
 算例包含2个企业车场、50个初始客户和97个公共充电站，客户需求合计13264 kg，节点均位于北京，
 采用北京代表日逐时电网碳强度数据\cite{ref:82}，见图\ref{fig:experiment-carbon-intensity}；其他地区算例采用相应城市的碳强度序列。
@@ -830,19 +934,25 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 6\\
 仿真实验所得最终路径见表\ref{tab:final-solution}。表中num表示路径内满足时间窗的客户数，
 装载率为路径最大实际装载量与相应车型载重上限之比。
 
-\begin{table}[H]
-\centering
+\begingroup
 \setptabsetup
-\caption{仿真实验最终路径表}\label{tab:final-solution}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcccccccc@{}}
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}lcccccccc@{}}
+\caption{仿真实验最终路径表}\label{tab:final-solution}\\
 \toprule
 路径 & \makecell{距离\\/km} & \makecell{成本\\/元} & \makecell{时间\\/h} & \makecell{油耗\\/L} & \makecell{电耗\\/kWh} & \makecell{碳排放\\/kg} & num & \makecell{装载率\\/\%}\\
 \midrule
+\endfirsthead
+\multicolumn{9}{c}{\small\bfseries 表~\thetable\quad 仿真实验最终路径表（续）}\\
+\toprule
+路径 & \makecell{距离\\/km} & \makecell{成本\\/元} & \makecell{时间\\/h} & \makecell{油耗\\/L} & \makecell{电耗\\/kWh} & \makecell{碳排放\\/kg} & num & \makecell{装载率\\/\%}\\
+\midrule
+\endhead
 \input{generated_tables/final_solution_trip_rows.tex}
-\end{tabular*}
+\end{longtable}
 \vspace{1pt}
-\parbox{\textwidth}{\footnotesize 注：路径列中1--50为客户编号，D1和D2为车场；时间合计为各路径运行时间之和。}
-\end{table}
+\noindent\parbox{\textwidth}{\footnotesize 注：路径列中1--50为客户编号，D1和D2为车场；时间合计为各路径运行时间之和。}
+\endgroup
 
 由表\ref{tab:final-solution}可知：
 1）该解完成全部50个客户和13264 kg需求，配送总成本为2601.61元，
@@ -959,21 +1069,27 @@ M、T、C分别表示实体车多趟衔接、整车换型邻域和时变碳充�
 表\ref{tab:component-ablation}给出各算法求得的最优解、解的平均值、
 以及平均值相对于最优解的误差比率Gap。
 
-\begin{table}[H]
-  \centering
-  \caption{TVGCI-CMDMF-DVRP模型实验结果}
-  \label{tab:component-ablation}
-  \small
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}cccc@{}}
-    \toprule
+\begingroup
+\small
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}cccc@{}}
+\caption{TVGCI-CMDMF-DVRP模型实验结果}\label{tab:component-ablation}\\
+\toprule
     算法 & 最优解（元） & 平均值（元） & Gap（\%）\\
-    \midrule
+\midrule
+\endfirsthead
+\multicolumn{4}{c}{\small\bfseries 表~\thetable\quad TVGCI-CMDMF-DVRP模型实验结果（续）}\\
+\toprule
+    算法 & 最优解（元） & 平均值（元） & Gap（\%）\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
     M-HGS & 2704.00 & 2718.73 & 0.54\\
     MT-HGS & 2641.17 & 2667.32 & 0.99\\
     MTC-HGS & 2601.61 & 2631.84 & 1.16\\
-    \bottomrule
-  \end{tabular*}
-\end{table}
+\end{longtable}
+\endgroup
 
 由表\ref{tab:component-ablation}可知：
 1）实体车多趟衔接是三种算法构造可行方案的共同基础。关闭多趟衔接后，
@@ -1005,15 +1121,22 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 其中成本最低的分配方式独立运行三次，取其最优配送方案。表\ref{tab:fleet-config}中给出不同动力配置下配送方案的
 启动成本、行驶成本、充电成本、油耗成本、碳成本、碳排量和总成本。
 
-\begin{table}[H]
-  \centering
-  \caption{不同动力配置下的配送方案对比}
-  \label{tab:fleet-config}
-  \small
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}cccccccc@{}}
-    \toprule
+\begingroup
+\small
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}cccccccc@{}}
+\caption{不同动力配置下的配送方案对比}\label{tab:fleet-config}\\
+\toprule
     \makecell{燃油车/电动车\\（辆）} & \makecell{启动成本\\（元）} & \makecell{行驶成本\\（元）} & \makecell{充电成本\\（元）} & \makecell{油耗成本\\（元）} & \makecell{碳成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & \makecell{总成本\\（元）}\\
-    \midrule
+\midrule
+\endfirsthead
+\multicolumn{8}{c}{\small\bfseries 表~\thetable\quad 不同动力配置下的配送方案对比（续）}\\
+\toprule
+    \makecell{燃油车/电动车\\（辆）} & \makecell{启动成本\\（元）} & \makecell{行驶成本\\（元）} & \makecell{充电成本\\（元）} & \makecell{油耗成本\\（元）} & \makecell{碳成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & \makecell{总成本\\（元）}\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
     6/0 & 1020.00 & 716.30 & 0.00 & 903.86 & 63.85 & 319.24 & 2704.00\\
     5/1 & 1120.00 & 759.30 & 66.40 & 662.66 & 51.73 & 258.66 & 2660.10\\
     4/2 & 1220.00 & 786.49 & 105.69 & 483.28 & 42.48 & 212.38 & 2637.94\\
@@ -1021,9 +1144,8 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
     2/4 & 1420.00 & 829.59 & 168.55 & 210.95 & 29.70 & 148.49 & 2658.79\\
     1/5 & 1520.00 & 836.84 & 183.73 & 121.76 & 25.77 & 128.83 & 2688.10\\
     0/6 & 1620.00 & 877.22 & 212.96 & 0.00 & 19.69 & 98.43 & 2729.86\\
-    \bottomrule
-  \end{tabular*}
-\end{table}
+\end{longtable}
+\endgroup
 
 由表\ref{tab:fleet-config}可知：
 1）随着车队中电动车数量的增加，路径方案的启动成本、行驶成本和充电成本逐渐上升，
@@ -1057,13 +1179,14 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 电价引导有序充电与碳强度引导有序充电分别指在可行时段内按充电费用最小、按充电排放最小安排充电时刻，即步骤~4的充电准则中电价一项与碳排放一项各自主导时的安排。
 三种安排的车型、路线与趟次均按含碳总成本重新优化，充电时刻分别按上述三条规则确定，各运行10次取均值，碳排量分燃油车直接排放与电动车充电排放列出，结果如表\ref{tab:carbon-charging}所示。
 
-\begin{table}[H]
-  \centering
-  \caption{不同充电安排下的配送方案对比}
-  \label{tab:carbon-charging}
-  \small
-  \input{generated_tables/carbon_charging_table.tex}
-\end{table}
+\begingroup
+\small
+\noindent\begin{minipage}{\linewidth}
+\centering
+\captionof{table}{不同充电安排下的配送方案对比}\label{tab:carbon-charging}
+\input{generated_tables/carbon_charging_table.tex}
+\end{minipage}
+\par\endgroup
 
 由表\ref{tab:carbon-charging}可知：
 1）电价引导有序充电的总成本最低，较无序充电减少27.09元（1.02\%），碳排量最高，
@@ -1087,13 +1210,14 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
   \label{fig:tariff-carbon-windows}
 \end{figure}
 
-\begin{table}[H]
-  \centering
-  \caption{三种充电安排在各补电窗口的充电开始时刻、充电成本与碳排量}
-  \label{tab:charging-windows}
-  \small
-  \input{generated_tables/charging_windows_table.tex}
-\end{table}
+\begingroup
+\small
+\noindent\begin{minipage}{\linewidth}
+\centering
+\captionof{table}{三种充电安排在各补电窗口的充电开始时刻、充电成本与碳排量}\label{tab:charging-windows}
+\input{generated_tables/charging_windows_table.tex}
+\end{minipage}
+\par\endgroup
 
 分析可知：
 1）分时电价与电网碳强度在时段上错开。北京现行分时电价依据《关于进一步完善分时电价机制的通知》\cite{ref:ndrc-tou}由北京市发展和改革委员会按电网负荷划定\cite{ref:bj-tou}，
@@ -1135,13 +1259,14 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 单位碳价取1.0元/kgCO$_2$e，低于首趟前窗口内改在低碳时段充电具有经济性所需的约4.09元/kgCO$_2$e，此时车队仍为混合配置。
 各条件下车型、路线与充电时刻均重新优化，两种安排各运行10次，表\ref{tab:two-conditions}中各项均为10次均值，其中电动车数均值反映车队构成的变化。
 
-\begin{table}[H]
-  \centering
-  \caption{两个条件分别与同时成立时两种充电安排的配送方案对比}
-  \label{tab:two-conditions}
-  \small
-  \input{generated_tables/two_conditions_table.tex}
-\end{table}
+\begingroup
+\small
+\noindent\begin{minipage}{\linewidth}
+\centering
+\captionof{table}{两个条件分别与同时成立时两种充电安排的配送方案对比}\label{tab:two-conditions}
+\input{generated_tables/two_conditions_table.tex}
+\end{minipage}
+\par\endgroup
 
 由表\ref{tab:two-conditions}可知：
 1）仅将谷段设在午间时，碳强度引导有序充电的午休与趟间补电落入既便宜又低碳的时段，10次均派遣2辆燃油车3辆电动车，
@@ -1153,13 +1278,14 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 与基准条件下的碳强度引导有序充电相比，总排放减少93.46 kgCO$_2$e（48.89\%），不含碳成本的运营成本增加36.23元（1.38\%）。
 表\ref{tab:carbon-charging-solved}在两个条件同时成立时比较三种充电安排，各运行10次取均值。
 
-\begin{table}[H]
-  \centering
-  \caption{谷段设在午间与碳价1.0元/kgCO$_2$e下三种充电安排的配送方案对比}
-  \label{tab:carbon-charging-solved}
-  \small
-  \input{generated_tables/carbon_charging_solved_table.tex}
-\end{table}
+\begingroup
+\small
+\noindent\begin{minipage}{\linewidth}
+\centering
+\captionof{table}{谷段设在午间与碳价1.0元/kgCO$_2$e下三种充电安排的配送方案对比}\label{tab:carbon-charging-solved}
+\input{generated_tables/carbon_charging_solved_table.tex}
+\end{minipage}
+\par\endgroup
 
 由表\ref{tab:carbon-charging-solved}可知：
 1）碳强度引导有序充电的总排放最低，为97.71 kgCO$_2$e，较无序充电减少72.03 kgCO$_2$e，较电价引导有序充电减少47.99 kgCO$_2$e（32.94\%）；
@@ -1181,7 +1307,7 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 反映客户就近划归、车场各自为营的运营格局；
 联合配送模式下，客户由哪个车场服务不再预先给定，算法在共同客户市场内统一选择服务车场并共享车辆资源。
 本算例中就近归属使两车场分别服务5个和45个客户，
-本文将客户较少的车场记为企业A、客户较多的车场记为企业B，4.6节沿用这一标记。
+本文将客户较少的车场记为企业A、客户较多的车场记为企业B（D1为企业A车场，D2为企业B车场），4.6节沿用这一标记。
 本文涉及独立配送的实验和成本分摊计算均采用这一定义。
 
 两种模式采用相同需求、车辆参数、评价方法和停止规则，各独立运行十次并取均值，
@@ -1206,26 +1332,34 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
   \label{fig:synergy-routes}
 \end{figure}
 
-\begin{table}[H]
-  \centering
-  \caption{两车场的配送组织变化}
-  \label{tab:synergy-depot}
-  \small
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcccc}
-    \toprule
+\begingroup
+\small
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc}
+\caption{两车场的配送组织变化}\label{tab:synergy-depot}\\
+\toprule
     \multirow{2}{*}{比较项目} & \multicolumn{2}{c}{企业A车场} & \multicolumn{2}{c}{企业B车场}\\
     \cmidrule(lr){2-3}\cmidrule(lr){4-5}
     & 独立配送 & 联合配送 & 独立配送 & 联合配送\\
-    \midrule
+\midrule
+\endfirsthead
+\multicolumn{5}{c}{\small\bfseries 表~\thetable\quad 两车场的配送组织变化（续）}\\
+\toprule
+    \multirow{2}{*}{比较项目} & \multicolumn{2}{c}{企业A车场} & \multicolumn{2}{c}{企业B车场}\\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    & 独立配送 & 联合配送 & 独立配送 & 联合配送\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
     服务客户数（个） & 5 & 8 & 45 & 42\\
     启用车辆数（辆） & 2 & 1 & 5 & 4\\
     车型构成 & 燃油2 & 电动1 & 燃油3、电动2 & 燃油2、电动2\\
     配送趟数（趟） & 3 & 2 & 14 & 13\\
     车辆作业时间（min） & 216.43 & 331.54 & 1675.21 & 1504.99\\
     车辆时间利用率 & 20.04\% & 61.40\% & 62.04\% & 69.68\%\\
-    \bottomrule
-  \end{tabular*}
-\end{table}
+\end{longtable}
+\endgroup
 
 联合配送把C004、C038、C042、C043四个客户由企业B车场改由企业A车场服务，
 同时把C014由企业A车场改由企业B车场服务，
@@ -1240,15 +1374,22 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 
 上述组织变化带来的效率与排放结果见表\ref{tab:synergy}，表中为十次独立运行的均值。
 
-\begin{table}[H]
-  \centering
-  \caption{不同配送模式对比}
-  \label{tab:synergy}
-  \small
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lccc}
-    \toprule
+\begingroup
+\small
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}lccc}
+\caption{不同配送模式对比}\label{tab:synergy}\\
+\toprule
     比较项目 & 独立配送 & 联合配送 & 变化幅度\\
-    \midrule
+\midrule
+\endfirsthead
+\multicolumn{4}{c}{\small\bfseries 表~\thetable\quad 不同配送模式对比（续）}\\
+\toprule
+    比较项目 & 独立配送 & 联合配送 & 变化幅度\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
     总成本（元） & 2853.58 & 2624.94 & $-8.01\%$\\
     车辆启动成本（元） & 1390.00 & 1150.00 & $-17.27\%$\\
     行驶成本（元） & 804.45 & 920.33 & $+14.41\%$\\
@@ -1261,9 +1402,8 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
     电动车数（辆） & 2.00 & 3.00 & $+50.00\%$\\
     燃油车数（辆） & 5.00 & 2.00 & $-60.00\%$\\
     配送趟数（趟） & 17.00 & 15.00 & $-11.76\%$\\
-    \bottomrule
-  \end{tabular*}
-\end{table}
+\end{longtable}
+\endgroup
 
 由表\ref{tab:synergy}可知：
 1）车辆与趟数的压缩直接反映在费用上。车辆启动成本由1390.00元降至1150.00元，下降17.27\%，
@@ -1300,22 +1440,28 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 联合配送成本是两车场共同服务全部50个客户的成本；三者均由本文算法在相同参数与停止规则下各独立运行十次求解所得，
 下表数值为十次运行的均值。分摊结果见表\ref{tab:allocation}。
 
-\begin{table}[H]
-  \centering
-  \caption{协作配送成本分摊结果}
-  \label{tab:allocation}
-  \small
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcc}
-    \toprule
+\begingroup
+\small
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}lcc}
+\caption{协作配送成本分摊结果}\label{tab:allocation}\\
+\toprule
     成本项目 & 企业A & 企业B\\
-    \midrule
+\midrule
+\endfirsthead
+\multicolumn{3}{c}{\small\bfseries 表~\thetable\quad 协作配送成本分摊结果（续）}\\
+\toprule
+    成本项目 & 企业A & 企业B\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
     独立配送成本$C_i$（元） & 687.72 & 2165.87\\
     协作配送分摊成本$\psi_i$（元） & 573.39 & 2051.54\\
     成本节约额$PCS_i$（元） & 114.33 & 114.33\\
     成本节约率$PCS_i\%$ & 16.62\% & 5.28\%\\
-    \bottomrule
-  \end{tabular*}
-\end{table}
+\end{longtable}
+\endgroup
 
 由表\ref{tab:allocation}可知：
 1）两家企业的独立配送成本合计与表\ref{tab:synergy}的独立配送总成本一致；
@@ -1346,24 +1492,30 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 不是可实施的在线策略，因而不参与两种在线策略之间的比较，
 其无在线阶段，上述两项不适用。
 
-\begin{table}[H]
-  \centering
-  \caption{动态需求下不同处理方式的求解结果}
-  \label{tab:dynamic}
-  \setptabsetup
-  \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
-    \toprule
-    比较项目 & \makecell{顺序插入\\策略} & \makecell{滚动重优化\\策略} & 相对变化 & \makecell{完全信息\\静态参考}\\
-    \midrule
-    总成本（元） & 3117.01 & 2897.34 & $-7.05\%$ & 2735.03\\
-    总排放（kgCO$_2$e） & 232.64 & 195.86 & $-15.81\%$ & 234.40\\
-    总距离（km） & 1099.85 & 966.28 & $-12.14\%$ & 968.09\\
-    实际车辆数（辆） & 7 & 7 & 0 & 6\\
-    新增订单插入次数（次） & 5 & 5 & --- & ---\\
-    未执行路径重排批次数（次） & 0 & 3 & --- & ---\\
-    \bottomrule
-  \end{tabular*}
-\end{table}
+\begingroup
+\setptabsetup
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\caption{动态需求下不同处理方式的求解结果}\label{tab:dynamic}\\
+\toprule
+    比较项目 & \makecell{完全信息\\静态参考} & \makecell{顺序插入\\策略} & \makecell{滚动重优化\\策略} & 相对变化\\
+\midrule
+\endfirsthead
+\multicolumn{5}{c}{\small\bfseries 表~\thetable\quad 动态需求下不同处理方式的求解结果（续）}\\
+\toprule
+    比较项目 & \makecell{完全信息\\静态参考} & \makecell{顺序插入\\策略} & \makecell{滚动重优化\\策略} & 相对变化\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+    总成本（元） & 2735.03 & 3117.01 & 2897.34 & $-7.05\%$\\
+    总排放（kgCO$_2$e） & 234.40 & 232.64 & 195.86 & $-15.81\%$\\
+    总距离（km） & 968.09 & 1099.85 & 966.28 & $-12.14\%$\\
+    实际车辆数（辆） & 6 & 7 & 7 & 0\\
+    新增订单插入次数（次） & --- & 5 & 5 & ---\\
+    未执行路径重排批次数（次） & --- & 0 & 3 & ---\\
+\end{longtable}
+\endgroup
 
 表中采用一次完整运行结果。
 由表\ref{tab:dynamic}可知：
