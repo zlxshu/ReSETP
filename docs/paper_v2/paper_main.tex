@@ -857,7 +857,7 @@ S2 & 116.4314 & 39.9961 & 08:00 & 19:00 & --- & ---\\
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{8}{@{}p{\dimexpr\textwidth-2\tabcolsep\relax}@{}}{\footnotesize 注：新增订单列示其订单属性；取消事件列示取消前的订单属性；需求量和时间窗变动以箭头表示变动前后的取值。}\\
+\multicolumn{8}{@{}l@{}}{\makebox[0pt][l]{\parbox{\dimexpr\textwidth-2\tabcolsep\relax}{\footnotesize 注：新增订单列示其订单属性；取消事件列示取消前的订单属性；需求量和时间窗变动以箭头表示变动前后的取值。}}}\\
 \endlastfoot
 C051 & 新增订单 & 116.3195 & 39.7459 & 08:03 & 13:04--13:42 & 139 & 6\\
 C007 & 订单取消 & 116.3652 & 39.9450 & 08:42 & 16:08--16:54 & 417 & 18\\
@@ -953,7 +953,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 6\\
 \endhead
 \bottomrule
 \endfoot
-\multicolumn{9}{@{}p{\dimexpr\textwidth-2\tabcolsep\relax}@{}}{\footnotesize 注：路径列中1--50为客户编号，D1和D2为车场；时间合计为各路径运行时间之和。}\\
+\multicolumn{9}{@{}l@{}}{\makebox[0pt][l]{\parbox{\dimexpr\textwidth-2\tabcolsep\relax}{\footnotesize 注：路径列中1--50为客户编号，D1和D2为车场；时间合计为各路径运行时间之和。}}}\\
 \endlastfoot
 \input{generated_tables/final_solution_trip_rows.tex}
 \end{longtable}
@@ -981,35 +981,29 @@ Best与Avg分别为其最优值与平均值。
 
 \begingroup
 \setptabsetup
-\Needspace{38\baselineskip}
-\topcaption{标准算例结果表}\label{tab:benchmark-results}
-\tablefirsthead{\toprule
-\multicolumn{1}{c}{\multirow{2}{*}{算例}} &
-\multicolumn{1}{c}{\multirow{2}{*}{BKS}} &
-\multicolumn{2}{c}{VCGP\cite{ref:74}} & \multicolumn{2}{c}{MDFIHA\cite{ref:75}} & \multicolumn{2}{c}{MDFIHA-ETGA\cite{ref:75}} & \multicolumn{2}{c}{本文算法}\\
-\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
-& &
-\multicolumn{1}{c}{Best} & \multicolumn{1}{c}{Avg} &
-\multicolumn{1}{c}{Best} & \multicolumn{1}{c}{Avg} &
-\multicolumn{1}{c}{Best} & \multicolumn{1}{c}{Avg} &
-\multicolumn{1}{c}{Best} & \multicolumn{1}{c}{Avg}\\
-\midrule}
-\tablehead{\multicolumn{10}{c}{\small\bfseries 表~\thetable\quad 标准算例结果表（续）}\\
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{\extracolsep{\fill}}lccccccccc@{}}
+\caption{标准算例结果表}\label{tab:benchmark-results}\\
 \toprule
-\multicolumn{1}{c}{\multirow{2}{*}{算例}} &
-\multicolumn{1}{c}{\multirow{2}{*}{BKS}} &
+\multirow{2}{*}{算例} & \multirow{2}{*}{BKS} &
 \multicolumn{2}{c}{VCGP\cite{ref:74}} & \multicolumn{2}{c}{MDFIHA\cite{ref:75}} & \multicolumn{2}{c}{MDFIHA-ETGA\cite{ref:75}} & \multicolumn{2}{c}{本文算法}\\
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
-& &
-\multicolumn{1}{c}{Best} & \multicolumn{1}{c}{Avg} &
-\multicolumn{1}{c}{Best} & \multicolumn{1}{c}{Avg} &
-\multicolumn{1}{c}{Best} & \multicolumn{1}{c}{Avg} &
-\multicolumn{1}{c}{Best} & \multicolumn{1}{c}{Avg}\\
-\midrule}
-\tabletail{\bottomrule}
-\tablelasttail{\bottomrule
-\multicolumn{10}{@{}p{\dimexpr\textwidth-2\tabcolsep\relax}@{}}{\footnotesize 注：BKS为该算例集在VRP-REP上公开的最好解（\url{http://www.vrp-rep.org/datasets/item/2017-0013.html}），各值由公开解文件所载成本换算得到，与本文算法两列采用相同的舍入方式。}\\}
-\begin{supertabular*}{\textwidth}{@{\extracolsep{\fill}}cccccccccc@{}}
+& & Best & Avg & Best & Avg & Best & Avg & Best & Avg\\
+\midrule
+\endfirsthead
+\multicolumn{10}{c}{\small\bfseries 表~\thetable\quad 标准算例结果表（续）}\\
+\toprule
+\multirow{2}{*}{算例} & \multirow{2}{*}{BKS} &
+\multicolumn{2}{c}{VCGP\cite{ref:74}} & \multicolumn{2}{c}{MDFIHA\cite{ref:75}} & \multicolumn{2}{c}{MDFIHA-ETGA\cite{ref:75}} & \multicolumn{2}{c}{本文算法}\\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
+& & Best & Avg & Best & Avg & Best & Avg & Best & Avg\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\bottomrule
+\multicolumn{10}{@{}l@{}}{\makebox[0pt][l]{\parbox{\dimexpr\textwidth-2\tabcolsep\relax}{\footnotesize 注：BKS为该算例集在VRP-REP上公开的最好解（\url{http://www.vrp-rep.org/datasets/item/2017-0013.html}），各值由公开解文件所载成本换算得到，与本文算法两列采用相同的舍入方式。}}}\\
+\endlastfoot
     PR11A & 6655.55 & 6720.71 & 6772.00 & 6685.36 & 6702.83 & 6683.00 & 6697.60 & 6666.44 & 6694.94\\
     PR11B & 4814.80 & 4839.44 & 4852.67 & 4832.98 & 4842.14 & 4831.74 & 4842.88 & 4819.92 & 4833.06\\
     PR12A & 8148.11 & 8179.80 & 8259.57 & 8208.50 & 8225.16 & 8164.72 & 8191.44 & 8173.45 & 8194.87\\
@@ -1039,9 +1033,8 @@ Best与Avg分别为其最优值与平均值。
     PR24A & 11638.61 & 11923.72 & 11971.74 & 12031.09 & 12063.55 & 11861.22 & 11882.24 & 11708.12 & 11748.79\\
     PR24B & 10486.45 & 10890.08 & 10997.66 & 10721.40 & 10806.23 & 10665.16 & 10667.91 & 10521.34 & 10551.01\\
     Average & 8626.11 & 8779.76 & 8843.52 & 8765.20 & 8799.46 & 8722.38 & 8751.15 & 8656.73 & 8688.79\\
-    Nbest & \multicolumn{1}{c}{---} & \multicolumn{1}{c}{0} & \multicolumn{1}{c}{---} & \multicolumn{1}{c}{0} & \multicolumn{1}{c}{---} & \multicolumn{1}{c}{1} & \multicolumn{1}{c}{---} & \multicolumn{1}{c}{27} & \multicolumn{1}{c}{---}\\
-\end{supertabular*}
-\tablefirsthead{}\tablehead{}\tabletail{}\tablelasttail{}
+    Nbest & --- & 0 & --- & 0 & --- & 1 & --- & 27 & ---\\
+\end{longtable}
 \endgroup
 
 由表\ref{tab:benchmark-results}可知，本文算法在28个标准算例上的最优值平均为四种算法中最低，相对已知最优解均值高出0.35\%，
