@@ -555,19 +555,19 @@ def audit_44():
            (CC["总成本（元）"][0] - CC["总成本（元）"][1]) / CC["总成本（元）"][0] * 100, 2)
     checkc(S, "电价引导 燃油直接排放减少（kg）", "15.17",
            m(A, "E_cv_direct") - m(P, "E_cv_direct"),
-           CC["燃油车直接排放（kgCO$_2$e）"][0] - CC["燃油车直接排放（kgCO$_2$e）"][1], 2)
+           CC["燃油车直接排放（kgCO$_2$）"][0] - CC["燃油车直接排放（kgCO$_2$）"][1], 2)
     checkc(S, "电价引导 充电排放增加（kg）", "22.33",
            m(P, "E_ev_indirect") - m(A, "E_ev_indirect"),
-           CC["电动车充电排放（kgCO$_2$e）"][1] - CC["电动车充电排放（kgCO$_2$e）"][0], 2)
+           CC["电动车充电排放（kgCO$_2$）"][1] - CC["电动车充电排放（kgCO$_2$）"][0], 2)
     checkc(S, "电价引导 总排放净增（kg）", "7.16",
            m(P, "E_total") - m(A, "E_total"),
-           CC["总排放（kgCO$_2$e）"][1] - CC["总排放（kgCO$_2$e）"][0], 2)
+           CC["总排放（kgCO$_2$）"][1] - CC["总排放（kgCO$_2$）"][0], 2)
     checkc(S, "碳强度引导 充电排放减少（kg）", "7.59",
            m(A, "E_ev_indirect") - m(C, "E_ev_indirect"),
-           CC["电动车充电排放（kgCO$_2$e）"][0] - CC["电动车充电排放（kgCO$_2$e）"][2], 2)
+           CC["电动车充电排放（kgCO$_2$）"][0] - CC["电动车充电排放（kgCO$_2$）"][2], 2)
     checkc(S, "碳强度引导 总排放增加（kg）", "1.36",
            m(C, "E_total") - m(A, "E_total"),
-           CC["总排放（kgCO$_2$e）"][2] - CC["总排放（kgCO$_2$e）"][0], 2)
+           CC["总排放（kgCO$_2$）"][2] - CC["总排放（kgCO$_2$）"][0], 2)
     fc = fleetcnt(C)
     n45 = sum(v for (cv, ev), v in fc.items() if cv in (4, 5))
     check(S, "碳强度引导 10次中燃油车4或5辆的次数", "4", n45, 0, f"构型计数={dict(fc)}")
@@ -604,10 +604,10 @@ def audit_44():
     check(S, "碳强度引导 充电排放（kg）", "44.47", m(SRC["cc"]["carbon_min"], "E_ev_indirect"), 2)
     checkc(S, "碳强度引导 充电排放占总排放（%）", "23.3",
            m(SRC["cc"]["carbon_min"], "E_ev_indirect") / m(SRC["cc"]["carbon_min"], "E_total") * 100,
-           CC["电动车充电排放（kgCO$_2$e）"][2] / CC["总排放（kgCO$_2$e）"][2] * 100, 1)
+           CC["电动车充电排放（kgCO$_2$）"][2] / CC["总排放（kgCO$_2$）"][2] * 100, 1)
     checkc(S, "碳强度引导 燃油直接排放占比（%）", "76.7",
            m(SRC["cc"]["carbon_min"], "E_cv_direct") / m(SRC["cc"]["carbon_min"], "E_total") * 100,
-           CC["燃油车直接排放（kgCO$_2$e）"][2] / CC["总排放（kgCO$_2$e）"][2] * 100, 1)
+           CC["燃油车直接排放（kgCO$_2$）"][2] / CC["总排放（kgCO$_2$）"][2] * 100, 1)
     kwh = m(SRC["cc"]["carbon_min"], "electricity_kwh")
     check(S, "碳强度引导 充电电量（kWh）", "181.21", kwh, 2)
     check(S, "全天最低碳强度（kg/kWh）", "0.1541", min(cf), 4)
@@ -616,7 +616,7 @@ def audit_44():
            "口径 printed 下＝表内充电电量 181.21 × 正文印出的 0.1541")
     checkc(S, "未利用的减排空间（kg）", "16.55",
            m(SRC["cc"]["carbon_min"], "E_ev_indirect") - kwh * min(cf),
-           CC["电动车充电排放（kgCO$_2$e）"][2] - Decimal("27.92"), 2,
+           CC["电动车充电排放（kgCO$_2$）"][2] - Decimal("27.92"), 2,
            "口径 printed 下＝表内 44.47 − 正文印出的 27.92")
     checkc(S, "按碳强度充电的充电成本高于按电价（元）", "9.06",
            m(SRC["cc"]["carbon_min"], "cost_elec") - m(SRC["cc"]["cost_min"], "cost_elec"),
@@ -682,7 +682,7 @@ def audit_44():
     n15 = sum(1 for r in cm if (r["n_veh_cv"], r["n_veh_ev"]) == (1, 5))
     check(S, "午谷1.0 碳强度引导 1油5电次数", "8", n15, 0, f"构型={dict(fleetcnt(cm))}")
     checkc(S, "午谷1.0 燃油直接排放减少（kg）", "69.49", m(am, "E_cv_direct") - m(cm, "E_cv_direct"),
-           SV["燃油车直接排放（kgCO$_2$e）"][0] - SV["燃油车直接排放（kgCO$_2$e）"][2], 2)
+           SV["燃油车直接排放（kgCO$_2$）"][0] - SV["燃油车直接排放（kgCO$_2$）"][2], 2)
     checkc(S, "午谷1.0 总成本减少（元）", "88.92", m(am, "total_cost") - m(cm, "total_cost"),
            R_MID10[2] - R_MID10[6], 2)
     checkc(S, "午谷1.0 总成本减少（%）", "3.12",
@@ -695,11 +695,11 @@ def audit_44():
            (R_MID10[3] - R_MID10[7]) / R_MID10[3] * 100, 2)
     base_c = SRC["cc"]["carbon_min"]
     checkc(S, "较基准碳强度引导 总排放减少（kg）", "93.46", m(base_c, "E_total") - m(cm, "E_total"),
-           CC["总排放（kgCO$_2$e）"][2] - SV["总排放（kgCO$_2$e）"][2], 2)
+           CC["总排放（kgCO$_2$）"][2] - SV["总排放（kgCO$_2$）"][2], 2)
     checkc(S, "较基准碳强度引导 总排放减少（%）", "48.89",
            (m(base_c, "E_total") - m(cm, "E_total")) / m(base_c, "E_total") * 100,
-           (CC["总排放（kgCO$_2$e）"][2] - SV["总排放（kgCO$_2$e）"][2])
-           / CC["总排放（kgCO$_2$e）"][2] * 100, 2)
+           (CC["总排放（kgCO$_2$）"][2] - SV["总排放（kgCO$_2$）"][2])
+           / CC["总排放（kgCO$_2$）"][2] * 100, 2)
     op_base = m(base_c, "total_cost") - m(base_c, "cost_carbon")
     op_now = m(cm, "total_cost") - m(cm, "cost_carbon")
     c_op_base = CC["总成本（元）"][2] - CC["碳成本（元）"][2]
@@ -711,11 +711,11 @@ def audit_44():
     # solved 表正文
     check(S, "午谷1.0 碳强度引导 总排放（kg）", "97.71", m(cm, "E_total"), 2)
     checkc(S, "碳强度较电价 总排放减少（kg）", "47.99", m(pm_, "E_total") - m(cm, "E_total"),
-           SV["总排放（kgCO$_2$e）"][1] - SV["总排放（kgCO$_2$e）"][2], 2)
+           SV["总排放（kgCO$_2$）"][1] - SV["总排放（kgCO$_2$）"][2], 2)
     checkc(S, "碳强度较电价 总排放减少（%）", "32.94",
            (m(pm_, "E_total") - m(cm, "E_total")) / m(pm_, "E_total") * 100,
-           (SV["总排放（kgCO$_2$e）"][1] - SV["总排放（kgCO$_2$e）"][2])
-           / SV["总排放（kgCO$_2$e）"][1] * 100, 2)
+           (SV["总排放（kgCO$_2$）"][1] - SV["总排放（kgCO$_2$）"][2])
+           / SV["总排放（kgCO$_2$）"][1] * 100, 2)
     check(S, "午谷1.0 碳强度引导 总成本（元）", "2761.86", m(cm, "total_cost"), 2)
     checkc(S, "碳强度较电价 总成本高（元）", "2.57", m(cm, "total_cost") - m(pm_, "total_cost"),
            SV["总成本（元）"][2] - SV["总成本（元）"][1], 2)
@@ -723,7 +723,7 @@ def audit_44():
            (m(cm, "total_cost") - m(pm_, "total_cost")) / m(pm_, "total_cost") * 100,
            (SV["总成本（元）"][2] - SV["总成本（元）"][1]) / SV["总成本（元）"][1] * 100, 2)
     checkc(S, "碳强度较电价 充电排放低（kg）", "18.11", m(pm_, "E_ev_indirect") - m(cm, "E_ev_indirect"),
-           SV["电动车充电排放（kgCO$_2$e）"][1] - SV["电动车充电排放（kgCO$_2$e）"][2], 2)
+           SV["电动车充电排放（kgCO$_2$）"][1] - SV["电动车充电排放（kgCO$_2$）"][2], 2)
     checkc(S, "碳强度较电价 充电成本高（元）", "49.97", m(cm, "cost_elec") - m(pm_, "cost_elec"),
            SV["充电成本（元）"][2] - SV["充电成本（元）"][1], 2)
     check(S, "午谷1.0 电价引导 电动车数（辆）", "4.2", m(pm_, "n_veh_ev"), 1)
@@ -731,7 +731,7 @@ def audit_44():
            m(cm, "electricity_kwh") - m(pm_, "electricity_kwh"),
            SV["充电电量（kWh）"][2] - SV["充电电量（kWh）"][1], 2)
     checkc(S, "碳强度较电价 燃油直接排放低（kg）", "29.88", m(pm_, "E_cv_direct") - m(cm, "E_cv_direct"),
-           SV["燃油车直接排放（kgCO$_2$e）"][1] - SV["燃油车直接排放（kgCO$_2$e）"][2], 2)
+           SV["燃油车直接排放（kgCO$_2$）"][1] - SV["燃油车直接排放（kgCO$_2$）"][2], 2)
     checkc(S, "碳强度较电价 油耗成本低（元）", "84.60", m(pm_, "cost_fuel") - m(cm, "cost_fuel"),
            SV["油耗成本（元）"][1] - SV["油耗成本（元）"][2], 2)
 

@@ -167,7 +167,7 @@ ROWS = [
     # ---- 本文方案（2026-09-08 用户定，21:50/23:40）
     # 组合＝充换电设施谷段设在午间 ＋ 按全生命周期购置价差补贴（46.97 元/日，
     # 长江证券 100 kWh 轻卡初购溢价 6.50 万 ＋ 一次换电池 5.90 万 ＝ 12.40 万，
-    # 8 年×330 日）＋ 单位碳价 1.2 元/kgCO2e。目录 run_01–10 全部 10 次，不设 runs 过滤。
+    # 8 年×330 日）＋ 单位碳价 1.2 元/kgCO2。目录 run_01–10 全部 10 次，不设 runs 过滤。
     # 已核：10 次 cost_carbon/E_total 逐次 ≡ 1.200000，车队 0/6×10。
     # 2026-09-08 起，两两组合三行（午谷＋碳价1.0、午谷＋购置补贴、午谷＋补贴24＋碳价1.2）
     # 移出本表，只作正文里的设计路径叙述，不再各占一行。
@@ -479,16 +479,16 @@ def build_table(fallback_old: bool) -> tuple[str, list[str]]:
         lines.append(
             r"    类别 & 情形 & \makecell{燃油/电动\\（辆）} & "
             r"\makecell{运营成本\\（元）} & \makecell{碳成本\\（元）} & "
-            r"\makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & "
-            r"\makecell{$\Delta$总成本\\（元）} & \makecell{$\Delta$碳排量\\（kgCO$_2$e）}\\"
+            r"\makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$）} & "
+            r"\makecell{$\Delta$总成本\\（元）} & \makecell{$\Delta$碳排量\\（kgCO$_2$）}\\"
         )
     else:
         lines.append(
             r"    类别 & 情形 & \makecell{燃油/电动\\（辆）} & \makecell{启动成本\\（元）} & "
             r"\makecell{行驶成本\\（元）} & \makecell{充电成本\\（元）} & "
             r"\makecell{油耗成本\\（元）} & \makecell{碳成本\\（元）} & "
-            r"\makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & "
-            r"\makecell{$\Delta$总成本\\（元）} & \makecell{$\Delta$碳排量\\（kgCO$_2$e）}\\"
+            r"\makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$）} & "
+            r"\makecell{$\Delta$总成本\\（元）} & \makecell{$\Delta$碳排量\\（kgCO$_2$）}\\"
         )
     lines.append(r"    \midrule")
 

@@ -69,10 +69,10 @@ def main() -> int:
     lines = [
         r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llcccc@{}}",
         r"\toprule",
-        r"\multirow{2}{*}{\makecell{电价\\时段方案}} & \multirow{2}{*}{\makecell{单位碳价\\（元/kgCO$_2$e）}} & "
+        r"\multirow{2}{*}{\makecell{电价\\时段方案}} & \multirow{2}{*}{\makecell{单位碳价\\（元/kgCO$_2$）}} & "
         + " & ".join(r"\multicolumn{2}{c}{" + h + "}" for h, _, _ in ARMS) + r"\\",
         r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
-        r" & & " + " & ".join([r"\makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）}"] * len(ARMS)) + r"\\",
+        r" & & " + " & ".join([r"\makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$）}"] * len(ARMS)) + r"\\",
         r"\midrule",
     ]
     prev_label = None

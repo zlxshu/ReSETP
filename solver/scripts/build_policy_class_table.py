@@ -162,7 +162,7 @@ def carbon_prices_from_table13() -> tuple[list[float], list[str]]:
     """从表 13 生成器的 ROWS 里取"碳定价—单位碳价"三行的碳价档位。
 
     与表 13 同一来源，避免两张表写出不同的档位。0.075 那一档目录名是
-    `P=0.07502`（现行全国碳市场价 75.02 元/tCO2e 折算），表里按正文口径写 0.075。
+    `P=0.07502`（现行全国碳市场价 75.02 元/tCO2 折算），表里按正文口径写 0.075。
     """
     sys.path.insert(0, str(REPO_ROOT / "solver/scripts"))
     import build_policy_table as bpt  # noqa: E402
@@ -218,7 +218,7 @@ def fmt_price_list(prices: list[float]) -> str:
     out = []
     for p in prices:
         if abs(p - 0.07502) < 1e-6:
-            out.append("0.075")          # 正文口径：现行全国碳市场价按 0.075 元/kgCO2e 报
+            out.append("0.075")          # 正文口径：现行全国碳市场价按 0.075 元/kgCO2 报
         elif p == int(p):
             out.append(f"{p:.1f}")       # 1 → "1.0"，与正文"碳价升至1.0"一致
         else:
@@ -285,8 +285,8 @@ def build_table() -> tuple[str, list[str]]:
         f"时段结构不变，{fmt_windows([w for w in dis_win if w not in cur_win])}"
         f"按谷价{dis_price:.3f}元/kWh计费"
     )
-    set_price = f"{fmt_price_list(prices)}元/kgCO$_2$e，其中0.075为现行全国碳市场价\\cite{{ref:mee2025}}"
-    set_quota = f"配额{quota:g} kgCO$_2$e"
+    set_price = f"{fmt_price_list(prices)}元/kgCO$_2$，其中0.075为现行全国碳市场价\\cite{{ref:mee2025}}"
+    set_quota = f"配额{quota:g} kgCO$_2$"
     set_subsidy = (
         f"按购置价差全额补贴，电动车日固定溢价由{base_premium:g}元降至{sub_premium:g}元，"
         f"即{subsidy:g}元/日"

@@ -38,9 +38,9 @@ ROWS = [
     ("碳成本（元）", "cost_carbon", 1.0),
     ("总距离（km）", "distance_total", 1e-3),
     ("充电电量（kWh）", "electricity_kwh", 1.0),
-    ("燃油车直接排放（kgCO$_2$e）", "E_cv_direct", 1.0),
-    ("电动车充电排放（kgCO$_2$e）", "E_ev_indirect", 1.0),
-    ("总排放（kgCO$_2$e）", "E_total", 1.0),
+    ("燃油车直接排放（kgCO$_2$）", "E_cv_direct", 1.0),
+    ("电动车充电排放（kgCO$_2$）", "E_ev_indirect", 1.0),
+    ("总排放（kgCO$_2$）", "E_total", 1.0),
 ]
 
 # 每行取最小值加粗的行（用户 08-12 通用规矩；是否保留待用户看四列版后定）
