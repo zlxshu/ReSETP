@@ -105,13 +105,13 @@
 \Title{双碳背景下复杂混合车队物流模型与求解算法}
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
 
-\Abstract{双碳目标下，城市物流配送面临降碳与控本的双重压力。本文研究时变电网碳强度下多企业协同多车场动态混合车队车辆路径问题，兼顾油电混合编组、多趟衔接、非线性充电、分时电价与动态需求，以启动、行驶、充电、油耗与碳排放总成本最小为目标，将充电的电量、费用与排放核算统一到同一时段体系，设计混合遗传搜索算法MTC-HGS求解。标准算例与仿真实验表明：本文算法在28个算例上平均优于对比算法；现行分时电价与基准碳价下，按电网碳强度安排充电只降低充电环节排放、总排放未减，因谷段与低碳时段不重合、车队处于油电平价点。将谷段设在午间并把碳价提高至1.0元/kgCO$_2$e，按碳强度安排充电较无序充电降本3.12\%、减排42.43\%，总成本与按电价安排充电相当；联合配送经成本分摊后各企业均获成本节约，滚动重优化以更少的在线调整完成全部动态订单。结果可为物流企业低碳运营与政府碳价政策提供参考。}
+\Abstract{双碳目标下，城市物流配送面临降碳与控本的双重压力。本文研究时变电网碳强度下多企业协同多车场动态混合车队车辆路径问题，兼顾油电混合编组、多趟衔接、非线性充电、分时电价与动态需求，以启动、行驶、充电、油耗与碳排放总成本最小为目标，将充电的电量、费用与排放核算统一到同一时段体系，设计混合遗传搜索算法MTC-HGS求解。标准算例与仿真实验表明：本文算法在28个算例上平均优于对比算法；现行分时电价与基准碳价下，按电网碳强度安排充电只降低充电环节排放、总排放未减，因谷段与低碳时段不重合、车队处于油电平价点。将谷段设在午间并把碳价提高至1.0元/kgCO$_2$e，按碳强度安排充电较无序充电降本3.12\%、减排42.43\%，总成本与按电价安排充电相当；联合配送经成本分摊后各企业均获成本节约，滚动重优化以更低的成本和排放完成全部动态订单。结果可为物流企业低碳运营与政府碳价政策提供参考。}
 
 \Keywords{车辆路径问题; 多车场协同配送; 混合车队; 实体车多趟; 时变电网碳强度; 动态需求; 混合遗传搜索}
 
 \ETitle{Complex mixed-fleet logistics model and solution algorithm under the dual-carbon goals}
 \EAuthor{ZHOU Leixishu, GAN Hongcheng, QIU Yingying}{Business School, University of Shanghai for Science and Technology, Shanghai 200093, China}
-\EAbstract{Under the dual-carbon goals, urban logistics distribution faces the dual pressure of cutting emissions and controlling cost. This paper studies the multi-enterprise collaborative multi-depot dynamic mixed-fleet vehicle routing problem with time-varying grid carbon intensity (TVGCI-CMDMF-DVRP), considering mixed fleets of conventional and electric vehicles, multi-trip chaining, nonlinear charging, time-of-use electricity prices and dynamic demand; the model minimizes the total cost of vehicle activation, travel, charging, fuel and carbon emissions, unifies the energy, cost and emission accounting of charging within a single time-slot system, and is solved by a hybrid genetic search algorithm, MTC-HGS. Benchmark and simulation experiments show that the proposed algorithm outperforms the compared algorithms on average over 28 instances, and that under the prevailing time-of-use tariff and the baseline carbon price a charging schedule accounting for both prices and grid carbon intensity lowers cost but not emissions, because the off-peak period and the low-carbon period do not overlap and the fleet sits at the cost parity point between conventional and electric vehicles. With the off-peak period shifted to midday and the carbon price raised to 1.0 CNY/kgCO$_2$e, accounting for both signals cuts total cost by 3.93\% and emissions by 30.35\% versus charging on arrival, while neither condition alone yields a significant reduction; after cost allocation every enterprise obtains cost savings, and rolling re-optimization fulfills all dynamic orders with fewer online adjustments. The results provide reference for low-carbon logistics operations and government carbon pricing policy.}
+\EAbstract{Under the dual-carbon goals, urban logistics distribution faces the dual pressure of cutting emissions and controlling cost. This paper studies the multi-enterprise collaborative multi-depot dynamic mixed-fleet vehicle routing problem with time-varying grid carbon intensity (TVGCI-CMDMF-DVRP), considering mixed fleets of conventional and electric vehicles, multi-trip chaining, nonlinear charging, time-of-use electricity prices and dynamic demand; the model minimizes the total cost of vehicle activation, travel, charging, fuel and carbon emissions, unifies the energy, cost and emission accounting of charging within a single time-slot system, and is solved by a hybrid genetic search algorithm, MTC-HGS. Benchmark and simulation experiments show that the proposed algorithm outperforms the compared algorithms on average over 28 instances, and that under the prevailing time-of-use tariff and the baseline carbon price a charging schedule accounting for both prices and grid carbon intensity lowers cost but not emissions, because the off-peak period and the low-carbon period do not overlap and the fleet sits at the cost parity point between conventional and electric vehicles. With the off-peak period shifted to midday and the carbon price raised to 1.0 CNY/kgCO$_2$e, accounting for both signals cuts total cost by 3.12\% and emissions by 42.43\% versus charging on arrival, whereas shifting the off-peak period alone cuts cost by 2.01\% and emissions by 27.42 kgCO$_2$e and raising the carbon price alone does not reduce total emissions; after cost allocation every enterprise obtains cost savings, and rolling re-optimization fulfills all dynamic orders at lower cost and emissions. The results provide reference for low-carbon logistics operations and government carbon pricing policy.}
 \EKeywords{vehicle routing problem; collaborative multi-depot delivery; mixed fleet;
 multi-trip delivery; time-varying grid carbon intensity; dynamic demand; hybrid genetic search}
 
@@ -126,7 +126,7 @@ multi-trip delivery; time-varying grid carbon intensity; dynamic demand; hybrid 
 
 从理论视角来看，混合车队配送属于车辆路径问题（Vehicle Routing Problem，VRP）的重要扩展。自1959年Dantzig和Ramser\cite{ref:dantzig}提出VRP以来，随着城市配送组织方式和能源结构的变化，单车场、同质车队和静态需求等传统假设已难以刻画现实运营，研究逐步扩展到多车场、电动车补能与动态需求等情形。这些扩展分别刻画配送系统中的一类关键限制，为研究多种因素共同作用下的配送优化奠定了理论基础。
 
-车辆能耗和补能方式直接影响混合车队路径的可行性与成本结构。围绕这一环节，已有研究分别刻画了油电两类车型在同一路段上的差异化能耗\cite{ref:27}、电动车按后续路径需要灵活补电的部分充电策略\cite{ref:45}、以分段线性函数表示的电池非线性充电过程\cite{ref:montoya}和充电站的容量限制\cite{ref:12}，以及行驶速度时变时的非线性能耗与部分充电策略\cite{ref:zhou2026}，并进一步考察了充电定价方案与分时电价对车队运营成本和充电决策的作用\cite{ref:deng,ref:93,ref:shi2025}。在电力侧，电网碳排放强度随发电结构日内波动，按碳强度安排充电时段可降低充电碳排放\cite{ref:52}，以低碳需求响应引导电动车充电在我国具有可观的减排潜力\cite{ref:du2025}；然而当电价信号与碳强度信号方向不一致或大量车辆跟随同一信号时，按单一信号安排充电反而可能增加排放\cite{ref:martin2025}。将非线性充电过程与分时电价和时变碳强度在同一时间尺度上协调考虑，是混合车队能耗与排放建模尚待深入的方向。
+车辆能耗和补能方式直接影响混合车队路径的可行性与成本结构。围绕这一环节，已有研究分别刻画了油电两类车型在同一路段上的差异化能耗\cite{ref:27}、电动车按后续路径需要灵活补电的部分充电策略\cite{ref:45}、以分段线性函数表示的电池非线性充电过程\cite{ref:montoya}和充电站的容量限制\cite{ref:12}，以及行驶速度时变时的非线性能耗与部分充电策略\cite{ref:zhou2026}，并进一步考察了充电定价方案与分时电价对车队运营成本和充电决策的作用\cite{ref:deng,ref:shi2025}。在电力侧，电网碳排放强度随发电结构日内波动，按碳强度安排充电时段可降低充电碳排放\cite{ref:52}，以低碳需求响应引导电动车充电在我国具有可观的减排潜力\cite{ref:du2025}；然而当电价信号与碳强度信号方向不一致或大量车辆跟随同一信号时，按单一信号安排充电反而可能增加排放\cite{ref:martin2025}。将非线性充电过程与分时电价和时变碳强度在同一时间尺度上协调考虑，是混合车队能耗与排放建模尚待深入的方向。
 
 在车辆使用层面，车辆启动成本在配送总成本中占比较高，同一车辆在一个运营日内连续执行多个配送趟，能够以趟间衔接换取更少的启用车辆，带时间窗和释放时间的多车场多趟问题及其异质车队扩展已有相应的分支定价算法\cite{ref:44,ref:sahin}，时间依赖的多趟问题也已有混合遗传搜索与动态规划相结合的求解方法\cite{ref:zhao2024}。对电动车而言，电池容量限制使其单趟行驶里程较短，多趟运营并在趟间补电是其承担全天配送任务的主要方式；然而现有多趟研究尚未将趟次衔接与混合车队、充电安排和时变碳排放联合建模。
 
@@ -1183,51 +1183,28 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 本算例中就近归属使两车场分别服务5个和45个客户，
 本文将客户较少的车场记为企业A、客户较多的车场记为企业B，4.6节沿用这一标记。
 本文涉及独立配送的实验和成本分摊计算均采用这一定义。
-图\ref{fig:collaboration-fairness-routes}以示意的方式给出独立配送、联合配送
-以及考虑成本分摊的联合配送三种情形下的路径组织：
-独立配送下两车场各自成环，联合配送下车辆与客户在两车场之间统一调配，
-成本分摊只改变费用的结算归属，配送路径与联合配送相同。
+
+两种模式采用相同需求、车辆参数、评价方法和停止规则，各独立运行十次并取均值，
+两种模式均完成50个客户和13264 kg需求，且客户归属、启用车辆的数量与车型、配送趟数在十次运行中均保持一致。
+就近归属下两车场的忙闲相差悬殊：企业A车场只有5个客户，启用2辆燃油车跑3趟，
+车辆作业时间合计216.43 min，时间利用率20.04\%；
+企业B车场承担其余45个客户，启用5辆车跑14趟，作业时间合计1675.21 min，时间利用率62.04\%。
+一侧车辆大半日闲置、另一侧车辆全天多趟周转，全网共启用7辆车、完成17趟，
+这是协作开展之前的运营起点。
+
+联合配送下，算法在共同客户市场内重新选择每个客户的服务车场。
+图\ref{fig:synergy-routes}给出两种模式的实际配送路径，
+其中(a)为独立配送，(b)为联合配送，(c)在联合配送的路径上标出改派的客户。
+独立配送下两车场各自成环，服务范围以就近分界；
+联合配送下企业A车场的车辆驶入原属企业B车场的客户区域，两车场的服务范围相互交叠，
+车场层面的组织变化见表\ref{tab:synergy-depot}。
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.76\textwidth,trim=0 20.16bp 0 0,clip]{generated_figures/concept_collaboration_fairness_notitle.pdf}
-  \caption{不同配送模式的配送路径示意}
-  \label{fig:collaboration-fairness-routes}
+  \includegraphics[width=\textwidth]{generated_figures/routes_synergy_v7.pdf}
+  \caption{不同配送模式下的实际配送路径}
+  \label{fig:synergy-routes}
 \end{figure}
-
-两种模式采用相同需求、车辆参数、评价方法和停止规则，各独立运行十次并取均值；
-表中另列出联合配送方案经成本分摊后的转归解——
-总分摊成本等于联合配送总成本、且每个成员的分摊成本不超过其独立配送成本的分摊方案，
-其配送路径与联合配送相同，差别仅在成本的结算归属。比较结果见表\ref{tab:synergy}。
-
-\begin{table}[H]
-  \centering
-  \caption{不同配送模式对比}
-  \label{tab:synergy}
-  \small
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcccc}
-    \toprule
-    比较项目 & 独立配送 & 联合配送 & 分摊后转归解 & 变化幅度\\
-    \midrule
-    总成本（元） & 2853.58 & 2624.94 & 2624.94 & $-8.01\%$\\
-    车辆启动成本（元） & 1390.00 & 1150.00 & 1150.00 & $-17.27\%$\\
-    行驶成本（元） & 804.45 & 920.33 & 920.33 & $+14.41\%$\\
-    油耗成本（元） & 523.40 & 333.23 & 333.23 & $-36.33\%$\\
-    充电成本（元） & 90.71 & 182.71 & 182.71 & $+101.42\%$\\
-    碳排放成本（元） & 45.03 & 38.67 & 38.67 & $-14.12\%$\\
-    总距离（km） & 958.74 & 1056.11 & 1056.11 & $+10.16\%$\\
-    总排放（kgCO$_2$e） & 225.14 & 193.35 & 193.35 & $-14.12\%$\\
-    车辆数（辆） & 7.00 & 5.00 & 5.00 & $-28.57\%$\\
-    电动车数（辆） & 2.00 & 3.00 & 3.00 & $+50.00\%$\\
-    燃油车数（辆） & 5.00 & 2.00 & 2.00 & $-60.00\%$\\
-    配送趟数（趟） & 17.00 & 15.00 & 15.00 & $-11.76\%$\\
-    \bottomrule
-  \end{tabular*}
-\end{table}
-
-表中为十次独立运行的均值，两种模式均完成50个客户和13264 kg需求。
-两种模式的客户归属、启用车辆的数量与车型、配送趟数在十次运行中均保持一致，
-车场层面的组织变化见表\ref{tab:synergy-depot}。
 
 \begin{table}[H]
   \centering
@@ -1250,15 +1227,47 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
   \end{tabular*}
 \end{table}
 
-由表\ref{tab:synergy}和表\ref{tab:synergy-depot}可知：
-1）客户归属的调整是车辆压缩的前提。联合配送把C004、C038、C042、C043四个客户由企业B车场改由企业A车场服务，
-同时把C014由企业A车场改由企业B车场服务，企业A车场服务的客户由5个增至8个，企业B车场由45个减至42个。
-归属调整之后，企业A车场把原本分散在2辆燃油车上的3趟任务集中到1辆电动车的2趟上，
+联合配送把C004、C038、C042、C043四个客户由企业B车场改由企业A车场服务，
+同时把C014由企业A车场改由企业B车场服务，
+企业A车场服务的客户由5个增至8个，企业B车场由45个减至42个。
+归属调整之后，两车场的启用车辆得以压缩：
+企业A车场把原本分散在2辆燃油车上的3趟任务集中到1辆电动车的2趟上，
 该车场的车辆作业时间由合计216.43 min变为331.54 min，时间利用率由20.04\%升至61.40\%；
-企业B车场启用车辆由5辆减至4辆、配送趟数由14趟减至13趟，作业时间由1675.21 min降至1504.99 min，
-时间利用率由62.04\%升至69.68\%。
+企业B车场启用车辆由5辆减至4辆、配送趟数由14趟减至13趟，
+作业时间由1675.21 min降至1504.99 min，时间利用率由62.04\%升至69.68\%。
 两项合计，全网启用车辆由7辆减至5辆，配送趟数由17趟减至15趟，
-车辆启动成本下降17.27\%，总成本下降8.01\%。
+两车场的车辆时间利用率由悬殊转为接近。
+
+上述组织变化带来的效率与排放结果见表\ref{tab:synergy}，表中为十次独立运行的均值。
+
+\begin{table}[H]
+  \centering
+  \caption{不同配送模式对比}
+  \label{tab:synergy}
+  \small
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lccc}
+    \toprule
+    比较项目 & 独立配送 & 联合配送 & 变化幅度\\
+    \midrule
+    总成本（元） & 2853.58 & 2624.94 & $-8.01\%$\\
+    车辆启动成本（元） & 1390.00 & 1150.00 & $-17.27\%$\\
+    行驶成本（元） & 804.45 & 920.33 & $+14.41\%$\\
+    油耗成本（元） & 523.40 & 333.23 & $-36.33\%$\\
+    充电成本（元） & 90.71 & 182.71 & $+101.42\%$\\
+    碳排放成本（元） & 45.03 & 38.67 & $-14.12\%$\\
+    总距离（km） & 958.74 & 1056.11 & $+10.16\%$\\
+    总排放（kgCO$_2$e） & 225.14 & 193.35 & $-14.12\%$\\
+    车辆数（辆） & 7.00 & 5.00 & $-28.57\%$\\
+    电动车数（辆） & 2.00 & 3.00 & $+50.00\%$\\
+    燃油车数（辆） & 5.00 & 2.00 & $-60.00\%$\\
+    配送趟数（趟） & 17.00 & 15.00 & $-11.76\%$\\
+    \bottomrule
+  \end{tabular*}
+\end{table}
+
+由表\ref{tab:synergy}可知：
+1）车辆与趟数的压缩直接反映在费用上。车辆启动成本由1390.00元降至1150.00元，下降17.27\%，
+总成本由2853.58元降至2624.94元，下降8.01\%。
 2）车辆压缩同时改变了车队的能源结构。联合配送电动车由2辆增至3辆、燃油车由5辆减至2辆，
 油耗成本下降36.33\%，充电成本上升101.42\%，两项叠加后能源支出由614.11元降至515.94元；
 总排放由225.14 kgCO$_2$e降至193.35 kgCO$_2$e，下降14.12\%，碳排放成本随之按相同比例下降。
@@ -1269,18 +1278,27 @@ MTC-HGS最优方案的电动车充电排放（77.86 kgCO$_2$e）反而高于MT-H
 行驶成本上升14.41\%，增幅高于距离，因为新增里程由单位里程非能源成本较高的电动车承担
 （电动车0.9145元/km，燃油车0.78元/km）。
 收益来自客户归属、车辆启用规模与车型选择的整体优化。
-联合配送方案也为多企业协作提供了统一的联盟基础，
 各企业分摊后的成本均低于其独立配送成本，具体分摊结果见4.6节。
+
 综上所述，多车场协作通过客户归属调整、车辆启用规模压缩与车型置换同时降低成本与排放，
 企业宜在共同客户市场内统一选择服务车场并共享车辆。
 
 \subsection{协作配送成本分摊分析}
 
-联合配送方案确定后，采用Shapley值分配联盟总成本。
-令$C_i$为企业$i$独立配送时的成本，其定义与表\ref{tab:synergy}中的独立配送模式一致，
-$\psi_i$为其协作配送分摊成本，
-$PCS_i=C_i-\psi_i$为企业$i$的成本节约额，$PCS_i\%=PCS_i/C_i\times100\%$为成本节约率。
-分摊结果见表\ref{tab:allocation}。
+联合配送把两家企业的客户与车辆放在一起统一安排，全网总成本由独立配送的2853.58元降至2624.94元，但节约来自客户归属调整与车辆合并，无法直接归到某一方名下。
+既有研究在多车场协作中考虑了协作收益的公平分配与成本分摊方法\cite{ref:8,ref:91}；若分摊后某一方承担的成本高于其自行配送的成本，该企业没有理由继续参与，协作随即退回各自配送。
+因此分摊方案须同时满足两个条件：两家企业的分摊成本之和等于联合配送总成本，
+且任一企业的分摊成本不高于其独立配送成本。
+
+本文按Shapley值分摊。其做法是先度量每家企业的边际贡献，即该企业加入一个已有企业组合时使总成本减少的数额，再对企业加入次序的全部可能取平均，得到该企业应分得的节约额，
+企业的分摊成本等于其独立配送成本减去该节约额，计算式见式\eqref{eq:shapley-cost}。
+两家企业只有两种加入次序，式\eqref{eq:shapley-cost}取平均后双方分得的节约额相等，即把联合配送产生的节约在两者之间平均分配。
+选用Shapley值，是因为它按边际贡献分配节约，上述两个条件由其构造直接保证；均等分摊会让规模较小的企业承担高于其独立配送成本的费用，比例分摊则不反映各方的边际贡献。
+
+令$C_i$为企业$i$独立配送时的成本，$\psi_i$为其协作配送分摊成本，$PCS_i=C_i-\psi_i$为成本节约额，$PCS_i\%=PCS_i/C_i\times100\%$为成本节约率。
+企业A的独立配送成本是其车场服务就近划归的5个客户的成本，企业B的独立配送成本是其车场服务就近划归的45个客户的成本，
+联合配送成本是两车场共同服务全部50个客户的成本；三者均由本文算法在相同参数与停止规则下各独立运行十次求解所得，
+下表数值为十次运行的均值。分摊结果见表\ref{tab:allocation}。
 
 \begin{table}[H]
   \centering
@@ -1293,75 +1311,19 @@ $PCS_i=C_i-\psi_i$为企业$i$的成本节约额，$PCS_i\%=PCS_i/C_i\times100\%
     \midrule
     独立配送成本$C_i$（元） & 687.72 & 2165.87\\
     协作配送分摊成本$\psi_i$（元） & 573.39 & 2051.54\\
-    成本节约额$PCS_i$（元） & 114.32 & 114.32\\
+    成本节约额$PCS_i$（元） & 114.33 & 114.33\\
     成本节约率$PCS_i\%$ & 16.62\% & 5.28\%\\
     \bottomrule
   \end{tabular*}
 \end{table}
 
-表中为十次运行的均值。由表\ref{tab:allocation}可知：
+由表\ref{tab:allocation}可知：
 1）两家企业的独立配送成本合计与表\ref{tab:synergy}的独立配送总成本一致；
 分摊后两家企业的成本合计等于联合配送总成本，分摊结果满足有效性要求。
-2）企业A和企业B的分摊成本分别低于各自独立配送成本114.32元，
-成本节约率分别达16.62\%和5.28\%，两家企业均从协作中获得真实收益，
-参与约束得到满足，协作联盟具有稳定性。
-3）Shapley值按边际贡献分配联盟收益，两企业博弈下双方获得相同的成本节约额；
-独立配送成本较低的企业A由此获得更高的成本节约率，
-体现了对小规模参与方的相对激励。
-上述结果表明，协作配送产生的收益能够在成员之间公平分配，
-为多企业协同配送的持续开展提供了利益保障机制。
-
-进一步地，分摊方法本身的选择也会影响联盟的稳定性。
-合作博弈理论表明，两人博弈下Shapley值、核仁、$\tau$值与Gately点等
-经典分摊方法给出的分摊额完全一致，因此表\ref{tab:allocation}的分摊结果
-对方法选择是稳健的；而三个及以上参与者的博弈中，各方法的结果出现差异\cite{ref:shan2018}，
-方法选择成为需要专门回答的问题。
-为考察分摊方法的选择，本文在珠三角四车场算例
-（150个客户，四家企业各自拥有车场与车队）上枚举全部15个联盟的最优配送成本，
-构造完整的特征函数，分别按Shapley值、核仁、按独立成本比例分摊和均等分摊
-四种方法计算各企业的分摊成本，并以参与约束的满足情况与
-企业间最大不满意度最小为标准择优确定。
-各联盟成本均通过两项一致性核对：任一联盟的成本不高于其任意拆分的成本之和，
-任一子联盟的成本不高于更大联盟最优解在该子联盟上的投影成本。
-分摊方法对比结果见表\ref{tab:allocation-methods}。
-
-\begin{table}[H]
-  \centering
-  \caption{四企业算例下不同分摊方法的结果对比}
-  \label{tab:allocation-methods}
-  \small
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}cccccc}
-    \toprule
-    企业 & 独立成本$C_i$（元） & Shapley值（元） & 核仁（元） & 比例分摊（元） & 均等分摊（元）\\
-    \midrule
-    企业A & 1425.37 & 1389.01 & 1407.72 & 1371.60 & 1341.38\\
-    企业B & 1128.14 & 962.38 & 937.05 & 1085.58 & 1044.15\\
-    企业C & 2266.86 & 2133.04 & 2139.65 & 2181.35 & 2182.87\\
-    企业D & 4085.23 & 4085.23 & 4085.23 & 3931.12 & 4001.25\\
-    \bottomrule
-  \end{tabular*}
-\end{table}
-
-四企业算例的联盟枚举结果显示，联盟节约全部来自企业A、B、C构成的地理相邻集群
-（企业B与C的联盟节约300.66元，A与B的联盟节约105.74元，三企业联盟节约335.94元），
-企业D与任何一方合并均不产生节约，全联盟最优成本8569.65元
-恰为``三企业集群加企业D单独运营''这一分割的成本。
-由表\ref{tab:allocation-methods}可知：
-1）四种方法给出的分摊额差异明显：对边际贡献最大的枢纽企业B，
-Shapley值分给其165.76元节约，核仁分给191.09元，相对差异达15\%；
-对不产生任何协同的企业D，Shapley值与核仁均分给0元节约，
-而比例分摊与均等分摊却分别把154.11元和83.99元的节约划给它。
-2）以联盟稳定性检验四种方法：核仁位于核心之内；
-Shapley值下企业B、C合计承担的费用比其自建联盟的成本高1.07元，
-恰好落在核心之外；比例分摊与均等分摊下，企业B、C合计承担的费用
-分别比其自建联盟的成本高172.59元和132.68元，
-该集群存在脱离全联盟的动机，分摊方案不可持续。
-核仁是唯一通过核心检验的方法，同时满足``企业间最大不满意度最小''的判据，
-最终采用核仁分摊方案。
-3）上述结果表明，当参与方的协同贡献差异悬殊时，
-不考虑边际贡献的简单分摊规则会系统性补贴无贡献成员、侵蚀贡献者利益，
-导致联盟解体。
-综上所述，成本分摊方法的选择应与联盟的协同结构相匹配，并以核心稳定性作为分摊方案可行的检验标准，两企业协作宜采用Shapley值，多企业协作宜采用核仁。
+2）企业A和企业B的分摊成本分别低于各自独立配送成本114.33元，成本节约率分别达16.62\%和5.28\%，
+两家企业均从协作中获得真实收益，参与约束得到满足。
+3）两企业博弈下双方获得相同的成本节约额，独立配送成本较低的企业A由此获得更高的成本节约率，分摊结果对规模较小的一方给予了相对更强的激励。
+综上所述，按Shapley值分摊使两家企业的分摊成本均低于其独立配送成本，协作联盟保持稳定，4.5节的联合配送方案得以持续执行。
 
 \subsection{不同动态处理策略对比分析}
 
@@ -1373,14 +1335,16 @@ Shapley值下企业B、C合计承担的费用比其自建联盟的成本高1.07�
 顺序插入策略把新到订单就近插入既有路径，除新增停靠点外不改动其余客户的服务次序；
 滚动重优化策略在触发批次对全部路径尚未执行的部分整体重新规划，
 已执行的路径前缀保持冻结。
-二者采用相同的订单到达过程、初始方案、评价方法和停止规则；
+二者采用相同的订单到达过程、初始方案与评价方法；
 表\ref{tab:dynamic}中的相对变化为滚动重优化策略相对顺序插入策略的变化。
-在线调整次数按各策略实际改动方案的方式计数：
-顺序插入策略逐单插入，计插入次数；
-滚动重优化策略按批次重排，计未执行路径发生改动的批次数。
+两种策略对方案的改动按两项分别计数：
+新增订单插入次数为把新到订单落入路径的次数；
+未执行路径重排批次数为重新规划使未执行部分的路径构成或次序发生改动的触发批次个数。
+两项分属不同层面，不能合并为一个调整次数，故不列相对变化。
 完全信息静态参考在优化开始前即掌握全日全部订单，
 用于说明动态信息造成的求解结果差异，属于理论参考线，
-不是可实施的在线策略，因而不参与两种在线策略之间的比较。
+不是可实施的在线策略，因而不参与两种在线策略之间的比较，
+其无在线阶段，上述两项不适用。
 
 \begin{table}[H]
   \centering
@@ -1395,10 +1359,8 @@ Shapley值下企业B、C合计承担的费用比其自建联盟的成本高1.07�
     总排放（kgCO$_2$e） & 232.64 & 195.86 & $-15.81\%$ & 234.40\\
     总距离（km） & 1099.85 & 966.28 & $-12.14\%$ & 968.09\\
     实际车辆数（辆） & 7 & 7 & 0 & 6\\
-    在线调整次数（次） & 5 & 3 & $-40.00\%$ & 0\\
-    完成客户数（个） & 53 & 53 & 0 & 53\\
-    完成需求量（kg） & 14133 & 14133 & 0 & 14133\\
-    最终未服务订单数（个） & 0 & 0 & 0 & 0\\
+    新增订单插入次数（次） & 5 & 5 & --- & ---\\
+    未执行路径重排批次数（次） & 0 & 3 & --- & ---\\
     \bottomrule
   \end{tabular*}
 \end{table}
@@ -1406,30 +1368,35 @@ Shapley值下企业B、C合计承担的费用比其自建联盟的成本高1.07�
 表中采用一次完整运行结果。
 由表\ref{tab:dynamic}可知：
 1）两种在线策略均完成53个客户和14133 kg需求，最终未服务订单数均为0，
+完全信息静态参考的客户数与需求量与之相同，
 方案在完整评价下可行，
 说明本文的动态信息处理策略能够在保留已执行路径的前提下，
 完整承接新增订单、订单取消、需求变化与时间窗变动，服务可行性得到保障。
-2）顺序插入策略的5次调整全部只在既有路径上添加新停靠点，
-全程原有客户的服务车辆与未执行路段的改动计数均为0；
+2）两种在线策略都把5笔新增订单全部落入路径，插入次数同为5次，
+但落入的方式不同：顺序插入策略的5次插入全部只在既有路径上添加新停靠点；
+滚动重优化策略中，第3批次的2笔由逐客户插入放置，其余3笔由批次重排直接安置。
+路径改动上，顺序插入策略全程未改动未执行路径，原有客户的服务车辆未发生改变；
 滚动重优化策略在3个批次改动了未执行路径，
-其中第4批次改写8条既有路径、新开2条、关闭3条，
-第5批次改写9条既有路径，20个原有客户改由其他车辆服务、涉及5辆车。
+其中第1批次派出1辆闲置车辆新开1条路径承接新增订单、既有路径未变动，
+第4批次改写8条既有路径、新开2条、关闭3条，
+第5批次改写9条既有路径，20个原有客户改由其他车辆服务、涉及5辆车
+（第4批次为28个原有客户、8辆车）。
 路径层面的这一差别使滚动重优化策略的总成本、总排放和总距离
-分别比顺序插入策略低7.05\%、15.81\%和12.14\%，
-车辆数与之持平，在线调整由5次减至3次。
+分别比顺序插入策略低7.05\%、15.81\%和12.14\%，车辆数与之持平。
 逐单插入把新增订单固定在原有路径的既定次序上，
 里程随订单累加；成批重排则把新增订单与尚未执行的原有客户一并考虑，
 在同样的车辆规模下把行驶里程从1099.85 km压回966.28 km，
 减少的排放几乎全部来自燃油直接排放（由178.09 kgCO$_2$e降至141.51 kgCO$_2$e），
 充电间接排放基本持平。
 3）完全信息静态参考的总成本为2735.03元，为三者中最低，
-滚动重优化策略的总成本比其高5.93\%，总距离仅比其长0.19\%，
+滚动重优化策略的总成本比其高5.93\%，
+总距离966.28 km反而比参考方案的968.09 km短0.19\%，
 车辆数为7辆而参考方案为6辆，
 即订单信息逐步到达带来的成本差距并未体现为行驶里程的差距；
 参考方案的总排放为234.40 kgCO$_2$e，高于滚动重优化策略，
 其只安排了2条电动车路径，燃油直接排放高出54.22 kgCO$_2$e，
 参考线并非三项指标的共同下界。
-综上所述，滚动重优化策略在成本、排放、距离与在线调整次数上均优于顺序插入策略，
+综上所述，滚动重优化策略在成本、排放与距离上均优于顺序插入策略，
 在线处理动态订单宜按批次对未执行路径整体重排，而非逐单插入。
 
 \section{结语}
@@ -1446,7 +1413,7 @@ Shapley值下企业B、C合计承担的费用比其自建联盟的成本高1.07�
 谷段移至午间单独成立时按碳强度安排充电降本2.01\%、减排27.42 kgCO$_2$e，碳价提高至1.0元/kgCO$_2$e单独成立时总排放未减，
 两者同时成立时按碳强度安排充电相较于无序充电总成本减少3.12\%、碳排放减少42.43\%，总成本与按电价安排充电相当，车队仍为油电混合；
 4）联合配送经成本分摊后各企业均获成本节约、节约率最低为5.28\%，
-协作联盟满足参与约束，动态需求下滚动重优化以更少的在线调整和更低的成本完成了全部动态订单。
+协作联盟满足参与约束，动态需求下滚动重优化以更低的成本和排放完成了全部动态订单。
 
 本文的理论贡献有三：一是将非线性充电过程的电量变化、充电费用与充电碳排放统一到同一时段体系，使分时电价与时变碳强度在同一模型内可比；
 二是揭示两种价格信号在补电窗口内的一致性是充电时刻安排能否减排的前提，并将减排空间分解为补电窗口限制与电价限制两部分；
@@ -1477,7 +1444,6 @@ Chen W R, Xu G M, Zhang D Z, et al. Multi-depot mixed fleet routing and speed op
 \bibitem{ref:montoya} Montoya A, Guéret C, Mendoza J E, et al. The electric vehicle routing problem with nonlinear charging function[J]. Transportation Research Part B: Methodological, 2017, 103: 87--110.
 \bibitem{ref:12} Froger A, Jabali O, Mendoza J E, et al. The electric vehicle routing problem with capacitated charging stations[J]. Transportation Science, 2022, 56(2): 460--482.
 \bibitem{ref:deng} Deng J, Hu H, Gong S, et al. Impacts of charging pricing schemes on cost-optimal logistics electric vehicle fleet operation[J]. Transportation Research Part D: Transport and Environment, 2022, 109: 103333.
-\bibitem{ref:93} Shi Y, Lin Y, Lim M K, et al. The bi-objective mixed-fleet vehicle routing problem under decentralized collaboration and time-of-use prices[J]. Expert Systems with Applications, 2025, 273: 126875.
 \bibitem{ref:52} Li Z, Chen Z, Li H, et al. On the value of orderly electric vehicle charging in carbon emission reduction[J]. Transportation Research Part D: Transport and Environment, 2024, 135: 104383.
 \bibitem{ref:woody2021} Woody M, Vaishnav P, Craig M T, et al. Charging strategies to minimize greenhouse gas emissions of electrified delivery vehicles[J]. Environmental Science \& Technology, 2021, 55(14): 10108--10120.
 \bibitem{ref:qiu2024} Qiu Y, Ding S, Pardalos P M. Routing a mixed fleet of electric and conventional vehicles under regulations of carbon emissions[J]. International Journal of Production Research, 2024, 62(16): 5720--5736.
@@ -1517,13 +1483,10 @@ Gong L, Zheng S L, Xu D J, et al. Distribution routing optimization for oil-elec
 \bibitem{ref:82} Li Y, Zhang S, Li W, et al. High temporal and spatial resolution projected electricity carbon emission factors of China from 2025--2060[J]. Scientific Data, 2026, 13: 926. Dataset DOI: 10.6084/m9.figshare.28953545.
 \bibitem{ref:75} Lei Z, Hao J K. A GPU-accelerated hybrid method for a class of multi-depot vehicle routing problems[EB/OL]. arXiv:2605.05208, 2026.
 \bibitem{ref:74} Vidal T, Crainic T G, Gendreau M, et al. A hybrid genetic algorithm with adaptive diversity management for a large class of vehicle routing problems with time-windows[J]. Computers \& Operations Research, 2013, 40(1): 475--489.
-\bibitem{ref:shan2018} 单而芳, 梁莉敏, 张广. 基于限制博弈的具有容量限制的易腐品联合运输费用分摊问题[J]. 中国管理科学, 2018, 26(9): 97--105.\newline
-Shan E F, Liang L M, Zhang G. Cost allocation for combined transportation of perishable products based on restricted cooperation game[J]. Chinese Journal of Management Science, 2018, 26(9): 97--105.
 \bibitem{ref:hebei-tou} 河北省发展和改革委员会. 关于进一步完善河北南网工商业及其他用户分时电价政策的通知[EB/OL]. 冀发改能价〔2022〕1364号, 2022-12-01.
 \bibitem{ref:bj-tou} 北京市发展和改革委员会. 关于进一步完善本市分时电价机制等有关事项的通知[EB/OL]. 2023-08-21. https://fgw.beijing.gov.cn/fgwzwgk/2024zcwj/bwgfxwj/202308/t20230821\_3718725.htm.
 \bibitem{ref:ndrc-tou} 国家发展和改革委员会. 关于进一步完善分时电价机制的通知[EB/OL]. 发改价格〔2021〕1093号, 2021-07-26.
 \bibitem{ref:mee2025} 生态环境部. 全国碳市场发展报告（2025）[R]. 北京: 生态环境部, 2025.
-Zhou X C, Zhou K J, Wang L, et al. Review of green vehicle routing model and its algorithm in logistics distribution[J]. Systems Engineering --- Theory \& Practice, 2021, 41(1): 213-230.
 \bibitem{ref:jac-k7} 安徽江淮汽车集团股份有限公司. 威铃K7产品参数[EB/OL]. https://yika.jac.com.cn/wlK7/.
 \bibitem{ref:foton-es1} 北汽福田汽车股份有限公司. 欧马可智蓝ES1纯电动轻卡产品单页[EB/OL]. 2025. https://aumark.foton.com.cn/profile/upload/2025/08/08/.
 \bibitem{ref:changjiang2024} 邬博华, 曹海花, 叶之楠. 经济性驱动，新能源轻重卡兑现爆发式增长[R]. 武汉: 长江证券研究所, 2024: 5.
