@@ -15,7 +15,7 @@ from setp_solver import cost as C
 import setp_solver.search.multitrip_schedule as MTS
 
 RUN = Path(sys.argv[1] if len(sys.argv) > 1 else
-           "solver/reports/ablation_reseed_20260901/MTC-HGS/run_1")
+           "solver/reports/ablation_v6_20260906/MTC-HGS/run_07")
 OUT = Path("docs/paper_v2/generated_tables/final_solution_trip_rows.tex")
 DEPOT_LABEL = {"D_OSM_WAY_1003511503": "D1", "D_OSM_WAY_1071205721": "D2"}
 # 单位碳价：默认取论文基准 0.20 元/kgCO2e，可由第二个命令行参数覆盖。
@@ -89,7 +89,7 @@ for r in sorted(sol.routes, key=lambda x: (physical_id(x.vehicle_id), x.vehicle_
     seq = [DEPOT_LABEL.get(r.node_sequence[0], r.node_sequence[0])] + \
           [str(int(c[1:])) if c.startswith("C") else c for c in r.node_sequence[1:-1]] + \
           [DEPOT_LABEL.get(r.node_sequence[-1], r.node_sequence[-1])]
-    rows.append((seq, km, trip_cost, hours, fuel, kwh, em, len(custs), demand / cap * 100.0))
+    rows.append([r.vehicle_type, p, seq, km, trip_cost, hours, fuel, kwh, em, len(custs), demand / cap * 100.0])
     tot["dist"] += km; tot["cost"] += trip_cost; tot["hours"] += hours
     tot["fuel"] += fuel; tot["kwh"] += kwh; tot["em"] += em; tot["cust"] += len(custs)
 
@@ -107,10 +107,22 @@ for n, a, b, tol in checks:
 if bad:
     print("对账失败，拒绝出表:", bad); sys.exit(2)
 
+# 车辆标签：车型（燃/电）+ 同车型内的车辆序号 + 该车的趟序号，行序即 (物理车, 趟) 序。
+TYPE_LABEL = {"cv": "燃", "ev": "电"}
+veh_index, type_count, trip_count = {}, {}, {}
+for row in rows:
+    vtype, phys = row[0], row[1]
+    label = TYPE_LABEL.get(vtype, vtype)
+    if phys not in veh_index:
+        type_count[label] = type_count.get(label, 0) + 1
+        veh_index[phys] = type_count[label]
+    trip_count[phys] = trip_count.get(phys, 0) + 1
+    row[0] = f"{label}{veh_index[phys]}-{trip_count[phys]}"
+
 lines = []
-for seq, km, cost, hours, fuel, kwh, em, n, load in rows:
-    lines.append(f"{{[{','.join(seq)}]}} & {km:.2f} & {cost:.2f} & {hours:.2f} & {fuel:.2f} & {kwh:.2f} & {em:.2f} & {n} & {load:.2f} \\\\")
-lines.append(f"合计 & {tot['dist']:.2f} & {tot['cost']:.2f} & {tot['hours']:.2f} & {tot['fuel']:.2f} & {tot['kwh']:.2f} & {tot['em']:.2f} & {tot['cust']} & --- \\\\")
+for tag, _phys, seq, km, cost, hours, fuel, kwh, em, n, load in rows:
+    lines.append(f"{{[{','.join(seq)}]}} & {tag} & {km:.2f} & {cost:.2f} & {hours:.2f} & {fuel:.2f} & {kwh:.2f} & {em:.2f} & {n} & {load:.2f} \\\\")
+lines.append(f"\\multicolumn{{2}}{{@{{}}c}}{{合计}} & {tot['dist']:.2f} & {tot['cost']:.2f} & {tot['hours']:.2f} & {tot['fuel']:.2f} & {tot['kwh']:.2f} & {tot['em']:.2f} & {tot['cust']} & --- \\\\")
 lines.append("\\bottomrule")
 OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
 print(f"已写 {OUT}，{len(rows)} 趟")
