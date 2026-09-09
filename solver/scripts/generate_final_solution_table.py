@@ -121,8 +121,8 @@ for row in rows:
 
 lines = []
 for tag, _phys, seq, km, cost, hours, fuel, kwh, em, n, load in rows:
-    lines.append(f"{{[{','.join(seq)}]}} & {tag} & {km:.2f} & {cost:.2f} & {hours:.2f} & {fuel:.2f} & {kwh:.2f} & {em:.2f} & {n} & {load:.2f} \\\\")
-lines.append(f"\\multicolumn{{2}}{{@{{}}c}}{{合计}} & {tot['dist']:.2f} & {tot['cost']:.2f} & {tot['hours']:.2f} & {tot['fuel']:.2f} & {tot['kwh']:.2f} & {tot['em']:.2f} & {tot['cust']} & --- \\\\")
+    lines.append(f"{tag}: [{','.join(seq)}] & {km:.2f} & {cost:.2f} & {hours:.2f} & {fuel:.2f} & {kwh:.2f} & {em:.2f} & {n} & {load:.2f} \\\\")
+lines.append(f"\\multicolumn{{1}}{{@{{}}l}}{{合计}} & {tot['dist']:.2f} & {tot['cost']:.2f} & {tot['hours']:.2f} & {tot['fuel']:.2f} & {tot['kwh']:.2f} & {tot['em']:.2f} & {tot['cust']} & --- \\\\")
 lines.append("\\bottomrule")
 OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
 print(f"已写 {OUT}，{len(rows)} 趟")

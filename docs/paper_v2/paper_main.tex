@@ -759,7 +759,7 @@ Vidal等\cite{ref:76}将种群进化与局部搜索相结合，提出求解多�
 
 \begingroup
 \small
-\renewcommand{\arraystretch}{0.88}
+\renewcommand{\arraystretch}{0.85}
 \setlength{\tabcolsep}{1.2pt}
 \setlength\LTleft{0pt}\setlength\LTright{0pt}
 \begin{longtable}{@{\extracolsep{\fill}}ccccccc@{}}
@@ -776,6 +776,7 @@ Vidal等\cite{ref:76}将种群进化与局部搜索相结合，提出求解多�
 \bottomrule
 \endfoot
 \bottomrule
+\multicolumn{7}{@{}l@{}}{\makebox[0pt][l]{\parbox[t]{\dimexpr\textwidth-2\tabcolsep\relax}{\footnotesize 注：车场与公共充电站不接受配送服务，不设时间窗与服务时间，车辆作业时段为08:00—19:00。}}}\\
 \endlastfoot
 C001 & 116.3518 & 39.9075 & 08:38 & 09:18 & 347 & 15\\
 C002 & 116.6490 & 40.1170 & 08:43 & 09:24 & 347 & 15\\
@@ -827,10 +828,10 @@ C047 & 116.7278 & 39.9032 & 14:16 & 15:15 & 139 & 6\\
 C048 & 116.3241 & 39.9657 & 16:13 & 17:06 & 139 & 6\\
 C049 & 116.7278 & 39.9035 & 14:07 & 14:53 & 347 & 15\\
 C050 & 116.3528 & 39.9350 & 13:08 & 13:54 & 347 & 15\\
-D1 & 116.1310 & 39.6730 & 08:00 & 19:00 & --- & ---\\
-D2 & 116.5163 & 40.0036 & 08:00 & 19:00 & --- & ---\\
-S1 & 116.4167 & 39.9908 & 08:00 & 19:00 & --- & ---\\
-S2 & 116.4314 & 39.9961 & 08:00 & 19:00 & --- & ---\\
+D1 & 116.1310 & 39.6730 & --- & --- & --- & ---\\
+D2 & 116.5163 & 40.0036 & --- & --- & --- & ---\\
+S1 & 116.4167 & 39.9908 & --- & --- & --- & ---\\
+S2 & 116.4314 & 39.9961 & --- & --- & --- & ---\\
 \end{longtable}
 \endgroup
 
@@ -859,7 +860,7 @@ S2 & 116.4314 & 39.9961 & 08:00 & 19:00 & --- & ---\\
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{8}{@{}l@{}}{\makebox[0pt][l]{\parbox{\dimexpr\textwidth-2\tabcolsep\relax}{\vspace{-0.9ex}\footnotesize 注：新增订单列示其订单属性；取消事件列示取消前的订单属性；需求量和时间窗变动以箭头表示变动前后的取值。}}}\\
+\multicolumn{8}{@{}l@{}}{\makebox[0pt][l]{\parbox[t]{\dimexpr\textwidth-2\tabcolsep\relax}{\footnotesize 注：新增订单列示其订单属性；取消事件列示取消前的订单属性；需求量和时间窗变动以箭头表示变动前后的取值。}}}\\
 \endlastfoot
 C051 & 新增订单 & 116.3195 & 39.7459 & 08:03 & 13:04--13:42 & 139 & 6\\
 C007 & 订单取消 & 116.3652 & 39.9450 & 08:42 & 16:08--16:54 & 417 & 18\\
@@ -936,7 +937,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 6\\
 
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=0.95\textwidth]{generated_figures/figure_experiment_carbon_intensity.pdf}
+  \includegraphics[width=0.70\textwidth]{generated_figures/figure_experiment_carbon_intensity.pdf}
   \caption{TVGCI-CMDMF-DVRP算例的逐时电网碳强度}
   \label{fig:experiment-carbon-intensity}
 \end{figure}
@@ -948,20 +949,20 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 6\\
 \begingroup
 \setptabsetup
 \setlength\LTleft{0pt}\setlength\LTright{0pt}
-\begin{longtable}{@{\extracolsep{\fill}}lccccccccc@{}}
+\begin{longtable}{@{\extracolsep{\fill}}lcccccccc@{}}
 \caption{仿真实验最终路径表}\label{tab:final-solution}\\
 \toprule
-路径 & 车辆 & 距离（km） & 成本（元） & 时间（h） & 油耗（L） & 电耗（kWh） & 碳排放（kg） & 客户数（个） & 装载率（\%）\\
+路径 & 距离（km） & 成本（元） & 时间（h） & 油耗（L） & 电耗（kWh） & 碳排放（kg） & 客户数（个） & 装载率（\%）\\
 \midrule
 \endfirsthead
-\multicolumn{10}{c}{\small\bfseries 表~\thetable\quad 仿真实验最终路径表（续）}\\
+\multicolumn{9}{c}{\small\bfseries 表~\thetable\quad 仿真实验最终路径表（续）}\\
 \toprule
-路径 & 车辆 & 距离（km） & 成本（元） & 时间（h） & 油耗（L） & 电耗（kWh） & 碳排放（kg） & 客户数（个） & 装载率（\%）\\
+路径 & 距离（km） & 成本（元） & 时间（h） & 油耗（L） & 电耗（kWh） & 碳排放（kg） & 客户数（个） & 装载率（\%）\\
 \midrule
 \endhead
 \bottomrule
 \endfoot
-\multicolumn{10}{@{}l@{}}{\makebox[0pt][l]{\parbox{\dimexpr\textwidth-2\tabcolsep\relax}{\vspace{-0.9ex}\footnotesize 注：路径列中1--50为客户编号，D1和D2为车场；车辆列中``燃1''``电2''分别表示第1辆燃油车和第2辆电动车，连字符后为该车的趟序号，同一车辆的各趟按出发先后排列；车辆日固定成本计入该车首趟；时间合计为各路径运行时间之和。}}}\\
+\multicolumn{9}{@{}l@{}}{\makebox[0pt][l]{\parbox[t]{\dimexpr\textwidth-2\tabcolsep\relax}{\footnotesize 注：路径列冒号前为车辆标识，``燃1''``电2''分别表示第1辆燃油车和第2辆电动车，连字符后为该车的趟序号，同一车辆的各趟按出发先后排列；冒号后方括号内1--50为客户编号，D1和D2为车场；车辆日固定成本计入该车首趟；时间合计为各路径运行时间之和。}}}\\
 \endlastfoot
 \input{generated_tables/final_solution_trip_rows.tex}
 \end{longtable}
@@ -1009,7 +1010,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 6\\
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{10}{@{}l@{}}{\makebox[0pt][l]{\parbox{\dimexpr\textwidth-2\tabcolsep\relax}{\vspace{-0.9ex}\footnotesize 注：BKS为该算例集在VRP-REP上公开的最好解（\url{http://www.vrp-rep.org/datasets/item/2017-0013.html}），各值由公开解文件所载成本换算得到，与本文算法两列采用相同的舍入方式。}}}\\
+\multicolumn{10}{@{}l@{}}{\makebox[0pt][l]{\parbox[t]{\dimexpr\textwidth-2\tabcolsep\relax}{\footnotesize 注：BKS为该算例集在VRP-REP上公开的最好解（\url{http://www.vrp-rep.org/datasets/item/2017-0013.html}），各值由公开解文件所载成本换算得到，与本文算法两列采用相同的舍入方式。}}}\\
 \endlastfoot
     PR11A & 6655.55 & 6720.71 & 6772.00 & 6685.36 & 6702.83 & 6683.00 & 6697.60 & 6666.44 & 6694.94\\
     PR11B & 4814.80 & 4839.44 & 4852.67 & 4832.98 & 4842.14 & 4831.74 & 4842.88 & 4819.92 & 4833.06\\
@@ -1431,7 +1432,7 @@ $C_d$取该车场按就近归属独立配送的成本，$C(\{A,B\})$取两车场
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{3}{@{}l@{}}{\makebox[0pt][l]{\parbox{\dimexpr\textwidth-2\tabcolsep\relax}{\vspace{-0.9ex}\footnotesize 注：各项由全精度结果分别四舍五入得到，逐格相加减可能与表中数值相差0.01元。}}}\\
+\multicolumn{3}{@{}l@{}}{\makebox[0pt][l]{\parbox[t]{\dimexpr\textwidth-2\tabcolsep\relax}{\footnotesize 注：各项由全精度结果分别四舍五入得到，逐格相加减可能与表中数值相差0.01元。}}}\\
 \endlastfoot
     独立配送成本$C_d$（元） & 687.72 & 2165.87\\
     联合配送分摊成本$\psi_d$（元） & 573.39 & 2051.54\\
