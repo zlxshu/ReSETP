@@ -438,6 +438,7 @@ def _build_context(
     tariff_calendar_authority: Path | str | None = None,
     ev_daily_premium_cny: float | None = None,
     carbon_quota_kg: float | None = None,
+    witness_path: Path | None = None,
 ):
     if instance_id.endswith("-V3-TWO-SHIFT-PRDFIX"):
         if depot_charging_scenario_name != "60kw":
@@ -469,8 +470,17 @@ def _build_context(
             tariff_calendar_authority=tariff_calendar_authority,
             ev_daily_premium_cny=ev_daily_premium_cny,
             carbon_quota_kg=carbon_quota_kg,
+            witness_path=witness_path,
         )
     raise ValueError(f"inactive private instance: {instance_id}")
+
+
+def _repo_relative_str(path: Path, repo: Path) -> str:
+    """Record a source path relative to the repo when it lives inside it."""
+    try:
+        return str(path.relative_to(repo))
+    except ValueError:
+        return str(path)
 
 
 def _csv_rows(path: Path) -> list[dict[str, str]]:
@@ -986,6 +996,7 @@ def _suite_context_from_built(
     ev_cap_override: Mapping[str, int | tuple[int, int]] | None = None,
     ev_daily_premium_cny: float | None = None,
     carbon_quota_kg: float | None = None,
+    witness_path: Path | None = None,
 ):
     """Turn one saved V3 two-shift construction into a private context."""
 
@@ -1008,6 +1019,13 @@ def _suite_context_from_built(
         else float(carbon_quota_kg)
     )
 
+    # 2026-09-09: the saved witness file is the default; --witness-path swaps in
+    # an alternative route skeleton over the same customers/depots/shift ids.
+    witness_file = (
+        report_root / "health_witness_routes.csv"
+        if witness_path is None
+        else Path(witness_path)
+    )
     saved_root = package_root / "instances" / instance_id
     shift_contract = json.loads(
         (saved_root / "shift_contract.json").read_text(encoding="utf-8")
@@ -1097,9 +1115,7 @@ def _suite_context_from_built(
                 "matrix_reference": str(
                     (saved_root / "matrix_reference.json").relative_to(repo)
                 ),
-                "health_witness_routes": str(
-                    (report_root / "health_witness_routes.csv").relative_to(repo)
-                ),
+                "health_witness_routes": _repo_relative_str(witness_file, repo),
                 "shift_contract": str(
                     (saved_root / "shift_contract.json").relative_to(repo)
                 ),
@@ -1124,7 +1140,7 @@ def _suite_context_from_built(
         individual = adapt_witness_rows_to_duty(
             (
                 row
-                for row in _csv_rows(report_root / "health_witness_routes.csv")
+                for row in _csv_rows(witness_file)
                 if row["instance_id"] == witness_row_id
             ),
             instance_id=witness_row_id,
@@ -1190,6 +1206,7 @@ def _build_saved_suite_context(
     tariff_calendar_authority: Path | str | None = None,
     ev_daily_premium_cny: float | None = None,
     carbon_quota_kg: float | None = None,
+    witness_path: Path | None = None,
 ):
     """Load any sealed V3 two-shift suite through its package contract."""
 
@@ -1222,6 +1239,7 @@ def _build_saved_suite_context(
         ev_cap_override=ev_cap_override,
         ev_daily_premium_cny=ev_daily_premium_cny,
         carbon_quota_kg=carbon_quota_kg,
+        witness_path=witness_path,
     )
 
 
@@ -1675,6 +1693,16 @@ def main() -> int:
         default="registered",
         help="charging-function arm: linear swaps the depot curve for the constant-power L100 control",
     )
+    parser.add_argument(
+        "--witness-path",
+        type=Path,
+        default=None,
+        help=(
+            "read the initial route skeleton from this CSV instead of the "
+            "instance's saved solver/reports/.../health_witness_routes.csv; "
+            "same schema, same customers/depots/shift ids"
+        ),
+    )
     parser.add_argument("--convergence-csv", type=Path)
     parser.add_argument(
         "--education-depth-limit",
@@ -2013,6 +2041,21 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--depot-lock-penalty",
+        type=float,
+        default=None,
+        help=(
+            "per-unit penalty the route kernel's local search pays for "
+            "breaking a closed mechanism's lock, in the units the local "
+            "search sees (i.e. after the repair booster).  Omit to keep the "
+            "historical value exactly: max_penalty 100000 x repair_booster "
+            "12 = 1200000 per unit.  The pinned load dimensions carry "
+            "whichever locks exist, so with --mechanism-off type_exchange "
+            "this also moves the vehicle-type lock; with cross_depot enabled "
+            "no lock dimension exists and the value is inert."
+        ),
+    )
+    parser.add_argument(
         "--init-witness",
         action="store_true",
         help=(
@@ -2298,6 +2341,11 @@ def main() -> int:
         tariff_calendar_authority=args.tariff_calendar_authority,
         ev_daily_premium_cny=args.ev_daily_premium,
         carbon_quota_kg=args.carbon_quota_kg,
+        witness_path=(
+            args.witness_path.resolve()
+            if args.witness_path is not None
+            else None
+        ),
     )
     if args.carbon_price != CHINA81_CARBON_PRICE_CNY_PER_KG:
         bundle = replace(
@@ -2422,6 +2470,14 @@ def main() -> int:
         route_engine_options["multi_trip_enabled"] = False
     if not mechanism_enabled["type_exchange"]:
         route_engine_options["type_exchange_enabled"] = False
+    # Only passed through when explicitly requested, so a run without the flag
+    # takes the engine's historical default path unchanged.
+    if args.depot_lock_penalty is not None:
+        if not float(args.depot_lock_penalty) > 0.0:
+            raise SystemExit("--depot-lock-penalty must be positive")
+        route_engine_options["mechanism_lock_penalty"] = float(
+            args.depot_lock_penalty
+        )
     route_engine_options["ev_charge_time_proxy_enabled"] = (
         not args.no_ev_charge_time_proxy
     )
@@ -2482,7 +2538,11 @@ def main() -> int:
         # rebuilt after initialization from the population's own sessions --
         # see the ``round-one reload gap`` block below the population build.
         # Later rounds feed back the exact best's own sessions at the same
-        # quantile (``runner.py``).
+        # quantile (``runner.py``).  This reference follows --witness-path, so
+        # it is read from the same skeleton the run starts from.  On
+        # cn-jjj-50c-01-DEPOTSEARCH-d996f755bd the saved witness gives
+        # 33.76 kWh, the energy of its C014|C028|C006|C026 trip; the
+        # nearest-depot witness does not contain that trip and gives 29.40 kWh.
         witness_bundle, witness_initial, _, _ = _build_context(
             data_repo,
             args.instance_id,
@@ -2490,6 +2550,11 @@ def main() -> int:
             depot_charging_scenario_name=args.depot_charging_scenario,
             tariff_calendar_authority=args.tariff_calendar_authority,
             ev_daily_premium_cny=args.ev_daily_premium,
+            witness_path=(
+                args.witness_path.resolve()
+                if args.witness_path is not None
+                else None
+            ),
         )
         route_engine_options["ev_reload_gap_reference_kwh"] = (
             reference_trip_energy_kwh(
@@ -2532,6 +2597,28 @@ def main() -> int:
             ),
         },
         "route_engine_source_id": route_engine.source_id,
+        # 2026-09-09: what the route kernel actually charged per unit for
+        # breaking a closed mechanism's lock.  ``requested`` is the command
+        # line (None = the historical default), ``effective`` is what the
+        # local search saw, ``raw_pinned`` is the value written into the
+        # pinned load dimensions before the repair booster, and
+        # ``locked_load_dimensions`` says how many locks existed at all --
+        # empty means the arm keeps the mechanism open and the knob is inert.
+        "mechanism_lock_penalty": {
+            "requested": (
+                None
+                if args.depot_lock_penalty is None
+                else float(args.depot_lock_penalty)
+            ),
+            "effective": float(route_engine.mechanism_lock_penalty_effective),
+            "raw_pinned": float(route_engine.mechanism_lock_penalty_raw),
+            "repair_booster": int(
+                route_engine.mechanism_lock_penalty_repair_booster
+            ),
+            "locked_load_dimensions": [
+                int(index) for index in route_engine.locked_load_dimensions
+            ],
+        },
         # What the kernel model actually compiled to, after the vehicle-type /
         # profile dedup.  Recorded because the dedup is data-driven: the same
         # switch gives 4 types on this static batch and 20 under a dynamic cut.
@@ -3378,6 +3465,14 @@ def main() -> int:
             if result.charging_prescreen_accounting is not None
             else {"enabled": False}
         ),
+        # 2026-09-08: the old override made charge_timing false in formal runs
+        # and hid the arm; use mechanism_closure.effective_charge_timing_policy.
+        "charging_candidate_channel": {
+            "enabled": bool(
+                result.effective_execution.include_charging_candidates
+            ),
+            "requested": bool(args.include_charging_candidates),
+        },
         "charging_repair_cost": {
             "scope": "search_only",
             "completed_cycles": int(result.iterations),
@@ -3419,12 +3514,7 @@ def main() -> int:
         "route_engine_wiring": route_engine_wiring,
         "ev_observation": ev_observation,
         "mechanism_off": sorted(mechanism_off),
-        "mechanism_enabled": {
-            **mechanism_enabled,
-            "charge_timing": bool(
-                result.effective_execution.include_charging_candidates
-            ),
-        },
+        "mechanism_enabled": dict(mechanism_enabled),
         "mechanism_closure": {
             "violations": list(closure_violations),
             "forbidden_named_proposed_actions": forbidden_proposed_actions,

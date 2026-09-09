@@ -8,8 +8,9 @@ acceptance authority. This module performs no file I/O.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
+from math import inf
 from time import perf_counter
 
 from .charging import ChargingRepairPolicy, repair_changed_duties
@@ -31,6 +32,9 @@ NOT_INSERTED_ENERGY = "NOT_INSERTED_ENERGY"
 NOT_INSERTED_CANDIDATE_EXHAUSTED = "NOT_INSERTED_CANDIDATE_EXHAUSTED"
 NOT_INSERTED_SEARCH_EXHAUSTED = "NOT_INSERTED_SEARCH_EXHAUSTED"
 INSERTION_DISABLED = "INSERTION_DISABLED"
+
+# Same tolerance the exact dynamic scheduler and the sequential arm use.
+_LOAD_TOL = 1e-6
 
 
 class DynamicInsertionFailure(RuntimeError):
@@ -80,8 +84,17 @@ class DynamicInsertionOperator:
         self,
         *,
         enabled: bool = False,
+        prefilter_ineligible_assets: bool = False,
+        candidate_budget: int | None = None,
     ) -> None:
         self.enabled = bool(enabled)
+        # 2026-09-09: two opt-in switches.  Every default reproduces the
+        # behaviour that produced the existing dynamic results bit for bit;
+        # a bare DynamicInsertionOperator(enabled=True) is unchanged.
+        self.prefilter_ineligible_assets = bool(prefilter_ineligible_assets)
+        self.candidate_budget = (
+            None if candidate_budget is None else int(candidate_budget)
+        )
 
     def apply(
         self,
@@ -169,6 +182,28 @@ class DynamicInsertionOperator:
         ):
             raise ValueError("dynamic insertion received an unrevealed customer")
 
+        # The cap on the search is a deterministic budget on complete
+        # evaluations, never a wall-clock deadline: wall clock depends on
+        # machine load, so a wall-clock cap would make a run irreproducible
+        # across machines.  With the budget unset the caller's predicate is
+        # passed through unchanged (including ``None``), so the old path is
+        # untouched.
+        full_evaluation_count = [0]
+        budget = self.candidate_budget
+        if budget is not None:
+            caller_stop = stop_requested
+
+            def stop_requested() -> bool:  # noqa: F811 - deliberate rebind
+                if caller_stop is not None and caller_stop():
+                    return True
+                return full_evaluation_count[0] >= budget
+
+        screen = (
+            _build_direct_insertion_screen(initial_future, evaluator)
+            if self.prefilter_ineligible_assets
+            else None
+        )
+
         before_calls = evaluator.full_calls
         committed_before = _committed_snapshot(evaluator)
         pending = tuple(
@@ -223,6 +258,7 @@ class DynamicInsertionOperator:
                     reason,
                 )
                 return None
+            full_evaluation_count[0] += 1
             try:
                 evaluation = evaluator.evaluate(candidate)
             except (TypeError, ValueError) as error:
@@ -379,6 +415,7 @@ class DynamicInsertionOperator:
             for candidate, candidate_id, changed_duty_count in _direct_insertion_candidates(
                 initial_future,
                 pending,
+                screen=screen,
             ):
                 if stop_requested is not None and stop_requested():
                     break
@@ -489,9 +526,110 @@ class DynamicInsertionOperator:
         )
 
 
+@dataclass(frozen=True)
+class DirectInsertionScreen:
+    """Necessary conditions applied before any complete candidate evaluation.
+
+    The single rule here is a *necessary* load condition already enforced
+    downstream by the exact dynamic scheduler, so a screened-out placement
+    could never have become an accepted candidate.  The screen therefore
+    removes evaluations, never reachable solutions.
+
+    Deliberately absent: any rule about *when* an asset becomes free.  The
+    exact scheduler does not reject an asset that is still busy at the cut,
+    it delays the departure (``dynamic_multitrip_schedule.py:1059``,
+    ``boundary = max(stage_start, asset.available_second)``), so an
+    availability test here would prune candidates the complete ruler accepts.
+    """
+
+    demand_by_customer: Mapping[str, float]
+    load_ceiling_by_trip: Mapping[tuple[str, int], float]
+    load_ceiling_by_new_trip: Mapping[str, float]
+
+    def _demand(self, customer_id: str) -> float:
+        return float(self.demand_by_customer.get(str(customer_id), 0.0))
+
+    def allows_trip(
+        self,
+        duty_id: str,
+        trip_index: int,
+        planned_customer_ids: tuple[str, ...],
+        customer_id: str,
+    ) -> bool:
+        ceiling = self.load_ceiling_by_trip.get((duty_id, int(trip_index)))
+        if ceiling is None:
+            return True
+        planned = sum(self._demand(item) for item in planned_customer_ids)
+        return planned + self._demand(customer_id) <= float(ceiling) + _LOAD_TOL
+
+    def allows_new_trip(self, duty_id: str, customer_id: str) -> bool:
+        ceiling = self.load_ceiling_by_new_trip.get(duty_id)
+        if ceiling is None:
+            return True
+        return self._demand(customer_id) <= float(ceiling) + _LOAD_TOL
+
+
+def _build_direct_insertion_screen(
+    individual: DutyIndividual,
+    evaluator: DutyFullEvaluator,
+) -> DirectInsertionScreen:
+    """Derive the screen from the same authorities the evaluator uses."""
+
+    state = evaluator.context.dynamic_state
+    bundle = evaluator.context.bundle
+    instance = bundle.instance
+    demand_by_customer = {
+        node.node_id: float(node.demand)
+        for node in instance.nodes
+        if node.node_type.lower() == "c"
+    }
+    fallback_capacity = float(
+        getattr(bundle.prices, "Q_capacity", inf) or inf
+    )
+
+    ceiling_by_trip: dict[tuple[str, int], float] = {}
+    ceiling_by_new_trip: dict[str, float] = {}
+    for duty in individual.duties:
+        duty_id = duty.physical_vehicle_id
+        try:
+            capacity = float(
+                instance.payload_capacity_kg(
+                    duty.vehicle_type,
+                    fallback=fallback_capacity,
+                )
+            )
+        except (AttributeError, TypeError, ValueError):
+            capacity = inf
+        ceiling_by_new_trip[duty_id] = capacity
+        asset = None if state is None else state.asset_states.get(duty_id)
+        for trip in duty.trips:
+            ceiling_by_trip[(duty_id, int(trip.trip_index))] = capacity
+        # The continuation trip inherits the load still on board at the cut;
+        # the exact scheduler refuses it with "exceeds inherited load"
+        # (``dynamic_multitrip_schedule.py:2184-2190``).
+        if (
+            asset is not None
+            and duty.trips
+            and getattr(asset, "continuation_route_id", None) is not None
+            and getattr(asset, "virtual_origin_node_id", None) is not None
+        ):
+            first_index = int(duty.trips[0].trip_index)
+            ceiling_by_trip[(duty_id, first_index)] = min(
+                capacity,
+                float(asset.remaining_load_kg),
+            )
+    return DirectInsertionScreen(
+        demand_by_customer=demand_by_customer,
+        load_ceiling_by_trip=ceiling_by_trip,
+        load_ceiling_by_new_trip=ceiling_by_new_trip,
+    )
+
+
 def _direct_insertion_candidates(
     initial: DutyIndividual,
     customer_ids: tuple[str, ...],
+    *,
+    screen: DirectInsertionScreen | None = None,
 ):
     """Enumerate every unlocked asset/trip/position insertion deterministically.
 
@@ -500,6 +638,11 @@ def _direct_insertion_candidates(
     visited, then every editable existing trip position and one new trip are
     tried.  Multiple revealed customers are placed recursively, so a terminal
     candidate contains the whole batch rather than only its first order.
+
+    ``screen`` is optional and off by default.  When supplied, its necessary
+    conditions are checked at every recursion level against the partially
+    built individual, so a rejected placement prunes the whole subtree of
+    later customers underneath it instead of being rediscovered at each leaf.
     """
 
     ordered_customers = tuple(dict.fromkeys(map(str, customer_ids)))
@@ -527,6 +670,13 @@ def _direct_insertion_candidates(
         ):
             for trip in duty.trips:
                 if trip.trip_index in duty.locked_charging_trip_indices:
+                    continue
+                if screen is not None and not screen.allows_trip(
+                    duty.physical_vehicle_id,
+                    trip.trip_index,
+                    trip.customer_ids,
+                    customer_id,
+                ):
                     continue
                 first_position = len(trip.locked_customer_prefix)
                 for position in range(first_position, len(trip.customer_ids) + 1):
@@ -556,6 +706,11 @@ def _direct_insertion_candidates(
                         changed_duty_ids.union(move.changed_duty_ids),
                     )
 
+            if screen is not None and not screen.allows_new_trip(
+                duty.physical_vehicle_id,
+                customer_id,
+            ):
+                continue
             move = InsertUnservedMove(
                 action_id=(
                     f"{customer_id}:{duty.physical_vehicle_id}:new-trip"

@@ -54,6 +54,30 @@ RUNTIME = Path(
     "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723"
 )
 
+# 2026-09-08: this batch used to run on the solver defaults (carbon price
+# 0.07502, no kernel search, the pre-confirming-round stopping rule) while
+# every other paper section runs the baseline in run_ablation_one.sh.  These
+# flags align the coalition enumeration with that baseline; --package lets it
+# read the final instance suite instead of the hard-coded package above.
+BASELINE_SOLVER_ARGV: tuple[str, ...] = (
+    "--carbon-price",
+    "0.2",
+    "--population-mode",
+    "copied_hgs_defaults",
+    "--recharge-mode",
+    "on_demand",
+    "--depot-curve",
+    "registered",
+    "--charge-timing-policy",
+    "cost_plus_carbon",
+    "--charging-prescreen",
+    "--search-mode",
+    "kernel_native",
+    "--no-ev-charge-time-proxy",
+    "--ev-reload-gap-proxy",
+    "--confirming-round",
+)
+
 
 @dataclass(frozen=True)
 class LoadedProblem:
@@ -121,12 +145,20 @@ def _load_problem(repo: Path, instance_id: str) -> LoadedProblem:
     def read_rows(path: Path) -> list[dict[str, str]]:
         resolved = path.resolve()
         if resolved == (package / "instance_catalog.csv").resolve():
+            # 2026-09-08: the final suite leaves matrix_source_instance_id
+            # empty for this instance while the instance's own pinned
+            # matrix_reference.json names it; fill it from there so the
+            # catalog lookup resolves, the same way node_count is patched.
+            def _patched(row: dict[str, str]) -> dict[str, str]:
+                patched = {**row, "node_count": str(len(node_rows))}
+                if not patched.get("matrix_source_instance_id"):
+                    patched["matrix_source_instance_id"] = str(
+                        reference["source_instance_id"]
+                    )
+                return patched
+
             return [
-                (
-                    {**row, "node_count": str(len(node_rows))}
-                    if row["instance_id"] == instance_id
-                    else row
-                )
+                (_patched(row) if row["instance_id"] == instance_id else row)
                 for row in china81_data._read_csv(resolved)
             ]
         if resolved == default_orders:
@@ -486,6 +518,7 @@ def _run_one(root: Path, coalition: CoalitionProblem) -> bool:
             "--depot-assignment-operator",
             "--arm",
             f"coalition-enumeration/{coalition.label}",
+            *BASELINE_SOLVER_ARGV,
         ]
         try:
             private_runner.main()
@@ -542,8 +575,20 @@ def main() -> int:
             "seed the union of their members' best solutions"
         ),
     )
+    parser.add_argument(
+        "--package",
+        type=Path,
+        default=None,
+        help=(
+            "instance package directory relative to the repo root; defaults "
+            "to the historical package this batch was built on"
+        ),
+    )
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
+    if args.package is not None:
+        global PACKAGE
+        PACKAGE = Path(args.package)
     source = _load_problem(repo, args.instance_id)
     if args.coalition == "all-singletons":
         requested = [(depot,) for depot in source.depot_ids]

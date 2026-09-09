@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import json
 import sys
-from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import asdict, dataclass, replace
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import asdict, dataclass, field as dataclass_field, replace
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any
@@ -287,6 +287,67 @@ class ProductionBackend:
 
     evaluator_identity = "Problem-HGS-DutyFullEvaluator-v2026-08-16"
 
+    # 2026-09-09: opt-in switches for the rolling arm.  All three defaults
+    # reproduce the behaviour behind the existing dynamic results, so a bare
+    # ProductionBackend() is unchanged.
+    prefilter_ineligible_assets: bool = False
+    partial_fallback: bool = False
+    insertion_candidate_budget: int | None = None
+    # 2026-09-09: the stage stop rule is patience-only, so a batch that keeps
+    # improving has no upper bound at all (measured on
+    # solver/reports/dynamic_v7_20260909_run1.log: batch 4 ran 51,403 cycles /
+    # 6,321 s while batches 1 and 3 stopped at ~20,000 cycles in 106 s / 149 s).
+    # A wall-clock budget would be load-dependent and therefore irreproducible;
+    # a total-cycle cap is deterministic.  ``stage_cycle_cap`` caps the rolling
+    # arm's stages only.  ``initial_plan`` and
+    # ``full_information_static_reference`` go through the same ``_run_hgs``,
+    # but capping them silently would move the reference the rolling arm is
+    # measured against, so they obey their own opt-in cap and nothing else.
+    stage_cycle_cap: int | None = None
+    reference_cycle_cap: int | None = None
+    # Set inside ``_run_hgs`` and drained by the diagnostics row of the stage
+    # that produced it.  ``compare=False`` keeps the frozen dataclass's
+    # ``__eq__``/``__hash__`` exactly as they were.
+    _stage_cap_hits: dict[tuple[str, int], bool] = dataclass_field(
+        default_factory=dict,
+        init=False,
+        repr=False,
+        compare=False,
+    )
+
+    def __post_init__(self) -> None:
+        for name in ("stage_cycle_cap", "reference_cycle_cap"):
+            value = getattr(self, name)
+            if value is not None and int(value) < 1:
+                raise ValueError(f"{name} must be at least 1; got {value!r}")
+
+    def _cycle_cap_for(self, arm: str) -> int | None:
+        """Which opt-in cap, if any, governs one stage call."""
+
+        if arm in REFERENCE_STAGE_ARMS:
+            return self.reference_cycle_cap
+        return self.stage_cycle_cap
+
+    def _stage_cap_diagnostics(
+        self,
+        arm: str,
+        stage_index: int,
+    ) -> dict[str, bool]:
+        """The cap flag for one finished stage, or nothing when uncapped.
+
+        Absent whenever no cap was configured, so a run with the switches off
+        writes exactly the diagnostics rows it wrote before this option existed.
+
+        Every seed in ``_run_hgs`` and every drain here use the same
+        ``(arm, stage_index)`` expression, and stage indices only ever
+        increase, so a stage that raises before its row is built (a
+        ``ProductionBackendHalt`` ends the run anyway) can leave one entry
+        behind but can never hand its flag to a later stage.
+        """
+
+        hit = self._stage_cap_hits.pop((arm, stage_index), None)
+        return {} if hit is None else {"stage_cycle_cap_hit": bool(hit)}
+
     def initial_plan(
         self,
         problem: ProductionDynamicProblem,
@@ -298,6 +359,9 @@ class ProductionBackend:
             arm="initial_plan",
             stage_index=0,
         )
+        # The initial plan carries no diagnostics row, so its cap flag has
+        # nowhere to go; drain it rather than leave a stale entry behind.
+        self._stage_cap_diagnostics("initial_plan", 0)
         static_solution = evaluation.prepared_solution
         static_certificate = evaluation.certificate
         static_ids = problem.static_customer_ids
@@ -359,6 +423,8 @@ class ProductionBackend:
         try:
             insertion = DynamicInsertionOperator(
                 enabled=True,
+                prefilter_ineligible_assets=self.prefilter_ineligible_assets,
+                candidate_budget=self.insertion_candidate_budget,
             ).apply(
                 frame.initial_future,
                 evaluator=frame.evaluator,
@@ -369,6 +435,19 @@ class ProductionBackend:
         except (DynamicInsertionFailure, TypeError, ValueError) as error:
             insertion = self._rolling_mechanical_fallback(frame, pending)
             if insertion is None:
+                partial = self._rolling_partial_fallback(
+                    problem,
+                    current,
+                    applied,
+                    float(trigger_second),
+                    pending,
+                    reason=(
+                        "dynamic_insertion_exception:"
+                        f"{type(error).__name__}"
+                    ),
+                )
+                if partial is not None:
+                    return partial
                 deferred = _deferred_state(
                     current,
                     frame,
@@ -397,6 +476,16 @@ class ProductionBackend:
             insertion.status != INSERTED_AND_FULL_EVALUATION_FEASIBLE
             or insertion.evaluation is None
         ):
+            partial = self._rolling_partial_fallback(
+                problem,
+                current,
+                applied,
+                float(trigger_second),
+                pending,
+                reason=f"no_feasible_candidate:{insertion.status}",
+            )
+            if partial is not None:
+                return partial
             diagnostic = {
                 "arm": "rolling_dynamic",
                 "kind": "dynamic_insertion_no_feasible_candidate",
@@ -451,6 +540,10 @@ class ProductionBackend:
                 "dynamic_insertion_candidate_count": int(
                     insertion.accounting.candidate_attempt_count
                 ),
+                **self._stage_cap_diagnostics(
+                    "rolling_dynamic",
+                    current.stage_index + 1,
+                ),
             },
         )
         return next_state, "rolling_dynamic_insertion_then_problem_hgs"
@@ -488,6 +581,180 @@ class ProductionBackend:
             ),
             status=INSERTED_AND_FULL_EVALUATION_FEASIBLE,
         )
+
+    def _rolling_partial_insertions(
+        self,
+        problem: ProductionDynamicProblem,
+        current: ProductionState,
+        applied_event_ids: Sequence[str],
+        trigger_second: float,
+        pending: Sequence[str],
+    ) -> tuple[ProductionState, tuple[str, ...], tuple[str, ...]]:
+        """Insert the pending batch one order at a time, keeping the winners.
+
+        ``insert_revealed_customer`` consumes exactly one revealed order and
+        the coverage check is taken from the stage instance, so a batch of two
+        or more can only be served through one stage per order.  This is the
+        same loop the sequential arm already runs in ``mechanical_dispatch``;
+        an order that finds no candidate is recorded and the rest continue.
+        """
+
+        work = current
+        placed: list[str] = []
+        deferred: list[str] = []
+        for customer_id in dict.fromkeys(map(str, pending)):
+            if customer_id in work.planning_active_customer_ids:
+                continue
+            attempt_active = frozenset(
+                {*work.planning_active_customer_ids, customer_id}
+            )
+            frame = self._build_stage(
+                problem,
+                work,
+                attempt_active,
+                float(trigger_second),
+                applied_event_ids,
+            )
+            started = _now()
+            try:
+                result = insert_revealed_customer(
+                    frame.initial_future,
+                    customer_id,
+                    frame.evaluator,
+                )
+            except MechanicalInsertionFailure:
+                # Only "this order found no candidate" defers the order.
+                deferred.append(customer_id)
+                continue
+            except (TypeError, ValueError) as error:
+                # A malformed cut is a defect, not a deferral.  Halt exactly
+                # the way the sequential arm halts in ``mechanical_dispatch``.
+                raise ProductionBackendHalt(
+                    "mechanical baseline cannot consume the dynamic cut for "
+                    f"{customer_id}: {type(error).__name__}: {error}"
+                ) from error
+            if not result.evaluation.feasible:
+                deferred.append(customer_id)
+                continue
+            work = _successful_state(
+                work,
+                frame,
+                result.individual,
+                result.evaluation,
+                active_customer_ids=attempt_active,
+                stage_index=work.stage_index,
+                diagnostics={
+                    "arm": "rolling_dynamic",
+                    # The counter in ``_summary`` keys off this exact string.
+                    # These seconds land in ``mechanical_insertion_wall_seconds``
+                    # like the sequential arm's, so the count must move with
+                    # them; ``source`` keeps the two paths distinguishable.
+                    "kind": "mechanical_insertion",
+                    "source": "partial_mechanical_fallback",
+                    "customer_id": customer_id,
+                    "candidate_class": result.decision.candidate_class,
+                },
+            )
+            work = replace(
+                work,
+                mechanical_insertion_wall_seconds=(
+                    work.mechanical_insertion_wall_seconds + (_now() - started)
+                ),
+            )
+            placed.append(customer_id)
+        return work, tuple(placed), tuple(deferred)
+
+    def _rolling_partial_fallback(
+        self,
+        problem: ProductionDynamicProblem,
+        current: ProductionState,
+        applied_event_ids: Sequence[str],
+        trigger_second: float,
+        pending: Sequence[str],
+        *,
+        reason: str,
+    ) -> tuple[ProductionState, str] | None:
+        """Serve the placeable part of a batch instead of deferring all of it.
+
+        Returns ``None`` when the switch is off, when nothing could be placed,
+        or when the resulting stage is not a complete feasible plan; the
+        caller then keeps its existing all-or-nothing deferral.
+        """
+
+        if not self.partial_fallback:
+            return None
+        work, placed, deferred = self._rolling_partial_insertions(
+            problem,
+            current,
+            applied_event_ids,
+            float(trigger_second),
+            pending,
+        )
+        if not placed:
+            return None
+        work = replace(
+            work,
+            deferred_customer_ids=tuple(
+                dict.fromkeys((*work.deferred_customer_ids, *deferred))
+            ),
+        )
+        served_active = frozenset(work.planning_active_customer_ids)
+        report_frame = self._build_stage(
+            problem,
+            work,
+            served_active,
+            float(trigger_second),
+            applied_event_ids,
+        )
+        report_evaluation = report_frame.evaluator.evaluate(
+            report_frame.initial_future
+        )
+        if (
+            report_frame.initial_future.unserved_customers
+            or not report_evaluation.feasible
+        ):
+            return None
+        candidate, evaluation, run_result = self._run_hgs(
+            report_frame.initial_future,
+            report_frame.context,
+            arm="rolling_dynamic",
+            stage_index=current.stage_index + 1,
+        )
+        if not evaluation.feasible:
+            candidate = report_frame.initial_future
+            evaluation = report_evaluation
+        next_state = _successful_state(
+            work,
+            report_frame,
+            candidate,
+            evaluation,
+            active_customer_ids=served_active,
+            stage_index=current.stage_index + 1,
+            diagnostics={
+                "arm": "rolling_dynamic",
+                # This branch really did spend one Problem-HGS call above, so
+                # it must be counted like every other stage call: the audit's
+                # ``actual_hgs_call_count`` in ``_summary`` counts rows whose
+                # ``kind`` is exactly ``problem_hgs_stage``, and the declared
+                # side of that audit is one call per trigger batch.  Labelling
+                # this row anything else would under-report the calls made and
+                # fail the budget/call check on a run that behaved correctly.
+                # ``source`` keeps this path distinguishable from the ordinary
+                # insert-then-reoptimize stage.
+                "kind": "problem_hgs_stage",
+                "source": "partial_mechanical_fallback",
+                "reason": reason,
+                "inserted_customer_ids": list(placed),
+                "deferred_customer_ids": list(deferred),
+                "iterations": int(run_result.iterations),
+                "termination_status": run_result.termination_status,
+                **self._stage_cap_diagnostics(
+                    "rolling_dynamic",
+                    current.stage_index + 1,
+                ),
+            },
+        )
+        return next_state, "rolling_partial_mechanical_fallback"
 
     def mechanical_dispatch(
         self,
@@ -778,6 +1045,10 @@ class ProductionBackend:
                     "arm": "full_information_static_reference",
                     "kind": "problem_hgs_stage",
                     "termination_status": run_result.termination_status,
+                    **self._stage_cap_diagnostics(
+                        "full_information_static_reference",
+                        len(dynamic_ids),
+                    ),
                 },
             ),
             applied_event_ids=applied,
@@ -1165,22 +1436,20 @@ class ProductionBackend:
                 candidate if not candidate.unserved_customers else None
             ),
         )
-        _telemetry_last = [_now()]
+        cycle_cap = self._cycle_cap_for(arm)
+        if cycle_cap is not None:
+            self._stage_cap_hits[(arm, stage_index)] = False
 
-        def _stage_stop(state):
-            if _now() - _telemetry_last[0] >= 60.0:
-                _telemetry_last[0] = _now()
-                print(
-                    f"STAGE {arm}#{stage_index} cycle={state.iterations} "
-                    f"best={state.best_cost} "
-                    f"noimp={state.iterations_without_improvement}",
-                    file=sys.stderr,
-                    flush=True,
-                )
-            return (
-                state.iterations_without_improvement
-                >= parameters.stagnation_patience
-            )
+        def _mark_cap_hit() -> None:
+            self._stage_cap_hits[(arm, stage_index)] = True
+
+        _stage_stop = _stage_stop_rule(
+            arm=arm,
+            stage_index=stage_index,
+            patience=parameters.stagnation_patience,
+            cycle_cap=cycle_cap,
+            on_cap_hit=_mark_cap_hit,
+        )
 
         result = run_integrated_problem_hgs(
             tuple(built.candidates),
@@ -1205,6 +1474,58 @@ class ProductionBackend:
         )
         _require_normal_hgs_termination(result, arm=arm)
         return result.best, result.best_evaluation, result
+
+
+REFERENCE_STAGE_ARMS = frozenset(
+    {"initial_plan", "full_information_static_reference"}
+)
+
+
+def _stage_stop_rule(
+    *,
+    arm: str,
+    stage_index: int,
+    patience: int,
+    cycle_cap: int | None,
+    on_cap_hit: Callable[[], None],
+    clock: Callable[[], float] | None = None,
+) -> Callable[[Any], bool]:
+    """Build one HGS stage's stopping rule.
+
+    ``cycle_cap is None`` reproduces the patience-only rule bit for bit: the
+    stage ends when ``iterations_without_improvement`` reaches ``patience``.
+    A cap only ever stops the search earlier -- it never relaxes patience.
+
+    A capped stop goes through the very same ``stop`` callback as patience
+    exhaustion, so ``run_integrated_problem_hgs`` still finishes through
+    ``_finish_result(..., status="STOPPED_BY_CALLER")`` (runner.py:378) and the
+    stage's ``termination_status`` stays inside
+    ``NORMAL_PROBLEM_HGS_TERMINATIONS`` (experiment_acceptance.py:11), which is
+    what ``_require_normal_hgs_termination`` and audit check 6 read.  The cap
+    is therefore invisible to the accounting; the visible record is the
+    ``stage_cycle_cap_hit`` flag on the stage's diagnostics row.
+    """
+
+    # ``_now`` is defined further down this module, so bind it at call time.
+    clock = _now if clock is None else clock
+    telemetry_last = [clock()]
+
+    def _stage_stop(state: Any) -> bool:
+        if clock() - telemetry_last[0] >= 60.0:
+            telemetry_last[0] = clock()
+            print(
+                f"STAGE {arm}#{stage_index} cycle={state.iterations} "
+                f"best={state.best_cost} "
+                f"noimp={state.iterations_without_improvement}",
+                file=sys.stderr,
+                flush=True,
+            )
+        if cycle_cap is not None and int(state.iterations) >= int(cycle_cap):
+            on_cap_hit()
+            return True
+        return state.iterations_without_improvement >= patience
+
+    return _stage_stop
 
 
 def _require_normal_hgs_termination(result: Any, *, arm: str) -> None:

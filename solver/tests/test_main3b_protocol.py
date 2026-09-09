@@ -153,3 +153,120 @@ def test_production_backend_rejects_internal_error() -> None:
             abnormal,
             arm="rolling_dynamic",
         )
+
+
+# --------------------------------------------------------------------------
+# 2026-09-09: the opt-in deterministic per-stage cycle cap.
+# --------------------------------------------------------------------------
+
+
+class _StubState:
+    """The two fields the stage stop rule reads off ProblemHGSSearchState."""
+
+    def __init__(self, iterations: int, iterations_without_improvement: int):
+        self.iterations = iterations
+        self.iterations_without_improvement = iterations_without_improvement
+        self.best_cost = 1.0
+
+
+def _run_stub_stage(
+    *,
+    cycle_cap: int | None,
+    patience: int = 20_000,
+    improves_every_cycle: bool = True,
+    max_cycles: int = 200,
+) -> tuple[int | None, list[bool]]:
+    """Drive the stop rule over a stub stage; return the stopping cycle."""
+
+    hits: list[bool] = []
+    stop = main3b_backend._stage_stop_rule(
+        arm="rolling_dynamic",
+        stage_index=4,
+        patience=patience,
+        cycle_cap=cycle_cap,
+        on_cap_hit=lambda: hits.append(True),
+        clock=lambda: 0.0,
+    )
+    for cycle in range(max_cycles + 1):
+        noimp = 0 if improves_every_cycle else cycle
+        if stop(_StubState(cycle, noimp)):
+            return cycle, hits
+    return None, hits
+
+
+def test_stage_cycle_cap_stops_a_stage_that_improves_every_cycle() -> None:
+    stopped_at, hits = _run_stub_stage(cycle_cap=25)
+    assert stopped_at == 25
+    assert hits == [True]
+
+
+def test_stage_cycle_cap_off_leaves_the_patience_rule_alone() -> None:
+    # Improving every cycle: patience never fires, and without a cap the
+    # stage has no upper bound at all -- the behaviour this option gates.
+    stopped_at, hits = _run_stub_stage(cycle_cap=None, max_cycles=100_000)
+    assert stopped_at is None
+    assert hits == []
+    # Stagnating: the patience rule fires at exactly the patience value.
+    stopped_at, hits = _run_stub_stage(
+        cycle_cap=None,
+        patience=30,
+        improves_every_cycle=False,
+    )
+    assert stopped_at == 30
+    assert hits == []
+
+
+def test_stage_cycle_cap_never_outlives_patience() -> None:
+    # A cap looser than patience must not extend a stagnating stage.
+    stopped_at, hits = _run_stub_stage(
+        cycle_cap=100,
+        patience=30,
+        improves_every_cycle=False,
+    )
+    assert stopped_at == 30
+    assert hits == []
+
+
+def test_capped_stop_is_a_normal_termination() -> None:
+    # The cap returns True from the same stop callback as patience, so the
+    # stage still finishes STOPPED_BY_CALLER and the audit sees it as normal.
+    main3b_backend._require_normal_hgs_termination(
+        SimpleNamespace(termination_status="STOPPED_BY_CALLER"),
+        arm="rolling_dynamic",
+    )
+    assert "STOPPED_BY_CALLER" in main3b_backend.NORMAL_PROBLEM_HGS_TERMINATIONS
+
+
+def test_reference_arms_ignore_the_rolling_cap() -> None:
+    backend = main3b_backend.ProductionBackend(stage_cycle_cap=25)
+    assert backend._cycle_cap_for("rolling_dynamic") == 25
+    assert backend._cycle_cap_for("initial_plan") is None
+    assert backend._cycle_cap_for("full_information_static_reference") is None
+    reference = main3b_backend.ProductionBackend(reference_cycle_cap=7)
+    assert reference._cycle_cap_for("rolling_dynamic") is None
+    assert reference._cycle_cap_for("initial_plan") == 7
+    assert reference._cycle_cap_for("full_information_static_reference") == 7
+
+
+def test_cap_diagnostics_absent_when_the_switch_is_off() -> None:
+    off = main3b_backend.ProductionBackend()
+    assert off._stage_cap_diagnostics("rolling_dynamic", 4) == {}
+    on = main3b_backend.ProductionBackend(stage_cycle_cap=25)
+    on._stage_cap_hits[("rolling_dynamic", 4)] = False
+    assert on._stage_cap_diagnostics("rolling_dynamic", 4) == {
+        "stage_cycle_cap_hit": False
+    }
+    on._stage_cap_hits[("rolling_dynamic", 5)] = True
+    assert on._stage_cap_diagnostics("rolling_dynamic", 5) == {
+        "stage_cycle_cap_hit": True
+    }
+    # Draining is what keeps consecutive stages apart: once read, the
+    # flag is gone, so the next stage starts from no entry at all.
+    assert on._stage_cap_diagnostics("rolling_dynamic", 5) == {}
+
+
+def test_non_positive_cycle_cap_is_rejected() -> None:
+    with pytest.raises(ValueError, match="stage_cycle_cap"):
+        main3b_backend.ProductionBackend(stage_cycle_cap=0)
+    with pytest.raises(ValueError, match="reference_cycle_cap"):
+        main3b_backend.ProductionBackend(reference_cycle_cap=-1)

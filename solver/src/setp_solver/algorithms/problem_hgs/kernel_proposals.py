@@ -63,17 +63,35 @@ class _LockPinnedPenaltyManager(PenaltyManager):
     """Upstream penalty manager whose mechanism-lock dimensions never adapt."""
 
     pinned_dimensions: tuple[int, ...] = ()
+    # Raw (pre-booster) penalty written into the pinned dimensions.  None --
+    # the historical behaviour and every caller that does not ask for another
+    # value -- keeps ``params.max_penalty``, so the pinned dimensions carry
+    # exactly the value they carried before this knob existed.
+    pinned_penalty: float | None = None
 
-    def pin_dimensions(self, dimensions: tuple[int, ...]) -> None:
+    def pin_dimensions(
+        self,
+        dimensions: tuple[int, ...],
+        *,
+        penalty: float | None = None,
+    ) -> None:
         for index in dimensions:
             if index < 0 or index >= len(self._penalties) - 2:
                 raise ValueError("pinned dimension must be a load dimension")
+        if penalty is not None and not float(penalty) > 0.0:
+            raise ValueError("pinned penalty must be positive")
         self.pinned_dimensions = tuple(dimensions)
+        self.pinned_penalty = None if penalty is None else float(penalty)
         self._repin()
 
     def _repin(self) -> None:
+        value = (
+            self._params.max_penalty
+            if self.pinned_penalty is None
+            else self.pinned_penalty
+        )
         for index in self.pinned_dimensions:
-            self._penalties[index] = self._params.max_penalty
+            self._penalties[index] = value
 
     def register(self, sol) -> None:
         super().register(sol)
@@ -112,6 +130,7 @@ class IndependentKernelDutyRouteProposalEngine:
         vehicle_fixed_cost_in_proxy: bool = True,
         max_reloads_per_vehicle: int | None = None,
         vehicle_type_dedup_enabled: bool = True,
+        mechanism_lock_penalty: float | None = None,
     ) -> None:
         if kernel_version != "0.12.2":
             raise RuntimeError("Duty route proposals require IndependentKernel 0.12.2 HGS")
@@ -237,6 +256,24 @@ class IndependentKernelDutyRouteProposalEngine:
         # dedup falls back to one type per vehicle on its own.  False restores
         # the historic 1:1 model bit for bit.
         self.vehicle_type_dedup_enabled = bool(vehicle_type_dedup_enabled)
+        # 2026-09-09: per-unit penalty the local search pays for breaking a
+        # mechanism lock (the pinned load dimensions built below), stated in
+        # the units the local search actually sees, i.e. AFTER the repair
+        # booster.  None keeps the historical value bit for bit:
+        # ``params.penalty.max_penalty`` (100,000) x ``repair_booster`` (12)
+        # = 1,200,000 per unit.  The pinned dimensions cover whichever locks
+        # exist -- depot locks when ``cross_depot`` is off, vehicle-type locks
+        # when ``type_exchange`` is off -- so this knob moves both.
+        self.mechanism_lock_penalty = (
+            None
+            if mechanism_lock_penalty is None
+            else float(mechanism_lock_penalty)
+        )
+        if (
+            self.mechanism_lock_penalty is not None
+            and not self.mechanism_lock_penalty > 0.0
+        ):
+            raise ValueError("mechanism_lock_penalty must be positive")
         # Realised electricity + carbon price per kWh fed back from an exact
         # evaluation (kernel-native search rounds); None keeps the calendar
         # estimate.
@@ -361,8 +398,33 @@ class IndependentKernelDutyRouteProposalEngine:
         # (2026-09-02: with adaptive penalties the type lock eroded to the
         # minimum within a run and the no-type-exchange arm ended up with EVs.)
         first_lock_dimension = 1 + int(self.rebuilt_volume_capacity_enabled)
+        # ``mechanism_lock_penalty`` is quoted in the units the local search
+        # sees, and ``_cost_evaluator`` is the BOOSTED evaluator, so divide
+        # the booster out before writing the raw pinned value.  None leaves
+        # the pin at ``params.penalty.max_penalty`` exactly as before.
+        self.mechanism_lock_penalty_repair_booster = int(
+            params.penalty.repair_booster
+        )
+        requested_raw_pin = (
+            None
+            if self.mechanism_lock_penalty is None
+            else self.mechanism_lock_penalty
+            / float(self.mechanism_lock_penalty_repair_booster)
+        )
+        # Always-valued mirrors, so an artefact can record what the pin
+        # actually carried without re-deriving the upstream default.
+        self.mechanism_lock_penalty_raw = float(
+            params.penalty.max_penalty
+            if requested_raw_pin is None
+            else requested_raw_pin
+        )
+        self.mechanism_lock_penalty_effective = (
+            self.mechanism_lock_penalty_raw
+            * float(self.mechanism_lock_penalty_repair_booster)
+        )
         penalty_manager.pin_dimensions(
-            tuple(range(first_lock_dimension, self._data.num_load_dimensions))
+            tuple(range(first_lock_dimension, self._data.num_load_dimensions)),
+            penalty=requested_raw_pin,
         )
         self.locked_load_dimensions = penalty_manager.pinned_dimensions
         self._penalty_manager = penalty_manager
@@ -435,6 +497,19 @@ class IndependentKernelDutyRouteProposalEngine:
             + (
                 "vtype-dedup:"
                 if self.vehicle_type_dedup_enabled
+                else ""
+            )
+            # Tagged only where it can change a search, like the first-trip
+            # opening above: the knob writes into the pinned lock dimensions,
+            # and an arm that keeps its mechanisms open has none, so its
+            # lineage string stays bit for bit what it was before this knob
+            # existed even when the flag is passed to both arms at once.
+            + (
+                f"lock-penalty-{self.mechanism_lock_penalty:g}:"
+                if (
+                    self.mechanism_lock_penalty is not None
+                    and self.locked_load_dimensions
+                )
                 else ""
             )
             + self.stream_role

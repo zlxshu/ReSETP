@@ -359,6 +359,22 @@ def run_paired_pipeline(
         "raw_rows": tuple(raw_rows),
         "event_rows": tuple(event_rows),
         "paired_rows": (paired_row,),
+        "backend_options": _backend_options(backend),
+    }
+
+
+def _backend_options(backend: ExperimentBackend) -> dict[str, Any]:
+    """Record the rolling-arm switches actually in force for this run."""
+
+    return {
+        name: getattr(backend, name, None)
+        for name in (
+            "prefilter_ineligible_assets",
+            "partial_fallback",
+            "insertion_candidate_budget",
+            "stage_cycle_cap",
+            "reference_cycle_cap",
+        )
     }
 
 
@@ -666,6 +682,7 @@ def write_output_package(output_dir: Path, results: Mapping[str, Any]) -> bool:
         "event_source": "paper mixed-event table",
         "stop_rule": "20,000 consecutive non-improving iterations; no restart",
         "arms": [ARM_STATIC, ARM_MECHANICAL, ARM_DYNAMIC],
+        "backend_options": dict(results.get("backend_options", {})),
     }
     decision = {
         "accepted": accepted,
@@ -715,6 +732,53 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         default=None,
         help="carbon price in CNY/kg; default keeps the China81 constant",
     )
+    parser.add_argument(
+        "--prefilter-ineligible-assets",
+        action="store_true",
+        help=(
+            "skip trips whose load already rules out a revealed order before "
+            "any complete evaluation; default off keeps the old search"
+        ),
+    )
+    parser.add_argument(
+        "--partial-fallback",
+        action="store_true",
+        help=(
+            "when the rolling insertion fails, serve the placeable part of "
+            "the batch instead of deferring all of it; default off"
+        ),
+    )
+    parser.add_argument(
+        "--insertion-candidate-budget",
+        type=int,
+        default=None,
+        help=(
+            "maximum complete candidate evaluations per rolling batch; "
+            "default unlimited. Deterministic, unlike a wall-clock cap"
+        ),
+    )
+    parser.add_argument(
+        "--stage-cycle-cap",
+        type=int,
+        default=None,
+        help=(
+            "stop each rolling-arm Problem-HGS stage after this many total "
+            "cycles even while it is still improving; default unlimited "
+            "(patience only). Deterministic, unlike a wall-clock budget. "
+            "Does not touch the initial plan or the static reference"
+        ),
+    )
+    parser.add_argument(
+        "--reference-cycle-cap",
+        type=int,
+        default=None,
+        help=(
+            "the same total-cycle cap for the initial plan and the "
+            "full-information static reference; default unlimited. Separate "
+            "from --stage-cycle-cap on purpose: capping the reference moves "
+            "the yardstick the rolling arm is measured against"
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -744,7 +808,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             stream,
             carbon_price_cny_per_kg=args.carbon_price,
         )
-        backend = ProductionBackend()
+        backend = ProductionBackend(
+            prefilter_ineligible_assets=bool(args.prefilter_ineligible_assets),
+            partial_fallback=bool(args.partial_fallback),
+            insertion_candidate_budget=args.insertion_candidate_budget,
+            stage_cycle_cap=args.stage_cycle_cap,
+            reference_cycle_cap=args.reference_cycle_cap,
+        )
     results = run_paired_pipeline(problem=problem, backend=backend)
     accepted = write_output_package(args.output_dir, results)
     print(
