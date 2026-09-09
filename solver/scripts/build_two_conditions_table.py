@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import re
 import statistics as st
 import sys
 from pathlib import Path
@@ -29,11 +30,12 @@ OUT_TEX = REPO_ROOT / "docs/paper_v2/generated_tables/two_conditions_table.tex"
 
 # 2026-09-10 用户令：主角改为碳强度引导有序充电（carbon_min），对照为无序充电（asap）。
 # (条件标签, 无序充电格目录, 碳强度引导有序充电目录)
+# 2026-09-09：加"电动车数"列后表宽超出版心，条件标签改为两行 makecell（内容不变）
 ROWS = [
-    (r"北京现行时段，碳价0.20（基准）", GRID_DIR / "beijing/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_20260906/carbon_min"),
-    (r"谷段设在午间，碳价0.20", GRID_DIR / "midday/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/carbon_min_two_conditions_20260910/midday_P0.2"),
-    (r"北京现行时段，碳价1.00", GRID_DIR / "beijing/P=1.0/MT-HGS", REPO_ROOT / "solver/reports/carbon_min_two_conditions_20260910/beijing_P1.0"),
-    (r"谷段设在午间，碳价1.00", GRID_DIR / "midday/P=1.0/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_midday_P1.0_20260909/carbon_min"),
+    (r"\makecell{北京现行时段\\碳价0.20（基准）}", GRID_DIR / "beijing/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_20260906/carbon_min"),
+    (r"\makecell{谷段设在午间\\碳价0.20}", GRID_DIR / "midday/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/carbon_min_two_conditions_20260910/midday_P0.2"),
+    (r"\makecell{北京现行时段\\碳价1.00}", GRID_DIR / "beijing/P=1.0/MT-HGS", REPO_ROOT / "solver/reports/carbon_min_two_conditions_20260910/beijing_P1.0"),
+    (r"\makecell{谷段设在午间\\碳价1.00}", GRID_DIR / "midday/P=1.0/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_midday_P1.0_20260909/carbon_min"),
 ]
 ARMS = (("asap",), ("carbon_min",))
 METRICS = ("total_cost", "E_total", "E_cv_direct", "E_ev_indirect")
@@ -83,26 +85,29 @@ def main() -> int:
     args = ap.parse_args()
 
     lines = [
-        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccccccc@{}}",
+        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccccccccc@{}}",
         r"    \toprule",
         # "条件"上下左右居中：表头共三行文字（第一行一行、第二行两行），multirow 跨 3 行高度
-        r"    \multirow{3}{*}{条件} & \multicolumn{3}{c}{无序充电} & \multicolumn{3}{c}{碳强度引导有序充电}\\",
-        r"    \cmidrule(lr){2-4}\cmidrule(lr){5-7}",
-        r"     & \makecell{电动车占比\\（\%）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & "
-        r"\makecell{电动车占比\\（\%）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）}\\",
+        r"    \multirow{3}{*}{条件} & \multicolumn{4}{c}{无序充电} & \multicolumn{4}{c}{碳强度引导有序充电}\\",
+        r"    \cmidrule(lr){2-5}\cmidrule(lr){6-9}",
+        # 2026-09-09 用户令：正文引用的是"电动车 3.9→3.4 辆"这类辆数，表里必须有这一列
+        r"     & \makecell{电动车数\\（辆）} & \makecell{电动车\\占比（\%）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & "
+        r"\makecell{电动车数\\（辆）} & \makecell{电动车\\占比（\%）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）}\\",
         r"    \midrule",
     ]
     for label, asap_dir, carbon_dir in ROWS:
         asap = load_arm(asap_dir, "asap")
         both = load_arm(carbon_dir, "carbon_min")
         ev = [st.mean(r["ev_share"] for r in asap), st.mean(r["ev_share"] for r in both)]
+        nev = [st.mean(r["n_ev"] for r in asap), st.mean(r["n_ev"] for r in both)]
         tc = [st.mean(r["total_cost"] for r in asap), st.mean(r["total_cost"] for r in both)]
         em = [st.mean(r["E_total"] for r in asap), st.mean(r["E_total"] for r in both)]
         tcs = [f"{v:.2f}" for v in tc]; ems = [f"{v:.2f}" for v in em]
-        tcs[tc.index(min(tc))] = r"\textbf{" + tcs[tc.index(min(tc))] + "}"
-        ems[em.index(min(em))] = r"\textbf{" + ems[em.index(min(em))] + "}"
-        lines.append(f"    {label} & {ev[0]:.1f} & {tcs[0]} & {ems[0]} & {ev[1]:.1f} & {tcs[1]} & {ems[1]}\\\\")
-        print(f"{label}: 即充 电动车 {ev[0]:.1f} {tc[0]:.2f}/{em[0]:.2f} | 本文 电动车 {ev[1]:.1f} {tc[1]:.2f}/{em[1]:.2f} | 众数 {mode(asap)}→{mode(both)}", file=sys.stderr)
+        lines.append(f"    {label} & {nev[0]:.1f} & {ev[0]:.1f} & {tcs[0]} & {ems[0]} & "
+                     f"{nev[1]:.1f} & {ev[1]:.1f} & {tcs[1]} & {ems[1]}\\\\")
+        plain = label.replace(r"\makecell{", "").replace("}", "").replace(r"\\", "，")
+        print(f"{plain}: 即充 电动车 {nev[0]:.1f}辆/{ev[0]:.1f}% {tc[0]:.2f}/{em[0]:.2f} | "
+              f"本文 电动车 {nev[1]:.1f}辆/{ev[1]:.1f}% {tc[1]:.2f}/{em[1]:.2f} | 众数 {mode(asap)}→{mode(both)}", file=sys.stderr)
     lines += [r"    \bottomrule", r"  \end{tabular*}"]
     tex = "\n".join(lines) + "\n"
     if args.dry_run:

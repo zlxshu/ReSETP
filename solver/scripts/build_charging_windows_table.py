@@ -161,20 +161,15 @@ def main() -> int:
     # 竖排：窗口分块 × 方案逐行（13 列横排超宽 23.9 pt，2026-09-06 改为此式；块内成本最低与碳排量最低各自加粗）
     names = [h for h, _, _ in ARMS]
     lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llccc@{}}", r"    \toprule",
-             r"    补电窗口 & 充电安排 & 充电开始时刻 & 充电成本（元） & 碳排量（kgCO$_2$e）\\",
+             r"    可充电时段 & 充电安排 & 充电开始时刻 & 充电成本（元） & 碳排量（kgCO$_2$e）\\",
              r"    \midrule"]
     blocks = [(lab, [(d[key][0], d[key][1], fmt_time(d[key][3])) for d in data]) for key, lab in WINDOWS]
     blocks.append(("合计", [(sum(v[0] for v in d.values()), sum(v[1] for v in d.values()), "") for d in data]))
     for bi, (lab, vals) in enumerate(blocks):
         if bi:
             lines.append(r"    \midrule")
-        cmin = min(v[0] for v in vals); emin = min(v[1] for v in vals)
         for ai, (k, e, tm) in enumerate(vals):
             kk = fmt(k); ee = fmt(e)
-            if abs(k - cmin) < 1e-9:
-                kk = r"\textbf{" + kk + "}"
-            if abs(e - emin) < 1e-9:
-                ee = r"\textbf{" + ee + "}"
             first = (r"\multirow{" + str(len(ARMS)) + "}{*}{" + lab + "}") if ai == 0 else ""
             lines.append(f"    {first} & {names[ai]} & {tm} & {kk} & {ee}\\\\")
     lines += [r"    \bottomrule", r"  \end{tabular*}"]

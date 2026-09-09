@@ -445,17 +445,6 @@ def build_table(fallback_old: bool) -> tuple[str, list[str]]:
 
     emitted = [e for e in resolved if e is not None]
 
-    # 三线表加粗：总成本列最小值、碳排量列最小值各一个（全部已输出行参与比较，
-    # 含基准行）。用行下标标记，避免浮点相等比较。
-    bold_cost_idx = (
-        min(range(len(emitted)), key=lambda i: emitted[i][3]["total_cost"])
-        if emitted else None
-    )
-    bold_carbon_idx = (
-        min(range(len(emitted)), key=lambda i: emitted[i][3]["E_total"])
-        if emitted else None
-    )
-
     # \multirow 跨行数：按已输出行里连续相同 category 分段统计（跳过的行不计）。
     span_start: list[int | None] = [None] * len(emitted)   # 该行是本段首行时记段长，否则 None
     i = 0
@@ -513,15 +502,11 @@ def build_table(fallback_old: bool) -> tuple[str, list[str]]:
             d_carbon = fmt_delta(bd["E_total"] - baseline_bd["E_total"])
 
         cell_total = fmt_num(bd["total_cost"])
-        if idx == bold_cost_idx:
-            cell_total = r"\textbf{" + cell_total + "}"
         cell_carbon = fmt_num(bd["E_total"])
-        if idx == bold_carbon_idx:
-            cell_carbon = r"\textbf{" + cell_carbon + "}"
 
         span = span_start[idx]
-        # 一级（类别）加粗、二级（情形）缩进，见 indent_label 的说明。
-        cat_text = r"\textbf{%s}" % CAT_WRAP.get(row["category"], row["category"])
+        # 一级（类别）与二级（情形）靠缩进区分，见 indent_label 的说明。
+        cat_text = CAT_WRAP.get(row["category"], row["category"])
         if span is None:
             cat_cell = ""
         elif span == 1:

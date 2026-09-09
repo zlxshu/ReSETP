@@ -44,7 +44,6 @@ ROWS = [
 ]
 
 # 每行取最小值加粗的行（用户 08-12 通用规矩；是否保留待用户看四列版后定）
-BOLD_KEYS = {"total_cost", "E_total"}
 
 COLUMNS = (
     # (列头 tex, 期望的实际充电时刻策略, 参数名)
@@ -86,6 +85,7 @@ def load_arm(arm_dir: Path, expected_policy: str, skip_policy_check: bool) -> tu
         if not sol["evaluation"].get("feasible", True):
             raise SystemExit(f"{run_dir}: 解不可行")
         row = {key: float(b[key]) * scale for _, key, scale in ROWS}
+        row["n_veh_ev_mean"] = float(b["n_veh_ev"])
         row["fleet"] = (int(b["n_veh_cv"]), int(b["n_veh_ev"]))
         row["run"] = run_dir.name
         runs.append(row)
@@ -96,17 +96,18 @@ def fmt(x: float) -> str:
     return f"{x:.2f}"
 
 
-def build_tex(means: list[dict], bold: bool, relative_rows: bool = False, columns=COLUMNS) -> str:
+def build_tex(means: list[dict], relative_rows: bool = False, columns=COLUMNS,
+              ev_count_row: bool = False) -> str:
     lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l" + "c" * len(columns) + r"@{}}", r"    \toprule"]
     lines.append("    指标 & " + " & ".join(h for h, _, _ in columns) + r"\\")
     lines.append(r"    \midrule")
     for label, key, _ in ROWS:
         vals = [m[key] for m in means]
         cells = [fmt(v) for v in vals]
-        if bold and key in BOLD_KEYS:
-            i = vals.index(min(vals))
-            cells[i] = r"\textbf{" + cells[i] + "}"
         lines.append(f"    {label} & " + " & ".join(cells) + r"\\")
+    if ev_count_row:
+        lines.append("    电动车数（辆） & "
+                     + " & ".join(f"{m['n_veh_ev_mean']:.1f}" for m in means) + r"\\")
     if relative_rows:
         # 2026-09-10 用户"美化表格"：追加相对本文安排（末列）的变化率，让"多花多少钱换多少减排"在表内可见
         lines.append(r"    \midrule")
@@ -127,10 +128,14 @@ def main() -> int:
     ap.add_argument("--carbon-dir", type=Path, default=new / "carbon_min")
     ap.add_argument("--both-dir", type=Path, default=grid / "MTC-HGS")
     ap.add_argument("--out", type=Path, default=REPO_ROOT / "docs/paper_v2/generated_tables/carbon_charging_table.tex")
-    ap.add_argument("--no-bold", action="store_true", help="总成本/总排放行不加粗")
+    ap.add_argument("--no-bold", action="store_true",
+                    help="已废弃的空开关：2026-09-10 起表内一律不加粗，保留仅为兼容旧命令行")
     ap.add_argument("--no-both", action="store_true", help="2026-09-10 用户令：删去第四列（考虑时变碳强度与分时电价），三列版")
     ap.add_argument("--skip-policy-check", action="store_true", help="只用于脚本自测，正式出表不得使用")
     ap.add_argument("--dry-run", action="store_true", help="只打印，不写文件")
+    ap.add_argument("--ev-count-row", action="store_true",
+                    help="2026-09-09 用户令：追加一行'电动车数（辆）'（该臂 10 次 n_veh_ev 的均值），"
+                         "供正文引用车队构成的辆数；默认关闭，tab:carbon-charging 逐位不变")
     ap.add_argument("--relative-rows", action="store_true", help="末尾追加两行：总成本/总排放较末列（本文安排）的变化率（%%）")
     ap.add_argument(
         "--statistic",
@@ -163,6 +168,7 @@ def main() -> int:
         if args.statistic == "best":
             best_run = min(runs, key=lambda r: r["total_cost"])
             m = {key: best_run[key] for _, key, _ in ROWS}
+            m["n_veh_ev_mean"] = best_run["n_veh_ev_mean"]
             print(
                 f"  → best（total_cost 最小）：{best_run['run']}  "
                 f"车队构型(cv,ev)={best_run['fleet']}  total_cost={best_run['total_cost']:.2f}",
@@ -170,9 +176,11 @@ def main() -> int:
             )
         else:
             m = {key: st.mean(r[key] for r in runs) for _, key, _ in ROWS}
+        m["n_veh_ev_mean"] = st.mean(r["n_veh_ev_mean"] for r in runs)
         means.append(m)
     print(f"批次口径：{shared_all}", file=sys.stderr)
-    tex = build_tex(means, bold=not args.no_bold, relative_rows=args.relative_rows, columns=columns)
+    tex = build_tex(means, relative_rows=args.relative_rows, columns=columns,
+                    ev_count_row=args.ev_count_row)
     if not args.dry_run:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(tex, encoding="utf-8")

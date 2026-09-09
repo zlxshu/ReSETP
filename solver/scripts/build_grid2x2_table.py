@@ -87,16 +87,10 @@ def main() -> int:
             stats.append((st.mean(tc), st.mean(em)))
             print(f"{label} × {price} {arm}: n={len(rows)} 总成本 {st.mean(tc):.2f}（sd {st.pstdev(tc):.2f}） "
                   f"碳排量 {st.mean(em):.2f}（sd {st.pstdev(em):.2f}） 车队 {dict(fleets)}", file=sys.stderr)
-        costs = [s[0] for s in stats]
-        ems = [s[1] for s in stats]
         cells = []
         for (c, e) in stats:
             cc = fmt(c)
             ee = fmt(e)
-            if c == min(costs):
-                cc = r"\textbf{" + cc + "}"
-            if e == min(ems):
-                ee = r"\textbf{" + ee + "}"
             cells += [cc, ee]
         if label != prev_label:
             if prev_label is not None:
