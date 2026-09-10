@@ -30,6 +30,13 @@ sol = solution_from_dict(payload["evaluation"]["prepared_solution"])
 inst = bundle.instance
 prices = bundle.prices
 node_lookup = {n.node_id: n for n in inst.nodes}
+# 装载率按车厢容积核算：本算例订单为轻泡货，容积先于额定载重成为约束。
+# 体积与容积上限取自求解器可行性检验所用的同一份路线合同，避免两处口径漂移。
+_contract = ctx.rebuilt_route_constraints
+if _contract is None:
+    sys.exit('缺少 rebuilt route contract，无法按容积核算装载率')
+VOL_BY_CUSTOMER = dict(_contract.customer_volume_m3_by_id)
+VOL_CAP_M3 = float(_contract.vehicle_volume_capacity_m3)
 
 cert = MTS.build_multitrip_certificate(list(sol.routes), inst, prices,
     charging_actions=list(sol.charging_actions))
@@ -83,13 +90,12 @@ for r in sorted(sol.routes, key=lambda x: (physical_id(x.vehicle_id), x.vehicle_
     if tno == first_trip_of[p]:
         fixed = float(inst.vehicle_fixed_cost_per_day(r.vehicle_type, fallback=float(prices.vehicle_fixed_cost)))
     trip_cost = per_km * km + fuel * diesel + elec_cost + fixed + em * CARBON_PRICE
-    demand = sum(node_lookup[n].demand for n in r.node_sequence[1:-1] if node_lookup[n].node_type.lower() == "c")
-    cap = 1735.0 if r.vehicle_type == "cv" else 1700.0
+    volume = sum(VOL_BY_CUSTOMER[n] for n in r.node_sequence[1:-1] if node_lookup[n].node_type.lower() == "c")
     custs = [n for n in r.node_sequence[1:-1] if node_lookup[n].node_type.lower() == "c"]
     seq = [DEPOT_LABEL.get(r.node_sequence[0], r.node_sequence[0])] + \
           [str(int(c[1:])) if c.startswith("C") else c for c in r.node_sequence[1:-1]] + \
           [DEPOT_LABEL.get(r.node_sequence[-1], r.node_sequence[-1])]
-    rows.append([r.vehicle_type, p, seq, km, trip_cost, hours, fuel, kwh, em, len(custs), demand / cap * 100.0])
+    rows.append([r.vehicle_type, p, seq, km, trip_cost, hours, fuel, kwh, em, len(custs), volume / VOL_CAP_M3 * 100.0])
     tot["dist"] += km; tot["cost"] += trip_cost; tot["hours"] += hours
     tot["fuel"] += fuel; tot["kwh"] += kwh; tot["em"] += em; tot["cust"] += len(custs)
 
