@@ -120,7 +120,14 @@
 \EKeywords{vehicle routing problem; collaborative multi-depot delivery; mixed fleet;
 time-of-use electricity price; time-varying grid carbon intensity; dynamic demand; hybrid genetic search}
 
+
 \begin{document}
+\EditorNote{\textbf{收稿日期:}\ XXXX-XX-XX}
+\EditorNote{\textbf{作者简介:} 周雷习书(2003--), 汉族, 男, 湖南郴州人, 硕士研究生, 研究方向: 智能优化算法、~物流与供应链, E-mail: XXX; 邱莹莹(1999--), 汉族, 女, 江苏南通人, 硕士研究生, 研究方向: 绿色物流, E-mail: 212281013@st.usst.edu.cn; 陈雨蝶(1999--), 汉族, 女, 安徽宿州人, 硕士, 研究方向: 智能优化算法、~物流与供应链, E-mail: chenyudie1022@126.com; 通信作者: 干宏程(1978--), 汉族, 男, 教授, 博士, 研究方向: 交通系统工程、~物流管理等, E-mail: hongchenggan@126.com.}
+% 基金项目为占位：暂用干宏程国家自然科学基金项目，待确认
+\EditorNote{\textbf{基金项目:}\ 国家自然科学基金(71871143)\\
+\textbf{Foundation item:} National Natural Science Foundation of China (71871143)}
+\CiteAuthor{周雷习书, 干宏程, 邱莹莹, 等.}{Zhou L X S, Gan H C, Qiu Y Y, et al.}
 \maketitle
 
 \section{引言}
@@ -135,7 +142,7 @@ time-of-use electricity price; time-varying grid carbon intensity; dynamic deman
 
 配送网络由单一车场扩展为多个车场后，客户、车辆和充电设施可以协同使用，各车场的服务范围随之扩大。既有研究提出了多中心电动车充电站共享框架\cite{ref:7}和时间依赖路网下多中心协作与资源共享的路径优化方法\cite{ref:wang2024}，并就协作收益的公平分配\cite{ref:8}与考虑服务质量差异的成本分摊\cite{ref:91}给出了方法。协作重新划分客户归属后，启用车辆与行驶里程未必同向变化；联盟能否维持还取决于分摊方式对规模较小一方的激励。
 
-上述研究多以需求信息在规划开始前完全已知为前提，而城市配送的订单往往在运营过程中持续到达或发生变化。自Psaraftis\cite{ref:14}提出动态车辆路径问题的研究框架以来，重规划时刻设定与静态子问题分解\cite{ref:18}、多车型动态路径优化\cite{ref:51}以及定时与定量联合触发策略\cite{ref:71}已形成丰富成果。多中心电动车的动态路径问题也已出现结合强化学习与变邻域搜索的求解框架\cite{ref:shahbazian2025}。对多中心混合车队而言，每次重规划须继承各车辆已执行任务的位置、时刻、载重和电量状态；在此前提下，逐单插入与成批重排在方案改动与运营成本之间如何取舍，尚缺少比较。
+上述研究多以需求信息在规划开始前完全已知为前提，而城市配送的订单往往在运营过程中持续到达或发生变化。自Psaraftis\cite{ref:14}提出动态车辆路径问题的研究框架以来，重规划时刻设定与静态子问题分解\cite{ref:18}、多车型动态路径优化\cite{ref:51}以及考虑碳排放的动态配送路径优化\cite{ref:zhang2022}已形成丰富成果。多中心电动车的动态路径问题也已出现结合强化学习与变邻域搜索的求解框架\cite{ref:shahbazian2025}。对多中心混合车队而言，每次重规划须继承各车辆已执行任务的位置、时刻、载重和电量状态；在此前提下，逐单插入与成批重排在方案改动与运营成本之间如何取舍，尚缺少比较。
 
 为反映相关研究对上述五类问题特征的考虑情况，选取与本文关系较为密切的研究比较，结果见表\ref{tab:literature-comparison}。
 
@@ -161,7 +168,7 @@ Goeke和Schneider\cite{ref:27} & $\checkmark$ & --- & --- & --- & ---\\
 陈婉茹等\cite{ref:23} & $\checkmark$ & --- & $\checkmark$ & --- & ---\\
 Wang等\cite{ref:7} & --- & --- & $\checkmark$ & $\checkmark$ & ---\\
 Soriano等\cite{ref:8} & --- & --- & $\checkmark$ & $\checkmark$ & ---\\
-邱莹莹\cite{ref:71} & $\checkmark$ & --- & --- & --- & $\checkmark$\\
+张金良和李超\cite{ref:zhang2022} & --- & --- & --- & --- & $\checkmark$\\
 姜广田等\cite{ref:51} & --- & --- & --- & --- & $\checkmark$\\
 Li等\cite{ref:52} & --- & $\checkmark$ & --- & --- & ---\\
 Qiu等\cite{ref:qiu2024} & $\checkmark$ & --- & --- & --- & ---\\
@@ -476,7 +483,7 @@ $\Omega_k^{(m)}$为车辆$k$在保留已执行前缀后形成的整日可行配�
 对$k\in K_{\mathrm{act}}^{(m)}$，该集合中的每个方案均包含相同的已执行前缀。
 方案属性$D_{kp}^{(m)}$、$G_{kp}^{(m)}$、$C_{kp}^{\mathrm e,(m)}$、
 $E_{kp}^{g,(m)}$和$E_{kp}^{e,(m)}$均由已执行前缀与待执行部分共同确定。
-动态阶段按文献\cite{ref:71}的做法，保留已发生成本并重新规划待执行任务，
+动态阶段按滚动时域的做法\cite{ref:18}，保留已发生成本并重新规划待执行任务，
 各成本项的核算方式与前述静态模型一致。
 因此，$F^{(m)}$表示时刻$u(m)$对整日总成本的重新评价，不同批次的$F^{(m)}$之间不作累加。
 \begin{equation}
@@ -518,8 +525,8 @@ F_5^{(m)}
 
 \subsubsection{动态信息处理策略}
 
-动态需求采用定时、定量联合批处理策略\cite{ref:71}。
-在该文献考虑的新增订单、订单取消和需求量增减基础上，本文将时间窗变动作为同类动态信息处理。
+动态需求采用定时与定量联合的批处理策略：按固定间隔处理累积的动态信息，或在累计新增需求达到上限时立即处理。
+动态信息包括客户需求点增减与需求量变化\cite{ref:zhang2022}，本文另将时间窗变动作为同类动态信息处理。
 需求量发生变化时，先取消原订单，再将更新后的订单纳入待配送客户集合；
 时间窗发生变化时，更新相应客户的$[e_i,l_i]$。
 取消及变更事件仅作用于尚未开始服务的客户。
@@ -834,7 +841,7 @@ S2 & 116.4314 & 39.9961 & --- & --- & --- & --- & ---\\
 \end{longtable}
 \endgroup
 
-动态事件类型参照相关研究\cite{ref:71}，事件规模结合相关算例\cite{ref:51}。
+动态事件类型参照相关研究\cite{ref:zhang2022}，事件规模结合相关算例\cite{ref:51}。
 在08:00--10:00的订单接收时段内，从基础订单属性中随机抽取新增订单，并从最早服务时刻不早于10:00的订单中
 无放回抽取取消、需求变动和时间窗变动对象，共形成10个动态事件，包括5笔新增订单、2笔订单取消、
 1个需求增加、1个需求减少和1个时间窗变动，事件数量占初始客户数的20\%，具体信息见表\ref{tab:dynamic-nodes}。
@@ -1586,8 +1593,8 @@ Li Y, Fan H M, Zhang X N. A periodic optimization model and solution for capacit
 \bibitem{ref:51} 姜广田, 纪皎月, 董佳伟. 绿色物流配送下的多车型动态车辆路径优化[J]. 系统工程理论与实践, 2024, 44(7): 2362--2380.\newline
 Jiang G T, Ji J Y, Dong J W. Multi-vehicle dynamic vehicle routing optimization in green logistics distribution[J]. Systems Engineering --- Theory \& Practice, 2024, 44(7): 2362--2380.
 
-\bibitem{ref:71} 邱莹莹. 低碳背景下考虑动态需求的混合车队物流配送路径问题研究[D]. 上海: 上海理工大学, 2024.\newline
-Qiu Y Y. Research on the vehicle routing problem of mixed-fleet considering dynamic demand under the background of low carbon[D]. Shanghai: University of Shanghai for Science and Technology, 2024.
+\bibitem{ref:zhang2022} 张金良, 李超. 碳排放影响下的动态配送车辆路径优化研究[J]. 中国管理科学, 2022, 30(9): 184--194.\newline
+Zhang J L, Li C. Research on dynamic distribution vehicle route optimization under the influence of carbon emission[J]. Chinese Journal of Management Science, 2022, 30(9): 184--194.
 
 \bibitem{ref:shahbazian2025} Shahbazian R, Ciacco A, Macrina G, et al. Knowledge-guided hybrid deep reinforcement learning for the dynamic multi-depot electric vehicle routing problem[J]. Computers \& Operations Research, 2025, 184: 107217.
 
