@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (MiKTeX 22.1) (preloaded format=xelatex 2026.5.15)  10 SEP 2026 16:02
+This is XeTeX, Version 3.141592653-2.6-0.999993 (MiKTeX 22.1) (preloaded format=xelatex 2026.5.15)  10 SEP 2026 16:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1690,11 +1690,6 @@ Package fontspec Info:
 (fontspec)             okay then ignore this warning. Otherwise a different
 (fontspec)             font should be chosen.
 
-
-
-[1
-
-]
 LaTeX Font Info:    Trying to load font information for U+msa on input line 128
 .
 
@@ -1706,10 +1701,24 @@ LaTeX Font Info:    Trying to load font information for U+msb on input line 128
 (/Library/Application Support/MiKTeX/texmfs/install/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
+
+[1
+
+]
 Overfull \hbox (469.47049pt too wide) detected at line 146
 []
  []
 
+
+! Infinite glue shrinkage found in box being split.
+<argument> Infinite shrink error above ignored ! 
+                                                 
+l.173 \end{longtable}
+                     
+The box you are \vsplitting contains some infinitely
+shrinkable glue, e.g., `\vss' or `\vskip 0pt minus 1fil'.
+Such glue doesn't belong there; but you can safely proceed,
+since the offensive shrinkability has been made finite.
 
 
 [2]
@@ -1717,6 +1726,16 @@ Overfull \hbox (469.47049pt too wide) detected at line 262
 []
  []
 
+
+! Infinite glue shrinkage found in box being split.
+<argument> Infinite shrink error above ignored ! 
+                                                 
+l.262 \end{xltabular}
+                     
+The box you are \vsplitting contains some infinitely
+shrinkable glue, e.g., `\vss' or `\vskip 0pt minus 1fil'.
+Such glue doesn't belong there; but you can safely proceed,
+since the offensive shrinkability has been made finite.
 
 
 [3]
@@ -1945,10 +1964,10 @@ Package rerunfilecheck Info: File `paper_main.out' has not changed.
 Here is how much of TeX's memory you used:
  33453 strings out of 402809
  720182 string characters out of 5443919
- 1181373 words of memory out of 5000000
+ 1178640 words of memory out of 5000000
  61763 multiletter control sequences out of 15000+600000
  640736 words of font info for 141 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 107i,16n,109p,1895b,872s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 107i,16n,109p,1483b,872s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on paper_main.pdf (25 pages).
