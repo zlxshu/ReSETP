@@ -168,9 +168,9 @@ def render(values: list[float], out_pdf: Path) -> None:
     ax.set_yticks([0.2, 0.4, 0.6])
     # labelpad 取 3.33 / 4.0 是为了让两个轴名落在与旧图同一位置（误差 <0.01 pt），
     # 不是圆整值；旧图与本图的 matplotlib 版本字体度量略有差异。
-    ax.set_xlabel("时刻", fontproperties=cn, labelpad=3.33, color=INK)
+    ax.set_xlabel("时刻/h", fontproperties=cn, labelpad=3.33, color=INK)
     ax.set_ylabel(
-        "电网碳强度（kgCO$_2$/kWh）",
+        "电网碳强度/(kgCO$_2$·kWh$^{-1}$)",
         fontproperties=cn,
         labelpad=4.0,
         color=INK,

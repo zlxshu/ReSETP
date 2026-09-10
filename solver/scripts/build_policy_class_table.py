@@ -275,26 +275,26 @@ def build_table() -> tuple[str, list[str]]:
     cur_hours = cur_diag["structural_hours"]
     mid_hours = mid_diag["structural_hours"]
     # "谷段总时长不变"这句只在两份日历的谷段小时数真的相等时才写，不凭印象断言。
-    same_len = "，谷段总时长不变" if abs(cur_hours - mid_hours) < 1e-9 else (
-        f"，谷段总时长由{cur_hours:g} h变为{mid_hours:g} h")
+    same_len = ", 谷段总时长不变" if abs(cur_hours - mid_hours) < 1e-9 else (
+        f", 谷段总时长由{cur_hours:g} h变为{mid_hours:g} h")
     set_midday = (
         f"谷段改设于{fmt_windows(mid_win)}"
-        f"（现行为{fmt_windows(cur_win)}）{same_len}"
+        f"(现行为{fmt_windows(cur_win)}){same_len}"
     )
     set_discount = (
-        f"时段结构不变，{fmt_windows([w for w in dis_win if w not in cur_win])}"
+        f"时段结构不变, {fmt_windows([w for w in dis_win if w not in cur_win])}"
         f"按谷价{dis_price:.3f}元/kWh计费"
     )
-    set_price = f"{fmt_price_list(prices)}元/kgCO$_2$，其中0.075为现行全国碳市场价\\cite{{ref:mee2025}}"
+    set_price = f"{fmt_price_list(prices)}元/kgCO$_2$, 其中0.075为现行全国碳市场价\\cite{{ref:mee2025}}"
     set_quota = f"配额{quota:g} kgCO$_2$"
     set_subsidy = (
-        f"按购置价差全额补贴，电动车日固定溢价由{base_premium:g}元降至{sub_premium:g}元，"
+        f"按购置价差全额补贴, 电动车日固定溢价由{base_premium:g}元降至{sub_premium:g}元, "
         f"即{subsidy:g}元/日"
     )
 
     # 每行：(类别标签或 None, 是否为该类首行, 措施, 决策维度, 代表研究或政策, 实测设定)
     rows = [
-        (CAT_PRICE_SIGNAL, True, "充换电设施分时时段划分（谷段设在午间）", "充电时刻",
+        (CAT_PRICE_SIGNAL, True, "充换电设施分时时段划分(谷段设在午间)", "充电时刻",
          r"河北南网分时电价\cite{ref:hebei-tou}", set_midday),
         (None, False, "午间充电按谷价补贴", "充电时刻",
          r"Wu等\cite{ref:wu2022}", set_discount),
@@ -307,7 +307,7 @@ def build_table() -> tuple[str, list[str]]:
     ]
 
     lines: list[str] = []
-    lines.append(r"\begin{table}[H]")
+    lines.append(r"\begin{table}[!htbp]")
     lines.append(r"  \centering")
     lines.append(r"  \caption{碳减排措施分类与实测设定}")
     lines.append(r"  \label{tab:policy-classes}")
@@ -315,7 +315,7 @@ def build_table() -> tuple[str, list[str]]:
     lines.append(r"  \setlength{\tabcolsep}{3pt}")
     lines.append(
         r"  \begin{tabularx}{\textwidth}{"
-        r">{\centering\arraybackslash}p{38pt}"
+        r">{\RaggedRight\arraybackslash}p{38pt}"
         r">{\RaggedRight\arraybackslash}X"
         r">{\centering\arraybackslash}p{50pt}"
         r">{\RaggedRight\arraybackslash}X"

@@ -3,7 +3,7 @@
 
 只证一句话：排放增加全部来自首趟出车前的补电窗口；只考虑碳强度的方案在每个窗口都已取到可达的最低排放。
 形态：陈婉茹 2023 表 11 的"情形逐行 × 方案逐列组"壳——行＝三个充电窗口＋合计，列组＝四种充电安排，
-每组三列：起充时刻（按电量加权的中位，前一日者标"前日"）、充电成本（元）、碳排量（kgCO$_2$），后两者为 10 次运算均值；
+每组三列：起充时刻（按电量加权的中位，前一日者标"前日"）、充电成本(元)、碳排量(kgCO$_2$)，后两者为 10 次运算均值；
 每行充电成本最低与碳排量最低各自加粗（用户 2026-09-06 定：图讲形状，表讲四方案×三窗口的账含起充时刻）。
 
 窗口归类与排放核算与 diagnose_charging_windows_20260906.py 完全一致（那份脚本已核：近似账与求解器记录逐 run 零偏差）：
@@ -157,11 +157,11 @@ def main() -> int:
         w, other, n = arm_windows(paths, pol, carbon, price, am_end, pm_start)
         data.append(w)
         tot_k = sum(v[0] for v in w.values()); tot_e = sum(v[1] for v in w.values())
-        print(f"[{pol:16s}] n={n} " + " ".join(f"{lab} {fmt_time(v[3])} {v[0]:.2f}元/{v[1]:.2f}kg（{v[2]:.1f}kWh）" for (key, lab), v in zip(WINDOWS, w.values())) + f" 合计 {tot_k:.2f}元/{tot_e:.2f}kg", file=sys.stderr)
+        print(f"[{pol:16s}] n={n} " + " ".join(f"{lab} {fmt_time(v[3])} {v[0]:.2f}元/{v[1]:.2f}kg({v[2]:.1f}kWh)" for (key, lab), v in zip(WINDOWS, w.values())) + f" 合计 {tot_k:.2f}元/{tot_e:.2f}kg", file=sys.stderr)
     # 竖排：窗口分块 × 方案逐行（13 列横排超宽 23.9 pt，2026-09-06 改为此式；块内成本最低与碳排量最低各自加粗）
     names = [h for h, _, _ in ARMS]
     lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llccc@{}}", r"    \toprule",
-             r"    可充电时段 & 充电安排 & 充电开始时刻（电量中位） & 充电成本（元） & 碳排量（kgCO$_2$）\\",
+             r"    可充电时段 & 充电安排 & 充电开始时刻(电量中位) & 充电成本(元) & 碳排量(kgCO$_2$)\\",
              r"    \midrule"]
     blocks = [(lab, [(d[key][0], d[key][1], fmt_time(d[key][3])) for d in data]) for key, lab in WINDOWS]
     blocks.append(("合计", [(sum(v[0] for v in d.values()), sum(v[1] for v in d.values()), "") for d in data]))

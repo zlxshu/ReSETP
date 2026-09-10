@@ -172,7 +172,7 @@ CAT_WRAP: dict[str, str] = {}
 ROWS = [
     dict(
         category=CAT_CARBON,
-        measure=r"碳税（单位碳价）\cite{ref:23,ref:qiu2024}",
+        measure=r"碳税(单位碳价)\cite{ref:23,ref:qiu2024}",
         source=r"陈婉茹等\cite{ref:23}；Qiu等\cite{ref:qiu2024}",
         context=(
             "多配送中心油电混合车队的路径与速度联合优化；"
@@ -189,7 +189,7 @@ ROWS = [
     ),
     dict(
         category=CAT_CARBON,
-        measure=r"限额碳交易（碳配额）\cite{ref:lijin2014,ref:23}",
+        measure=r"限额碳交易(碳配额)\cite{ref:lijin2014,ref:23}",
         source=r"李进和张江华\cite{ref:lijin2014}；陈婉茹等\cite{ref:23}",
         context=(
             "碳排放交易机制下以旅行商问题为参考模型的物流配送路径；"
@@ -215,7 +215,7 @@ ROWS = [
             "购后返款与所得税抵免较弱，过早取消会产生负面影响；"
             "后者未报告实测减排效果，给出每辆车补贴取值区间0.5万--30万美元"
         ),
-        ours=r"购置价差补贴，折24元/(辆$\cdot$日)",
+        ours=r"购置价差补贴, 折24元/(辆$\cdot$日)",
     ),
     dict(
         category=CAT_DR,
@@ -271,7 +271,7 @@ def build_table() -> str:
     # 72+122+200＝394pt，加 6 个 \tabcolsep 2.2pt 共约 407pt，窄于版心 468.2pt，居中排。
     lines.append(
         r"  \begin{tabular}{"
-        r">{\centering\arraybackslash}p{72pt}"
+        r">{\RaggedRight\arraybackslash}p{72pt}"
         r">{\raggedright\arraybackslash}p{122pt}"
         r">{\raggedright\arraybackslash}p{200pt}}"
     )
