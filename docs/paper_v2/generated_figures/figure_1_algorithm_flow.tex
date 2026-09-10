@@ -30,7 +30,7 @@
 
 % ---- left column ----
 \node[terminal] (start) at (1.50,5.90) {开始};
-\node[box]      (read)  at (1.50,4.50) {读取客户、~车场、~车辆\\分时电价与电网碳强度};
+\node[box]      (read)  at (1.50,4.50) {读取客户、车场、车辆\\分时电价与电网碳强度};
 \node[box]      (proxy) at (1.50,3.10) {构建路线层近似问题};
 \node[side]     (dyn)   at (1.50,1.365) {动态事件触发\\继承车辆状态与客户};
 \draw[flow] (start) -- (read);
@@ -41,7 +41,7 @@
 \node[box]      (init)  at (6.395,5.90) {生成初始种群};
 \node[box]      (cross) at (6.395,4.50) {选择父代\\选择性路线交换};
 \node[box]      (ls)    at (6.395,3.10) {局部搜索与罚系数更新};
-\node[decision] (stopk) at (6.395,1.365) {连续20 000次\\未改善? };
+\node[decision] (stopk) at (6.395,1.365) {连续20\,000次\\未改善？};
 \draw[flow] (init) -- (cross);
 \draw[flow] (cross) -- (ls);
 \draw[flow] (ls) -- (stopk);
@@ -62,7 +62,7 @@
 
 % ---- right column ----
 \node[narrow]   (best)   at (15.970,5.90) {更新当前最优解};
-\node[decision] (stopr)  at (15.970,4.20) {连续两轮\\未改善? };
+\node[decision] (stopr)  at (15.970,4.20) {连续两轮\\未改善？};
 \node[narrow]   (output) at (15.970,2.30) {输出最优可行方案};
 \node[terminal] (end)    at (15.970,1.10) {结束};
 \draw[flow] (educ) -- (best);
@@ -74,7 +74,7 @@
 % ---- outer loop: realised electricity price fed back into the proxy problem ----
 \draw[flow] (stopr.east) -- (17.95,4.20) -- (17.95,-0.55) -- (-0.55,-0.55) -- (-0.55,3.10) -- (proxy.west);
 \node[lab,anchor=south] at (17.79,4.32) {否};
-\node[wide] (feed) at (8.870,-0.55) {回填实付电价, 重建近似问题};
+\node[wide] (feed) at (8.870,-0.55) {回填实付电价，重建近似问题};
 
 % ---- stage frames ----
 \draw[frame] (3.75,0.18) rectangle (9.04,7.00);

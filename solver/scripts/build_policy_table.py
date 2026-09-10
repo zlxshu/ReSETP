@@ -138,7 +138,7 @@ CAT_WRAP = {
 
 ROWS = [
     dict(category=CAT_BASELINE,
-         label=r"\makecell[l]{基准(北京现行时段,\\碳价0.20)}", group="baseline",
+         label=r"\makecell[l]{基准（北京现行时段，\\碳价0.20）}", group="baseline",
          new_dir="solver/reports/grid2x2_v3_20260906/beijing/P=0.2/MTC-HGS", old_dir=None),
     # ---- 碳规制政策
     dict(category=CAT_CARBON_PRICING,
@@ -151,11 +151,11 @@ ROWS = [
          label="碳价升至1.5", group="single",
          new_dir="solver/reports/carbon_price_sweep_v3_20260906/P=1.5", old_dir=None),
     dict(category=CAT_CARBON_PRICING,
-         label=r"\makecell[l]{碳配额与交易\\(配额200 kg)}", group="single",
+         label=r"\makecell[l]{碳配额与交易\\（配额200 kg）}", group="single",
          new_dir="solver/reports/policy_combos_20260907/quota200", old_dir=None),
     # ---- 购置端财政激励
     dict(category=CAT_FLEET_ECON,
-         label=r"\makecell[l]{购置补贴\\(折24元/日)}", group="single",
+         label=r"\makecell[l]{购置补贴\\（折24元/日）}", group="single",
          new_dir="solver/reports/policy_combos_20260907/subsidy_alone", old_dir=None),
     # ---- 需求响应政策
     dict(category=CAT_PRICE_SIGNAL,
@@ -462,9 +462,9 @@ def build_table(fallback_old: bool) -> tuple[str, list[str]]:
     lines.append(r"  \caption{既有方案与本文方案在本文算例上的实测结果}")
     lines.append(r"  \label{tab:fleet-levels}")
     # 字号与前文各表一致：\setptabsetup（paper_main.tex 第 62 行）＝\small＋arraystretch 0.95
-    # ＋tabcolsep 2.2pt。本表列多，仍保持不少于2pt的列间距。
+    # ＋tabcolsep 2.2pt。本表列多，tabcolsep 覆盖为 1.5pt（见 COMPACT_COST_COLUMNS 注释）。
     lines.append(r"  \setptabsetup")
-    lines.append(r"  \setlength{\tabcolsep}{2.0pt}")
+    lines.append(r"  \setlength{\tabcolsep}{1.5pt}")
     # 第一列固定宽度：\multirow 的内容不参与列宽计算，若留作 l 列会压到"情形"列上。
     # 列数：类别（p）＋情形（l）＋若干居中数字列。
     # 紧凑版数字列 7＝燃油/电动、运营成本、碳成本、总成本、碳排量、Δ总成本、Δ碳排量；
@@ -472,23 +472,23 @@ def build_table(fallback_old: bool) -> tuple[str, list[str]]:
     n_num_cols = 7 if COMPACT_COST_COLUMNS else 10
     lines.append(
         r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}"
-        r">{\RaggedRight\arraybackslash}p{40pt}l" + "c" * n_num_cols + r"@{}}"
+        r">{\centering\arraybackslash}p{40pt}l" + "c" * n_num_cols + r"@{}}"
     )
     lines.append(r"    \toprule")
     if COMPACT_COST_COLUMNS:
         lines.append(
-            r"    类别 & 情形 & \makecell{燃油/电动\\(辆)} & "
-            r"\makecell{运营成本\\(元)} & \makecell{碳成本\\(元)} & "
-            r"\makecell{总成本\\(元)} & \makecell{碳排量\\(kgCO$_2$)} & "
-            r"\makecell{$\Delta$总成本\\(元)} & \makecell{$\Delta$碳排量\\(kgCO$_2$)}\\"
+            r"    类别 & 情形 & \makecell{燃油/电动\\（辆）} & "
+            r"\makecell{运营成本\\（元）} & \makecell{碳成本\\（元）} & "
+            r"\makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$）} & "
+            r"\makecell{$\Delta$总成本\\（元）} & \makecell{$\Delta$碳排量\\（kgCO$_2$）}\\"
         )
     else:
         lines.append(
-            r"    类别 & 情形 & \makecell{燃油/电动\\(辆)} & \makecell{启动成本\\(元)} & "
-            r"\makecell{行驶成本\\(元)} & \makecell{充电成本\\(元)} & "
-            r"\makecell{油耗成本\\(元)} & \makecell{碳成本\\(元)} & "
-            r"\makecell{总成本\\(元)} & \makecell{碳排量\\(kgCO$_2$)} & "
-            r"\makecell{$\Delta$总成本\\(元)} & \makecell{$\Delta$碳排量\\(kgCO$_2$)}\\"
+            r"    类别 & 情形 & \makecell{燃油/电动\\（辆）} & \makecell{启动成本\\（元）} & "
+            r"\makecell{行驶成本\\（元）} & \makecell{充电成本\\（元）} & "
+            r"\makecell{油耗成本\\（元）} & \makecell{碳成本\\（元）} & "
+            r"\makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$）} & "
+            r"\makecell{$\Delta$总成本\\（元）} & \makecell{$\Delta$碳排量\\（kgCO$_2$）}\\"
         )
     lines.append(r"    \midrule")
 

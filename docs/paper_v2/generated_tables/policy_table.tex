@@ -3,17 +3,17 @@
   \caption{既有方案与本文方案在本文算例上的实测结果}
   \label{tab:fleet-levels}
   \setptabsetup
-  \setlength{\tabcolsep}{2.0pt}
-  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}>{\RaggedRight\arraybackslash}p{40pt}lccccccc@{}}
+  \setlength{\tabcolsep}{1.5pt}
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}>{\centering\arraybackslash}p{40pt}lccccccc@{}}
     \toprule
-    类别 & 情形 & \makecell{燃油/电动\\(辆)} & \makecell{运营成本\\(元)} & \makecell{碳成本\\(元)} & \makecell{总成本\\(元)} & \makecell{碳排量\\(kgCO$_2$)} & \makecell{$\Delta$总成本\\(元)} & \makecell{$\Delta$碳排量\\(kgCO$_2$)}\\
+    类别 & 情形 & \makecell{燃油/电动\\（辆）} & \makecell{运营成本\\（元）} & \makecell{碳成本\\（元）} & \makecell{总成本\\（元）} & \makecell{碳排量\\（kgCO$_2$e）} & \makecell{$\Delta$总成本\\（元）} & \makecell{$\Delta$碳排量\\（kgCO$_2$e）}\\
     \midrule
-    基准 & \makecell[l]{\quad 基准(北京现行时段,\\\quad 碳价0.20)} & 2/3 & 2593.77 & 38.07 & 2631.84 & 190.33 &  & \\
+    基准 & \makecell[l]{\quad 基准（北京现行时段，\\\quad 碳价0.20）} & 2/3 & 2593.77 & 38.07 & 2631.84 & 190.33 &  & \\
     \multirow{4}{*}{\shortstack{碳规制\\政策}} & \quad 碳价降至现行0.075 & 2/3 & 2589.64 & 14.10 & 2603.74 & 187.95 & $-$28.10 & $-$2.38\\
      & \quad 碳价升至1.0 & 2/4 & 2643.69 & 135.23 & 2778.92 & 135.23 & $+$147.08 & $-$55.10\\
      & \quad 碳价升至1.5 & 1/5 & 2699.61 & 139.66 & 2839.27 & 93.11 & $+$207.43 & $-$97.23\\
-     & \makecell[l]{\quad 碳配额与交易\\\quad (配额200 kg)} & 3/3 & 2603.58 & $-$3.11 & 2600.47 & 184.44 & $-$31.37 & $-$5.89\\
-    \shortstack{购置端\\财政激励} & \makecell[l]{\quad 购置补贴\\\quad (折24元/日)} & 2/4 & 2532.44 & 30.86 & 2563.30 & 154.29 & $-$68.55 & $-$36.05\\
+     & \makecell[l]{\quad 碳配额与交易\\\quad （配额200 kg）} & 3/3 & 2603.58 & $-$3.11 & 2600.47 & 184.44 & $-$31.37 & $-$5.89\\
+    \shortstack{购置端\\财政激励} & \makecell[l]{\quad 购置补贴\\\quad （折24元/日）} & 2/4 & 2532.44 & 30.86 & 2563.30 & 154.29 & $-$68.55 & $-$36.05\\
     \multirow{2}{*}{\shortstack{需求响应\\政策}} & \makecell[l]{\quad 充换电设施\\\quad 谷段设在午间} & 2/3 & 2570.40 & 35.35 & 2605.75 & 176.77 & $-$26.09 & $-$13.56\\
      & \makecell[l]{\quad 午间充电\\\quad 按谷价补贴} & 2/3 & 2547.19 & 38.48 & 2585.67 & 192.40 & $-$46.17 & $+$2.07\\
     本文方案 & \makecell[l]{\quad 谷段设在午间＋全生命周期\\\quad 价差补贴＋碳价升至1.2} & 0/6 & 2403.55 & 81.28 & 2484.82 & 67.73 & $-$147.02 & $-$122.60\\

@@ -32,7 +32,7 @@ OUT_TEX = REPO_ROOT / "docs/paper_v2/generated_tables/two_conditions_table.tex"
 # (条件标签, 无序充电格目录, 碳强度引导有序充电目录)
 # 2026-09-09：加"电动车数"列后表宽超出版心，条件标签改为两行 makecell（内容不变）
 ROWS = [
-    (r"\makecell{北京现行时段\\碳价0.20(基准)}", GRID_DIR / "beijing/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_20260906/carbon_min"),
+    (r"\makecell{北京现行时段\\碳价0.20（基准）}", GRID_DIR / "beijing/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_20260906/carbon_min"),
     (r"\makecell{谷段设在午间\\碳价0.20}", GRID_DIR / "midday/P=0.2/MT-HGS", REPO_ROOT / "solver/reports/carbon_min_two_conditions_20260910/midday_P0.2"),
     (r"\makecell{北京现行时段\\碳价1.00}", GRID_DIR / "beijing/P=1.0/MT-HGS", REPO_ROOT / "solver/reports/carbon_min_two_conditions_20260910/beijing_P1.0"),
     (r"\makecell{谷段设在午间\\碳价1.00}", GRID_DIR / "midday/P=1.0/MT-HGS", REPO_ROOT / "solver/reports/charging_arrangements_midday_P1.0_20260909/carbon_min"),
@@ -85,14 +85,14 @@ def main() -> int:
     args = ap.parse_args()
 
     lines = [
-        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcccccccc@{}}",
+        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccccccccc@{}}",
         r"    \toprule",
         # "条件"上下左右居中：表头共三行文字（第一行一行、第二行两行），multirow 跨 3 行高度
         r"    \multirow{3}{*}{条件} & \multicolumn{4}{c}{无序充电} & \multicolumn{4}{c}{碳强度引导有序充电}\\",
         r"    \cmidrule(lr){2-5}\cmidrule(lr){6-9}",
         # 2026-09-09 用户令：正文引用的是"电动车 3.9→3.4 辆"这类辆数，表里必须有这一列
-        r"     & \makecell{电动车数\\(辆)} & \makecell{电动车\\占比(\%)} & \makecell{总成本\\(元)} & \makecell{总排放\\(kgCO$_2$)} & "
-        r"\makecell{电动车数\\(辆)} & \makecell{电动车\\占比(\%)} & \makecell{总成本\\(元)} & \makecell{总排放\\(kgCO$_2$)}\\",
+        r"     & \makecell{电动车数\\（辆）} & \makecell{电动车\\占比（\%）} & \makecell{总成本\\（元）} & \makecell{总排放\\（kgCO$_2$）} & "
+        r"\makecell{电动车数\\（辆）} & \makecell{电动车\\占比（\%）} & \makecell{总成本\\（元）} & \makecell{总排放\\（kgCO$_2$）}\\",
         r"    \midrule",
     ]
     for label, asap_dir, carbon_dir in ROWS:

@@ -30,17 +30,17 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # (输出键, breakdown 键, 缩放) —— 与 build_charge_timing_comparison.METRICS 同一口径
 ROWS = [
-    ("总成本(元)", "total_cost", 1.0),
-    ("启动成本(元)", "cost_fix", 1.0),
-    ("行驶成本(元)", "cost_km", 1.0),
-    ("充电成本(元)", "cost_elec", 1.0),
-    ("油耗成本(元)", "cost_fuel", 1.0),
-    ("碳成本(元)", "cost_carbon", 1.0),
-    ("总距离(km)", "distance_total", 1e-3),
-    ("充电电量(kWh)", "electricity_kwh", 1.0),
-    ("燃油车直接排放(kgCO$_2$)", "E_cv_direct", 1.0),
-    ("电动车充电排放(kgCO$_2$)", "E_ev_indirect", 1.0),
-    ("总排放(kgCO$_2$)", "E_total", 1.0),
+    ("总成本（元）", "total_cost", 1.0),
+    ("启动成本（元）", "cost_fix", 1.0),
+    ("行驶成本（元）", "cost_km", 1.0),
+    ("充电成本（元）", "cost_elec", 1.0),
+    ("油耗成本（元）", "cost_fuel", 1.0),
+    ("碳成本（元）", "cost_carbon", 1.0),
+    ("总距离（km）", "distance_total", 1e-3),
+    ("充电电量（kWh）", "electricity_kwh", 1.0),
+    ("燃油车直接排放（kgCO$_2$）", "E_cv_direct", 1.0),
+    ("电动车充电排放（kgCO$_2$）", "E_ev_indirect", 1.0),
+    ("总排放（kgCO$_2$）", "E_total", 1.0),
 ]
 
 # 每行取最小值加粗的行（用户 08-12 通用规矩；是否保留待用户看四列版后定）
@@ -106,12 +106,12 @@ def build_tex(means: list[dict], relative_rows: bool = False, columns=COLUMNS,
         cells = [fmt(v) for v in vals]
         lines.append(f"    {label} & " + " & ".join(cells) + r"\\")
     if ev_count_row:
-        lines.append("    电动车数(辆) & "
+        lines.append("    电动车数（辆） & "
                      + " & ".join(f"{m['n_veh_ev_mean']:.1f}" for m in means) + r"\\")
     if relative_rows:
         # 2026-09-10 用户"美化表格"：追加相对本文安排（末列）的变化率，让"多花多少钱换多少减排"在表内可见
         lines.append(r"    \midrule")
-        for label, key in ((r"总成本较本文安排变化(\%)", "total_cost"), (r"总排放较本文安排变化(\%)", "E_total")):
+        for label, key in (("总成本较本文安排变化（\%）", "total_cost"), ("总排放较本文安排变化（\%）", "E_total")):
             base = means[-1][key]
             cells = [f"${'+' if m[key] >= base else '-'}${abs(m[key] - base) / base * 100:.2f}" for m in means[:-1]] + ["---"]
             lines.append(f"    {label} & " + " & ".join(cells) + r"\\")
@@ -134,7 +134,7 @@ def main() -> int:
     ap.add_argument("--skip-policy-check", action="store_true", help="只用于脚本自测，正式出表不得使用")
     ap.add_argument("--dry-run", action="store_true", help="只打印，不写文件")
     ap.add_argument("--ev-count-row", action="store_true",
-                    help="2026-09-09 用户令：追加一行'电动车数(辆)'（该臂 10 次 n_veh_ev 的均值），"
+                    help="2026-09-09 用户令：追加一行'电动车数（辆）'（该臂 10 次 n_veh_ev 的均值），"
                          "供正文引用车队构成的辆数；默认关闭，tab:carbon-charging 逐位不变")
     ap.add_argument("--relative-rows", action="store_true", help="末尾追加两行：总成本/总排放较末列（本文安排）的变化率（%%）")
     ap.add_argument(
