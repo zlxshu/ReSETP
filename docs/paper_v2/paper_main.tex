@@ -123,29 +123,30 @@ time-of-use electricity price; time-varying grid carbon intensity; dynamic deman
 
 \begin{document}
 \EditorNote{\textbf{收稿日期:}\ XXXX-XX-XX}
-\EditorNote{\textbf{作者简介:} 周雷习书(2003--), 汉族, 男, 湖南郴州人, 硕士研究生, 研究方向: 智能优化算法、~物流与供应链, E-mail: XXX; 邱莹莹(1999--), 汉族, 女, 江苏南通人, 硕士研究生, 研究方向: 绿色物流, E-mail: 212281013@st.usst.edu.cn; 陈雨蝶(1999--), 汉族, 女, 安徽宿州人, 硕士, 研究方向: 智能优化算法、~物流与供应链, E-mail: chenyudie1022@126.com; 通信作者: 干宏程(1978--), 汉族, 男, 教授, 博士, 研究方向: 交通系统工程、~物流管理等, E-mail: hongchenggan@126.com.}
-% 基金项目为占位：暂用干宏程国家自然科学基金项目，待确认
-\EditorNote{\textbf{基金项目:}\ 国家自然科学基金(71871143)\\
-\textbf{Foundation item:} National Natural Science Foundation of China (71871143)}
+\EditorNote{\textbf{作者简介:} 周雷习书(2003--),汉族,男,浙江宁波人,硕士研究生,研究方向:智能优化算法、物流与供应链,E-mail: rayzo\_19@163.com;通信作者:干宏程(1978--),汉族,男,浙江宁波人,教授,博士,研究方向:交通系统工程、物流管理等,E-mail:hongchenggan@126.com;邱莹莹(1999--),汉族,女,江苏南通人,硕士,研究方向:绿色物流,E-mail:212281013@st.usst.edu.cn;陈雨蝶(1999--),汉族,女,安徽宿州人,硕士,研究方向:智能优化算法、物流与供应链,E-mail:chenyudie1022@126.com.}
+% 基金项目为占位，待作者确认正式项目名称
+\EditorNote{\textbf{基金项目:}\ 上海“科技创新行动计划”社会发展科技攻关项目(22dz1203405)\\
+\textbf{Foundation item:} Key scientific and technological project funded by Science and Technology Commission of Shanghai Municipality (22dz1203405)}
 \CiteAuthor{周雷习书, 干宏程, 邱莹莹, 等.}{Zhou L X S, Gan H C, Qiu Y Y, et al.}
 \maketitle
 
 \section{引言}
 
-2026年，国务院印发《“十五五”碳达峰行动方案》，提出加快交通运输领域低碳转型，持续增加新能源汽车保有量、加快公共领域车辆电动化\cite{ref:tdf1555}。同年，国家发展改革委与交通运输部印发《物流网建设实施方案》，提出推广绿色设施设备、加快建设零碳物流园区，并建设物流碳排放核算与管理公共服务平台\cite{ref:wlw2026}。城市配送处在上述转型的末端环节，连接仓储节点与终端客户，车辆运行频繁，服务时段集中，燃料消耗和碳排放直接影响物流企业的运营成本与减排目标。在低碳转型的政策要求和降低运营成本的经营需要双重推动下，优化配送车队的调度方案与能耗管理，已成为运筹学与物流管理领域的重要研究课题。
+2026年，国务院印发《“十五五”碳达峰行动方案》，提出加快交通运输领域低碳转型，持续增加新能源汽车保有量、加快公共领域车辆电动化\cite{ref:tdf1555}。同年，国家发展改革委与交通运输部印发《物流网建设实施方案》，提出推广绿色设施设备、加快建设零碳物流园区，并建设物流碳排放核算与管理公共服务平台\cite{ref:wlw2026}。落实到城市配送，企业每天须在有限班次和客户时间窗内，从多个车场组织燃油车与电动车完成订单，并在不耽误后续配送的时段补电。若低谷电价与低碳时段错开，按碳强度调整充电可能降低充电环节排放，却因电费、车型和路径联动而未必降低系统总排放。因此，车队编组、路径与充电时刻需要统一决策。
 
-在燃油车尚未退出、电动车持续投入运营的过渡阶段，由两类车辆共同承担配送任务是车队更新中常见的组织方式。燃油车续驶里程充裕、补能便捷，电动车运行能耗较低且无尾气排放，但两类车辆在固定成本、载重能力、续驶里程和补能方式等方面存在差异，车型配置与路径规划需要统一确定。李得成等\cite{ref:6}建立带时间窗的电动车与燃油车混合车辆路径模型，设计分支定价算法求解，并就车型配比、载重与电池容量等因素的影响做灵敏度分析。陈婉茹等\cite{ref:23}在多中心混合车队中考虑车辆速度对能耗的影响，采用机械功率模型分别计算两类车辆的实际能耗，并将碳交易成本纳入优化目标。近年的研究进一步把碳排放限额与碳交易\cite{ref:qiu2024}以及车队更新政策\cite{ref:gao2025}纳入混合车队路径优化，考察政策约束下两类车辆的配置与路径。这些研究以车型配置与路径为主，充电时刻对成本与排放的影响尚未纳入。
+燃油车尚未退出、电动车持续投入运营时，两类车辆在固定成本、载重、续驶里程和补能方式上的差异，使车型配置必须与路径共同确定。现有研究已采用分支定价求解带时间窗的油电混合车辆路径问题\cite{ref:6}，并进一步考虑多中心运营、速度能耗与碳交易\cite{ref:23}、碳排放规制\cite{ref:qiu2024}以及车队更新政策\cite{ref:gao2025}。这类研究说明政策约束会改变车型配置和路径，但通常没有把每次充电所处时段的电价与碳强度同时纳入决策。
 
-车辆启动成本按启用车辆数计取，减少启用车辆是压缩配送总成本的直接途径。同一车辆在一个运营日内连续执行多个配送趟，可以趟间衔接换取更少的启用车辆。带时间窗和释放时间的多中心多趟问题已有分支定价算法\cite{ref:44}，其异质车队扩展也已有相应的分支定价求解\cite{ref:sahin}。对电动车而言，电池容量限制使电动车单趟行驶里程较短，多趟运营并在趟间补电是电动车承担全天配送任务的主要方式，但现有多趟研究尚未将趟次衔接与混合车队、充电安排和时变碳排放联合建模。
+减少启用车辆可直接压缩启动成本，同一车辆在一个运营日内连续执行多个配送趟，则可用趟间衔接换取更少的车辆。多中心、多趟、时间窗与释放时间的联合问题已有启发式求解研究\cite{ref:44}，异质车队扩展也已有分支定价算法\cite{ref:sahin}。对电动车而言，多趟衔接同时决定下一趟的出发时刻和可用补电窗口；现有研究尚未把这一衔接关系与混合车队、充电时刻和时变碳排放统一建模。
 
-混合车队配送属于车辆路径问题（Vehicle Routing Problem, VRP）\cite{ref:dantzig}的扩展形式。车辆能耗和补能方式直接影响混合车队路径的可行性与成本结构。已有研究分别刻画了油电两类车型在同一路段上的差异化能耗\cite{ref:27}、电动车按后续路径需要灵活补电的部分充电策略\cite{ref:45}、以分段线性函数表示的电池非线性充电过程\cite{ref:montoya}和充电站的容量限制\cite{ref:12}。分时电价下混合车队的协作路径优化已有研究\cite{ref:shi2025}。在电力侧，电网碳排放强度随发电结构日内波动。按碳强度安排充电时段可降低充电碳排放\cite{ref:52}，以低碳需求响应引导电动车充电在我国具有可观的减排潜力\cite{ref:du2025}。然而当大量车辆跟随同一碳排放因子信号时，按该信号安排充电反而可能增加电网排放\cite{ref:martin2025}；该效应以电网整体为对象，本文以单个配送系统为对象，将电网碳强度取为外生参数。将非线性充电过程与分时电价和时变碳强度在同一时间尺度上协调考虑，是混合车队能耗与排放建模有待补充之处。
+混合车队配送是车辆路径问题（Vehicle Routing Problem, VRP）\cite{ref:dantzig}的扩展。相关研究已分别刻画油电车辆的差异化能耗\cite{ref:27}、非线性充电\cite{ref:montoya}和充电站容量限制\cite{ref:12}，并研究分时电价下的协作路径优化\cite{ref:shi2025}。在电力侧，按碳强度安排充电可以降低充电排放\cite{ref:52}，低碳需求响应也具有减排潜力\cite{ref:du2025}；但大量车辆跟随同一边际排放信号时也可能增加电网排放\cite{ref:martin2025}。上述成果分别处理路径、充电或电力信号，尚未回答在配送窗口受限时，低价与低碳信号错位为何可能使充电减排不能转化为系统总减排。本文以单个配送系统为对象，将电网碳强度作为外生参数。
 
-配送网络由单一车场扩展为多个车场后，客户、车辆和充电设施可以协同使用，各车场的服务范围随之扩大。既有研究提出了多中心电动车充电站共享框架\cite{ref:7}和时间依赖路网下多中心协作与资源共享的路径优化方法\cite{ref:wang2024}，并就协作收益的公平分配\cite{ref:8}与考虑服务质量差异的成本分摊\cite{ref:91}给出了方法。协作重新划分客户归属后，启用车辆与行驶里程未必同向变化；联盟能否维持还取决于分摊方式对规模较小一方的激励。
+配送网络由单一车场扩展为多个车场后，企业可以共享客户、车辆和充电设施。现有研究已涉及多中心电动车充电站共享\cite{ref:7}、时间依赖路网中的协作与资源共享\cite{ref:wang2024}，并从利润公平\cite{ref:8}和服务质量差异\cite{ref:91}讨论收益或成本分配。其共同关注点是协作能否降低联盟成本并维持稳定，但客户归属改变后，车辆数、路径里程和排放可能不同向变化，仍需从实际路径变化解释协作收益。
 
-上述研究多以需求信息在规划开始前完全已知为前提，而城市配送的订单往往在运营过程中持续到达或发生变化。自Psaraftis\cite{ref:14}提出动态车辆路径问题的研究框架以来，重规划时刻设定与静态子问题分解\cite{ref:18}、多车型动态路径优化\cite{ref:51}以及考虑碳排放的动态配送路径优化\cite{ref:zhang2022}已形成丰富成果。多中心电动车的动态路径问题也已出现结合强化学习与变邻域搜索的求解框架\cite{ref:shahbazian2025}。对多中心混合车队而言，每次重规划须继承各车辆已执行任务的位置、时刻、载重和电量状态；在此前提下，逐单插入与成批重排在方案改动与运营成本之间如何取舍，尚缺少比较。
+需求信息在运营过程中持续到达或变化时，上述车队、路径与充电决策还须随车辆状态滚动更新。动态车辆路径研究已形成基本框架\cite{ref:14}，并发展出周期性重规划与静态子问题分解\cite{ref:18}、多车型动态路径优化\cite{ref:51}、考虑碳排放的动态配送\cite{ref:zhang2022}以及结合强化学习与变邻域搜索的多中心电动车框架\cite{ref:shahbazian2025}。对多中心混合车队而言，重规划不仅要继承车辆位置、时刻和载重，还要继承电量与已执行充电；逐单插入和成批重排如何影响路径、成本与排放，仍缺少同一情景下的比较。
 
 为反映相关研究对上述五类问题特征的考虑情况，选取与本文关系较为密切的研究比较，结果见表\ref{tab:literature-comparison}。
 
+\Needspace{18\baselineskip}
 \begingroup
 \setptabsetup
 \setlength\LTleft{0pt}\setlength\LTright{0pt}
@@ -155,7 +156,7 @@ time-of-use electricity price; time-varying grid carbon intensity; dynamic deman
 文献 & 混合车队 & 分时充电排放 & 多中心 & 成本分摊 & 动态需求\\
 \midrule
 \endfirsthead
-\multicolumn{6}{c}{\small\bfseries 表~\thetable\quad 相关研究内容比较（续）}\\
+\multicolumn{6}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
 文献 & 混合车队 & 分时充电排放 & 多中心 & 成本分摊 & 动态需求\\
 \midrule
@@ -219,7 +220,7 @@ TVGCI-CMDMF-DVRP），建立以车辆启动、行驶、充电、油耗与碳排�
 符号 & 说明 & 符号 & 说明\\
 \midrule
 \endfirsthead
-\multicolumn{4}{c}{\small\bfseries 表~\thetable\quad 符号说明（续）}\\
+\multicolumn{4}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
 符号 & 说明 & 符号 & 说明\\
 \midrule
@@ -464,7 +465,7 @@ $\mathcal C_{kp}^{rr'}$为相邻配送趟$r$与$r'$之间的车场充电过程�
 $B_h^{d}=\varepsilon_{d_{r_1}^{+}r_1}$且$U_0\le t_h^{\mathrm{cb}}<t_h^{\mathrm{ce}}\le\tau_{d_{r_1}^{+}r_1}$；
 若$\mathcal C_{kp}^{rr'}=\{h\}$，则$B_h^{a}=\varepsilon_{d_r^{-}r}$、
 $B_h^{d}=\varepsilon_{d_{r'}^{+}r'}$且$\tau_{d_r^{-}r}\le t_h^{\mathrm{cb}}<t_h^{\mathrm{ce}}\le\tau_{d_{r'}^{+}r'}$。
-趟间间隔包括必要等待及相应充电时间；充电过程集合为空时，前后电量直接继承\cite{ref:44}。
+趟间间隔包括必要等待及相应充电时间；充电过程集合为空时，前后电量直接继承。
 充电设施容量依据容量受限充电站的并发占用原则\cite{ref:12}，
 按方案中各充电过程的$[t_h^{\mathrm{cb}},t_h^{\mathrm{ce}}]$预先确定时段占用系数$\beta_{skpt}$；
 车辆方案选择采用集合划分形式\cite{ref:sahin}。模型的总目标为
@@ -483,7 +484,7 @@ $\Omega_k^{(m)}$为车辆$k$在保留已执行前缀后形成的整日可行配�
 对$k\in K_{\mathrm{act}}^{(m)}$，该集合中的每个方案均包含相同的已执行前缀。
 方案属性$D_{kp}^{(m)}$、$G_{kp}^{(m)}$、$C_{kp}^{\mathrm e,(m)}$、
 $E_{kp}^{g,(m)}$和$E_{kp}^{e,(m)}$均由已执行前缀与待执行部分共同确定。
-动态阶段按滚动时域的做法\cite{ref:18}，保留已发生成本并重新规划待执行任务，
+动态阶段参考杨沙的两阶段建模思路\cite{ref:yang2022}，按滚动时域保留已发生成本并重新规划待执行任务，
 各成本项的核算方式与前述静态模型一致。
 因此，$F^{(m)}$表示时刻$u(m)$对整日总成本的重新评价，不同批次的$F^{(m)}$之间不作累加。
 \begin{equation}
@@ -525,7 +526,7 @@ F_5^{(m)}
 
 \subsubsection{动态信息处理策略}
 
-动态需求采用定时与定量联合的批处理策略：按固定间隔处理累积的动态信息，或在累计新增需求达到上限时立即处理。
+动态需求采用定时与定量联合的批处理策略：按固定间隔处理累积的动态信息，或在累计新增需求达到上限时立即处理\cite{ref:yang2022}。
 动态信息包括客户需求点增减与需求量变化\cite{ref:zhang2022}，本文另将时间窗变动作为同类动态信息处理。
 需求量发生变化时，先取消原订单，再将更新后的订单纳入待配送客户集合；
 时间窗发生变化时，更新相应客户的$[e_i,l_i]$。
@@ -760,12 +761,12 @@ Vidal等\cite{ref:76}将种群进化与局部搜索相结合，提出求解多�
 则企业$d$的分摊成本不高于其独立配送成本。
 
 
-本文选取北京TVGCI-CMDMF-DVRP算例开展仿真实验。
+本文构造以北京为背景的TVGCI-CMDMF-DVRP仿真情景开展实验。
 初始客户、车场和公共充电站的详细信息见表\ref{tab:initial-nodes}，D1和D2为两家企业的车场，以联盟形式共同承担配送，S1和S2为公共充电站。
 
 \begingroup
 \small
-\renewcommand{\arraystretch}{0.85}
+\renewcommand{\arraystretch}{0.95}
 \setlength{\tabcolsep}{1.2pt}
 \setlength\LTleft{0pt}\setlength\LTright{0pt}
 \begin{longtable}{@{\extracolsep{\fill}}cccccccc@{}}
@@ -774,7 +775,7 @@ Vidal等\cite{ref:76}将种群进化与局部搜索相结合，提出求解多�
 编号 & 经度（$^{\circ}$E） & 纬度（$^{\circ}$N） & \makecell{最早服务\\时刻} & \makecell{最迟服务\\时刻} & \makecell{需求量\\（kg）} & \makecell{体积\\（m$^3$）} & \makecell{服务时间\\（min）}\\
 \midrule
 \endfirsthead
-\multicolumn{8}{c}{\small\bfseries 表~\thetable\quad 初始客户、车场和充电站详细信息表（续）}\\
+\multicolumn{8}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
 编号 & 经度（$^{\circ}$E） & 纬度（$^{\circ}$N） & \makecell{最早服务\\时刻} & \makecell{最迟服务\\时刻} & \makecell{需求量\\（kg）} & \makecell{体积\\（m$^3$）} & \makecell{服务时间\\（min）}\\
 \midrule
@@ -849,7 +850,7 @@ S2 & 116.4314 & 39.9961 & --- & --- & --- & --- & ---\\
 
 \begingroup
 \small
-\renewcommand{\arraystretch}{0.90}
+\renewcommand{\arraystretch}{0.95}
 \setlength{\tabcolsep}{1.0pt}
 \setlength\LTleft{0pt}\setlength\LTright{0pt}
 \begin{longtable}{@{\extracolsep{\fill}}ccccccccc@{}}
@@ -858,7 +859,7 @@ S2 & 116.4314 & 39.9961 & --- & --- & --- & --- & ---\\
 编号 & 事件类型 & 经度（$^{\circ}$E） & 纬度（$^{\circ}$N） & 动态时刻 & 时间窗 & \makecell{需求量\\（kg）} & \makecell{体积\\（m$^3$）} & \makecell{服务时间\\（min）}\\
 \midrule
 \endfirsthead
-\multicolumn{9}{c}{\small\bfseries 表~\thetable\quad 动态需求信息（续）}\\
+\multicolumn{9}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
 编号 & 事件类型 & 经度（$^{\circ}$E） & 纬度（$^{\circ}$N） & 动态时刻 & 时间窗 & \makecell{需求量\\（kg）} & \makecell{体积\\（m$^3$）} & \makecell{服务时间\\（min）}\\
 \midrule
@@ -895,8 +896,8 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 1.0 & 6\
 基准单位碳价取0.20元/kgCO$_2$，高于现行全国碳市场价格（截至2025年8月底，综合价格收盘价为69.30元/吨，合0.069元/kgCO$_2$\cite{ref:mee2025}），落在文献\cite{ref:23}碳价灵敏度分析所取的0--1元/kgCO$_2$区间内，用于体现碳价上升情景。
 能耗模型参数中，空气阻力系数、迎风面积与整备质量为本文设定，其余取文献\cite{ref:27}的取值。燃油排放因子按《陆上交通运输企业温室气体排放核算方法与报告指南（试行）》\cite{ref:ndrc2015}给出的柴油缺省参数换算，所用参数为密度0.84 t/m$^3$、低位发热量43.330 GJ/t、单位热值含碳量$20.20\times10^{-3}$ tC/GJ和碳氧化率98\%。该因子与电网碳排放因子均只计二氧化碳，不含甲烷和氧化亚氮等其他温室气体。电动车首趟预充电前的初始电量$B_k^{0}$取0~kWh，碳排放配额$\overline E$取0~kg，即本文情景不预分配免费配额，式\eqref{eq:unified-f5}退化为按总排放计取碳成本。
 客户订单的体积与时间窗宽度取自公开的城市货运订单数据集\cite{ref:zhang2025}。客户位置重锚至北京的开放街道地图节点，需求量按车厢容量份额构造，服务时长按体积与装卸速率换算。时间窗位置与作业班次按上下午两班的班次结构外推。
-车场与公共充电站取自开放街道地图（\url{https://www.openstreetmap.org}）中的真实物流设施与充电站，行驶距离与时间由路径规划引擎OSRM在该路网上计算\cite{ref:osrm}。
-逐时电网碳强度取自中国分省电力碳排放因子数据集\cite{ref:82}中基准情景下北京2025年的逐小时序列，与分时电价共用同一半小时时段体系。
+车场与公共充电站取自开放街道地图（\url{https://www.openstreetmap.org}）中的真实物流设施与充电站，行驶距离与时间由开放路径规划引擎（Open Source Routing Machine, OSRM）在该路网上计算\cite{ref:osrm}。
+逐时电网碳强度取自中国分省电力碳排放因子预测数据集\cite{ref:82}中基准情景下北京2025年的模拟序列，并与分时电价按小时对齐后用于充电费用和间接碳排放核算。
 
 \begingroup
 \small
@@ -907,7 +908,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 1.0 & 6\
     参数 & 数值 & 参数 & 数值\\
 \midrule
 \endfirsthead
-\multicolumn{4}{c}{\small\bfseries 表~\thetable\quad 主要参数设置（续）}\\
+\multicolumn{4}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
     参数 & 数值 & 参数 & 数值\\
 \midrule
@@ -938,7 +939,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 1.0 & 6\
 
 算例包含2个企业车场和50个初始客户，客户需求合计13264 kg，节点均位于北京，
 车场D1最多可用3辆燃油车和3辆电动车，车场D2最多可用7辆燃油车和7辆电动车，实际启用的车辆数与车型由模型确定，
-采用北京代表日逐时电网碳强度数据\cite{ref:82}；其他地区算例采用相应城市的碳强度序列。
+采用北京代表日逐时电网碳强度预测序列\cite{ref:82}；其他地区算例采用相应城市的预测序列。
 由图\ref{fig:experiment-carbon-intensity}可知，电网碳强度凌晨和傍晚较高，正午前后随清洁电源出力增加降至低谷，峰谷差接近0.5 kgCO$_2$/kWh。
 
 \begin{figure}[!htb]
@@ -961,7 +962,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 1.0 & 6\
 路径 & 距离（km） & 成本（元） & 时间（h） & 油耗（L） & 电耗（kWh） & 碳排放（kg） & 客户数（个） & 装载率（\%）\\
 \midrule
 \endfirsthead
-\multicolumn{9}{c}{\small\bfseries 表~\thetable\quad 仿真实验最终路径表（续）}\\
+\multicolumn{9}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
 路径 & 距离（km） & 成本（元） & 时间（h） & 油耗（L） & 电耗（kWh） & 碳排放（kg） & 客户数（个） & 装载率（\%）\\
 \midrule
@@ -990,7 +991,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 1.0 & 6\
 \subsubsection{标准算例实验}
 
 选取Vidal等V13算例集中28个大规模多中心带时间窗标准算例检验算法性能，目标函数为总行驶距离。
-表中VCGP、MDFIHA和MDFIHA-ETGA为Lei和Hao\cite{ref:75}所用的算法标签，VCGP即Vidal等的混合遗传搜索算法\cite{ref:74}；
+标准算例结果见表\ref{tab:benchmark-results}。表中VCGP、MDFIHA和MDFIHA-ETGA为Lei和Hao\cite{ref:75}所用的算法标签，VCGP即Vidal等的混合遗传搜索算法\cite{ref:74}；
 本文算法在每个算例上独立运行10次，Best与Avg为其最优值与平均值。
 
 \begingroup
@@ -1005,7 +1006,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 1.0 & 6\
 & & Best & Avg & Best & Avg & Best & Avg & Best & Avg\\
 \midrule
 \endfirsthead
-\multicolumn{10}{c}{\small\bfseries 表~\thetable\quad 标准算例结果表（续）}\\
+\multicolumn{10}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
 \multirow{2}{*}{算例} & \multirow{2}{*}{BKS} &
 \multicolumn{2}{c}{VCGP\cite{ref:74}} & \multicolumn{2}{c}{MDFIHA\cite{ref:75}} & \multicolumn{2}{c}{MDFIHA-ETGA\cite{ref:75}} & \multicolumn{2}{c}{本文算法}\\
@@ -1084,7 +1085,7 @@ C055 & 新增订单 & 116.3575 & 39.9412 & 09:57 & 13:06--13:44 & 208 & 1.0 & 6\
     算法 & 最优解（元） & 平均值（元） & Gap（\%）\\
 \midrule
 \endfirsthead
-\multicolumn{4}{c}{\small\bfseries 表~\thetable\quad TVGCI-CMDMF-DVRP模型实验结果（续）}\\
+\multicolumn{4}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
     算法 & 最优解（元） & 平均值（元） & Gap（\%）\\
 \midrule
@@ -1135,7 +1136,7 @@ MTC-HGS最优方案的电动车充电排放为77.86 kgCO$_2$，高于MT-HGS最�
     \makecell{燃油车/电动车\\（辆）} & \makecell{启动成本\\（元）} & \makecell{行驶成本\\（元）} & \makecell{充电成本\\（元）} & \makecell{油耗成本\\（元）} & \makecell{碳成本\\（元）} & \makecell{总排放\\（kgCO$_2$）} & \makecell{总成本\\（元）}\\
 \midrule
 \endfirsthead
-\multicolumn{8}{c}{\small\bfseries 表~\thetable\quad 不同动力配置下的配送方案对比（续）}\\
+\multicolumn{8}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
     \makecell{燃油车/电动车\\（辆）} & \makecell{启动成本\\（元）} & \makecell{行驶成本\\（元）} & \makecell{充电成本\\（元）} & \makecell{油耗成本\\（元）} & \makecell{碳成本\\（元）} & \makecell{总排放\\（kgCO$_2$）} & \makecell{总成本\\（元）}\\
 \midrule
@@ -1175,7 +1176,7 @@ MTC-HGS最优方案的电动车充电排放为77.86 kgCO$_2$，高于MT-HGS最�
 
 \subsubsection{不同充电安排对比分析}
 
-电网碳强度采用图\ref{fig:experiment-carbon-intensity}所示的北京2025年逐小时数据\cite{ref:82}，日内取值介于0.154至0.644 kgCO$_2$/kWh之间，峰谷比为4.18。
+电网碳强度采用图\ref{fig:experiment-carbon-intensity}所示的北京2025年逐小时预测序列\cite{ref:82}，日内取值介于0.154至0.644 kgCO$_2$/kWh之间，峰谷比为4.18。
 电动车充电按是否受引导分为无序充电与有序充电，有序充电按电网碳强度安排充电时刻可降低充电环节的碳排放\cite{ref:52}；
 配送车辆回场后立即充满是充电策略比较中的基准，其排放最高\cite{ref:woody2021}。
 为考察时变碳强度对降本降碳的作用，在基准条件（北京现行分时电价、单位碳价0.20元/kgCO$_2$）下设置三种充电安排：
@@ -1223,7 +1224,7 @@ MTC-HGS最优方案的电动车充电排放为77.86 kgCO$_2$，高于MT-HGS最�
 \par\endgroup
 
 分析可知：
-1）分时电价与电网碳强度在时段上错开。北京现行分时电价按电网负荷划定\cite{ref:bj-tou}，低谷时段为23:00--07:00；电网碳强度取决于电源结构\cite{ref:82}，夜间最高、正午最低。谷段恰好落在碳强度最高的时段，光伏出力最大的10:00--13:00处于高峰时段；
+1）分时电价与电网碳强度在时段上错开。北京现行分时电价按电网负荷划定\cite{ref:bj-tou}，低谷时段为23:00--07:00；基准情景下的电网碳强度预测序列取决于电源结构\cite{ref:82}，夜间最高、正午最低。谷段恰好落在碳强度最高的时段，光伏出力最大的10:00--13:00处于高峰时段；
 河北省已将部分低谷时段调整至午间\cite{ref:hebei-tou}。
 2）补电只能安排在班次允许的三个时段内：首趟出车前（自前一晚回场至次日开工）、午休与趟间。
 碳强度最低的13:00为下午班开工时刻，首趟前时段不含该时刻；午休与趟间时段内电价与碳强度的低点接近，两种有序充电均将午休补电推迟至12:19--12:35，
@@ -1238,6 +1239,7 @@ MTC-HGS最优方案的电动车充电排放为77.86 kgCO$_2$，高于MT-HGS最�
 5）两类车型的成本水平接近。碳强度引导有序充电的总排放中76.7\%为燃油车直接排放，车队以2辆燃油车3辆电动车为主。
 由表\ref{tab:fleet-config}可知，车队总量固定为6辆时，3辆燃油车3辆电动车与4辆燃油车2辆电动车的总成本仅相差4.00元。按碳强度充电的充电成本高于按电价充电9.06元，电动车的使用成本未因此下降，基准碳价不足以改变车型选择。
 
+上述价格信号、运营窗口与车型选择的作用关系如图\ref{fig:mechanism}所示。
 \begin{figure}[!htb]
   \centering
   \input{generated_figures/figure_5_mechanism.tikz}
@@ -1332,7 +1334,7 @@ MTC-HGS最优方案的电动车充电排放为77.86 kgCO$_2$，高于MT-HGS最�
     & 独立配送 & 联合配送 & 独立配送 & 联合配送\\
 \midrule
 \endfirsthead
-\multicolumn{5}{c}{\small\bfseries 表~\thetable\quad 两车场的配送组织变化（续）}\\
+\multicolumn{5}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
     \multirow{2}{*}{比较项目} & \multicolumn{2}{c}{企业A车场} & \multicolumn{2}{c}{企业B车场}\\
     \cmidrule(lr){2-3}\cmidrule(lr){4-5}
@@ -1370,7 +1372,7 @@ MTC-HGS最优方案的电动车充电排放为77.86 kgCO$_2$，高于MT-HGS最�
     比较项目 & 独立配送 & 联合配送 & 变化幅度\\
 \midrule
 \endfirsthead
-\multicolumn{4}{c}{\small\bfseries 表~\thetable\quad 不同配送模式对比（续）}\\
+\multicolumn{4}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
     比较项目 & 独立配送 & 联合配送 & 变化幅度\\
 \midrule
@@ -1413,7 +1415,7 @@ MTC-HGS最优方案的电动车充电排放为77.86 kgCO$_2$，高于MT-HGS最�
 \subsection{联合配送成本分摊分析}
 
 联合配送把两家企业的客户与车辆放在一起统一安排，所得节约来自客户归属调整与车辆合并，无法直接归到某一方名下。
-既有研究在多中心协作中考虑了协作收益的公平分配\cite{ref:8}与成本分摊方法\cite{ref:91}；若分摊后某一方承担的成本高于其自行配送的成本，该企业将不再参与，协作退回各自配送。
+既有研究在多中心协作中考虑了协作收益的公平分配\cite{ref:8}与成本分摊方法\cite{ref:91}；若某一企业的分摊成本高于其独立配送成本，则该分配结果不能保证该企业的参与意愿。因此，本文以各企业分摊成本不高于独立配送成本作为分配方案的可接受条件。
 
 本文按Shapley值分摊，企业的分摊成本按式\eqref{eq:shapley-cost}计算，由该企业按各种次序加入联盟时的边际贡献取平均得到。
 均等分摊会让规模较小的企业承担高于其独立配送成本的费用，比例分摊不反映各方的边际贡献。
@@ -1431,7 +1433,7 @@ $C_d$取该车场按就近归属独立配送的成本，$C(\{A,B\})$取两车场
     成本项目 & 企业A & 企业B\\
 \midrule
 \endfirsthead
-\multicolumn{3}{c}{\small\bfseries 表~\thetable\quad 联合配送成本分摊结果（续）}\\
+\multicolumn{3}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
     成本项目 & 企业A & 企业B\\
 \midrule
@@ -1478,7 +1480,7 @@ $C_d$取该车场按就近归属独立配送的成本，$C(\{A,B\})$取两车场
     比较项目 & \makecell{完全信息\\静态参考} & \makecell{顺序插入\\策略} & \makecell{滚动重优化\\策略} & 相对变化\\
 \midrule
 \endfirsthead
-\multicolumn{5}{c}{\small\bfseries 表~\thetable\quad 动态需求下不同处理方式的求解结果（续）}\\
+\multicolumn{5}{c}{\small\bfseries 表~\thetable（续）}\\
 \toprule
     比较项目 & \makecell{完全信息\\静态参考} & \makecell{顺序插入\\策略} & \makecell{滚动重优化\\策略} & 相对变化\\
 \midrule
@@ -1519,39 +1521,34 @@ $C_d$取该车场按就近归属独立配送的成本，$C(\{A,B\})$取两车场
 
 \section{结语}
 
-本文研究双碳背景下的TVGCI-CMDMF-DVRP，
-考虑多中心协作、油电混合编组、多趟衔接、非线性充电、分时电价、时变碳强度与动态需求等因素。
-模型把充电过程的电量变化、费用核算与间接碳排放统一到同一时段体系，
-并给出多趟运营与动态重规划中车辆位置、载重与电量状态的继承方法。
-针对模型特点设计多趟衔接、车型置换邻域与时变碳充电安排的混合遗传搜索算法MTC-HGS。
-标准算例上本文算法的平均结果优于参与比较的其他算法。仿真实验表明，油电混合配置的总成本低于纯燃油与纯电动配置。
-在现行分时电价与基准碳价下，按电网碳强度安排充电只降低充电环节的排放，总排放未减少，
-原因是低谷电价时段与碳强度低谷错位，碳价也不足以改变车型选择。
-当谷段对齐到光伏出力较高的午间并同时提高单位碳价时，按碳强度安排充电的总排放明显下降，总成本略高于按电价安排充电。
-多中心联合配送以行驶里程的增加换取车辆规模的压缩，同时降低成本与排放，按Shapley值分摊后协作联盟保持稳定。
-动态需求下按批次重排未执行路径优于逐单插入，成本、排放与距离同时下降。
-上述结果为物流企业在车队电动化过渡期安排编组与充电、为政府划定分时电价时段和确定碳价水平提供管理启示。
+本文研究油电车辆并行运营时多中心协作、多趟衔接、充电安排与动态需求共同作用下的路径决策。模型统一核算充电电量、电费与间接碳排放，并在多趟运营和动态重规划中继承车辆状态；设计的MTC-HGS通过标准算例和完整模型实验得到检验。
+
+仿真结果表明，油电混合配置的总成本低于纯燃油与纯电动配置，但低碳充电不必然降低系统总排放。在现行分时电价与基准碳价下，夜间低谷电价与较高碳强度错位，运营窗口又限制了可改充时段，按碳强度充电因而只降低充电环节排放；只有谷段与午间低碳时段重合且碳价足以改变车型选择时，总排放才明显下降。联合配送通过重划客户归属和压缩车辆规模降低成本与排放，按Shapley值分摊后联盟保持稳定；动态需求下，成批重排优于逐单插入。
+
+因此，配送企业需要联合选择车型、路径和充电时刻，不能只追逐单一的低价或低碳信号；管理部门调整谷段时刻和碳价水平，会直接改变企业的充电窗口、车队构成和系统排放。价格信号只有与实际运营窗口相匹配，低碳充电才可能转化为配送系统总减排。
 
 后续研究可结合企业实际运营数据，进一步考察充电排队、随机行驶时间与跨日车辆调度对配送方案的影响，
 并将协作范围扩展到多个合作周期，研究长期合作下的成本分摊方式与联盟稳定性。
 
 \begin{thebibliography}{99}
 
-\bibitem{ref:tdf1555} 国务院. 关于印发《“十五五”碳达峰行动方案》的通知[EB/OL]. 国发〔2026〕22号. (2026-07-09)[2026-09-09].
+\bibitem{ref:tdf1555} 国务院. 关于印发《“十五五”碳达峰行动方案》的通知[EB/OL]. 国发〔2026〕22号. (2026--07--09)[2026--09--09].\\
+State Council. Notice on issuing the Action Plan for Carbon Peaking during the 15th Five-Year Plan Period[EB/OL]. State Council Document [2026] No. 22. (2026--07--09)[2026--09--09].\\
 \url{https://www.gov.cn/zhengce/content/202607/content_7074826.htm}.
 
-\bibitem{ref:wlw2026} 国家发展改革委, 交通运输部. 关于印发《物流网建设实施方案》的通知[EB/OL]. 发改经贸〔2026〕1241号. (2026-08-27)[2026-09-09].
+\bibitem{ref:wlw2026} 国家发展改革委, 交通运输部. 关于印发《物流网建设实施方案》的通知[EB/OL]. 发改经贸〔2026〕1241号. (2026--08--27)[2026--09--09].\\
+National Development and Reform Commission, Ministry of Transport. Notice on issuing the Implementation Plan for Logistics Network Construction[EB/OL]. NDRC Economic and Trade Document [2026] No. 1241. (2026--08--27)[2026--09--09].\\
 \url{https://zfxxgk.ndrc.gov.cn/web/iteminfo.jsp?id=20659}.
 
-\bibitem{ref:6} 李得成, 陈彦如, 张宗成. 基于分支定价算法的电动车与燃油车混合车辆路径问题研究[J]. 系统工程理论与实践, 2021, 41(4): 995--1009.\newline
+\bibitem{ref:6} 李得成, 陈彦如, 张宗成. 基于分支定价算法的电动车与燃油车混合车辆路径问题研究[J]. 系统工程理论与实践, 2021, 41(4): 995--1009.\\
 Li D C, Chen Y R, Zhang Z C. A branch-and-price algorithm for electric vehicle routing problem with time windows and mixed fleet[J]. Systems Engineering --- Theory \& Practice, 2021, 41(4): 995--1009.
 
-\bibitem{ref:23} 陈婉茹, 徐光明, 张得志, 等. 碳交易机制下多中心混合车队配送路径和速度优化研究[J]. 系统工程理论与实践, 2023, 43(11): 3320--3335.\newline
+\bibitem{ref:23} 陈婉茹, 徐光明, 张得志, 等. 碳交易机制下多中心混合车队配送路径和速度优化研究[J]. 系统工程理论与实践, 2023, 43(11): 3320--3335.\\
 Chen W R, Xu G M, Zhang D Z, et al. Multi-depot mixed fleet routing and speed optimization under a carbon trading mechanism[J]. Systems Engineering --- Theory \& Practice, 2023, 43(11): 3320--3335.
 
 \bibitem{ref:qiu2024} Qiu Y, Ding S, Pardalos P M. Routing a mixed fleet of electric and conventional vehicles under regulations of carbon emissions[J]. International Journal of Production Research, 2024, 62(16): 5720--5736.
 
-\bibitem{ref:gao2025} 高咏玲, 乔源, 徐猛. 考虑电动车配置与路径优化的城市配送车队更新政策效应研究[J]. 中国管理科学, 2025, 33(8): 156--165.\newline
+\bibitem{ref:gao2025} 高咏玲, 乔源, 徐猛. 考虑电动车配置与路径优化的城市配送车队更新政策效应研究[J]. 中国管理科学, 2025, 33(8): 156--165.\\
 Gao Y L, Qiao Y, Xu M. Effects analyses of delivery fleet renewal policies considering electric vehicle deployment and routing optimization[J]. Chinese Journal of Management Science, 2025, 33(8): 156--165.
 
 \bibitem{ref:44} Zhen L, Ma C, Wang K, et al. Multi-depot multi-trip vehicle routing problem with time windows and release dates[J]. Transportation Research Part E: Logistics and Transportation Review, 2020, 135: 101866.
@@ -1561,8 +1558,6 @@ Gao Y L, Qiao Y, Xu M. Effects analyses of delivery fleet renewal policies consi
 \bibitem{ref:dantzig} Dantzig G B, Ramser J H. The truck dispatching problem[J]. Management Science, 1959, 6(1): 80--91.
 
 \bibitem{ref:27} Goeke D, Schneider M. Routing a mixed fleet of electric and conventional vehicles[J]. European Journal of Operational Research, 2015, 245(1): 81--99.
-
-\bibitem{ref:45} Keskin M, \c{C}atay B. Partial recharge strategies for the electric vehicle routing problem with time windows[J]. Transportation Research Part C: Emerging Technologies, 2016, 65: 111--127.
 
 \bibitem{ref:montoya} Montoya A, Guéret C, Mendoza J E, et al. The electric vehicle routing problem with nonlinear charging function[J]. Transportation Research Part B: Methodological, 2017, 103: 87--110.
 
@@ -1582,40 +1577,47 @@ Gao Y L, Qiao Y, Xu M. Effects analyses of delivery fleet renewal policies consi
 
 \bibitem{ref:8} Soriano A, Gansterer M, Hartl R F. The multi-depot vehicle routing problem with profit fairness[J]. International Journal of Production Economics, 2023, 255: 108669.
 
-\bibitem{ref:91} 饶卫振, 苗晓河, 朱庆华, 等. 考虑企业服务质量差异的协作配送问题及成本分摊方法研究[J]. 系统工程理论与实践, 2022, 42(10): 2721--2739.\newline
+\bibitem{ref:91} 饶卫振, 苗晓河, 朱庆华, 等. 考虑企业服务质量差异的协作配送问题及成本分摊方法研究[J]. 系统工程理论与实践, 2022, 42(10): 2721--2739.\\
 Rao W Z, Miao X H, Zhu Q H, et al. Research on collaborative distribution problems and cost allocation methods considering differences in service quality of logistics enterprises[J]. Systems Engineering --- Theory \& Practice, 2022, 42(10): 2721--2739.
 
 \bibitem{ref:14} Psaraftis H N. Dynamic vehicle routing problems[M]//Golden B L, Assad A A. Vehicle Routing: Methods and Studies. Amsterdam: North-Holland, 1988: 223--248.
 
-\bibitem{ref:18} 李阳, 范厚明, 张晓楠. 动态需求下车辆路径问题的周期性优化模型及求解[J]. 中国管理科学, 2022, 30(8): 254--266.\newline
+\bibitem{ref:18} 李阳, 范厚明, 张晓楠. 动态需求下车辆路径问题的周期性优化模型及求解[J]. 中国管理科学, 2022, 30(8): 254--266.\\
 Li Y, Fan H M, Zhang X N. A periodic optimization model and solution for capacitated vehicle routing problem with dynamic requests[J]. Chinese Journal of Management Science, 2022, 30(8): 254--266.
 
-\bibitem{ref:51} 姜广田, 纪皎月, 董佳伟. 绿色物流配送下的多车型动态车辆路径优化[J]. 系统工程理论与实践, 2024, 44(7): 2362--2380.\newline
+\bibitem{ref:51} 姜广田, 纪皎月, 董佳伟. 绿色物流配送下的多车型动态车辆路径优化[J]. 系统工程理论与实践, 2024, 44(7): 2362--2380.\\
 Jiang G T, Ji J Y, Dong J W. Multi-vehicle dynamic vehicle routing optimization in green logistics distribution[J]. Systems Engineering --- Theory \& Practice, 2024, 44(7): 2362--2380.
 
-\bibitem{ref:zhang2022} 张金良, 李超. 碳排放影响下的动态配送车辆路径优化研究[J]. 中国管理科学, 2022, 30(9): 184--194.\newline
+\bibitem{ref:zhang2022} 张金良, 李超. 碳排放影响下的动态配送车辆路径优化研究[J]. 中国管理科学, 2022, 30(9): 184--194.\\
 Zhang J L, Li C. Research on dynamic distribution vehicle route optimization under the influence of carbon emission[J]. Chinese Journal of Management Science, 2022, 30(9): 184--194.
 
 \bibitem{ref:shahbazian2025} Shahbazian R, Ciacco A, Macrina G, et al. Knowledge-guided hybrid deep reinforcement learning for the dynamic multi-depot electric vehicle routing problem[J]. Computers \& Operations Research, 2025, 184: 107217.
 
-\bibitem{ref:95} 巩亮, 郑世龙, 许得杰, 等. 低碳视角下油电混合车队配送路径优化研究[J]. 控制与决策, 2026, 41(5): 1338--1347.\newline
+\bibitem{ref:95} 巩亮, 郑世龙, 许得杰, 等. 低碳视角下油电混合车队配送路径优化研究[J]. 控制与决策, 2026, 41(5): 1338--1347.\\
 Gong L, Zheng S L, Xu D J, et al. Optimization of distribution paths for hybrid fuel-electric fleet under low-carbon perspective[J]. Control and Decision, 2026, 41(5): 1338--1347.
 
 \bibitem{ref:woody2021} Woody M, Vaishnav P, Craig M T, et al. Charging strategies to minimize greenhouse gas emissions of electrified delivery vehicles[J]. Environmental Science \& Technology, 2021, 55(14): 10108--10120.
+
+\bibitem{ref:yang2022} 杨沙. 考虑动态需求的冷链物流配送路径优化研究[D]. 沈阳: 沈阳工业大学, 2022.\\
+Yang S. Research on distribution route optimization of cold chain logistics considering dynamic demand[D]. Shenyang: Shenyang University of Technology, 2022.
 
 \bibitem{ref:76} Vidal T, Crainic T G, Gendreau M, et al. A hybrid genetic algorithm for multidepot and periodic vehicle routing problems[J]. Operations Research, 2012, 60(3): 611--624.
 
 \bibitem{ref:hgs-cvrp-2022} Vidal T. Hybrid genetic search for the CVRP: Open-source implementation and SWAP* neighborhood[J]. Computers \& Operations Research, 2022, 140: 105643.
 
-\bibitem{ref:srex} Nagata Y, Kobayashi S. A memetic algorithm for the pickup and delivery problem with time windows using selective route exchange crossover[C]//Parallel Problem Solving from Nature, PPSN XI. Berlin: Springer, 2010: 536--545.
+\bibitem{ref:srex} Nagata Y, Kobayashi S. A memetic algorithm for the pickup and delivery problem with time windows using selective route exchange crossover[C]//Schaefer R, Cotta C, Ko{\l}odziej J, et al. Parallel Problem Solving from Nature, PPSN XI: 11th International Conference, Krak{\'o}w, Poland, September 11--15, 2010, Proceedings, Part I. Berlin, Heidelberg: Springer, 2010: 536--545.
 
-\bibitem{ref:changjiang2024} 邬博华, 曹海花, 叶之楠. 经济性驱动，新能源轻重卡兑现爆发式增长[R/OL]. 武汉: 长江证券研究所, 2024-07-13: 5[2026-09-09].
-\url{https://reportify-1252068037.cos.ap-beijing.myqcloud.com/media/production/s_0232f12d_0232f12d70229944881f25f11df9ebfa.pdf}.
+\bibitem{ref:changjiang2024} 邬博华, 曹海花, 叶之楠. 经济性驱动，新能源轻重卡兑现爆发式增长[R/OL]. 武汉: 长江证券研究所, 2024--07--13: 5[2026--09--09].\\
+Wu B H, Cao H H, Ye Z N. Economics-driven growth: New-energy light- and heavy-duty trucks poised for rapid expansion[R/OL]. Wuhan: Changjiang Securities Research Institute, 2024--07--13: 5[2026--09--09].\\
+\href{https://reportify-1252068037.cos.ap-beijing.myqcloud.com/media/production/s_0232f12d_0232f12d70229944881f25f11df9ebfa.pdf}{%
+\nolinkurl{https://reportify-1252068037.cos.ap-beijing.myqcloud.com/media/production/}\\
+\nolinkurl{s_0232f12d_0232f12d70229944881f25f11df9ebfa.pdf}}.
 
 % 日期取所引网页显示的发布日期2023-08-21（该页另标成文日期2023-08-18、实施日期2023-09-01）；
 % 该通知只规定时段与浮动比例，不含元/kWh绝对电价。
 
-\bibitem{ref:bj-tou} 北京市发展和改革委员会. 关于进一步完善本市分时电价机制等有关事项的通知[EB/OL]. 京发改规〔2023〕11号. (2023-08-21)[2026-09-09].
+\bibitem{ref:bj-tou} 北京市发展和改革委员会. 关于进一步完善本市分时电价机制等有关事项的通知[EB/OL]. 京发改规〔2023〕11号. (2023--08--21)[2026--09--09].\\
+Beijing Municipal Commission of Development and Reform. Notice on further improving the time-of-use electricity pricing mechanism and related matters[EB/OL]. Jing Fa Gai Gui [2023] No. 11. (2023--08--21)[2026--09--09].\\
 \url{https://fgw.beijing.gov.cn/fgwzwgk/2024zcwj/bwgfxwj/202308/t20230821_3718725.htm}.
 
 % 三档到户电价的实际出处。机构名与表名取自扫描件/镜像原文抬头；1--10 kV单一制高峰/平/低谷
@@ -1623,15 +1625,18 @@ Gong L, Zheng S L, Xu D J, et al. Optimization of distribution paths for hybrid 
 % 国网95598原始发布URL本轮仍未检索到【未核实】，故URL给可核的第三方数字档案镜像；
 % 本地扫描件 data/ChinaPrices/official_snapshots/china_2025_02_nine_city/beijing_2025_02.webp (sha256 a77e05e7...)。
 
-\bibitem{ref:bj-price-table} 国网北京市电力公司. 国网北京市电力公司代理购电工商业用户电价表（执行时间：2025年2月1日--2025年2月28日）[EB/OL]. (2025-01-31)[2026-09-09].
+\bibitem{ref:bj-price-table} 国网北京市电力公司. 国网北京市电力公司代理购电工商业用户电价表（执行时间：2025年2月1日--2025年2月28日）[EB/OL]. (2025--01--31)[2026--09--09].\\
+State Grid Beijing Electric Power Company. Electricity tariff schedule for commercial and industrial customers under agency power purchase (effective from February 1 to February 28, 2025)[EB/OL]. (2025--01--31)[2026--09--09].\\
 \url{https://energydc.cn/policy/beijing/2025-02/6b885a88-d1dd-11f0-9e8e-46a1f660a16d}.
 
-\bibitem{ref:mee2025} 生态环境部. 全国碳市场发展报告（2025）[R]. 北京: 生态环境部, 2025.
+\bibitem{ref:mee2025} 生态环境部. 全国碳市场发展报告（2025）[R]. 北京: 生态环境部, 2025.\\
+Ministry of Ecology and Environment of the People's Republic of China. Progress Report of China's National Carbon Market (2025)[R]. Beijing: Ministry of Ecology and Environment of the People's Republic of China, 2025.
 
 % 责任者、文号、成文日期与附件清单均取自该发改委政务公开页；柴油缺省参数（密度0.84 t/m$^3$、
 % 低位发热量43.330 GJ/t、单位热值含碳量20.20e-3 tC/GJ、碳氧化率98\%）见该通知附件8正文。
 
-\bibitem{ref:ndrc2015} 国家发展改革委办公厅. 关于印发第三批10个行业企业温室气体核算方法与报告指南（试行）的通知：附件8陆上交通运输企业温室气体排放核算方法与报告指南（试行）[EB/OL]. 发改办气候〔2015〕1722号. (2015-07-06)[2026-09-10].\newline
+\bibitem{ref:ndrc2015} 国家发展改革委办公厅. 关于印发第三批10个行业企业温室气体核算方法与报告指南（试行）的通知：附件8陆上交通运输企业温室气体排放核算方法与报告指南（试行）[EB/OL]. 发改办气候〔2015〕1722号. (2015--07--06)[2026--09--10].\\
+General Office of the National Development and Reform Commission. Notice on issuing the third batch of greenhouse gas accounting methods and reporting guidelines for enterprises in 10 industries (trial): Annex 8 Guidelines for greenhouse gas emissions accounting and reporting of land transportation enterprises (trial)[EB/OL]. NDRC General Office Climate Document [2015] No. 1722. (2015--07--06)[2026--09--10].\\
 \url{https://zfxxgk.ndrc.gov.cn/web/iteminfo.jsp?id=2313}.
 
 \bibitem{ref:zhang2025} Zhang J. Pickup and delivery planning for the crowdsourced freight delivery routing problem[J]. PLoS ONE, 2025, 20(2): e0318432.
@@ -1640,7 +1645,7 @@ Gong L, Zheng S L, Xu D J, et al. Optimization of distribution paths for hybrid 
 
 \bibitem{ref:82} Li Y, Zhang S, Li W, et al. High temporal and spatial resolution projected electricity carbon emission factors of China from 2025--2060[J]. Scientific Data, 2026, 13: 926.
 
-\bibitem{ref:75} Lei Z, Hao J K. A GPU-accelerated hybrid method for a class of multi-depot vehicle routing problems[EB/OL]. arXiv:2605.05208. (2026-02-24)[2026-09-09].
+\bibitem{ref:75} Lei Z, Hao J K. A GPU-accelerated hybrid method for a class of multi-depot vehicle routing problems[EB/OL]. arXiv:2605.05208. (2026--02--24)[2026--09--09].
 \url{https://arxiv.org/abs/2605.05208}.
 
 \bibitem{ref:74} Vidal T, Crainic T G, Gendreau M, et al. A hybrid genetic algorithm with adaptive diversity management for a large class of vehicle routing problems with time-windows[J]. Computers \& Operations Research, 2013, 40(1): 475--489.
@@ -1650,7 +1655,8 @@ Gong L, Zheng S L, Xu D J, et al. Optimization of distribution paths for hybrid 
 % 责任者取该页标注的来源“河北省发展和改革委员会”，日期取该页显示的发布日期2022-11-03
 % （文件落款2022年10月28日，自2022年12月1日起执行）。
 
-\bibitem{ref:hebei-tou} 河北省发展和改革委员会. 关于进一步完善河北南网工商业及其他用户分时电价政策的通知[EB/OL]. 冀发改能价〔2022〕1364号. (2022-11-03)[2026-09-10].\newline
+\bibitem{ref:hebei-tou} 河北省发展和改革委员会. 关于进一步完善河北南网工商业及其他用户分时电价政策的通知[EB/OL]. 冀发改能价〔2022〕1364号. (2022--11--03)[2026--09--10].\\
+Hebei Provincial Development and Reform Commission. Notice on further improving the time-of-use electricity pricing policy for industrial, commercial and other users in the Southern Hebei Power Grid[EB/OL]. Ji Fa Gai Neng Jia [2022] No. 1364. (2022--11--03)[2026--09--10].\\
 \url{https://fgw.cangzhou.gov.cn/fgw/c101713/202403/f236865498a447aabe5b3f38f66e85db.shtml}.
 
 \end{thebibliography}
