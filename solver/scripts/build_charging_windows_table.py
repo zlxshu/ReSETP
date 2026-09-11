@@ -32,7 +32,7 @@ ARMS = [
     ("电价引导有序充电", REPO / "solver/reports/charging_arrangements_20260906/cost_min", "cost_min"),
     ("碳强度引导有序充电", REPO / "solver/reports/charging_arrangements_20260906/carbon_min", "carbon_min"),
 ]
-WINDOWS = [("first", "首趟出车前"), ("lunch", "午休"), ("pm", "趟间")]
+WINDOWS = [("first", "首趟出车前"), ("lunch", "上午班后"), ("pm", "趟间")]
 DAY, SLOT = 86400.0, 1800.0
 OUT = REPO / "docs/paper_v2/generated_tables/charging_windows_table.tex"
 
@@ -161,7 +161,7 @@ def main() -> int:
     # 竖排：窗口分块 × 方案逐行（13 列横排超宽 23.9 pt，2026-09-06 改为此式；块内成本最低与碳排量最低各自加粗）
     names = [h for h, _, _ in ARMS]
     lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llccc@{}}", r"    \toprule",
-             r"    可充电时段 & 充电安排 & 充电开始时刻（电量中位） & 充电成本（元） & 碳排量（kgCO$_2$）\\",
+             r"    可充电阶段 & 充电安排 & 充电开始时刻（电量加权中位数） & 充电成本（元） & 碳排放量（kgCO$_2$）\\",
              r"    \midrule"]
     blocks = [(lab, [(d[key][0], d[key][1], fmt_time(d[key][3])) for d in data]) for key, lab in WINDOWS]
     blocks.append(("合计", [(sum(v[0] for v in d.values()), sum(v[1] for v in d.values()), "") for d in data]))

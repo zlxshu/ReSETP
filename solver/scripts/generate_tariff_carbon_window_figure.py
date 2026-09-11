@@ -119,7 +119,7 @@ def main() -> int:
     price, carbon = load_calendar()
     shifts = json.load(open(SHIFT))["shifts"]
     fig, (left, right) = plt.subplots(1, 2, figsize=(6.9, 2.6))
-    draw_panel(left, carbon, "电网碳强度\n(kgCO$_2$e/kWh)", 0.9, 0.2, shifts)
+    draw_panel(left, carbon, "电网碳强度\n(kgCO$_2$/kWh)", 0.9, 0.2, shifts)
     draw_panel(right, price, "分时电价\n(元/kWh)", 1.6, 0.2, shifts)
     left.set_title("(a) 电网碳强度与补电窗口", fontsize=TEXT_PT, y=-0.42)
     right.set_title("(b) 分时电价与补电窗口", fontsize=TEXT_PT, y=-0.42)
