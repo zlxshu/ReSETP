@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-"""图：分时电价、电网碳强度与补电窗口的时段关系（4.4.2，2026-09-06 第四版＝条件图）。
+"""分时电价、电网碳强度与作业班次的时段关系。
 
-只画**条件**，不画结果：电价的谷与碳强度的峰重叠在同一段夜里；碳强度最低点落在下午班的灰带里；
-首趟前补电窗口横跨整夜、压在最脏的一段上。"谁在何时充了多少"由表 11 的起充时刻列承担（用户 2026-09-06 定：
-图讲形状与相对位置，表讲四方案×三窗口的账，文字做推理）。第三版的充电电量柱已撤（杂且只画得下两种安排）。
-
-体裁：两格并排（左格碳强度、右格电价，用户 2026-09-01 定），灰带标作业班次，高度压在窗口括号之下
-（用户 2026-09-06 令"不要高过补电窗口"）；三个补电窗口以横括号标在格顶：
-  首趟出车前（前一日 19:00 下午班结束→当日 07:30＝开工 08:00 − 一次补电）、午休（11:00–13:00）、趟间（13:00–19:00，无余量）；
-每格在坐标框内左上角设置纵排图例；横轴自前一日 12:00 至当日 24:00，00:00 处灰虚线为日期变更线。
-数据：日历 beijing 2025-02-12；班次 shift_contract.json。
+灰带表示作业班次。
+实际可充电时段由车辆返回及下一行程出发时刻确定，起止结果在正文说明。
+数据：日历 beijing 2025-02-12；班次 shift_contract.json。曲线与原图一致。
 用法（须用仓库 venv）：.public-hgs-venv/bin/python3 solver/scripts/generate_tariff_carbon_window_figure.py [--out PDF]
 """
 
@@ -27,7 +21,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from fontTools.ttLib import TTCollection
 from matplotlib import font_manager
-from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 REPO = Path(__file__).resolve().parents[2]
@@ -37,13 +30,7 @@ OUT = REPO / "docs/paper_v2/generated_figures/figure_4_tariff_carbon_windows.pdf
 FONT_DIR = Path("/Applications/Microsoft Word.app/Contents/Resources/DFonts")
 
 X0, X1 = -12.0, 24.0  # 横轴：前一日 12:00 → 当日 24:00（小时，负数为前一日）
-WINDOWS = [  # (标签, 起, 止) 小时
-    ("首次出车前", -5.0, 7.5),
-    ("午休", 11.0, 13.0),
-    ("配送行程间", 13.0, 19.0),
-]
-BRACKET_FRAC = 0.80   # 括号所在高度（轴分数）
-BAND_TOP_FRAC = 0.72  # 灰带顶（轴分数），压在括号之下
+BAND_TOP_FRAC = 0.72
 # 源图按约 0.945 倍缩放到版心，8.5 pt 落版后约为 8 pt，
 # 统一为比 9 pt 图题小一号的图内字号。
 TEXT_PT = 8.5
@@ -100,14 +87,8 @@ def draw_panel(ax, values, ylabel, ymax, ytick_step, shifts):
     ax.tick_params(direction="out", length=2.5, width=0.5, pad=2)
     for s in ax.spines.values():
         s.set_linewidth(0.5)
-    y = BRACKET_FRAC * ymax
-    tick = 0.025 * ymax
-    for label, a, b in WINDOWS:
-        ax.plot([a, a, b, b], [y - tick, y, y, y - tick], color="black", linewidth=0.6, zorder=3)
-        ax.text((a + b) / 2, y + 0.008 * ymax, label, ha="center", va="bottom", fontsize=TEXT_PT)
     handles = [
         Patch(facecolor=BAND_COLOR, edgecolor="#808080", linewidth=0.5, label="作业班次"),
-        Line2D([0], [0], color="black", linewidth=0.6, label="补电窗口"),
     ]
     ax.legend(
         handles=handles,
@@ -148,12 +129,12 @@ def main() -> int:
     )
     price, carbon = load_calendar()
     shifts = json.load(open(SHIFT))["shifts"]
-    fig, (left, right) = plt.subplots(1, 2, figsize=(6.9, 2.6))
+    fig, (left, right) = plt.subplots(1, 2, figsize=(6.9, 1.8))
     draw_panel(left, carbon, "电网碳强度\n(kgCO$_2$/kWh)", 0.9, 0.2, shifts)
     draw_panel(right, price, "分时电价\n(元/kWh)", 1.6, 0.2, shifts)
-    left.set_title("(a) 电网碳强度与补电窗口", fontsize=TEXT_PT, y=-0.42)
-    right.set_title("(b) 分时电价与补电窗口", fontsize=TEXT_PT, y=-0.42)
-    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.30, top=0.97, wspace=0.32)
+    left.set_title("(a) 电网碳强度", fontsize=TEXT_PT, y=-0.63)
+    right.set_title("(b) 分时电价", fontsize=TEXT_PT, y=-0.63)
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.38, top=0.97, wspace=0.32)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.out)
     fig.savefig(args.out.with_suffix(".png"), dpi=200)

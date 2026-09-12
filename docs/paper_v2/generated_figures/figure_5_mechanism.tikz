@@ -12,37 +12,37 @@
   frame/.style={draw=black!60, densely dashed, line width=0.4pt, inner xsep=5pt, inner ysep=7pt, fill=none},
   stage/.style={font=\fontsize{8pt}{10pt}\selectfont, anchor=north, yshift=-3pt, inner sep=0pt}
 ]
-\def\dx{4.15}
+\def\dx{4.09}
 \def\ymid{2.45}
 \def\ytop{4.75}
 % ---- 列 1 首次出车前
-\node[boxbottom] (c1b) at (0,0)      {低谷电价时段碳强度最高\\低碳时段电价较高};
-\node[boxmid] (c1m) at (0,\ymid)  {降低电费与减少排放相互牵制\\碳价过低，按碳强度充电须多付电费};
-\node[boxtop] (c1t) at (0,\ytop)  {补电留在回场时刻\\排放与无序充电接近，电费较高};
+\node[boxbottom] (c1b) at (0,0)      {夜间低谷电价\\对应较高碳强度};
+\node[boxmid] (c1m) at (0,\ymid)  {利用前一日下午充电\\避开夜间高碳时段};
+\node[boxtop] (c1t) at (0,\ytop)  {较电价引导方案\\电费增量超过\\碳成本降幅};
 % ---- 列 2 午休
-\node[boxbottom] (c2b) at (\dx,0)      {午后电价与碳强度同时较低};
-\node[boxmid] (c2m) at (\dx,\ymid)  {降费与减排方向一致\\受下午班开工时刻限制};
-\node[boxtop] (c2t) at (\dx,\ytop)  {补电靠近午后\\减排幅度有限};
+\node[boxbottom] (c2b) at (\dx,0)      {午间碳强度较低\\可充电至下一趟出发前};
+\node[boxmid] (c2m) at (\dx,\ymid)  {利用午间低碳电力\\补电量随配送任务变化};
+\node[boxtop] (c2t) at (\dx,\ytop)  {较无序充电\\电量与单位电量\\排放均下降};
 % ---- 列 3 配送行程间
-\node[boxbottom] (c3b) at (2*\dx,0)      {电价与碳强度变化平缓};
-\node[boxmid] (c3m) at (2*\dx,\ymid)  {配送行程间隔较短\\受客户时间窗限制};
-\node[boxtop] (c3t) at (2*\dx,\ytop)  {充电时刻不变};
+\node[boxbottom] (c3b) at (2*\dx,0)      {班次内行程间隔较短\\补电需在下一趟出发前};
+\node[boxmid] (c3m) at (2*\dx,\ymid)  {充电时刻调整受限\\满足后续配送所需电量};
+\node[boxtop] (c3t) at (2*\dx,\ytop)  {较无序充电\\起止时刻接近\\补电量较少};
 % ---- 列 4 全日
-\node[boxbottom] (c4b) at (3*\dx,0)      {碳价不足以改变车型选择\\燃油车直接排放占比较高};
+\node[boxbottom] (c4b) at (3*\dx,0)      {电费与碳成本共同影响\\两类车辆的使用成本};
 \node[boxmid] (c4m) at (3*\dx,\ymid)  {车队与路线\\按含碳总成本择优};
-\node[boxtop] (c4t) at (3*\dx,\ytop)  {总成本与无序充电相当\\总排放未减少};
+\node[boxtop] (c4t) at (3*\dx,\ytop)  {较无序充电\\平均总排放接近\\充电减排被抵消};
 % ---- 竖箭头与标注
 \foreach \i in {1,2,3,4}{
-  \draw[arr] (c\i b.north) -- node[pos=0.5, anchor=west, xshift=4pt, inner sep=0pt]{约束} (c\i m.south);
-  \draw[arr] (c\i m.north) -- node[pos=0.5, anchor=west, xshift=4pt, inner sep=0pt]{导致} (c\i t.south);
+  \draw[arr] (c\i b.north) -- node[pos=0.5, anchor=west, xshift=4pt, inner sep=0pt]{影响} (c\i m.south);
+  \draw[arr] (c\i m.north) -- node[pos=0.5, anchor=west, xshift=4pt, inner sep=0pt]{结果} (c\i t.south);
 }
 % ---- 阶段虚线框与阶段名
-\foreach \i/\lab in {1/首次出车前, 2/午休, 3/配送行程间, 4/全日}{
+\foreach \i/\lab in {1/首次出车前, 2/跨班次, 3/班次内, 4/整体配送}{
   \node[frame, fit=(c\i b) (c\i t)] (f\i) {};
   \node[stage] at (f\i.south) {\lab};
 }
 % ---- 层名（四字，竖排不相撞）
-\node[tier] at (-2.15,0)      {外部条件};
+\node[tier] at (-2.15,0)      {决策条件};
 \node[tier] at (-2.15,\ymid)  {企业决策};
-\node[tier] at (-2.15,\ytop)  {充电结果};
+\node[tier] at (-2.15,\ytop)  {方案对比};
 \end{tikzpicture}

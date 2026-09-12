@@ -7,7 +7,7 @@
 
 画风沿用仓库既有图脚本：全图黑白灰、不使用彩色（SimSun 走中文、Times New Roman 走拉丁，
 pdf.fonttype=42）。两车场靠**墨色深浅**区分而非颜色：企业A车场（小车场）路径为黑实线，
-企业B车场（大车场）路径为中灰实线；客户为白底黑边小圆点；两车场分别为黑色实心方块与实心三角，
+企业B车场（大车场）路径为中灰实线；客户为白底黑边小圆点；两车场均为黑色实心方块，
 并加白色描边，使其在多条路径汇聚处仍能被一眼认出。
 
 版式仿陈婉茹等（2023，《系统工程理论与实践》43(11): 3320-3335）图 3(b)「实例求解结果」：
@@ -208,8 +208,8 @@ def draw_map(ax, xy, routes, *, mode: str) -> None:
             ax.plot(x, y, marker="o", markersize=MOVED_MS, markerfacecolor=INK,
                     markeredgecolor="white", markeredgewidth=0.6, zorder=7)
         else:
-            ax.plot(x, y, marker="o", markersize=CUST_MS - 0.2, markerfacecolor="white",
-                    markeredgecolor=PALE, markeredgewidth=0.4, zorder=3)
+            ax.plot(x, y, marker="o", markersize=CUST_MS, markerfacecolor="white",
+                    markeredgecolor=GRAY, markeredgewidth=0.4, zorder=5)
 
     if mode == "highlight":
         for node in MOVED_TO_A + MOVED_TO_B:
@@ -230,7 +230,7 @@ def draw_map(ax, xy, routes, *, mode: str) -> None:
     # 加白色描边，使汇聚到车场的十余条路径不糊住标记本身。
     ax.plot(*xy[DEPOT_A], marker="s", markersize=DEPOT_A_MS, markerfacecolor=INK,
             markeredgecolor="white", markeredgewidth=0.7, zorder=9)
-    ax.plot(*xy[DEPOT_B], marker="^", markersize=DEPOT_B_MS, markerfacecolor=INK,
+    ax.plot(*xy[DEPOT_B], marker="s", markersize=DEPOT_B_MS, markerfacecolor=INK,
             markeredgecolor="white", markeredgewidth=0.7, zorder=9)
 
 

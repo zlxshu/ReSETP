@@ -32,7 +32,7 @@ ARMS = [
     ("电价引导有序充电", REPO / "solver/reports/charging_arrangements_20260906/cost_min", "cost_min"),
     ("碳强度引导有序充电", REPO / "solver/reports/charging_arrangements_20260906/carbon_min", "carbon_min"),
 ]
-WINDOWS = [("first", "首次出车前"), ("lunch", "上午班后"), ("pm", "配送行程间")]
+WINDOWS = [("first", "首次出车前"), ("lunch", "跨班次"), ("pm", "班次内")]
 DAY, SLOT = 86400.0, 1800.0
 OUT = REPO / "docs/paper_v2/generated_tables/charging_windows_table.tex"
 
@@ -83,6 +83,7 @@ def pick_run_paths(arm_dir: Path, statistic: str) -> list[str]:
 def arm_windows(paths: list[str], policy: str, carbon, price, am_end, pm_start):
     kwh = {w: 0.0 for w, _ in WINDOWS}; em = {w: 0.0 for w, _ in WINDOWS}; cost = {w: 0.0 for w, _ in WINDOWS}
     starts = {w: [] for w, _ in WINDOWS}
+    ends = {w: [] for w, _ in WINDOWS}
     other = 0.0; n = 0; em_check = 0.0; em_rec = 0.0; cost_check = 0.0; cost_rec = 0.0
     for p in paths:
         sol = json.load(open(p)); meta = json.load(open(p.replace("best_solution.json", "metadata.json")))
@@ -113,10 +114,11 @@ def arm_windows(paths: list[str], policy: str, carbon, price, am_end, pm_start):
                     continue
                 kwh[w] += c["energy_kwh"]; em[w] += e; cost[w] += cc
                 starts[w].append((start / 3600.0, c["energy_kwh"]))
+                ends[w].append(((start + c["occupancy_minutes"] * 60) / 3600.0, c["energy_kwh"]))
         em_rec += sol["evaluation"]["breakdown"]["E_ev_indirect"]; cost_rec += sol["evaluation"]["breakdown"]["cost_elec"]
     assert abs(em_check - em_rec) < 1e-6 * max(1.0, em_rec), (arm_dir, em_check, em_rec)
     assert abs(cost_check - cost_rec) < 1e-6 * max(1.0, cost_rec), (arm_dir, cost_check, cost_rec)
-    return {w: (cost[w] / n, em[w] / n, kwh[w] / n, wmedian(starts[w])) for w, _ in WINDOWS}, other / n, n
+    return {w: (cost[w] / n, em[w] / n, kwh[w] / n, wmedian(starts[w]), wmedian(ends[w])) for w, _ in WINDOWS}, other / n, n
 
 
 def wmedian(pairs):
@@ -160,18 +162,18 @@ def main() -> int:
         print(f"[{pol:16s}] n={n} " + " ".join(f"{lab} {fmt_time(v[3])} {v[0]:.2f}元/{v[1]:.2f}kg（{v[2]:.1f}kWh）" for (key, lab), v in zip(WINDOWS, w.values())) + f" 合计 {tot_k:.2f}元/{tot_e:.2f}kg", file=sys.stderr)
     # 竖排：窗口分块 × 方案逐行（13 列横排超宽 23.9 pt，2026-09-06 改为此式；块内成本最低与碳排量最低各自加粗）
     names = [h for h, _, _ in ARMS]
-    lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llccc@{}}", r"    \toprule",
-             r"    可充电阶段 & 充电安排 & 充电开始时刻（电量加权中位数） & 充电成本（元） & 碳排放量（kgCO$_2$）\\",
+    lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llccccc@{}}", r"    \toprule",
+             r"    充电阶段 & 充电安排 & 开始时刻 & 结束时刻 & 电量（kWh） & 成本（元） & 排放（kgCO$_2$）\\",
              r"    \midrule"]
-    blocks = [(lab, [(d[key][0], d[key][1], fmt_time(d[key][3])) for d in data]) for key, lab in WINDOWS]
-    blocks.append(("合计", [(sum(v[0] for v in d.values()), sum(v[1] for v in d.values()), "") for d in data]))
+    blocks = [(lab, [(d[key][0], d[key][1], fmt_time(d[key][3]), fmt_time(d[key][4]), d[key][2]) for d in data]) for key, lab in WINDOWS]
+    blocks.append(("合计", [(sum(v[0] for v in d.values()), sum(v[1] for v in d.values()), "", "", sum(v[2] for v in d.values())) for d in data]))
     for bi, (lab, vals) in enumerate(blocks):
         if bi:
             lines.append(r"    \midrule")
-        for ai, (k, e, tm) in enumerate(vals):
+        for ai, (k, e, tm, end_tm, energy) in enumerate(vals):
             kk = fmt(k); ee = fmt(e)
             first = (r"\multirow{" + str(len(ARMS)) + "}{*}{" + lab + "}") if ai == 0 else ""
-            lines.append(f"    {first} & {names[ai]} & {tm} & {kk} & {ee}\\\\")
+            lines.append(f"    {first} & {names[ai]} & {tm} & {end_tm} & {fmt(energy)} & {kk} & {ee}\\\\")
     lines += [r"    \bottomrule", r"  \end{tabular*}"]
     tex = "\n".join(lines) + "\n"
     if not args.dry_run:
