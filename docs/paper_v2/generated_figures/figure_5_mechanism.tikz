@@ -2,44 +2,47 @@
 % 皮囊：王强, 王哲璇, 刘玉奇. 管理科学学报, 2023, 26(11): 58–80, 图 5（三层×阶段网格，竖箭头，阶段虚线框，左侧竖排层名）。
 % 用户令：不放数字、小白能懂 → 每框最多两行、每行 ≤11 字；层名缩为四字以免竖排相撞；同层框等高。
 \begin{tikzpicture}[
-  every node/.style={font=\scriptsize},
-  box/.style={draw, line width=0.4pt, rectangle, text width=3.0cm, align=center, inner xsep=3pt, inner ysep=3pt, minimum height=0.85cm, fill=white},
-  tier/.style={font=\scriptsize, rotate=90, anchor=center},
-  arr/.style={-{Stealth[length=4pt]}, line width=0.4pt},
-  frame/.style={draw, dashed, line width=0.4pt, inner xsep=4pt, inner ysep=6pt},
-  stage/.style={font=\scriptsize, anchor=north, yshift=-2pt}
+  every node/.style={font=\fontsize{8pt}{10pt}\selectfont},
+  box/.style={draw, line width=0.4pt, rectangle, text width=3.0cm, align=center, inner xsep=3pt, inner ysep=4pt, fill=none},
+  boxtop/.style={box, minimum height=1.75cm},
+  boxmid/.style={box, minimum height=1.75cm},
+  boxbottom/.style={box, minimum height=1.75cm},
+  tier/.style={font=\fontsize{8pt}{10pt}\selectfont, rotate=90, anchor=center},
+  arr/.style={-{Stealth[length=4.5pt,width=3.2pt]}, line width=0.4pt, shorten <=1pt, shorten >=1.5pt},
+  frame/.style={draw=black!60, densely dashed, line width=0.4pt, inner xsep=5pt, inner ysep=7pt, fill=none},
+  stage/.style={font=\fontsize{8pt}{10pt}\selectfont, anchor=north, yshift=-3pt, inner sep=0pt}
 ]
 \def\dx{4.15}
-\def\ymid{1.60}
-\def\ytop{3.20}
-% ---- 列 1 首趟出车前
-\node[box] (c1b) at (0,0)      {低谷电价时段碳强度最高\\低碳时段电价较高};
-\node[box] (c1m) at (0,\ymid)  {降低电费与减少排放相互牵制\\碳价过低，按碳强度充电须多付电费};
-\node[box] (c1t) at (0,\ytop)  {补电留在回场时刻\\排放与无序充电接近，电费较高};
+\def\ymid{2.45}
+\def\ytop{4.75}
+% ---- 列 1 首次出车前
+\node[boxbottom] (c1b) at (0,0)      {低谷电价时段碳强度最高\\低碳时段电价较高};
+\node[boxmid] (c1m) at (0,\ymid)  {降低电费与减少排放相互牵制\\碳价过低，按碳强度充电须多付电费};
+\node[boxtop] (c1t) at (0,\ytop)  {补电留在回场时刻\\排放与无序充电接近，电费较高};
 % ---- 列 2 午休
-\node[box] (c2b) at (\dx,0)      {午后电价与碳强度同时较低};
-\node[box] (c2m) at (\dx,\ymid)  {降费与减排方向一致\\受下午班开工时刻限制};
-\node[box] (c2t) at (\dx,\ytop)  {补电靠近午后\\减排幅度有限};
-% ---- 列 3 趟间
-\node[box] (c3b) at (2*\dx,0)      {电价与碳强度变化平缓};
-\node[box] (c3m) at (2*\dx,\ymid)  {趟间间隔较短\\受客户时间窗限制};
-\node[box] (c3t) at (2*\dx,\ytop)  {充电时刻不变};
+\node[boxbottom] (c2b) at (\dx,0)      {午后电价与碳强度同时较低};
+\node[boxmid] (c2m) at (\dx,\ymid)  {降费与减排方向一致\\受下午班开工时刻限制};
+\node[boxtop] (c2t) at (\dx,\ytop)  {补电靠近午后\\减排幅度有限};
+% ---- 列 3 配送行程间
+\node[boxbottom] (c3b) at (2*\dx,0)      {电价与碳强度变化平缓};
+\node[boxmid] (c3m) at (2*\dx,\ymid)  {配送行程间隔较短\\受客户时间窗限制};
+\node[boxtop] (c3t) at (2*\dx,\ytop)  {充电时刻不变};
 % ---- 列 4 全日
-\node[box] (c4b) at (3*\dx,0)      {碳价不足以改变车型选择\\燃油车直接排放占比较高};
-\node[box] (c4m) at (3*\dx,\ymid)  {车队与路线\\按含碳总成本择优};
-\node[box] (c4t) at (3*\dx,\ytop)  {总成本与无序充电相当\\总排放未减少};
+\node[boxbottom] (c4b) at (3*\dx,0)      {碳价不足以改变车型选择\\燃油车直接排放占比较高};
+\node[boxmid] (c4m) at (3*\dx,\ymid)  {车队与路线\\按含碳总成本择优};
+\node[boxtop] (c4t) at (3*\dx,\ytop)  {总成本与无序充电相当\\总排放未减少};
 % ---- 竖箭头与标注
 \foreach \i in {1,2,3,4}{
-  \draw[arr] (c\i b.north) -- node[right, inner sep=1.5pt]{约束} (c\i m.south);
-  \draw[arr] (c\i m.north) -- node[right, inner sep=1.5pt]{导致} (c\i t.south);
+  \draw[arr] (c\i b.north) -- node[pos=0.5, anchor=west, xshift=4pt, inner sep=0pt]{约束} (c\i m.south);
+  \draw[arr] (c\i m.north) -- node[pos=0.5, anchor=west, xshift=4pt, inner sep=0pt]{导致} (c\i t.south);
 }
 % ---- 阶段虚线框与阶段名
-\foreach \i/\lab in {1/首趟出车前, 2/午休, 3/趟间, 4/全日}{
+\foreach \i/\lab in {1/首次出车前, 2/午休, 3/配送行程间, 4/全日}{
   \node[frame, fit=(c\i b) (c\i t)] (f\i) {};
   \node[stage] at (f\i.south) {\lab};
 }
 % ---- 层名（四字，竖排不相撞）
-\node[tier] at (-2.05,0)      {外部条件};
-\node[tier] at (-2.05,\ymid)  {企业决策};
-\node[tier] at (-2.05,\ytop)  {充电结果};
+\node[tier] at (-2.15,0)      {外部条件};
+\node[tier] at (-2.15,\ymid)  {企业决策};
+\node[tier] at (-2.15,\ytop)  {充电结果};
 \end{tikzpicture}

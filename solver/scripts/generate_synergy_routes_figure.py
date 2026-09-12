@@ -5,7 +5,7 @@
 本图改画算例 cn-jjj-50c-01-DEPOTSEARCH-d996f755bd 的**真实解**——独立配送与联合配送各取
 第 1 次运行的最优解（十次运行的客户归属、启用车辆与配送趟数一致，取哪一次都相同）。
 
-画风沿用仓库既有图脚本：全图黑白灰、不使用彩色（宋体走中文、Times New Roman 走拉丁，
+画风沿用仓库既有图脚本：全图黑白灰、不使用彩色（SimSun 走中文、Times New Roman 走拉丁，
 pdf.fonttype=42）。两车场靠**墨色深浅**区分而非颜色：企业A车场（小车场）路径为黑实线，
 企业B车场（大车场）路径为中灰实线；客户为白底黑边小圆点；两车场分别为黑色实心方块与实心三角，
 并加白色描边，使其在多条路径汇聚处仍能被一眼认出。
@@ -61,6 +61,7 @@ REPORTS = REPO / "solver/reports/synergy_v7_20260909"
 INDEPENDENT = REPORTS / "independent/run_01/best_solution.json"
 JOINT = REPORTS / "joint/run_01/best_solution.json"
 OUTDIR = REPO / "docs/paper_v2/generated_figures"
+FONT_DIR = Path("/Applications/Microsoft Word.app/Contents/Resources/DFonts")
 
 DEPOT_A = "D_OSM_WAY_1003511503"  # 小车场＝企业A
 DEPOT_B = "D_OSM_WAY_1071205721"  # 大车场＝企业B
@@ -70,9 +71,10 @@ GRAY = "#666666"
 PALE = "#D0D0D0"
 ROUTE_PT = 0.42
 HILITE_PT = 0.95
-TEXT_PT = 7.5
-LABEL_PT = 6.5
-TICK_PT = 6.0
+# 本图按版心原尺寸插入，图内文字统一为 8 pt，比 9 pt 图题小一号。
+TEXT_PT = 8.0
+LABEL_PT = 8.0
+TICK_PT = 8.0
 
 # 标记尺寸（磅）：车场远大于客户，是仿原图区分车场与客户的主要手段。
 CUST_MS = 2.0
@@ -102,22 +104,23 @@ LABEL_ALIGN = {
 _FONT_TMP = tempfile.TemporaryDirectory(prefix="resetp_synergy_routes_font_")
 
 
-def _songti_regular() -> Path:
-    source = Path("/System/Library/Fonts/Supplemental/Songti.ttc")
-    target = Path(_FONT_TMP.name) / "songti_sc_regular.ttf"
+def _simsun_regular() -> Path:
+    source = FONT_DIR / "Simsun.ttc"
+    target = Path(_FONT_TMP.name) / "simsun_regular.ttf"
     for font in TTCollection(source).fonts:
         names = {r.toUnicode() for r in font["name"].names if r.nameID == 6}
-        if "STSongti-SC-Regular" in names:
+        if "SimSun" in names:
             font.save(target)
             return target
-    raise RuntimeError("Songti SC Regular face not found in system Songti.ttc")
+    raise RuntimeError("SimSun face not found in Word Simsun.ttc")
 
 
-CN = font_manager.FontProperties(fname=_songti_regular(), size=TEXT_PT)
-CN_LEGEND = font_manager.FontProperties(fname=CN.get_file(), size=7.0)
+CN = font_manager.FontProperties(fname=_simsun_regular(), size=TEXT_PT)
+CN_LEGEND = font_manager.FontProperties(fname=CN.get_file(), size=TEXT_PT)
 EN = font_manager.FontProperties(family="Times New Roman", size=TEXT_PT)
 EN_SMALL = font_manager.FontProperties(family="Times New Roman", size=LABEL_PT)
 EN_TICK = font_manager.FontProperties(family="Times New Roman", size=TICK_PT)
+EN_VAR = font_manager.FontProperties(fname=FONT_DIR / "timesi.ttf", size=TICK_PT)
 
 plt.rcParams.update(
     {
@@ -247,6 +250,35 @@ def panel_caption(fig, ax, prefix: str, chinese: str, drop_in: float = 0.085) ->
     cn_text.set_position((start + en_width, y))
 
 
+def add_axis_unit_labels(ax):
+    """把单字母变量设为 Times New Roman Italic，单位保持正体。"""
+    x_var = ax.text(0, -0.14, "x", transform=ax.transAxes, fontproperties=EN_VAR,
+                    ha="left", va="top", clip_on=False)
+    x_unit = ax.text(0, -0.14, "/km", transform=ax.transAxes, fontproperties=EN_TICK,
+                     ha="left", va="top", clip_on=False)
+    y_var = ax.text(-0.17, 0, "y", transform=ax.transAxes, fontproperties=EN_VAR,
+                    rotation=90, rotation_mode="anchor", ha="left", va="center", clip_on=False)
+    y_unit = ax.text(-0.17, 0, "/km", transform=ax.transAxes, fontproperties=EN_TICK,
+                     rotation=90, rotation_mode="anchor", ha="left", va="center", clip_on=False)
+    return x_var, x_unit, y_var, y_unit
+
+
+def center_axis_unit_labels(fig, ax, labels) -> None:
+    renderer = fig.canvas.get_renderer()
+    x_var, x_unit, y_var, y_unit = labels
+    x_var_width = x_var.get_window_extent(renderer=renderer).width / ax.bbox.width
+    x_unit_width = x_unit.get_window_extent(renderer=renderer).width / ax.bbox.width
+    x_start = 0.5 - (x_var_width + x_unit_width) / 2.0
+    x_var.set_position((x_start, -0.14))
+    x_unit.set_position((x_start + x_var_width, -0.14))
+
+    y_var_height = y_var.get_window_extent(renderer=renderer).height / ax.bbox.height
+    y_unit_height = y_unit.get_window_extent(renderer=renderer).height / ax.bbox.height
+    y_start = 0.5 - (y_var_height + y_unit_height) / 2.0
+    y_var.set_position((-0.17, y_start))
+    y_unit.set_position((-0.17, y_start + y_var_height))
+
+
 def build(panels: int, out_pdf: Path) -> None:
     xy = load_nodes()
     independent = load_routes(INDEPENDENT)
@@ -292,12 +324,12 @@ def build(panels: int, out_pdf: Path) -> None:
         ax.set_xlim(*xlim)
         ax.set_ylim(*ylim)
         draw_map(ax, xy, routes, mode=mode)
-        ax.set_xlabel("x/km", fontproperties=EN_TICK, labelpad=1.2)
-        ax.set_ylabel("y/km", fontproperties=EN_TICK, labelpad=1.2)
-        made.append((ax, prefix, chinese))
+        axis_labels = add_axis_unit_labels(ax)
+        made.append((ax, prefix, chinese, axis_labels))
 
     fig.canvas.draw()
-    for ax, prefix, chinese in made:
+    for ax, prefix, chinese, axis_labels in made:
+        center_axis_unit_labels(fig, ax, axis_labels)
         panel_caption(fig, ax, prefix, chinese, drop_in=xlab_band - 0.02)
 
     out_pdf.parent.mkdir(parents=True, exist_ok=True)

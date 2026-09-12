@@ -13,7 +13,7 @@
 日历按 48 个半小时槽存储，同一小时内两槽数值相同（求解器亦按此断言），故取整点值成 24 点序列。
 列名仍保留 kgco2e 的历史命名，数值不变；仅图上标签按正文口径写作 kgCO$_2$/kWh。
 
-画风沿用仓库既有图脚本：全图黑白灰、不使用彩色（宋体走中文、Times New Roman 走拉丁，
+画风沿用仓库既有图脚本：全图黑白灰、不使用彩色（SimSun 走中文、Times New Roman 走拉丁，
 pdf.fonttype=42），四边封闭矩形框、无网格线、无标题；阶梯线 drawstyle="steps-post"，
 横轴 0—24 时每 4 小时一个刻度。版面尺寸与旧图相同（442.8×104.4 pt），
 以配合 paper_main.tex 中 width=0.95\\textwidth 的插图宽度。
@@ -55,6 +55,7 @@ OUT = (
     REPO
     / "docs/paper_v2/generated_figures/figure_experiment_carbon_intensity.pdf"
 )
+FONT_DIR = Path("/Applications/Microsoft Word.app/Contents/Resources/DFonts")
 
 # 2026-08-29 旧图 PDF 内容流里逐点反解出的 24 个纵坐标（保留 4 位小数）。
 # 留在这里当哨兵：若日历数据被换掉或取数路径漂移，脚本立刻报错而不是悄悄画出另一条线。
@@ -66,7 +67,9 @@ EXPECTED = (
 
 INK = "#000000"
 AXIS_INK = "#1A1A1A"  # 旧图坐标框与刻度的灰度 0.1019607843
-TEXT_PT = 8.0
+# 论文中按 0.70\textwidth 插入，源图 10.8 pt 缩放后约为 8 pt，
+# 比 9 pt 图题小一号，符合出版社模板要求。
+TEXT_PT = 10.8
 CURVE_PT = 0.62
 AXIS_PT = 0.468
 TICK_LEN = 2.5
@@ -82,19 +85,19 @@ AXES_RECT = dict(left=0.10, right=0.99, bottom=0.28, top=0.95)
 _FONT_TMP = tempfile.TemporaryDirectory(prefix="resetp_carbon_intensity_font_")
 
 
-def _songti_regular() -> str:
-    """从系统 Songti.ttc 里抽出 STSongti-SC-Regular 单个字面，供 matplotlib 嵌入。"""
+def _simsun_regular() -> str:
+    """从 Word 自带的 Simsun.ttc 抽出 SimSun 字面，供 matplotlib 嵌入。"""
 
-    target = Path(_FONT_TMP.name) / "STSongti-SC-Regular.ttf"
+    target = Path(_FONT_TMP.name) / "SimSun.ttf"
     if target.is_file():
         return str(target)
-    source = Path("/System/Library/Fonts/Supplemental/Songti.ttc")
+    source = FONT_DIR / "Simsun.ttc"
     for font in TTCollection(source).fonts:
         names = {r.toUnicode() for r in font["name"].names if r.nameID == 6}
-        if "STSongti-SC-Regular" in names:
+        if "SimSun" in names:
             font.save(target)
             return str(target)
-    raise RuntimeError("Songti SC Regular face not found in system Songti.ttc")
+    raise RuntimeError("SimSun face not found in Word Simsun.ttc")
 
 
 def load_hourly_intensity() -> list[float]:
@@ -133,14 +136,22 @@ def check_against_old_figure(values: list[float]) -> None:
 
 
 def render(values: list[float], out_pdf: Path) -> None:
-    cn = font_manager.FontProperties(fname=_songti_regular(), size=TEXT_PT)
+    cn = font_manager.FontProperties(fname=_simsun_regular(), size=TEXT_PT)
+    font_manager.fontManager.addfont(cn.get_file())
     en = font_manager.FontProperties(family="Times New Roman", size=TEXT_PT)
+    math_rm = font_manager.FontProperties(fname=FONT_DIR / "times.ttf").get_fontconfig_pattern()
+    math_it = font_manager.FontProperties(fname=FONT_DIR / "timesi.ttf").get_fontconfig_pattern()
+    math_bf = font_manager.FontProperties(fname=FONT_DIR / "timesbd.ttf").get_fontconfig_pattern()
 
     plt.rcParams.update(
         {
-            "font.family": "Times New Roman",
+            "font.family": ["Times New Roman", cn.get_name()],
             "font.size": TEXT_PT,
             "pdf.fonttype": 42,
+            "mathtext.fontset": "custom",
+            "mathtext.rm": math_rm,
+            "mathtext.it": math_it,
+            "mathtext.bf": math_bf,
             "savefig.dpi": 300,
         }
     )
@@ -168,10 +179,9 @@ def render(values: list[float], out_pdf: Path) -> None:
     ax.set_yticks([0.2, 0.4, 0.6])
     # labelpad 取 3.33 / 4.0 是为了让两个轴名落在与旧图同一位置（误差 <0.01 pt），
     # 不是圆整值；旧图与本图的 matplotlib 版本字体度量略有差异。
-    ax.set_xlabel("时刻", fontproperties=cn, labelpad=3.33, color=INK)
+    ax.set_xlabel("时刻", labelpad=3.33, color=INK)
     ax.set_ylabel(
-        "电网碳强度（kgCO$_2$/kWh）",
-        fontproperties=cn,
+        "电网碳强度\n(kgCO$_2$/kWh)",
         labelpad=4.0,
         color=INK,
     )

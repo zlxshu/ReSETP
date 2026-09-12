@@ -1,86 +1,82 @@
-\documentclass[tikz,border=4pt]{standalone}
+\documentclass[tikz,border=3pt]{standalone}
 \usepackage[UTF8,fontset=none]{ctex}
-\setCJKmainfont{Songti SC}
+\usepackage{amsmath}
+\setCJKmainfont[Path={/Applications/Microsoft Word.app/Contents/Resources/DFonts/},FontIndex=0]{Simsun.ttc}
 \setmainfont{Times New Roman}
-\xeCJKsetup{CJKglue=\hskip 0pt}
-\usetikzlibrary{arrows.meta,calc,shapes.geometric,shapes.misc}
-
+\xeCJKsetup{CJKglue=\hskip 0pt,CJKecglue=\hskip 0pt}
+\usetikzlibrary{arrows.meta,backgrounds,calc,shapes.geometric}
 \begin{document}
 \begin{tikzpicture}[
-  x=1cm, y=1cm,
-  every node/.style={font=\fontsize{8pt}{9.6pt}\selectfont, align=center, text=black, fill=white, inner sep=0pt, outer sep=0pt},
-  box/.style={rectangle, draw=black, line width=0.5pt, minimum width=3.10cm, minimum height=0.90cm, inner xsep=1.2mm, inner ysep=0.9mm},
-  wide/.style={box, minimum width=3.90cm},
-  narrow/.style={box, minimum width=2.60cm},
-  terminal/.style={rounded rectangle, rounded rectangle arc length=180, draw=black, line width=0.5pt, minimum width=1.75cm, minimum height=0.62cm},
-  decision/.style={diamond, draw=black, line width=0.5pt, aspect=2.0, inner xsep=1.0mm, inner ysep=0.5mm},
-  side/.style={box, dashed, draw=black!70},
-  frame/.style={draw=black!60, fill=none, dash pattern=on 2.6mm off 1.3mm, line width=0.5pt, inner sep=0pt},
-  frametitle/.style={font=\fontsize{8pt}{9.6pt}\selectfont, fill=none, anchor=north west, inner xsep=0pt, inner ysep=0pt},
-  flow/.style={-{Stealth[length=1.7mm,width=1.3mm,fill=black]}, draw=black, line width=0.5pt, line join=miter, shorten >=0.5mm},
-  dashedflow/.style={flow, dashed, draw=black!70},
-  lab/.style={font=\fontsize{8pt}{9.6pt}\selectfont, fill=none, inner xsep=0.3mm, inner ysep=0.2mm}
+  every node/.style={font=\fontsize{8.5pt}{10.5pt}\selectfont,align=center,inner sep=3pt,outer sep=1pt},
+  box/.style={rectangle,draw,line width=.55pt,text width=3.1cm,minimum height=.76cm},
+  smallbox/.style={box,text width=1.65cm},
+  terminal/.style={rectangle,rounded corners=6pt,draw,line width=.55pt,minimum width=1.4cm,minimum height=.55cm},
+  decision/.style={diamond,draw,line width=.55pt,aspect=2.5,text width=2.15cm,inner sep=1pt},
+  flow/.style={-{Stealth[length=1.65mm,width=1.2mm]},line width=.55pt,shorten <=.5pt,shorten >=1pt},
+  label/.style={fill=white,inner sep=1.5pt,font=\fontsize{8.5pt}{10.5pt}\selectfont},
+  frame/.style={draw,dashed,line width=.45pt},
+  title/.style={anchor=north west,inner sep=0pt,font=\fontsize{8.5pt}{10.5pt}\selectfont}
 ]
+% The left subprocedure evolves route solutions. The right subprocedure
+% improves each fully scheduled feasible solution, then returns seeds/costs.
+\node[terminal] (start) at (0,4.15) {开始};
+\node[box] (data) at (0,2.9) {输入数据与初始方案\\确定路径搜索成本};
+\node[box] (init) at (0,1.5) {个体编码\\生成初始种群};
+\node[box,dashed,text width=3.0cm] (dynamic) at (3.65,4.15) {动态事件\\固定已执行作业\\更新客户与车辆状态};
+\node[box] (select) at (0,0) {偏差适应度评价\\二元锦标赛选择};
+\node[box] (cross) at (0,-1.35) {选择性路径交换};
+\node[box] (local) at (0,-2.9) {客户与路径邻域搜索\\多趟次调整、跨中心拆分};
+\node[box] (population) at (0,-4.55) {子代入群与概率修复\\罚系数调整、种群管理};
+\node[decision] (innerstop) at (0,-6.2) {种群进化\\停止？};
 
-% ============ layout constants ============
-% rows      : R1=5.90  R2=4.50  R3=3.10  R4=1.365
-% columns   : left 1.50 | frame1 6.395 | frame2 11.890 | right 15.870
-% channels  : proxy->init 3.40 | kernel return 4.07 | outer loop -0.55 / 17.70 / -0.45
-% frames    : F1 3.75..9.04   F2 9.79..13.99   both y 0.28..6.90
+\node[box] (complete) at (7,-6.2) {路径解码与充电排程\\逐一取完整可行方案 $x$};
+\node[box] (move) at (7,-4.55) {行程交换、车型置换\\重排充电并评价 $x'$};
+\node[decision] (improve) at (7,-2.9) {存在可行改进\\$F(x')<F(x)$？};
+\node[smallbox] (accept) at (10.6,-2.9) {接受改进解\\$x\leftarrow x'$};
+\node[decision] (all) at (7,-.7) {全部方案均已\\完成搜索？};
+\node[box,text width=.34cm,inner sep=2pt] (next) at (4.45,-2.8) {取\\下\\一\\方\\案};
+\node[box] (best) at (7,1.15) {更新历轮最优解 $x^*$};
+\node[decision] (outerstop) at (7,2.9) {满足终止\\条件？};
+\node[terminal] (end) at (7,4.5) {输出 $x^*$};
+\node[box,text width=4.8cm] (feedback) at (3.3,-8.15) {更新单位补电成本与趟间充电时间\\以本轮可行方案及 $x^*$ 重建种群};
 
-% ---- left column ----
-\node[terminal] (start) at (1.50,5.90) {开始};
-\node[box]      (read)  at (1.50,4.50) {读取客户、车场、车辆\\分时电价与电网碳强度};
-\node[box]      (proxy) at (1.50,3.10) {构建路线层近似问题};
-\node[side]     (dyn)   at (1.50,1.365) {动态事件触发\\继承车辆状态与客户};
-\draw[flow] (start) -- (read);
-\draw[flow] (read) -- (proxy);
-\draw[dashedflow] (dyn) -- (proxy);
+\begin{scope}[on background layer]
+  \draw[frame] (-3,.9) rectangle (2.4,-7.35);
+  \draw[frame] (4.0,.45) rectangle (11.65,-7.35);
+\end{scope}
+\node[title,font=\fontsize{8pt}{10pt}\selectfont] at (-2.9,.8) {种群进化};
+\node[title,align=left] at (9.2,.27) {完整方案\\邻域搜索};
 
-% ---- stage 1: route search ----
-\node[box]      (init)  at (6.395,5.90) {生成初始种群};
-\node[box]      (cross) at (6.395,4.50) {选择父代\\选择性路线交换};
-\node[box]      (ls)    at (6.395,3.10) {局部搜索与罚系数更新};
-\node[decision] (stopk) at (6.395,1.365) {连续20\,000次\\未改善？};
-\draw[flow] (init) -- (cross);
-\draw[flow] (cross) -- (ls);
-\draw[flow] (ls) -- (stopk);
-\draw[flow] (proxy.east) -- (3.40,3.10) -- (3.40,5.90) -- (init.west);
-\draw[flow] (stopk.west) -- (4.07,1.365) -- (4.07,4.50) -- (cross.west);
-\node[lab,anchor=south] at (4.45,1.485) {否};
-
-% ---- stage 2: exact evaluation ----
-\node[box] (decode) at (11.890,1.365) {解码为各车辆趟次序列};
-\node[box] (charge) at (11.890,3.10) {安排预充与趟间补电};
-\node[box] (exact)  at (11.890,4.50) {计算总成本并检验约束};
-\node[box] (educ)   at (11.890,5.90) {跨车场趟交换\\车型任务交换};
-\draw[flow] (stopk.east) -- (decode.west);
-\node[lab,anchor=south] at (9.415,1.485) {是};
-\draw[flow] (decode) -- (charge);
-\draw[flow] (charge) -- (exact);
-\draw[flow] (exact) -- (educ);
-
-% ---- right column ----
-\node[narrow]   (best)   at (15.970,5.90) {更新当前最优解};
-\node[decision] (stopr)  at (15.970,4.20) {连续两轮\\未改善？};
-\node[narrow]   (output) at (15.970,2.30) {输出最优可行方案};
-\node[terminal] (end)    at (15.970,1.10) {结束};
-\draw[flow] (educ) -- (best);
-\draw[flow] (best) -- (stopr);
-\draw[flow] (stopr) -- (output);
-\node[lab,anchor=west] at (16.130,3.058) {是};
-\draw[flow] (output) -- (end);
-
-% ---- outer loop: realised electricity price fed back into the proxy problem ----
-\draw[flow] (stopr.east) -- (17.95,4.20) -- (17.95,-0.55) -- (-0.55,-0.55) -- (-0.55,3.10) -- (proxy.west);
-\node[lab,anchor=south] at (17.79,4.32) {否};
-\node[wide] (feed) at (8.870,-0.55) {回填含碳补电成本，重建近似问题};
-
-% ---- stage frames ----
-\draw[frame] (3.75,0.18) rectangle (9.04,7.00);
-\node[frametitle] at (3.87,6.86) {路线搜索};
-\draw[frame] (9.79,0.18) rectangle (13.99,7.00);
-\node[frametitle] at (9.91,6.86) {精确评价};
-
+\draw[flow] (start) -- (data);
+\draw[flow] (data) -- (init);
+\draw[flow,dashed] (dynamic.south) |- (data.east);
+\draw[flow] (init) -- (select);
+\draw[flow] (select) -- (cross);
+\draw[flow] (cross) -- (local);
+\draw[flow] (local) -- (population);
+\draw[flow] (population) -- (innerstop);
+\draw[flow] (innerstop.west) -- (-2.55,-6.2) |- (select.west)
+  node[pos=.12,label,above] {否};
+\draw[flow] (innerstop.east) -- (complete.west)
+  node[midway,label,above] {是};
+\draw[flow] (complete.north) -- (move.south);
+\draw[flow] (move.north) -- (improve.south);
+\draw[flow] (improve.east) -- (accept.west)
+  node[midway,label,above] {是};
+\draw[flow] (accept.south) |- (move.east);
+\draw[flow] (improve.north) -- (all.south)
+  node[midway,label,right] {否};
+\draw[flow] (all.west) -| (next.north)
+  node[pos=.10,label,above] {否};
+\draw[flow] (next.south) |- (move.west);
+\draw[flow] (all.north) -- (best.south)
+  node[midway,label,right] {是};
+\draw[flow] (best.north) -- (outerstop.south);
+\draw[flow] (outerstop.north) -- (end.south)
+  node[midway,label,right] {是};
+\draw[flow] (outerstop.east) -- (12.2,2.9) |- (feedback.east)
+;
+\node[label] at (9.8,3.1) {否};
+\draw[flow] (feedback.west) -- (-3.7,-8.15) |- (init.west);
 \end{tikzpicture}
 \end{document}

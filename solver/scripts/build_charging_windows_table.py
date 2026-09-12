@@ -32,7 +32,7 @@ ARMS = [
     ("电价引导有序充电", REPO / "solver/reports/charging_arrangements_20260906/cost_min", "cost_min"),
     ("碳强度引导有序充电", REPO / "solver/reports/charging_arrangements_20260906/carbon_min", "carbon_min"),
 ]
-WINDOWS = [("first", "首趟出车前"), ("lunch", "上午班后"), ("pm", "趟间")]
+WINDOWS = [("first", "首次出车前"), ("lunch", "上午班后"), ("pm", "配送行程间")]
 DAY, SLOT = 86400.0, 1800.0
 OUT = REPO / "docs/paper_v2/generated_tables/charging_windows_table.tex"
 

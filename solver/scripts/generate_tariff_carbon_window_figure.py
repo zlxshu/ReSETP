@@ -8,7 +8,7 @@
 体裁：两格并排（左格碳强度、右格电价，用户 2026-09-01 定），灰带标作业班次，高度压在窗口括号之下
 （用户 2026-09-06 令"不要高过补电窗口"）；三个补电窗口以横括号标在格顶：
   首趟出车前（前一日 19:00 下午班结束→当日 07:30＝开工 08:00 − 一次补电）、午休（11:00–13:00）、趟间（13:00–19:00，无余量）；
-图例在每格左上角、竖排、无框；横轴自前一日 12:00 至当日 24:00，00:00 处灰虚线为日期变更线。
+每格在坐标框内左上角设置纵排图例；横轴自前一日 12:00 至当日 24:00，00:00 处灰虚线为日期变更线。
 数据：日历 beijing 2025-02-12；班次 shift_contract.json。
 用法（须用仓库 venv）：.public-hgs-venv/bin/python3 solver/scripts/generate_tariff_carbon_window_figure.py [--out PDF]
 """
@@ -34,29 +34,32 @@ REPO = Path(__file__).resolve().parents[2]
 CAL = REPO / "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_hourly_calendar.csv"
 SHIFT = REPO / "data/ChinaInstances/china81_final_suite_v2_20260815/instances/cn-jjj-50c-01-DEPOTSEARCH-d996f755bd/shift_contract.json"
 OUT = REPO / "docs/paper_v2/generated_figures/figure_4_tariff_carbon_windows.pdf"
+FONT_DIR = Path("/Applications/Microsoft Word.app/Contents/Resources/DFonts")
 
 X0, X1 = -12.0, 24.0  # 横轴：前一日 12:00 → 当日 24:00（小时，负数为前一日）
 WINDOWS = [  # (标签, 起, 止) 小时
-    ("首趟出车前", -5.0, 7.5),
+    ("首次出车前", -5.0, 7.5),
     ("午休", 11.0, 13.0),
-    ("趟间", 13.0, 19.0),
+    ("配送行程间", 13.0, 19.0),
 ]
 BRACKET_FRAC = 0.80   # 括号所在高度（轴分数）
 BAND_TOP_FRAC = 0.72  # 灰带顶（轴分数），压在括号之下
-TEXT_PT = 8.0
+# 源图按约 0.945 倍缩放到版心，8.5 pt 落版后约为 8 pt，
+# 统一为比 9 pt 图题小一号的图内字号。
+TEXT_PT = 8.5
 BAND_COLOR = "#EFEFEF"
 _FONT_TMP = tempfile.TemporaryDirectory(prefix="resetp_window_fig_font_")
 
 
-def _songti_regular() -> Path:
-    source = Path("/System/Library/Fonts/Supplemental/Songti.ttc")
-    target = Path(_FONT_TMP.name) / "songti_sc_regular.ttf"
+def _simsun_regular() -> Path:
+    source = FONT_DIR / "Simsun.ttc"
+    target = Path(_FONT_TMP.name) / "simsun_regular.ttf"
     for font in TTCollection(source).fonts:
         names = {r.toUnicode() for r in font["name"].names if r.nameID == 6}
-        if "STSongti-SC-Regular" in names:
+        if "SimSun" in names:
             font.save(target)
             return target
-    raise RuntimeError("Songti SC Regular face not found")
+    raise RuntimeError("SimSun face not found")
 
 
 def load_calendar():
@@ -101,21 +104,48 @@ def draw_panel(ax, values, ylabel, ymax, ytick_step, shifts):
     tick = 0.025 * ymax
     for label, a, b in WINDOWS:
         ax.plot([a, a, b, b], [y - tick, y, y, y - tick], color="black", linewidth=0.6, zorder=3)
-        ax.text((a + b) / 2, y + 0.008 * ymax, label, ha="center", va="bottom", fontsize=TEXT_PT - 1)
-    handles = [Patch(facecolor=BAND_COLOR, edgecolor="#808080", linewidth=0.5, label="作业班次"),
-               Line2D([0], [0], color="black", linewidth=0.6, label="补电窗口")]
-    ax.legend(handles=handles, loc="upper left", frameon=False, fontsize=TEXT_PT - 1.2,
-              handlelength=1.6, borderaxespad=0.4, labelspacing=0.3)
+        ax.text((a + b) / 2, y + 0.008 * ymax, label, ha="center", va="bottom", fontsize=TEXT_PT)
+    handles = [
+        Patch(facecolor=BAND_COLOR, edgecolor="#808080", linewidth=0.5, label="作业班次"),
+        Line2D([0], [0], color="black", linewidth=0.6, label="补电窗口"),
+    ]
+    ax.legend(
+        handles=handles,
+        loc="upper left",
+        bbox_to_anchor=(0.008, 0.992),
+        ncol=1,
+        frameon=False,
+        fontsize=TEXT_PT,
+        handlelength=1.0,
+        handletextpad=0.3,
+        labelspacing=0.08,
+        borderpad=0.0,
+        borderaxespad=0.0,
+    )
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args()
-    font_path = _songti_regular()
+    font_path = _simsun_regular()
     font_manager.fontManager.addfont(str(font_path))
-    plt.rcParams["font.family"] = font_manager.FontProperties(fname=str(font_path)).get_name()
-    plt.rcParams["axes.unicode_minus"] = False
+    cn_name = font_manager.FontProperties(fname=str(font_path)).get_name()
+    math_rm = font_manager.FontProperties(fname=FONT_DIR / "times.ttf").get_fontconfig_pattern()
+    math_it = font_manager.FontProperties(fname=FONT_DIR / "timesi.ttf").get_fontconfig_pattern()
+    math_bf = font_manager.FontProperties(fname=FONT_DIR / "timesbd.ttf").get_fontconfig_pattern()
+    plt.rcParams.update(
+        {
+            "font.family": ["Times New Roman", cn_name],
+            "font.size": TEXT_PT,
+            "axes.unicode_minus": False,
+            "pdf.fonttype": 42,
+            "mathtext.fontset": "custom",
+            "mathtext.rm": math_rm,
+            "mathtext.it": math_it,
+            "mathtext.bf": math_bf,
+        }
+    )
     price, carbon = load_calendar()
     shifts = json.load(open(SHIFT))["shifts"]
     fig, (left, right) = plt.subplots(1, 2, figsize=(6.9, 2.6))
