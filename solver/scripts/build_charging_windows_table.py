@@ -163,7 +163,7 @@ def main() -> int:
     # 竖排：窗口分块 × 方案逐行（13 列横排超宽 23.9 pt，2026-09-06 改为此式；块内成本最低与碳排量最低各自加粗）
     names = [h for h, _, _ in ARMS]
     lines = [r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llccccc@{}}", r"    \toprule",
-             r"    充电阶段 & 充电安排 & 开始时刻 & 结束时刻 & 电量（kWh） & 成本（元） & 排放（kgCO$_2$）\\",
+             r"    充电阶段 & 充电安排 & 开始时刻 & 结束时刻 & 电量(kWh) & 成本(元) & 排放(kgCO$_2$)\\",
              r"    \midrule"]
     blocks = [(lab, [(d[key][0], d[key][1], fmt_time(d[key][3]), fmt_time(d[key][4]), d[key][2]) for d in data]) for key, lab in WINDOWS]
     blocks.append(("合计", [(sum(v[0] for v in d.values()), sum(v[1] for v in d.values()), "", "", sum(v[2] for v in d.values())) for d in data]))
