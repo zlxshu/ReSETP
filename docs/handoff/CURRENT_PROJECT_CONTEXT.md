@@ -4469,3 +4469,10 @@ FACT（2026-09-13，四处PDF批注）：参照陈婉茹2023第2.4.2节“模型
 FACT（2026-09-13，发布包整理，公开待确认）：按用户“移动磁盘根目录以论文标题建文件夹，整理发布仓库与投稿TeX/PDF，创建新GitHub公开仓库”及“供审稿人审核和后人复现与操作”的要求，在 `/Volumes/移动硬盘（512G）/双碳背景下复杂混合车队物流模型与求解算法/` 整理了独立 `repository/`、`投稿文件.zip`、`发布版仓库.zip`。新仓库无旧Git历史，保留66个项目Python依赖文件、必要第三方源码及许可、50客户输入和28标准算例、正式最终结果与实际配置；不带内部交接、调试日志、缓存、商业字体或密钥。发布副本仅作路径与文字清理、增加运行适配入口，原仓库受保护文件及论文正文未改。全新Python环境安装、静态初始化完整评价（50客户、13264 kg，无违反）、动态10事件加载、frvcpy加载、小型内核功能检查通过；未重跑正式实验。投稿副本按LaTeX官方longtable gh/1907修正有限收缩量，编译正常退出，PDF24页，提取文字与原稿完全相同；逐页栅格仅第11页长表行距有变化，已目视检查。
 
 FACT（公开前发现的实质差异）：当前 `run_problem_hgs_private_technical.py` 的中心配置为 `capacity_mode=unbounded`、`active_concurrency_limit=UNBOUNDED`，而正文容量约束覆盖中心、表4列2个桩；算例 `nodes.csv` 含97个候选公共充电站，正文节点表/图仅列S1和S2；早期与后期正式结果存在充电时间代理种群估计/固定估计及第一轮起点数差异。这些事实已写入发布副本USAGE.md，未擅改模型、数据或论文。已向用户请求决定：先保留本地包暂不公开，或按现稿与实际代码公开并保留差异说明。该请求是代理因新发现风险提出，尚非用户决定；截至本条记录未创建GitHub仓库、未上传。
+
+
+USER DECISION（2026-09-13，当前对话）：用户选择“②按当前版本公开，并保留差异说明”。此前公开等待确认状态至此解除，未授权修改研究参数、模型或论文。
+FACT：已创建公开仓库 https://github.com/zlxshu/mixed-fleet-logistics ，发布 https://github.com/zlxshu/mixed-fleet-logistics/releases/tag/v1.0.0 。首页及USAGE.md保留三项差异说明。附件为 manuscript-submission.zip（投稿文件）与 research-release.zip（发布仓库）；中文附件名上传返回404，改用英文名后成功，本地仍保留中文文件名。匿名API确认仓库public，两个附件均经匿名下载、压缩包完整性及本地内容一致性核对。发布副本共590个跟踪文件，投稿包16个文件。原论文、求解规则及受保护文件本轮未改。
+
+FACT（2026-09-13，投稿文件命名与官方口径核对）：已读官网投稿指南、作者中心basicinfo/viewHtmlFile.action?id=8及用户提供的20240614090444.zip。作者中心明载15页以内、图表题中英对照/表内英文、中摘200—300字/英摘300—400词；当前24页、中摘353汉字/英摘约213词。该口径与提供模板的中文图表示例及近期已发表25页同类论文存在张力，不能据发表篇幅推定初投稿例外。未擅压页数、改图表或论文内容。未登录系统，上传白名单/大小/必填表单仍未核实，未声称完全符合。官方来源：https://sxsjx.magtechjournal.com/journalx_xtgcllysj/basicinfo/viewHtmlFile.action?id=8 、https://sysengi.cjoe.ac.cn/CN/column/item46.shtml 、https://sysengi.cjoe.ac.cn/CN/10.12011/SETP2024-1783 。
+FACT：移动磁盘标题目录下新增“投稿材料/”，含manuscript.pdf、manuscript-source.zip、投稿说明.txt。源包主文件manuscript.tex，15个必要文件（含编译说明），解压后两次XeLaTeX退出0、24页，提取文字与现稿一致。PDF原样复制，未改研究代码；GitHub v1.0.0保持原版。旧投稿文件.zip保存在本机临时备份 /var/folders/5y/3l36tt_s3n5_lch2yl3kfjmm0000gn/T/resetp-submission-before-5x6pu38y/ 。文件名为整理选择，已查官方公开规范无固定命名要求，不编造稿号。
